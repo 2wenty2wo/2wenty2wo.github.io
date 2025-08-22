@@ -27,11 +27,18 @@ export class GameScene extends Phaser.Scene {
     const map = this.make.tilemap({ data: layout, tileWidth: tileSize, tileHeight: tileSize });
     const grassTiles = map.addTilesetImage('grass');
     const roadTiles = map.addTilesetImage('road');
-    map.createLayer(0, [grassTiles, roadTiles], 0, 0);
+    const layer = map.createLayer(0, [grassTiles, roadTiles], 0, 0);
+    layer.setCollision(0); // grass is collidable
     this.map = map;
+    this.mapLayer = layer;
+
+    // Physics world bounds
+    this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
 
     // Create the car at an intersection
     this.car = new PoliceCar(this, tileSize * 12, tileSize * 6);
+    this.car.setCollideWorldBounds(true);
+    this.physics.add.collider(this.car, this.mapLayer);
 
     // Camera follow
     this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
@@ -101,10 +108,5 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.car.update(dt);
-
-    // Keep the car in-bounds of the world
-    const w = this.map.widthInPixels, h = this.map.heightInPixels;
-    this.car.x = Phaser.Math.Clamp(this.car.x, 40, w - 40);
-    this.car.y = Phaser.Math.Clamp(this.car.y, 40, h - 40);
   }
 }
