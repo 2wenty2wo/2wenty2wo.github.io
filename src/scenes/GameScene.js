@@ -8,42 +8,28 @@ export class GameScene extends Phaser.Scene {
 
   create() {
     const tileSize = 64;
-    const cols = Math.ceil(GAME_CONFIG.world.width / tileSize);
-    const rows = Math.ceil(GAME_CONFIG.world.height / tileSize);
+    this.tileSize = tileSize;
+    this.chunkSize = GAME_CONFIG.world.chunkSize;
 
-    // Build a simple layout: 0 = grass, 1 = road
-    const layout = Array.from({ length: rows }, () => Array(cols).fill(0));
-    // Horizontal roads
-    [5, 15, 23, 35].forEach(r => {
-      if (r < rows) layout[r].fill(1);
-    });
-    // Vertical roads
-    [10, 30, 50].forEach(c => {
-      if (c < cols) {
-        for (let r = 0; r < rows; r++) layout[r][c] = 1;
-      }
-    });
+    // Background grass so empty space is never visible
+    this.bg = this.add.tileSprite(0, 0, this.scale.width, this.scale.height, 'grass')
+      .setOrigin(0)
+      .setScrollFactor(0);
 
-    const map = this.make.tilemap({ data: layout, tileWidth: tileSize, tileHeight: tileSize });
-    const grassTiles = map.addTilesetImage('grass');
-    const roadTiles = map.addTilesetImage('road');
-    const layer = map.createLayer(0, [grassTiles, roadTiles], 0, 0);
-    layer.setCollision(0); // grass is collidable
-    this.map = map;
-    this.mapLayer = layer;
+    // Track generated chunks
+    this.chunks = new Map();
 
-    // Physics world bounds
-    this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+    // Create the car at a default road intersection
+    this.car = new PoliceCar(this, tileSize * 10 + tileSize / 2, tileSize * 5 + tileSize / 2);
 
-    // Create the car at an intersection
-    this.car = new PoliceCar(this, tileSize * 12, tileSize * 6);
-    this.car.setCollideWorldBounds(true);
-    this.physics.add.collider(this.car, this.mapLayer);
-
-    // Camera follow
-    this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+    // Camera follow with very large bounds
+    const bound = 1e6;
+    this.cameras.main.setBounds(-bound, -bound, bound * 2, bound * 2);
     this.cameras.main.startFollow(this.car, true, 0.12, 0.12);
     this.cameras.main.setZoom(1); // tweaked automatically by Resize handler
+
+    // Generate initial chunks around the car
+    this.updateChunks();
 
     // Background music
     if (this.cache.audio.exists('bgm')) {
@@ -84,6 +70,9 @@ export class GameScene extends Phaser.Scene {
     // Adjust zoom so car is readable across devices
     const target = Math.min(width / 1100, height / 700);
     this.cameras.main.setZoom(Phaser.Math.Clamp(target, 0.6, 1.6));
+    if (this.bg) {
+      this.bg.setSize(width, height);
+    }
   }
 
   update(time, delta) {
@@ -108,8 +97,65 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.car.update(dt);
+    
+    // Spawn / cleanup chunks around the car
+    this.updateChunks();
+
+    // Scroll background
+    this.bg.setTilePosition(this.cameras.main.scrollX, this.cameras.main.scrollY);
 
     // Store current speed for the UI scene
     this.registry.set('carSpeed', this.car.body.speed);
+  }
+
+  updateChunks() {
+    const { chunkSize, tileSize } = this;
+    const chunkX = Math.floor(this.car.x / (chunkSize * tileSize));
+    const chunkY = Math.floor(this.car.y / (chunkSize * tileSize));
+
+    for (let x = chunkX - 1; x <= chunkX + 1; x++) {
+      for (let y = chunkY - 1; y <= chunkY + 1; y++) {
+        const key = `${x},${y}`;
+        if (!this.chunks.has(key)) {
+          this.chunks.set(key, this.generateChunk(x, y));
+        }
+      }
+    }
+
+    // Optional cleanup of far-away chunks
+    for (const [key, chunk] of this.chunks) {
+      const [x, y] = key.split(',').map(Number);
+      if (Math.abs(x - chunkX) > 2 || Math.abs(y - chunkY) > 2) {
+        chunk.collider.destroy();
+        chunk.layer.destroy();
+        chunk.map.destroy();
+        this.chunks.delete(key);
+      }
+    }
+  }
+
+  generateChunk(cx, cy) {
+    const { chunkSize, tileSize } = this;
+    const map = this.make.tilemap({ tileWidth: tileSize, tileHeight: tileSize, width: chunkSize, height: chunkSize });
+    const grass = map.addTilesetImage('grass');
+    const road = map.addTilesetImage('road');
+    const layer = map.createBlankLayer('layer', [grass, road], cx * chunkSize * tileSize, cy * chunkSize * tileSize);
+    layer.setCollision(0);
+
+    const offset = GAME_CONFIG.world.seed;
+    for (let x = 0; x < chunkSize; x++) {
+      for (let y = 0; y < chunkSize; y++) {
+        const worldX = cx * chunkSize + x;
+        const worldY = cy * chunkSize + y;
+        let tile = 0;
+        if ((worldY + offset) % 20 === 5 || (worldX + offset) % 20 === 10) {
+          tile = 1;
+        }
+        layer.putTileAt(tile, x, y);
+      }
+    }
+
+    const collider = this.physics.add.collider(this.car, layer);
+    return { map, layer, collider };
   }
 }

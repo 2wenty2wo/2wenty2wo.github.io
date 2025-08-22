@@ -2,8 +2,8 @@
 // Centralized config so we can tweak physics & UI easily.
 export const GAME_CONFIG = {
   world: {
-    width: 4000,        // World size in pixels (large enough for camera follow on ultrawide)
-    height: 3000
+    chunkSize: 16,      // tiles per chunk for on-demand generation
+    seed: 1             // seed for deterministic layout
   },
   car: {
     // "Realistic‑ish" top-down car physics model (arcade but grounded)
