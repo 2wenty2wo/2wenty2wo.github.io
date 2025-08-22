@@ -18,6 +18,9 @@ function createGame() {
     render: { pixelArt: false, antialias: true },
     physics: { default: 'arcade' },
     audio: { disableWebAudio: false },
+    plugins: {
+      scene: [{ key: 'LightsPlugin', plugin: Phaser.Plugins.LightsPlugin, mapping: 'lights' }]
+    },
     scene: [BootScene, GameScene, UIScene]
   });
 }
