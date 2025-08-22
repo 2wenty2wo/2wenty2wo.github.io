@@ -24,6 +24,22 @@ export class PoliceCar extends Phaser.GameObjects.Container {
     this._lightTimer = 0;
     this._lightPhase = 0; // 0 = blue, 1 = red
 
+    // Enable Lights2D and create light objects
+    scene.lights.enable().setAmbientColor(0x555555);
+    this.sprite.setPipeline('Light2D');
+
+    const hlRadius = 180;
+    this.headlights = [
+      scene.lights.addLight(x, y, hlRadius, 0xffffff, 0),
+      scene.lights.addLight(x, y, hlRadius, 0xffffff, 0)
+    ];
+
+    const sirenRadius = 120;
+    this.sirenLights = [
+      scene.lights.addLight(x, y, sirenRadius, 0x0066ff, 0), // blue
+      scene.lights.addLight(x, y, sirenRadius, 0xff0000, 0)  // red
+    ];
+
     // Make the sprite a bit smaller so car feels in scale
     this.sprite.setScale(0.6);
 
@@ -32,8 +48,12 @@ export class PoliceCar extends Phaser.GameObjects.Container {
 
   toggleLights(forceState = null) {
     this.lightsOn = forceState === null ? !this.lightsOn : !!forceState;
-    if (!this.lightsOn) {
+    if (this.lightsOn) {
+      this.headlights.forEach(l => l.setIntensity(1));
+    } else {
       this.sprite.setTexture('police-off');
+      this.headlights.forEach(l => l.setIntensity(0));
+      this.sirenLights.forEach(l => l.setIntensity(0));
     }
   }
 
@@ -100,16 +120,37 @@ export class PoliceCar extends Phaser.GameObjects.Container {
     // Apply rotation
     this.sprite.rotation = this.heading + Math.PI/2; // sprite points 'up'
 
+    // Update light positions relative to car
+    const cos = Math.cos(this.heading);
+    const sin = Math.sin(this.heading);
+    const frontOffset = 40;
+    const sideOffset = 15;
+    const hx = this.x + cos * frontOffset;
+    const hy = this.y + sin * frontOffset;
+    this.headlights[0].setPosition(hx - sin * sideOffset, hy + cos * sideOffset);
+    this.headlights[1].setPosition(hx + sin * sideOffset, hy - cos * sideOffset);
+    this.sirenLights[0].setPosition(this.x - sin * sideOffset, this.y + cos * sideOffset);
+    this.sirenLights[1].setPosition(this.x + sin * sideOffset, this.y - cos * sideOffset);
+
     // Lights animation
     if (this.lightsOn) {
       this._lightTimer += dt;
       if (this._lightTimer >= 0.18) { // 180ms flash cadence
         this._lightTimer = 0;
         this._lightPhase = 1 - this._lightPhase;
-        this.sprite.setTexture(this._lightPhase === 0 ? 'police-blue' : 'police-red');
+      }
+      if (this._lightPhase === 0) {
+        this.sprite.setTexture('police-blue');
+        this.sirenLights[0].setIntensity(1);
+        this.sirenLights[1].setIntensity(0);
+      } else {
+        this.sprite.setTexture('police-red');
+        this.sirenLights[0].setIntensity(0);
+        this.sirenLights[1].setIntensity(1);
       }
     } else {
       this.sprite.setTexture('police-off');
+      this.sirenLights.forEach(l => l.setIntensity(0));
     }
   }
 }
