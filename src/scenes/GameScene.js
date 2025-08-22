@@ -38,6 +38,16 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.car, true, 0.12, 0.12);
     this.cameras.main.setZoom(1); // tweaked automatically by Resize handler
 
+    // Background music
+    if (this.cache.audio.exists('bgm')) {
+      this.bgm = this.sound.add('bgm', { loop: true, volume: 0.5 });
+      this.bgm.play();
+      this.events.once('shutdown', () => this.bgm.stop());
+    } else if (window.MIDIjs) {
+      window.MIDIjs.play('assets/AUD_AP0356.mid');
+      this.events.once('shutdown', () => window.MIDIjs.stop());
+    }
+
     // Inputs
     this.keys = this.input.keyboard.addKeys({
       up: Phaser.Input.Keyboard.KeyCodes.W,
