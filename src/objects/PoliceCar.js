@@ -15,7 +15,6 @@ export class PoliceCar extends Phaser.Physics.Arcade.Sprite {
     this.setOrigin(0.5, 0.5);
     this.setScale(0.3);
     this.setDamping(true);
-    this.setDrag(600);
     this.setMaxVelocity(GAME_CONFIG.car.maxSpeed);
 
     // Controls
@@ -97,7 +96,7 @@ export class PoliceCar extends Phaser.Physics.Arcade.Sprite {
     if (braking) {
       this.setDrag(cfg.brakeStrength);
     } else {
-      this.setDrag(600);
+      this.setDrag(0);
     }
 
     // Steering (scale with speed)
@@ -115,7 +114,8 @@ export class PoliceCar extends Phaser.Physics.Arcade.Sprite {
       lateralScale += cfg.handbrakeSlip;
     }
 
-    const newVelocity = forwardComponent.add(lateralComponent.scale(lateralScale));
+    const dragFactor = Math.pow(cfg.drag, dt);
+    const newVelocity = forwardComponent.add(lateralComponent.scale(lateralScale)).scale(dragFactor);
     this.body.setVelocity(newVelocity.x, newVelocity.y);
 
     // Update light positions relative to car
