@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Top-Down Police — Phaser Starter</title>
+  <title>PoliceCops</title>
   <style>
     html,body { height: 100%; margin: 0; background:#111; }
     #game { width:100%; height:100%; touch-action: none; }
@@ -18,17 +18,55 @@
       box-shadow: 0 6px 16px rgba(0,0,0,.35);
     }
     .mobile-hint { position:fixed; bottom:12px; left:12px; right:12px; color:#bbb; font-size:12px; text-align:center;}
+
+    .logo {
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      margin:0 0 8px 0;
+    }
+    .logo span {
+      text-transform:uppercase;
+      color:white;
+      font-weight:100;
+      letter-spacing:3px;
+      font-size:70px;
+    }
+    .logo span:first-child {
+      animation:red 0.5s linear infinite;
+      animation-delay:0.25s;
+    }
+    .logo span:last-child {
+      animation:blue 0.5s linear infinite;
+      animation-delay:0.5s;
+    }
+    @keyframes red {
+      from {
+        text-shadow:0 0 5px red,
+                   0 0 15px red,
+                   0 0 30px red,
+                   0 0 60px red;
+      }
+    }
+    @keyframes blue {
+      from {
+        text-shadow:0 0 5px blue,
+                   0 0 15px blue,
+                   0 0 30px blue,
+                   0 0 60px blue;
+      }
+    }
   </style>
 </head>
 <body>
   <div id="game"></div>
   <div class="overlay" id="startOverlay">
-    <div>
-      <h1 style="margin-top:0;margin-bottom:8px;">Top‑Down Police (Part 1)</h1>
-      <p style="margin:0 0 16px 0">Click / tap to start. Desktop: <b>WASD / Arrows</b> to drive, <b>L</b> toggle lights, <b>H</b> siren, <b>Space</b> handbrake.<br>Mobile: use on‑screen controls.</p>
-      <div style="text-align:center"><button id="startBtn">Start</button></div>
-      <div class="mobile-hint">Optimized for ultrawide and iPhone. Camera follows the car. Roads are a simple starter city.</div>
-    </div>
+      <div>
+        <div class="logo"><span>Police</span><span>Cops</span></div>
+        <p style="margin:0 0 16px 0">Click / tap to start. Desktop: <b>WASD / Arrows</b> to drive, <b>L</b> toggle lights, <b>H</b> siren, <b>Space</b> handbrake.<br>Mobile: use on‑screen controls.</p>
+        <div style="text-align:center"><button id="startBtn">Start</button></div>
+        <div class="mobile-hint">Optimized for ultrawide and iPhone. Camera follows the car. Roads are a simple starter city.</div>
+      </div>
   </div>
   <!-- Phaser 3 -->
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
