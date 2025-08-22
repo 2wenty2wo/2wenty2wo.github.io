@@ -28,20 +28,20 @@ export class PoliceCar extends Phaser.GameObjects.Container {
     scene.lights.enable().setAmbientColor(0x555555);
     this.sprite.setPipeline('Light2D');
 
-    const hlRadius = 180;
+    const hlRadius = 90;      // was 180
     this.headlights = [
       scene.lights.addLight(x, y, hlRadius, 0xffffff, 0),
       scene.lights.addLight(x, y, hlRadius, 0xffffff, 0)
     ];
 
-    const sirenRadius = 120;
+    const sirenRadius = 60;   // was 120
     this.sirenLights = [
       scene.lights.addLight(x, y, sirenRadius, 0x0066ff, 0), // blue
       scene.lights.addLight(x, y, sirenRadius, 0xff0000, 0)  // red
     ];
 
     // Make the sprite a bit smaller so car feels in scale
-    this.sprite.setScale(0.6);
+    this.sprite.setScale(0.3);
 
     scene.add.existing(this);
   }
@@ -125,8 +125,8 @@ export class PoliceCar extends Phaser.GameObjects.Container {
     // Update light positions relative to car
     const cos = Math.cos(this.heading);
     const sin = Math.sin(this.heading);
-    const frontOffset = 40;
-    const sideOffset = 15;
+    const frontOffset = 20;   // was 40
+    const sideOffset = 7.5;   // was 15
     const hx = this.x + cos * frontOffset;
     const hy = this.y + sin * frontOffset;
     this.headlights[0].setPosition(hx - sin * sideOffset, hy + cos * sideOffset);
