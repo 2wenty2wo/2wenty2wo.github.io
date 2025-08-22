@@ -12,7 +12,7 @@ export class BootScene extends Phaser.Scene {
 
     // Audio (optional for local file usage; only starts after user gesture)
     this.load.audio('siren', ['assets/audio/siren.mp3']);
-    this.load.audio('bgm', 'assets/AUD_AP0356.mid');
+    this.load.audio('bgm', ['assets/AUD_AP0356.mp3']);
   }
   create() {
     this.scene.start('Game');
