@@ -105,8 +105,8 @@ export class PoliceCar extends Phaser.GameObjects.Container {
 
     // Velocity aligns to heading with some lateral slip (grip)
     const desiredVel = new Phaser.Math.Vector2(Math.cos(this.heading), Math.sin(this.heading)).scale(this.speed);
-    const lerp = cfg.grip + (this.inputs.handbrake ? cfg.handbrakeSlip : 0);
-    this.vel.lerp(desiredVel, Phaser.Math.Clamp(lerp, 0, 1));
+    const align = Phaser.Math.Clamp((cfg.grip + (this.inputs.handbrake ? cfg.handbrakeSlip : 0)) * dt * 60, 0, 1);
+    this.vel.lerp(desiredVel, align);
 
     // Position integrate
     this.x += this.vel.x * dt;
