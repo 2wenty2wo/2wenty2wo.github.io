@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Top-Down Police — Phaser Starter</title>
+  <style>
+    html,body { height: 100%; margin: 0; background:#111; }
+    #game { width:100%; height:100%; touch-action: none; }
+    .overlay {
+      position: fixed; inset: 0; display:flex; align-items:center; justify-content:center;
+      background: radial-gradient(ellipse at center, rgba(0,0,0,.75), rgba(0,0,0,.95));
+      color:#fff; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      z-index: 10;
+    }
+    .overlay button {
+      font-size: 18px; padding: 12px 18px; background:#1976d2; color:#fff; border:0; border-radius:10px;
+      box-shadow: 0 6px 16px rgba(0,0,0,.35);
+    }
+    .mobile-hint { position:fixed; bottom:12px; left:12px; right:12px; color:#bbb; font-size:12px; text-align:center;}
+  </style>
+</head>
+<body>
+  <div id="game"></div>
+  <div class="overlay" id="startOverlay">
+    <div>
+      <h1 style="margin-top:0;margin-bottom:8px;">Top‑Down Police (Part 1)</h1>
+      <p style="margin:0 0 16px 0">Click / tap to start. Desktop: <b>WASD / Arrows</b> to drive, <b>L</b> toggle lights, <b>H</b> siren, <b>Space</b> handbrake.<br>Mobile: use on‑screen controls.</p>
+      <div style="text-align:center"><button id="startBtn">Start</button></div>
+      <div class="mobile-hint">Optimized for ultrawide and iPhone. Camera follows the car. Roads are a simple starter city.</div>
+    </div>
+  </div>
+  <!-- Phaser 3 -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
+  <!-- Game modules -->
+  <script type="module" src="./src/main.js"></script>
+  <script>
+    // Gate the audio context by user gesture
+    const btn = document.getElementById('startBtn');
+    const overlay = document.getElementById('startOverlay');
+    btn.addEventListener('click', () => {
+      overlay.style.display = 'none';
+      window.__GAME_START__ && window.__GAME_START__();
+    });
+  </script>
+</body>
+</html>
