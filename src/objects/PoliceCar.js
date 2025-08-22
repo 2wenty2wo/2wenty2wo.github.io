@@ -1,19 +1,22 @@
 // src/objects/PoliceCar.js
-// A self-contained arcade car with manual physics integration and siren/lights logic.
+// A police car using Arcade physics with siren and light effects.
 import { GAME_CONFIG } from '../config.js';
 
-export class PoliceCar extends Phaser.GameObjects.Container {
+export class PoliceCar extends Phaser.Physics.Arcade.Sprite {
   /** @param {Phaser.Scene} scene */
   constructor(scene, x, y) {
-    super(scene, x, y);
+    super(scene, x, y, 'police-off');
 
-    this.sprite = scene.add.sprite(0, 0, 'police-off').setOrigin(0.5, 0.5);
-    this.add(this.sprite);
+    scene.add.existing(this);
+    scene.physics.add.existing(this);
 
-    // Physics state (manual, not using Arcade bodies so we can control rotation/slide)
-    this.heading = -Math.PI / 2; // face 'up'
-    this.speed = 0;
-    this.vel = new Phaser.Math.Vector2();
+    // Start facing 'up'
+    this.setRotation(0);
+    this.setOrigin(0.5, 0.5);
+    this.setScale(0.3);
+    this.setDamping(true);
+    this.setDrag(600);
+    this.setMaxVelocity(GAME_CONFIG.car.maxSpeed);
 
     // Controls
     this.inputs = { throttle: 0, steer: 0, brake: 0, handbrake: 0 };
@@ -26,7 +29,7 @@ export class PoliceCar extends Phaser.GameObjects.Container {
 
     // Enable Lights2D and create light objects
     scene.lights.enable().setAmbientColor(0x555555);
-    this.sprite.setPipeline('Light2D');
+    this.setPipeline('Light2D');
 
     const hlRadius = 90;      // was 180
     this.headlights = [
@@ -39,11 +42,6 @@ export class PoliceCar extends Phaser.GameObjects.Container {
       scene.lights.addLight(x, y, sirenRadius, 0x0066ff, 0), // blue
       scene.lights.addLight(x, y, sirenRadius, 0xff0000, 0)  // red
     ];
-
-    // Make the sprite a bit smaller so car feels in scale
-    this.sprite.setScale(0.3);
-
-    scene.add.existing(this);
   }
 
   toggleLights(forceState = null) {
@@ -52,7 +50,7 @@ export class PoliceCar extends Phaser.GameObjects.Container {
       this.headlights.forEach(l => l.setIntensity(1));
       this._setSiren(true);
     } else {
-      this.sprite.setTexture('police-off');
+      this.setTexture('police-off');
       this.headlights.forEach(l => l.setIntensity(0));
       this.sirenLights.forEach(l => l.setIntensity(0));
       this._setSiren(false);
@@ -82,49 +80,33 @@ export class PoliceCar extends Phaser.GameObjects.Container {
     const cfg = GAME_CONFIG.car;
     const t = this.inputs.throttle;
     const s = this.inputs.steer;
-    const braking = this.inputs.brake > 0;
+    const braking = this.inputs.brake > 0 || this.inputs.handbrake > 0;
 
-    // Longitudinal dynamics
+    // Acceleration along current heading
+    const forward = this.rotation - Math.PI / 2; // sprite points 'up'
     const forwardAccel = (t > 0 ? cfg.accel : (t < 0 ? -cfg.reverseAccel : 0));
-    this.speed += forwardAccel * dt;
 
-    // Braking / handbrake
+    if (forwardAccel !== 0) {
+      const vec = this.scene.physics.velocityFromRotation(forward, forwardAccel);
+      this.body.setAcceleration(vec.x, vec.y);
+    } else {
+      this.body.setAcceleration(0, 0);
+    }
+
+    // Drag / braking
     if (braking) {
-      // Stronger decel when moving
-      const sign = Math.sign(this.speed);
-      this.speed -= sign * cfg.brakeStrength * dt;
-      if (Math.sign(this.speed) != sign) this.speed = 0;
+      this.setDrag(cfg.brakeStrength);
+    } else {
+      this.setDrag(600);
     }
 
-    // Drag
-    this.speed *= Math.pow(cfg.drag, dt);
-
-    // Steering (scale with speed so it feels natural)
-    const steerStrength = cfg.turnRate * (Phaser.Math.Clamp(Math.abs(this.speed) / cfg.maxSpeed, 0, 1));
-    this.heading += s * steerStrength * dt;
-
-    // Velocity aligns to heading with some lateral slip (grip)
-    const desiredVel = new Phaser.Math.Vector2(Math.cos(this.heading), Math.sin(this.heading)).scale(this.speed);
-    const align = Phaser.Math.Clamp((cfg.grip + (this.inputs.handbrake ? cfg.handbrakeSlip : 0)) * dt * 60, 0, 1);
-    this.vel.lerp(desiredVel, align);
-
-    // Position integrate
-    this.x += this.vel.x * dt;
-    this.y += this.vel.y * dt;
-
-    // Clamp absolute max speed
-    const spd = this.vel.length();
-    if (spd > cfg.maxSpeed) {
-      this.vel.scale(cfg.maxSpeed / spd);
-      this.speed = Phaser.Math.Clamp(this.speed, -cfg.maxSpeed, cfg.maxSpeed);
-    }
-
-    // Apply rotation
-    this.sprite.rotation = this.heading + Math.PI/2; // sprite points 'up'
+    // Steering (scale with speed)
+    const steerStrength = cfg.turnRate * Phaser.Math.Clamp(this.body.speed / cfg.maxSpeed, 0, 1);
+    this.setAngularVelocity(Phaser.Math.RadToDeg(s * steerStrength));
 
     // Update light positions relative to car
-    const cos = Math.cos(this.heading);
-    const sin = Math.sin(this.heading);
+    const cos = Math.cos(forward);
+    const sin = Math.sin(forward);
     const frontOffset = 20;   // was 40
     const sideOffset = 7.5;   // was 15
     const hx = this.x + cos * frontOffset;
@@ -142,16 +124,16 @@ export class PoliceCar extends Phaser.GameObjects.Container {
         this._lightPhase = 1 - this._lightPhase;
       }
       if (this._lightPhase === 0) {
-        this.sprite.setTexture('police-blue');
+        this.setTexture('police-blue');
         this.sirenLights[0].setIntensity(1);
         this.sirenLights[1].setIntensity(0);
       } else {
-        this.sprite.setTexture('police-red');
+        this.setTexture('police-red');
         this.sirenLights[0].setIntensity(0);
         this.sirenLights[1].setIntensity(1);
       }
     } else {
-      this.sprite.setTexture('police-off');
+      this.setTexture('police-off');
       this.sirenLights.forEach(l => l.setIntensity(0));
     }
   }
