@@ -7,61 +7,34 @@ export class GameScene extends Phaser.Scene {
   constructor() { super('Game'); }
 
   create() {
-    const { width, height } = GAME_CONFIG.world;
+    const tileSize = 64;
+    const cols = Math.ceil(GAME_CONFIG.world.width / tileSize);
+    const rows = Math.ceil(GAME_CONFIG.world.height / tileSize);
 
-    // Create a big render texture to draw a simple city roads
-    const rt = this.make.renderTexture({ x: 0, y: 0, width, height, add: false });
-    const g = this.make.graphics({ x: 0, y: 0, add: false });
-
-    // Background (grass/concrete)
-    g.fillStyle(0x2a2f2a, 1); // dark green
-    g.fillRect(0, 0, width, height);
-
-    // Helper to draw a road strip with lane lines
-    const drawRoad = (x, y, w, h) => {
-      const asphalt = 0x303030;
-      const shoulder = 0x1f1f1f;
-      g.fillStyle(shoulder, 1);
-      g.fillRect(x - 6, y - 6, w + 12, h + 12);
-      g.fillStyle(asphalt, 1);
-      g.fillRect(x, y, w, h);
-      // Center dashed line
-      g.lineStyle(4, 0xdddd66, 1);
-      const isHorizontal = h < w;
-      const length = isHorizontal ? w : h;
-      const dash = 40, gap = 30;
-      for (let i = 20; i < length; i += dash + gap) {
-        if (isHorizontal) g.lineBetween(x + i, y + h/2, x + i + dash, y + h/2);
-        else g.lineBetween(x + w/2, y + i, x + w/2, y + i + dash);
+    // Build a simple layout: 0 = grass, 1 = road
+    const layout = Array.from({ length: rows }, () => Array(cols).fill(0));
+    // Horizontal roads
+    [5, 15, 23, 35].forEach(r => {
+      if (r < rows) layout[r].fill(1);
+    });
+    // Vertical roads
+    [10, 30, 50].forEach(c => {
+      if (c < cols) {
+        for (let r = 0; r < rows; r++) layout[r][c] = 1;
       }
-    };
+    });
 
-    // A small handmade network (not a perfect grid) — starter city feel
-    const R = 180; // road width
-    drawRoad(200, 400, width - 400, R);          // top avenue
-    drawRoad(300, 1000, width - 1000, R);        // mid avenue
-    drawRoad(600, 1600, width - 900, R);         // lower avenue
-    drawRoad(200, 2300, width - 400, R);         // bottom avenue
+    const map = this.make.tilemap({ data: layout, tileWidth: tileSize, tileHeight: tileSize });
+    const grassTiles = map.addTilesetImage('grass');
+    const roadTiles = map.addTilesetImage('road');
+    map.createLayer(0, [grassTiles, roadTiles], 0, 0);
+    this.map = map;
 
-    drawRoad(600, 200, R, height - 400);         // left spine
-    drawRoad(1600, 300, R, height - 600);        // central spine
-    drawRoad(2800, 600, R, height - 1000);       // right spine
-
-    // A couple of diagonals for variety
-    g.lineStyle(R, 0x303030, 1);
-    g.strokePath();
-    g.beginPath();
-    g.moveTo(600, 1600); g.lineTo(1600, 1000); g.lineTo(width - 600, 1400);
-    g.strokePath();
-
-    rt.draw(g);
-    this.add.image(0, 0, rt.texture.key, rt.frame.name).setOrigin(0);
-
-    // Create the car
-    this.car = new PoliceCar(this, 700, 1200);
+    // Create the car at an intersection
+    this.car = new PoliceCar(this, tileSize * 12, tileSize * 6);
 
     // Camera follow
-    this.cameras.main.setBounds(0, 0, width, height);
+    this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
     this.cameras.main.startFollow(this.car, true, 0.12, 0.12);
     this.cameras.main.setZoom(1); // tweaked automatically by Resize handler
 
@@ -120,8 +93,8 @@ export class GameScene extends Phaser.Scene {
     this.car.update(dt);
 
     // Keep the car in-bounds of the world
-    const w = GAME_CONFIG.world.width, h = GAME_CONFIG.world.height;
-    this.car.x = Phaser.Math.Clamp(this.car.x, 40, w-40);
-    this.car.y = Phaser.Math.Clamp(this.car.y, 40, h-40);
+    const w = this.map.widthInPixels, h = this.map.heightInPixels;
+    this.car.x = Phaser.Math.Clamp(this.car.x, 40, w - 40);
+    this.car.y = Phaser.Math.Clamp(this.car.y, 40, h - 40);
   }
 }
