@@ -48,13 +48,9 @@ export class UIScene extends Phaser.Scene {
   }
 
   update() {
-    const speedMps = this.registry.get('carSpeed') || 0;
-    let speed;
-    if (this.speedUnit === 'mph') {
-      speed = Math.floor(speedMps * 2.23694);
-    } else {
-      speed = Math.floor(speedMps * 3.6);
-    }
+    const speedPx = this.registry.get('carSpeed') || 0;
+    const factor = this.speedUnit === 'mph' ? 0.1 : 0.16;
+    const speed = Math.floor(speedPx * factor);
     this.speedText.setText(`${speed} ${this.speedUnit}`);
   }
 
