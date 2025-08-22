@@ -9,6 +9,13 @@ export class UIScene extends Phaser.Scene {
     const show = GAME_CONFIG.mobile.showControls;
     this.inputs = { throttle:0, steer:0, brake:0, handbrake:0 };
 
+    this.speedText = this.add.text(20, 20, '0', {
+      fontFamily: 'Arial',
+      fontSize: '64px',
+      fontStyle: 'italic',
+      color: '#ffffff',
+    }).setScrollFactor(0);
+
     // Virtual controls only on touch devices (or when explicitly enabled)
     const isTouch = this.sys.game.device.input.touch;
     if (show && isTouch) {
@@ -30,6 +37,12 @@ export class UIScene extends Phaser.Scene {
     // Bridge to GameScene to call methods on the car
     const game = this.scene.get('Game');
     this.events.on('toggleLights', () => game.car.toggleLights());
+  }
+
+  update() {
+    const speedMps = this.registry.get('carSpeed') || 0;
+    const speedMph = Math.floor(speedMps * 2.23694);
+    this.speedText.setText(speedMph.toString());
   }
 
   createButtons() {

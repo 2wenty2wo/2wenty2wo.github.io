@@ -108,5 +108,8 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.car.update(dt);
+
+    // Store current speed for the UI scene
+    this.registry.set('carSpeed', this.car.body.speed);
   }
 }
