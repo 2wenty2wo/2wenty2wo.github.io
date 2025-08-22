@@ -104,6 +104,20 @@ export class PoliceCar extends Phaser.Physics.Arcade.Sprite {
     const steerStrength = cfg.turnRate * Phaser.Math.Clamp(this.body.speed / cfg.maxSpeed, 0, 1);
     this.setAngularVelocity(Phaser.Math.RadToDeg(s * steerStrength));
 
+    // Reduce sideways slide by aligning velocity with the car's heading
+    const velocity = this.body.velocity.clone();
+    const forwardVec = new Phaser.Math.Vector2(Math.cos(forward), Math.sin(forward));
+    const forwardComponent = forwardVec.clone().scale(velocity.dot(forwardVec));
+    const lateralComponent = velocity.clone().subtract(forwardComponent);
+
+    let lateralScale = cfg.grip;
+    if (braking) {
+      lateralScale += cfg.handbrakeSlip;
+    }
+
+    const newVelocity = forwardComponent.add(lateralComponent.scale(lateralScale));
+    this.body.setVelocity(newVelocity.x, newVelocity.y);
+
     // Update light positions relative to car
     const cos = Math.cos(forward);
     const sin = Math.sin(forward);
