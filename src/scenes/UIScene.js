@@ -11,7 +11,12 @@ export class UIScene extends Phaser.Scene {
 
     const camHeight = this.cameras.main.height;
     this.speedUnit = 'mph';
-    this.speedText = this.add.text(20, camHeight - 20, '0 mph', {
+
+    const toggleUnit = () => {
+      this.speedUnit = this.speedUnit === 'mph' ? 'kph' : 'mph';
+    };
+
+    this.speedValueText = this.add.text(20, camHeight - 20, '0', {
       fontFamily: 'Arial',
       fontSize: '96px',
       fontStyle: 'italic',
@@ -19,10 +24,19 @@ export class UIScene extends Phaser.Scene {
     })
       .setOrigin(0, 1)
       .setScrollFactor(0)
-      .setInteractive({ useHandCursor: true });
-    this.speedText.on('pointerdown', () => {
-      this.speedUnit = this.speedUnit === 'mph' ? 'kph' : 'mph';
-    });
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', toggleUnit);
+
+    this.speedUnitText = this.add.text(this.speedValueText.x + this.speedValueText.displayWidth + 10, camHeight - 20, 'mph', {
+      fontFamily: 'Arial',
+      fontSize: '32px',
+      fontStyle: 'italic',
+      color: '#ffffff',
+    })
+      .setOrigin(0, 1)
+      .setScrollFactor(0)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', toggleUnit);
 
     // Virtual controls only on touch devices (or when explicitly enabled)
     const isTouch = this.sys.game.device.input.touch;
@@ -51,7 +65,10 @@ export class UIScene extends Phaser.Scene {
     const speedPx = this.registry.get('carSpeed') || 0;
     const factor = this.speedUnit === 'mph' ? 0.1 : 0.16;
     const speed = Math.floor(speedPx * factor);
-    this.speedText.setText(`${speed} ${this.speedUnit}`);
+    this.speedValueText.setText(`${speed}`);
+    this.speedUnitText.setText(this.speedUnit);
+    this.speedUnitText.x = this.speedValueText.x + this.speedValueText.displayWidth + 10;
+    this.speedUnitText.y = this.speedValueText.y;
   }
 
   createButtons() {
