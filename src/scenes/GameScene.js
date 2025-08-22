@@ -76,12 +76,10 @@ export class GameScene extends Phaser.Scene {
       left2: Phaser.Input.Keyboard.KeyCodes.LEFT,
       right2: Phaser.Input.Keyboard.KeyCodes.RIGHT,
       space: Phaser.Input.Keyboard.KeyCodes.SPACE,
-      L: Phaser.Input.Keyboard.KeyCodes.L,
-      H: Phaser.Input.Keyboard.KeyCodes.H
+      L: Phaser.Input.Keyboard.KeyCodes.L
     });
 
     this.keys.L.on('down', () => this.car.toggleLights());
-    this.keys.H.on('down', () => this.car.toggleSiren());
 
     // Listen to UI scene for virtual controls
     this.registry.set('mobileInputs', { throttle:0, steer:0, brake:0, handbrake:0 });

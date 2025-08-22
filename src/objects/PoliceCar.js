@@ -20,7 +20,7 @@ export class PoliceCar extends Phaser.GameObjects.Container {
 
     // Lights & siren
     this.lightsOn = false;
-    this.sirenOn = false;
+    this.sirenOn = false; // tracks audio state
     this._lightTimer = 0;
     this._lightPhase = 0; // 0 = blue, 1 = red
 
@@ -50,16 +50,18 @@ export class PoliceCar extends Phaser.GameObjects.Container {
     this.lightsOn = forceState === null ? !this.lightsOn : !!forceState;
     if (this.lightsOn) {
       this.headlights.forEach(l => l.setIntensity(1));
+      this._setSiren(true);
     } else {
       this.sprite.setTexture('police-off');
       this.headlights.forEach(l => l.setIntensity(0));
       this.sirenLights.forEach(l => l.setIntensity(0));
+      this._setSiren(false);
     }
   }
 
-  toggleSiren(forceState = null) {
+  _setSiren(on) {
     const prev = this.sirenOn;
-    this.sirenOn = forceState === null ? !this.sirenOn : !!forceState;
+    this.sirenOn = !!on;
     if (this.sirenOn && !prev) {
       this.scene.sound.stopByKey('siren');
       const s = this.scene.sound.add('siren', { loop: true, volume: 0.35 });

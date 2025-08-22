@@ -1,5 +1,5 @@
 // src/scenes/UIScene.js
-// Minimal on-screen controls for mobile + quick buttons for lights/siren.
+// Minimal on-screen controls for mobile + quick button for lights.
 import { GAME_CONFIG } from '../config.js';
 
 export class UIScene extends Phaser.Scene {
@@ -15,7 +15,7 @@ export class UIScene extends Phaser.Scene {
       this.createButtons();
     }
 
-    // Toggle buttons for lights/siren (also visible on desktop for convenience)
+    // Toggle button for lights (also visible on desktop for convenience)
     const makeBtn = (label, x, y, cb) => {
       const btn = this.add.text(x, y, label, { fontSize: 18, fontFamily: 'system-ui, -apple-system, sans-serif', padding:{x:10,y:6}, backgroundColor: '#222', color:'#fff' })
         .setScrollFactor(0)
@@ -26,12 +26,10 @@ export class UIScene extends Phaser.Scene {
       return btn;
     };
     this.lightBtn = makeBtn('Lights (L)', 120, 40, () => this.events.emit('toggleLights'));
-    this.sirenBtn = makeBtn('Siren (H)', 270, 40, () => this.events.emit('toggleSiren'));
 
     // Bridge to GameScene to call methods on the car
     const game = this.scene.get('Game');
     this.events.on('toggleLights', () => game.car.toggleLights());
-    this.events.on('toggleSiren', () => game.car.toggleSiren());
   }
 
   createButtons() {
