@@ -80,17 +80,28 @@ export class GameScene extends Phaser.Scene {
 
     // Combine desktop keys + mobile inputs
     const m = this.registry.get('mobileInputs') || { throttle:0, steer:0, brake:0, handbrake:0 };
-    const throttle = (this.keys.up.isDown || this.keys.up2.isDown ? 1 : 0) + (m.throttle > 0 ? m.throttle : 0);
-    const reverse  = (this.keys.down.isDown || this.keys.down2.isDown ? 1 : 0);
+    const forward = (this.keys.up.isDown || this.keys.up2.isDown ? 1 : 0);
+    const back = (this.keys.down.isDown || this.keys.down2.isDown ? 1 : 0);
     const steerLeft = (this.keys.left.isDown || this.keys.left2.isDown ? 1 : 0);
     const steerRight = (this.keys.right.isDown || this.keys.right2.isDown ? 1 : 0);
 
     const steer = (steerRight - steerLeft) + m.steer;
-    const brake = (reverse > 0 ? 1 : 0) + (m.brake || 0);
     const handbrake = (this.keys.space.isDown ? 1 : 0) + (m.handbrake || 0);
 
+    const speedThreshold = 10;
+    let throttle = forward + (m.throttle > 0 ? m.throttle : 0);
+    let brake = (m.brake || 0);
+
+    if (back) {
+      if (this.car.body.speed > speedThreshold) {
+        brake += 1;
+      } else {
+        throttle -= 1;
+      }
+    }
+
     this.car.setInputs({
-      throttle: throttle - reverse, // forward positive, reverse negative
+      throttle,
       steer: Phaser.Math.Clamp(steer, -1, 1),
       brake: brake > 0 ? 1 : 0,
       handbrake: handbrake > 0 ? 1 : 0
