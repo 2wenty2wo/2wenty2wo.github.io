@@ -83,7 +83,7 @@ export class PoliceCar extends Phaser.Physics.Arcade.Sprite {
     const braking = this.inputs.brake > 0 || this.inputs.handbrake > 0;
 
     // Acceleration along current heading
-    const forward = this.rotation - Math.PI / 2; // sprite points 'up'
+    const forward = this.rotation + Math.PI / 2; // sprite points 'up'
     const forwardAccel = (t > 0 ? cfg.accel : (t < 0 ? -cfg.reverseAccel : 0));
 
     if (forwardAccel !== 0) {
