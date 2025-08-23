@@ -62,6 +62,9 @@ export class UIScene extends Phaser.Scene {
     this.musicIndex = 0;
     let currentTrack;
     let playBtn;
+    const playIcon = '▶';
+    const pauseIcon = '⏸';
+    const stopIcon = '■';
     const width = this.cameras.main.width;
     const height = this.cameras.main.height;
     const bottom = height - 40;
@@ -80,7 +83,7 @@ export class UIScene extends Phaser.Scene {
       currentTrack = this.sound.add(key);
       currentTrack.play();
       currentTrack.once('complete', nextTrack);
-      playBtn.setText('Pause');
+      playBtn.setText(pauseIcon);
       updateLabel();
     };
 
@@ -89,10 +92,10 @@ export class UIScene extends Phaser.Scene {
         playCurrent();
       } else if (currentTrack.isPlaying) {
         currentTrack.pause();
-        playBtn.setText('Play');
+        playBtn.setText(playIcon);
       } else {
         currentTrack.resume();
-        playBtn.setText('Pause');
+        playBtn.setText(pauseIcon);
       }
     };
 
@@ -101,9 +104,18 @@ export class UIScene extends Phaser.Scene {
       playCurrent();
     };
 
-    playBtn = makeBtn('Play', width - 100, bottom, togglePlay);
-    makeBtn('Next', width - 40, bottom, nextTrack);
+    const stopTrack = () => {
+      if (currentTrack) {
+        currentTrack.stop();
+        currentTrack = null;
+      }
+      playBtn.setText(playIcon);
+    };
+
+    playBtn = makeBtn(playIcon, width - 100, bottom, togglePlay);
+    makeBtn(stopIcon, width - 40, bottom, stopTrack);
     updateLabel();
+    playCurrent();
 
     // Bridge to GameScene to call methods on the car
     const game = this.scene.get('Game');
