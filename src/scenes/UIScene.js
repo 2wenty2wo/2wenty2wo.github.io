@@ -1,6 +1,7 @@
 // src/scenes/UIScene.js
 // Minimal on-screen controls for mobile + quick button for lights.
 import { GAME_CONFIG } from '../config.js';
+import { MUSIC_TRACKS } from '../music.js';
 
 export class UIScene extends Phaser.Scene {
   constructor() { super('UI'); }
@@ -55,6 +56,54 @@ export class UIScene extends Phaser.Scene {
       return btn;
     };
     this.lightBtn = makeBtn('Lights (L)', 120, 40, () => this.events.emit('toggleLights'));
+
+    // Simple music player (bottom-right)
+    const playlist = MUSIC_TRACKS.map(t => t.key);
+    this.musicIndex = 0;
+    let currentTrack;
+    let playBtn;
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+    const bottom = height - 40;
+
+    const trackText = this.add.text(width - 40, bottom - 40, '', { fontSize: 14, color: '#ffffff' })
+      .setOrigin(1, 1)
+      .setScrollFactor(0);
+
+    const updateLabel = () => {
+      trackText.setText(playlist[this.musicIndex]);
+    };
+
+    const playCurrent = () => {
+      if (currentTrack) currentTrack.stop();
+      const key = playlist[this.musicIndex];
+      currentTrack = this.sound.add(key);
+      currentTrack.play();
+      currentTrack.once('complete', nextTrack);
+      playBtn.setText('Pause');
+      updateLabel();
+    };
+
+    const togglePlay = () => {
+      if (!currentTrack) {
+        playCurrent();
+      } else if (currentTrack.isPlaying) {
+        currentTrack.pause();
+        playBtn.setText('Play');
+      } else {
+        currentTrack.resume();
+        playBtn.setText('Pause');
+      }
+    };
+
+    const nextTrack = () => {
+      this.musicIndex = (this.musicIndex + 1) % playlist.length;
+      playCurrent();
+    };
+
+    playBtn = makeBtn('Play', width - 100, bottom, togglePlay);
+    makeBtn('Next', width - 40, bottom, nextTrack);
+    updateLabel();
 
     // Bridge to GameScene to call methods on the car
     const game = this.scene.get('Game');
