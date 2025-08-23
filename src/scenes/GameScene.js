@@ -24,10 +24,13 @@ export class GameScene extends Phaser.Scene {
     const sy = ((5  - GAME_CONFIG.world.seed + 20) % 20) * tileSize + tileSize / 2;
     this.car = new PoliceCar(this, sx, sy);
     this.car.setDepth(1);
+    // Allow the car to leave the world bounds without collision
+    this.car.body.setCollideWorldBounds(false);
 
     // Camera follow with very large bounds
     const bound = 1e6;
     this.cameras.main.setBounds(-bound, -bound, bound * 2, bound * 2);
+    this.physics.world.setBounds(-bound, -bound, bound * 2, bound * 2);
     this.cameras.main.startFollow(this.car, true, 1, 1);
     this.cameras.main.centerOn(this.car.x, this.car.y);
     this.cameras.main.setZoom(1); // tweaked automatically by Resize handler
