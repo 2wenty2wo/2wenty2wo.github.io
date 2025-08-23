@@ -2,8 +2,9 @@
 // Centralized config so we can tweak physics & UI easily.
 export const GAME_CONFIG = {
   world: {
-    chunkSize: 16,      // tiles per chunk for on-demand generation
-    seed: 1             // seed for deterministic layout
+    seed: 1,            // seed for deterministic layout
+    mapWidth: 200,      // width of the generated road map in tiles
+    mapHeight: 200      // height of the generated road map in tiles
   },
   car: {
     // "Realistic‑ish" top-down car physics model (arcade but grounded)

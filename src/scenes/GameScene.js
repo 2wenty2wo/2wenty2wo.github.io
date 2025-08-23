@@ -1,48 +1,33 @@
 // src/scenes/GameScene.js
-// Renders a simple city, spawns the car, handles input, and updates physics.
+// Renders the map, spawns the car, handles input, and updates physics.
 import { GAME_CONFIG } from '../config.js';
 import { PoliceCar } from '../objects/PoliceCar.js';
+import { generateRoadMap } from '../maps/roadMap.js';
 
 export class GameScene extends Phaser.Scene {
   constructor() { super('Game'); }
 
-  preload() {
-    // Road tileset
-    this.load.image('roads', 'assets/roads_tileset_grid.png');
-    this.load.json('roads-data', 'assets/roads_tileset.json');
-  }
-
   create() {
-    const tileSize = 64;
-    this.tileSize = tileSize;
-    this.chunkSize = GAME_CONFIG.world.chunkSize;
-
-    // Background grass so empty space is never visible
-    this.bg = this.add.tileSprite(0, 0, this.scale.width, this.scale.height, 'grass')
-      .setOrigin(0)
-      .setScrollFactor(0);
-
-    // Track generated chunks
-    this.chunks = new Map();
+    const { seed, mapWidth, mapHeight } = GAME_CONFIG.world;
+    const roadMap = generateRoadMap(this, { seed, width: mapWidth, height: mapHeight });
+    const { tileSize, width, height } = roadMap;
 
     // Create the car at a seed-based road intersection
-    const sx = ((10 - GAME_CONFIG.world.seed + 20) % 20) * tileSize + tileSize / 2;
-    const sy = ((5  - GAME_CONFIG.world.seed + 20) % 20) * tileSize + tileSize / 2;
+    const sx = ((10 - seed + 20) % 20) * tileSize + tileSize / 2;
+    const sy = ((5 - seed + 20) % 20) * tileSize + tileSize / 2;
     this.car = new PoliceCar(this, sx, sy);
     this.car.setDepth(1);
     // Allow the car to leave the world bounds without collision
     this.car.body.setCollideWorldBounds(false);
 
-    // Camera follow with very large bounds
-    const bound = 1e6;
-    this.cameras.main.setBounds(-bound, -bound, bound * 2, bound * 2);
-    this.physics.world.setBounds(-bound, -bound, bound * 2, bound * 2);
+    // Camera follow with bounds matching the map size
+    const worldWidth = width * tileSize;
+    const worldHeight = height * tileSize;
+    this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
+    this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
     this.cameras.main.startFollow(this.car, true, 1, 1);
     this.cameras.main.centerOn(this.car.x, this.car.y);
     this.cameras.main.setZoom(1); // tweaked automatically by Resize handler
-
-    // Generate initial chunks around the car
-    this.updateChunks();
 
     // Background music
     if (this.cache.audio.exists('bgm')) {
@@ -83,9 +68,6 @@ export class GameScene extends Phaser.Scene {
     // Adjust zoom so car is readable across devices
     const target = Math.min(width / 1100, height / 700);
     this.cameras.main.setZoom(Phaser.Math.Clamp(target, 0.6, 1.6));
-    if (this.bg) {
-      this.bg.setSize(width, height);
-    }
   }
 
   update(time, delta) {
@@ -121,86 +103,9 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.car.update(dt);
-    
-    // Spawn / cleanup chunks around the car
-    this.updateChunks();
-
-    // Scroll background
-    this.bg.setTilePosition(this.cameras.main.scrollX, this.cameras.main.scrollY);
 
     // Store current speed for the UI scene
     this.registry.set('carSpeed', this.car.body.speed);
   }
-
-  updateChunks() {
-    const { chunkSize, tileSize } = this;
-    const chunkX = Math.floor(this.car.x / (chunkSize * tileSize));
-    const chunkY = Math.floor(this.car.y / (chunkSize * tileSize));
-
-    for (let x = chunkX - 1; x <= chunkX + 1; x++) {
-      for (let y = chunkY - 1; y <= chunkY + 1; y++) {
-        const key = `${x},${y}`;
-        if (!this.chunks.has(key)) {
-          this.chunks.set(key, this.generateChunk(x, y));
-        }
-      }
-    }
-
-    // Optional cleanup of far-away chunks
-    for (const [key, chunk] of this.chunks) {
-      const [x, y] = key.split(',').map(Number);
-      if (Math.abs(x - chunkX) > 2 || Math.abs(y - chunkY) > 2) {
-        chunk.collider.destroy();
-        chunk.layer.destroy();
-        chunk.map.destroy();
-        this.chunks.delete(key);
-      }
-    }
-  }
-
-  generateChunk(cx, cy) {
-    const { chunkSize, tileSize } = this;
-    const map = this.make.tilemap({ tileWidth: tileSize, tileHeight: tileSize, width: chunkSize, height: chunkSize });
-    const grass = map.addTilesetImage('grass');
-    const roads = map.addTilesetImage('roads');
-    const layer = map.createBlankLayer('layer', [grass, roads], cx * chunkSize * tileSize, cy * chunkSize * tileSize);
-    layer.setDepth(0);
-
-    const roadFirst = roads.firstgid;
-    const roadIndexes = Array.from({ length: 16 }, (_, i) => roadFirst + i);
-    layer.setCollisionByExclusion(roadIndexes); // only grass blocks movement
-
-    // Map bitmask values to tileset indices for the 4x4 grid
-    const roadMaskLookup = [
-      0, 1, 2, 3,
-      4, 5, 6, 7,
-      8, 9,10,11,
-     12,13,14,15
-    ];
-
-    const offset = GAME_CONFIG.world.seed;
-    const isRoad = (wx, wy) => ((wy + offset) % 20 === 5 || (wx + offset) % 20 === 10);
-
-    for (let x = 0; x < chunkSize; x++) {
-      for (let y = 0; y < chunkSize; y++) {
-        const worldX = cx * chunkSize + x;
-        const worldY = cy * chunkSize + y;
-
-        if (isRoad(worldX, worldY)) {
-          let mask = 0;
-          if (isRoad(worldX, worldY - 1)) mask |= 1; // up
-          if (isRoad(worldX + 1, worldY)) mask |= 2; // right
-          if (isRoad(worldX, worldY + 1)) mask |= 4; // down
-          if (isRoad(worldX - 1, worldY)) mask |= 8; // left
-          const tile = roadFirst + roadMaskLookup[mask];
-          layer.putTileAt(tile, x, y);
-        } else {
-          layer.putTileAt(1, x, y); // grass
-        }
-      }
-    }
-
-    const collider = this.physics.add.collider(this.car, layer);
-    return { map, layer, collider };
-  }
 }
+
