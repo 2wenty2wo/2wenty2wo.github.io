@@ -170,6 +170,14 @@ export class GameScene extends Phaser.Scene {
     const roadIndexes = Array.from({ length: 16 }, (_, i) => roadFirst + i);
     layer.setCollisionByExclusion(roadIndexes); // only grass blocks movement
 
+    // Map bitmask values to tileset indices for the 4x4 grid
+    const roadMaskLookup = [
+      0, 1, 2, 3,
+      4, 5, 6, 7,
+      8, 9,10,11,
+     12,13,14,15
+    ];
+
     const offset = GAME_CONFIG.world.seed;
     const isRoad = (wx, wy) => ((wy + offset) % 20 === 5 || (wx + offset) % 20 === 10);
 
@@ -184,7 +192,7 @@ export class GameScene extends Phaser.Scene {
           if (isRoad(worldX + 1, worldY)) mask |= 2; // right
           if (isRoad(worldX, worldY + 1)) mask |= 4; // down
           if (isRoad(worldX - 1, worldY)) mask |= 8; // left
-          const tile = roadFirst + mask;
+          const tile = roadFirst + roadMaskLookup[mask];
           layer.putTileAt(tile, x, y);
         } else {
           layer.putTileAt(1, x, y); // grass
