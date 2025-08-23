@@ -6,6 +6,12 @@ import { PoliceCar } from '../objects/PoliceCar.js';
 export class GameScene extends Phaser.Scene {
   constructor() { super('Game'); }
 
+  preload() {
+    // Road tileset
+    this.load.image('roads', 'assets/roads_tileset_grid.png');
+    this.load.json('roads-data', 'assets/roads_tileset.json');
+  }
+
   create() {
     const tileSize = 64;
     this.tileSize = tileSize;
@@ -156,21 +162,33 @@ export class GameScene extends Phaser.Scene {
     const { chunkSize, tileSize } = this;
     const map = this.make.tilemap({ tileWidth: tileSize, tileHeight: tileSize, width: chunkSize, height: chunkSize });
     const grass = map.addTilesetImage('grass');
-    const road = map.addTilesetImage('road');
-    const layer = map.createBlankLayer('layer', [grass, road], cx * chunkSize * tileSize, cy * chunkSize * tileSize);
-    layer.setCollision(1);          // grass blocks movement
+    const roads = map.addTilesetImage('roads');
+    const layer = map.createBlankLayer('layer', [grass, roads], cx * chunkSize * tileSize, cy * chunkSize * tileSize);
     layer.setDepth(0);
 
+    const roadFirst = roads.firstgid;
+    const roadIndexes = Array.from({ length: 16 }, (_, i) => roadFirst + i);
+    layer.setCollisionByExclusion(roadIndexes); // only grass blocks movement
+
     const offset = GAME_CONFIG.world.seed;
+    const isRoad = (wx, wy) => ((wy + offset) % 20 === 5 || (wx + offset) % 20 === 10);
+
     for (let x = 0; x < chunkSize; x++) {
       for (let y = 0; y < chunkSize; y++) {
         const worldX = cx * chunkSize + x;
         const worldY = cy * chunkSize + y;
-        let tile = 1;                   // grass by default
-        if ((worldY + offset) % 20 === 5 || (worldX + offset) % 20 === 10) {
-          tile = 2;                   // road
+
+        if (isRoad(worldX, worldY)) {
+          let mask = 0;
+          if (isRoad(worldX, worldY - 1)) mask |= 1; // up
+          if (isRoad(worldX + 1, worldY)) mask |= 2; // right
+          if (isRoad(worldX, worldY + 1)) mask |= 4; // down
+          if (isRoad(worldX - 1, worldY)) mask |= 8; // left
+          const tile = roadFirst + mask;
+          layer.putTileAt(tile, x, y);
+        } else {
+          layer.putTileAt(1, x, y); // grass
         }
-        layer.putTileAt(tile, x, y);
       }
     }
 

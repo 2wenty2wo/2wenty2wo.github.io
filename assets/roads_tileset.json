@@ -1,0 +1,15 @@
+{
+  "type": "tileset",
+  "name": "roads_tileset",
+  "tilewidth": 64,
+  "tileheight": 64,
+  "tilecount": 16,
+  "columns": 4,
+  "image": "roads_tileset_grid.png",
+  "imagewidth": 256,
+  "imageheight": 256,
+  "margin": 0,
+  "spacing": 0,
+  "version": "1.0",
+  "tiledversion": "1.9.2"
+}
