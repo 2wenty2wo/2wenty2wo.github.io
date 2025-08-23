@@ -10,6 +10,9 @@ export class BootScene extends Phaser.Scene {
     this.load.image('grass', 'assets/grass.jpg');
     this.load.image('road', 'assets/road.jpg');
 
+    // Tilemap data
+    this.load.json('roads_tileset', 'assets/roads_tileset.json');
+
     // Audio (optional for local file usage; only starts after user gesture)
     this.load.audio('siren', ['assets/audio/siren.mp3']);
     this.load.audio('bgm', ['assets/AUD_AP0356.mp3']);
