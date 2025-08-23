@@ -21,6 +21,7 @@ export class GameScene extends Phaser.Scene {
 
     // Create the car at a default road intersection
     this.car = new PoliceCar(this, tileSize * 10 + tileSize / 2, tileSize * 5 + tileSize / 2);
+    this.car.setDepth(1);
 
     // Camera follow with very large bounds
     const bound = 1e6;
@@ -152,6 +153,7 @@ export class GameScene extends Phaser.Scene {
     const road = map.addTilesetImage('road');
     const layer = map.createBlankLayer('layer', [grass, road], cx * chunkSize * tileSize, cy * chunkSize * tileSize);
     layer.setCollision(0);
+    layer.setDepth(0);
 
     const offset = GAME_CONFIG.world.seed;
     for (let x = 0; x < chunkSize; x++) {
