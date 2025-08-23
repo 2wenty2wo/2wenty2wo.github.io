@@ -8,12 +8,13 @@ export class PoliceCar extends Phaser.Physics.Arcade.Sprite {
     super(scene, x, y, 'police-off');
 
     scene.add.existing(this);
+    // Scale the sprite before enabling physics so the body matches the visible size
+    this.setScale(0.3);
     scene.physics.add.existing(this);
 
     // Start facing 'up'
     this.setRotation(0);
     this.setOrigin(0.5, 0.5);
-    this.setScale(0.3);
     this.setDamping(true);
     this.setMaxVelocity(GAME_CONFIG.car.maxSpeed);
 
