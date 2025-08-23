@@ -2,6 +2,7 @@
 // Renders a simple city, spawns the car, handles input, and updates physics.
 import { GAME_CONFIG } from '../config.js';
 import { PoliceCar } from '../objects/PoliceCar.js';
+import { NpcCar } from '../objects/NpcCar.js';
 
 export class GameScene extends Phaser.Scene {
   constructor() { super('Game'); }
@@ -20,6 +21,15 @@ export class GameScene extends Phaser.Scene {
     this.car.setDepth(1);
     // Allow the car to leave the world bounds without collision
     this.car.body.setCollideWorldBounds(false);
+
+    // NPC cars
+    this.npcCars = [];
+    this.npcCars.push(new NpcCar(this, sx + 200, sy, 'taxi'));
+    this.npcCars.push(new NpcCar(this, sx - 200, sy, 'gti'));
+    for (const car of this.npcCars) {
+      car.setDepth(1);
+      car.body.setCollideWorldBounds(false);
+    }
 
     // Camera follow with very large bounds
     const bound = 1e6;
@@ -93,6 +103,9 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.car.update(dt);
+    for (const car of this.npcCars) {
+      car.update(dt);
+    }
 
     // Scroll background with camera
     this.bg.tilePositionX = this.cameras.main.scrollX;
