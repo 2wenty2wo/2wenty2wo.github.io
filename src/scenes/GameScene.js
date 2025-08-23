@@ -26,7 +26,8 @@ export class GameScene extends Phaser.Scene {
     // Camera follow with very large bounds
     const bound = 1e6;
     this.cameras.main.setBounds(-bound, -bound, bound * 2, bound * 2);
-    this.cameras.main.startFollow(this.car, true, 0.12, 0.12);
+    this.cameras.main.startFollow(this.car, true, 1, 1);
+    this.cameras.main.centerOn(this.car.x, this.car.y);
     this.cameras.main.setZoom(1); // tweaked automatically by Resize handler
 
     // Generate initial chunks around the car
