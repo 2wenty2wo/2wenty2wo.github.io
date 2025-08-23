@@ -29,13 +29,6 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.centerOn(this.car.x, this.car.y);
     this.cameras.main.setZoom(1); // tweaked automatically by Resize handler
 
-    // Background music
-    if (this.cache.audio.exists('bgm')) {
-      this.bgm = this.sound.add('bgm', { loop: true, volume: 0.5 });
-      this.bgm.play();
-      this.events.once('shutdown', () => this.bgm.stop());
-    }
-
     // Inputs
     this.keys = this.input.keyboard.addKeys({
       up: Phaser.Input.Keyboard.KeyCodes.W,

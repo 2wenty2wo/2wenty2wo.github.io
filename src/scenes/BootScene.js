@@ -1,5 +1,7 @@
 // src/scenes/BootScene.js
 // Preloads assets and hands off to the main game.
+import { MUSIC_TRACKS } from '../music.js';
+
 export class BootScene extends Phaser.Scene {
   constructor() { super('Boot'); }
   preload() {
@@ -11,7 +13,7 @@ export class BootScene extends Phaser.Scene {
 
     // Audio (optional for local file usage; only starts after user gesture)
     this.load.audio('siren', ['assets/audio/siren.mp3']);
-    this.load.audio('bgm', ['assets/AUD_AP0356.mp3']);
+    MUSIC_TRACKS.forEach(t => this.load.audio(t.key, [t.file]));
   }
   create() {
     this.scene.start('Game');
