@@ -26,21 +26,27 @@ export class PoliceCar extends Phaser.Physics.Arcade.Sprite {
     this._lightTimer = 0;
     this._lightPhase = 0; // 0 = blue, 1 = red
 
-    // Enable Lights2D and create light objects
-    scene.lights.enable().setAmbientColor(0x555555);
-    this.setPipeline('Light2D');
+    // Enable Lights2D and create light objects only when WebGL is available
+    const makeDummyLight = () => ({ setIntensity: () => {}, setPosition: () => {} });
+    if (scene.sys.game.renderer.type === Phaser.WEBGL) {
+      scene.lights.enable().setAmbientColor(0x555555);
+      this.setPipeline('Light2D');
 
-    const hlRadius = 90;      // was 180
-    this.headlights = [
-      scene.lights.addLight(x, y, hlRadius, 0xffffff, 0),
-      scene.lights.addLight(x, y, hlRadius, 0xffffff, 0)
-    ];
+      const hlRadius = 90;      // was 180
+      this.headlights = [
+        scene.lights.addLight(x, y, hlRadius, 0xffffff, 0),
+        scene.lights.addLight(x, y, hlRadius, 0xffffff, 0)
+      ];
 
-    const sirenRadius = 60;   // was 120
-    this.sirenLights = [
-      scene.lights.addLight(x, y, sirenRadius, 0x0066ff, 0), // blue
-      scene.lights.addLight(x, y, sirenRadius, 0xff0000, 0)  // red
-    ];
+      const sirenRadius = 60;   // was 120
+      this.sirenLights = [
+        scene.lights.addLight(x, y, sirenRadius, 0x0066ff, 0), // blue
+        scene.lights.addLight(x, y, sirenRadius, 0xff0000, 0)  // red
+      ];
+    } else {
+      this.headlights = [makeDummyLight(), makeDummyLight()];
+      this.sirenLights = [makeDummyLight(), makeDummyLight()];
+    }
   }
 
   toggleLights(forceState = null) {
