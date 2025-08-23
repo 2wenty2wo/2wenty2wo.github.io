@@ -66,7 +66,6 @@
         <div style="text-align:center"><button id="startBtn">Start</button></div>
         <div class="mobile-hint">100% made with ChatGPT</div>
       </div>
-      <audio id="splashBgm" src="assets/audio/policecops.mp3" loop autoplay></audio>
   </div>
   <!-- Phaser 3 -->
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
@@ -76,12 +75,7 @@
     // Gate the audio context by user gesture
     const btn = document.getElementById('startBtn');
     const overlay = document.getElementById('startOverlay');
-    const splashBgm = document.getElementById('splashBgm');
     btn.addEventListener('click', () => {
-      if (splashBgm) {
-        splashBgm.pause();
-        splashBgm.currentTime = 0;
-      }
       overlay.style.display = 'none';
       window.__GAME_START__ && window.__GAME_START__();
     });
