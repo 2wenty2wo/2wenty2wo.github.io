@@ -2,30 +2,18 @@
 // Renders a simple city, spawns the car, handles input, and updates physics.
 import { GAME_CONFIG } from '../config.js';
 import { PoliceCar } from '../objects/PoliceCar.js';
-import { createRoadChunk } from '../maps/roadMap.js';
 
 export class GameScene extends Phaser.Scene {
   constructor() { super('Game'); }
 
-  preload() {
-    // Road tileset
-    this.load.image('roads', 'assets/roads_tileset_grid.png');
-  }
-
   create() {
-    const tileSize = 64;
-    this.tileSize = tileSize;
-    this.chunkSize = GAME_CONFIG.world.chunkSize;
-
-    // Background grass so empty space is never visible
-    this.bg = this.add.tileSprite(0, 0, this.scale.width, this.scale.height, 'grass')
+    // Background road tiles
+    this.bg = this.add.tileSprite(0, 0, this.scale.width, this.scale.height, 'road')
       .setOrigin(0)
       .setScrollFactor(0);
 
-    // Track generated chunks
-    this.chunks = new Map();
-
     // Create the car at a seed-based road intersection
+    const tileSize = 64;
     const sx = ((10 - GAME_CONFIG.world.seed + 20) % 20) * tileSize + tileSize / 2;
     const sy = ((5  - GAME_CONFIG.world.seed + 20) % 20) * tileSize + tileSize / 2;
     this.car = new PoliceCar(this, sx, sy);
@@ -40,9 +28,6 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.car, true, 1, 1);
     this.cameras.main.centerOn(this.car.x, this.car.y);
     this.cameras.main.setZoom(1); // tweaked automatically by Resize handler
-
-    // Generate initial chunks around the car
-    this.updateChunks();
 
     // Background music
     if (this.cache.audio.exists('bgm')) {
@@ -83,9 +68,6 @@ export class GameScene extends Phaser.Scene {
     // Adjust zoom so car is readable across devices
     const target = Math.min(width / 1100, height / 700);
     this.cameras.main.setZoom(Phaser.Math.Clamp(target, 0.6, 1.6));
-    if (this.bg) {
-      this.bg.setSize(width, height);
-    }
   }
 
   update(time, delta) {
@@ -121,47 +103,12 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.car.update(dt);
-    
-    // Spawn / cleanup chunks around the car
-    this.updateChunks();
 
-    // Scroll background
-    this.bg.setTilePosition(this.cameras.main.scrollX, this.cameras.main.scrollY);
+    // Scroll background with camera
+    this.bg.tilePositionX = this.cameras.main.scrollX;
+    this.bg.tilePositionY = this.cameras.main.scrollY;
 
     // Store current speed for the UI scene
     this.registry.set('carSpeed', this.car.body.speed);
-  }
-
-  updateChunks() {
-    const { chunkSize, tileSize } = this;
-    const chunkX = Math.floor(this.car.x / (chunkSize * tileSize));
-    const chunkY = Math.floor(this.car.y / (chunkSize * tileSize));
-
-    for (let x = chunkX - 1; x <= chunkX + 1; x++) {
-      for (let y = chunkY - 1; y <= chunkY + 1; y++) {
-        const key = `${x},${y}`;
-        if (!this.chunks.has(key)) {
-          this.chunks.set(key, this.generateChunk(x, y));
-        }
-      }
-    }
-
-    // Optional cleanup of far-away chunks
-    for (const [key, chunk] of this.chunks) {
-      const [x, y] = key.split(',').map(Number);
-      if (Math.abs(x - chunkX) > 2 || Math.abs(y - chunkY) > 2) {
-        chunk.collider.destroy();
-        chunk.grassLayer.destroy();
-        chunk.roadLayer.destroy();
-        chunk.map.destroy();
-        this.chunks.delete(key);
-      }
-    }
-  }
-
-  generateChunk(cx, cy) {
-    const chunk = createRoadChunk(this, cx, cy);
-    const collider = this.physics.add.collider(this.car, chunk.grassLayer);
-    return { ...chunk, collider };
   }
 }
