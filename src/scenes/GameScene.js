@@ -19,8 +19,10 @@ export class GameScene extends Phaser.Scene {
     // Track generated chunks
     this.chunks = new Map();
 
-    // Create the car at a default road intersection
-    this.car = new PoliceCar(this, tileSize * 10 + tileSize / 2, tileSize * 5 + tileSize / 2);
+    // Create the car at a seed-based road intersection
+    const sx = ((10 - GAME_CONFIG.world.seed + 20) % 20) * tileSize + tileSize / 2;
+    const sy = ((5  - GAME_CONFIG.world.seed + 20) % 20) * tileSize + tileSize / 2;
+    this.car = new PoliceCar(this, sx, sy);
     this.car.setDepth(1);
 
     // Camera follow with very large bounds
@@ -153,7 +155,7 @@ export class GameScene extends Phaser.Scene {
     const grass = map.addTilesetImage('grass');
     const road = map.addTilesetImage('road');
     const layer = map.createBlankLayer('layer', [grass, road], cx * chunkSize * tileSize, cy * chunkSize * tileSize);
-    layer.setCollision(0);
+    layer.setCollision(1);          // grass blocks movement
     layer.setDepth(0);
 
     const offset = GAME_CONFIG.world.seed;
@@ -161,9 +163,9 @@ export class GameScene extends Phaser.Scene {
       for (let y = 0; y < chunkSize; y++) {
         const worldX = cx * chunkSize + x;
         const worldY = cy * chunkSize + y;
-        let tile = 0;
+        let tile = 1;                   // grass by default
         if ((worldY + offset) % 20 === 5 || (worldX + offset) % 20 === 10) {
-          tile = 1;
+          tile = 2;                   // road
         }
         layer.putTileAt(tile, x, y);
       }
