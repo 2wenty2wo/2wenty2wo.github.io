@@ -9,6 +9,8 @@ export class BootScene extends Phaser.Scene {
     this.load.image('police-off', 'assets/police-off.png');
     this.load.image('police-blue', 'assets/police-blue.png');
     this.load.image('police-red', 'assets/police-red.png');
+    this.load.image('taxi', 'assets/taxi.png');
+    this.load.image('gti', 'assets/gti.png');
     this.load.image('road', 'assets/road.jpg');
 
     // Audio (optional for local file usage; only starts after user gesture)
