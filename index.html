@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en" x-data="labelApp()" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="UTF-8">
+  <title>Gridfinity Label Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/alpinejs" defer></script>
+</head>
+<body class="bg-gray-50 font-sans flex flex-col items-center p-6">
+  <h1 class="text-2xl font-bold mb-1">Gridfinity Label Generator</h1>
+  <p class="text-gray-500 mb-6">Print-Ready Labels for Your Gridfinity System</p>
+
+  <div class="bg-white shadow rounded-xl p-6 w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Left form -->
+    <div class="md:col-span-2 space-y-4">
+      <!-- Tabs -->
+      <div class="flex space-x-2">
+        <button :class="tab==='screw'?'bg-blue-600 text-white':'bg-gray-100'" @click="tab='screw'" class="px-4 py-2 rounded-lg text-sm font-medium">Screw</button>
+        <button :class="tab==='nut'?'bg-blue-600 text-white':'bg-gray-100'" @click="tab='nut'" class="px-4 py-2 rounded-lg text-sm font-medium">Nut</button>
+        <button :class="tab==='washer'?'bg-blue-600 text-white':'bg-gray-100'" @click="tab='washer'" class="px-4 py-2 rounded-lg text-sm font-medium">Washer</button>
+      </div>
+
+      <!-- Metric / Imperial -->
+      <div class="flex space-x-2">
+        <button :class="system==='metric'?'bg-blue-600 text-white':'bg-gray-100'" @click="system='metric'" class="flex-1 px-4 py-2 rounded-lg text-sm font-medium">Metric</button>
+        <button :class="system==='imperial'?'bg-blue-600 text-white':'bg-gray-100'" @click="system='imperial'" class="flex-1 px-4 py-2 rounded-lg text-sm font-medium">Imperial</button>
+      </div>
+
+      <!-- Inputs -->
+      <input type="text" placeholder="Thread size..." class="w-full border rounded-lg p-2 text-sm">
+      <input type="text" placeholder="Optional notes" class="w-full border rounded-lg p-2 text-sm">
+      <input type="text" placeholder="Hardware standard..." class="w-full border rounded-lg p-2 text-sm">
+
+      <!-- Preview -->
+      <div class="border border-dashed rounded-lg h-24 flex flex-col justify-center items-center text-gray-400 text-sm">
+        <span>Fill out the form to generate a label</span>
+      </div>
+
+      <!-- Download & Coffee -->
+      <div class="flex space-x-2">
+        <button disabled class="flex-1 bg-gray-100 text-gray-400 rounded-lg px-4 py-2 text-sm">Download</button>
+        <a href="https://www.buymeacoffee.com/" target="_blank" class="flex-1 bg-yellow-400 rounded-lg px-4 py-2 text-sm font-semibold">☕ Buy me a coffee</a>
+      </div>
+    </div>
+
+    <!-- Right settings -->
+    <div class="space-y-4">
+      <div class="flex items-center justify-between">
+        <span class="text-sm">Standard Reference</span>
+        <input type="checkbox" x-model="standardRef" class="h-5 w-5 text-blue-600 rounded">
+      </div>
+      <div class="flex items-center justify-between">
+        <span class="text-sm">Image</span>
+        <input type="checkbox" x-model="image" class="h-5 w-5 text-blue-600 rounded">
+      </div>
+      <div class="flex items-center justify-between">
+        <span class="text-sm">QR Code</span>
+        <input type="checkbox" x-model="qrCode" class="h-5 w-5 text-blue-600 rounded">
+      </div>
+
+      <div>
+        <label class="text-sm font-medium">Label Width (<span x-text="labelWidth"></span> mm)</label>
+        <input type="range" min="37" max="100" x-model="labelWidth" class="w-full">
+      </div>
+
+      <div>
+        <span class="text-sm font-medium mb-1 block">Label Height</span>
+        <div class="grid grid-cols-4 gap-2">
+          <template x-for="h in [9,12,18,24]" :key="h">
+            <button @click="labelHeight=h"
+              :class="labelHeight===h?'bg-blue-600 text-white':'bg-gray-100'"
+              class="px-2 py-1 rounded-lg text-sm">
+              <span x-text="h"></span> mm
+            </button>
+          </template>
+        </div>
+      </div>
+
+      <button class="w-full bg-gray-100 rounded-lg px-4 py-2 text-sm">Provide feedback</button>
+    </div>
+  </div>
+
+  <script>
+    function labelApp() {
+      return {
+        tab: 'washer',
+        system: 'metric',
+        standardRef: true,
+        image: true,
+        qrCode: false,
+        labelWidth: 55,
+        labelHeight: 12
+      }
+    }
+  </script>
+</body>
+</html>
