@@ -4,73 +4,84 @@ import * as QRCode from "qrcode"; // namespace import avoids undefined default
 import JsBarcode from "jsbarcode";
 import Papa from "papaparse";
 
+// ---- units & helpers -------------------------------------------------------
 const MM_PER_INCH = 25.4;
 const PT_PER_INCH = 72;
 const mmToPt = (mm) => (mm * PT_PER_INCH) / MM_PER_INCH;
 const mmToPx = (mm) => mm * 3.7795275591; // preview only
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
+// ---- sizing presets --------------------------------------------------------
 const DEFAULT_DIMS = { widthMM: 55, heightMM: 12, marginMM: { left: 2, right: 2, top: 1, bottom: 1 } };
-const TAPE_PRESETS = [
-  { label: "9 mm tape", widthMM: 55, heightMM: 9 },
-  { label: "12 mm tape", widthMM: 55, heightMM: 12 },
-  { label: "18 mm tape", widthMM: 55, heightMM: 18 },
-  { label: "24 mm tape", widthMM: 55, heightMM: 24 },
-];
+const HEIGHT_PRESETS = [9, 12, 18, 24];
 const PAGE_PRESETS = [
   { id: "A4", label: "A4 (210×297 mm)", widthMM: 210, heightMM: 297 },
   { id: "Letter", label: "Letter (216×279 mm)", widthMM: 216, heightMM: 279 },
 ];
 
+// ---- categories (adds Nut & Washer for the screenshot look) ---------------
 const CATEGORY_SCHEMAS = {
+  screw: {
+    label: "Screw", icon: "screw",
+    fields: ["thread", "length_mm", "material", "head", "drive", "standard", "notes"],
+    chips: (v) => [v.thread, v.length_mm && `L=${v.length_mm}mm`, v.material, v.head, v.drive, v.standard].filter(Boolean),
+    title: (v) => `${v.thread || "?"} ${v.head || "Screw"}`.trim(),
+    subtitle: (v) => [v.material, v.drive].filter(Boolean).join(" • "),
+  },
+  nut: {
+    label: "Nut", icon: "nut",
+    fields: ["thread", "type", "material", "standard", "notes"],
+    chips: (v) => [v.thread, v.type, v.material, v.standard].filter(Boolean),
+    title: (v) => `${v.thread || "?"} ${v.type || "Nut"}`.trim(),
+    subtitle: (v) => [v.material, v.standard].filter(Boolean).join(" • "),
+  },
+  washer: {
+    label: "Washer", icon: "washer",
+    fields: ["thread", "id_mm", "od_mm", "thickness_mm", "material", "standard", "notes"],
+    chips: (v) => [v.thread, v.id_mm && `ID=${v.id_mm}`, v.od_mm && `OD=${v.od_mm}`, v.thickness_mm && `${v.thickness_mm}mm`, v.material].filter(Boolean),
+    title: (v) => `${v.thread || "?"} Washer`, subtitle: (v) => [v.material, v.standard].filter(Boolean).join(" • "),
+  },
   heat_insert: {
-    label: "Heat-Insert",
-    icon: "heat_insert",
-    fields: ["thread", "length_mm", "outer_mm", "hole_mm", "material", "knurl"],
-    chips: (v) => [v.length_mm && `L=${v.length_mm} mm`, v.outer_mm && `OD=${v.outer_mm}`, v.hole_mm && `Hole=${v.hole_mm}`].filter(Boolean),
-    title: (v) => `${v.thread || "?"} Heat-Insert`,
-    subtitle: (v) => [v.material, v.knurl].filter(Boolean).join(" • "),
+    label: "Heat-Insert", icon: "heat_insert",
+    fields: ["thread", "length_mm", "outer_mm", "hole_mm", "material", "knurl", "notes"],
+    chips: (v) => [v.length_mm && `L=${v.length_mm}mm`, v.outer_mm && `OD=${v.outer_mm}`, v.hole_mm && `Hole=${v.hole_mm}`, v.material, v.knurl].filter(Boolean),
+    title: (v) => `${v.thread || "?"} Heat-Insert`, subtitle: (v) => [v.material, v.knurl].filter(Boolean).join(" • "),
   },
   fuse_blade: {
     label: "Fuse (Blade)", icon: "fuse_blade",
-    fields: ["series", "rating_A", "voltage_V", "blow", "qty"],
-    chips: (v) => [v.rating_A && `${v.rating_A} A`, v.voltage_V && `${v.voltage_V} V`, v.blow && v.blow.toUpperCase(), v.qty && `x${v.qty}`].filter(Boolean),
-    title: (v) => `${v.series || "Blade"} Fuse`, subtitle: (v) => (v.note || "Automotive"),
+    fields: ["series", "rating_A", "voltage_V", "blow", "qty", "notes"],
+    chips: (v) => [v.rating_A && `${v.rating_A}A`, v.voltage_V && `${v.voltage_V}V`, v.blow && v.blow.toUpperCase(), v.qty && `x${v.qty}`].filter(Boolean),
+    title: (v) => `${v.series || "Blade"} Fuse`, subtitle: (v) => v.notes || "Automotive",
   },
   fuse_glass: {
     label: "Fuse (Glass)", icon: "fuse_glass",
-    fields: ["size", "rating_A", "voltage_V", "timelag", "breaking"],
-    chips: (v) => [v.size, v.rating_A && `${v.rating_A} A`, v.voltage_V && `${v.voltage_V} V`, v.timelag, v.breaking].filter(Boolean),
-    title: (v) => `${v.size || "5×20"} Glass Fuse`, subtitle: (v) => (v.timelag || ""),
+    fields: ["size", "rating_A", "voltage_V", "timelag", "breaking", "notes"],
+    chips: (v) => [v.size, v.rating_A && `${v.rating_A}A`, v.voltage_V && `${v.voltage_V}V`, v.timelag, v.breaking].filter(Boolean),
+    title: (v) => `${v.size || "5×20"} Glass Fuse`, subtitle: (v) => v.timelag || "",
   },
   resistor: {
     label: "Resistor", icon: "resistor",
-    fields: ["value", "tolerance", "watt", "series", "smd_code"],
-    chips: (v) => [v.value, v.tolerance, v.watt && `${v.watt} W`, v.series, v.smd_code].filter(Boolean),
-    title: (v) => `Resistor ${v.value || "?"}`, subtitle: (v) => [v.tolerance, v.watt && `${v.watt} W`].filter(Boolean).join(" • "),
+    fields: ["value", "tolerance", "watt", "series", "smd_code", "notes"],
+    chips: (v) => [v.value, v.tolerance, v.watt && `${v.watt}W`, v.series, v.smd_code].filter(Boolean),
+    title: (v) => `Resistor ${v.value || "?"}`, subtitle: (v) => [v.tolerance, v.watt && `${v.watt}W`].filter(Boolean).join(" • "),
   },
   capacitor: {
     label: "Capacitor", icon: "capacitor",
-    fields: ["type", "value", "voltage", "esr", "pkg"],
+    fields: ["type", "value", "voltage", "esr", "pkg", "notes"],
     chips: (v) => [v.value, v.voltage, v.esr && `ESR ${v.esr}`, v.pkg].filter(Boolean),
     title: (v) => `${v.type || "Cap"} ${v.value || "?"}`, subtitle: (v) => v.voltage || "",
   },
   connector: {
     label: "Connector", icon: "jst",
-    fields: ["family", "positions", "pitch_mm", "gender", "part"],
-    chips: (v) => [v.family, v.positions && `${v.positions} pos`, v.pitch_mm && `${v.pitch_mm} mm`, v.gender].filter(Boolean),
+    fields: ["family", "positions", "pitch_mm", "gender", "part", "notes"],
+    chips: (v) => [v.family, v.positions && `${v.positions}p`, v.pitch_mm && `${v.pitch_mm}mm`, v.gender].filter(Boolean),
     title: (v) => `${v.family || "Conn"} ${v.positions || "?"}p`, subtitle: (v) => v.part || "",
   },
   wire: {
     label: "Wire", icon: "wire",
-    fields: ["awg", "mm2", "strands", "insulation", "voltage", "temp", "color"],
-    chips: (v) => [v.awg && `AWG ${v.awg}`, v.mm2 && `${v.mm2} mm²`, v.color, v.voltage, v.temp].filter(Boolean),
-    title: (v) => `${v.color || ""} Wire`.trim(), subtitle: (v) => [v.awg && `AWG ${v.awg}`, v.mm2 && `${v.mm2} mm²`].filter(Boolean).join(" • "),
-  },
-  screw: {
-    label: "Screw/Bolt", icon: "screw",
-    fields: ["standard", "thread", "length_mm", "material", "finish", "head", "drive"],
-    chips: (v) => [v.thread, v.length_mm && `L=${v.length_mm} mm`, v.material, v.head, v.drive].filter(Boolean),
-    title: (v) => `${v.thread || "?"} ${v.head || ""}`.trim(), subtitle: (v) => [v.material, v.finish].filter(Boolean).join(" • "),
+    fields: ["awg", "mm2", "strands", "insulation", "voltage", "temp", "color", "notes"],
+    chips: (v) => [v.awg && `AWG ${v.awg}`, v.mm2 && `${v.mm2}mm²`, v.color, v.voltage, v.temp].filter(Boolean),
+    title: (v) => `${v.color || ""} Wire`.trim(), subtitle: (v) => [v.awg && `AWG ${v.awg}`, v.mm2 && `${v.mm2}mm²`].filter(Boolean).join(" • "),
   },
   custom: {
     label: "Custom", icon: "custom",
@@ -80,6 +91,7 @@ const CATEGORY_SCHEMAS = {
   },
 };
 
+// ---- templates (still available if you expand later) ----------------------
 const TEMPLATES = [
   { id: "minimal", label: "Minimal" },
   { id: "specStack", label: "Spec Stack" },
@@ -87,112 +99,43 @@ const TEMPLATES = [
   { id: "twoLine", label: "Two-Line" },
 ];
 
-const makeBlankRecord = (category = "heat_insert") => ({
+// ---- model & util ----------------------------------------------------------
+const makeBlankRecord = (category = "screw") => ({
   id: `${category}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
   category,
   dims: { ...DEFAULT_DIMS },
   icon: { name: CATEGORY_SCHEMAS[category]?.icon || "custom" },
-  barcode: { type: "none" },
+  barcode: { type: "none", value: "" },
   fields: {},
   template: "specStack",
   theme: "default",
 });
 
+// ---- tiny ui atoms ---------------------------------------------------------
+const Toggle = ({ checked, onChange, children }) => (
+  <button type="button" onClick={() => onChange(!checked)}
+    className={`w-full flex items-center justify-between px-3 py-2 border rounded-lg text-sm transition ${checked?"bg-blue-50 border-blue-200":"bg-white border-neutral-200"}`}>
+    <span className="flex items-center gap-2">{children}</span>
+    <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition ${checked?"bg-blue-600":"bg-neutral-300"}`}>
+      <span className={`h-4 w-4 bg-white rounded-full transform transition ${checked?"translate-x-4":"translate-x-1"}`}></span>
+    </span>
+  </button>
+);
+
+const Seg = ({ options, value, onChange }) => (
+  <div className="grid grid-cols-4 bg-neutral-100 p-1 rounded-xl border border-neutral-200">
+    {options.map((o) => (
+      <button key={o.value} onClick={() => onChange(o.value)}
+        className={`text-sm px-3 py-1.5 rounded-lg transition ${value===o.value?"bg-white shadow border border-neutral-200":""}`}>{o.label}</button>
+    ))}
+  </div>
+);
+
 const Pill = ({ text }) => (
   <span className="border px-1.5 py-[1px] rounded-md text-[10px] leading-none mr-1 mb-1 inline-block">{text}</span>
 );
 
-const RecordEditor = ({ rec, onChange }) => {
-  const schema = CATEGORY_SCHEMAS[rec.category] || CATEGORY_SCHEMAS.custom;
-  const [local, setLocal] = useState(rec);
-  useEffect(() => setLocal(rec), [rec.id]);
-  function set(path, value) {
-    const next = { ...local };
-    const segments = path.split(".");
-    let ref = next;
-    for (let i = 0; i < segments.length - 1; i++) ref = ref[segments[i]];
-    ref[segments[segments.length - 1]] = value;
-    setLocal(next); onChange(next);
-  }
-  const dims = local.dims;
-  return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-2">
-        <label className="text-sm">Category
-          <select className="w-full border rounded p-1" value={local.category} onChange={(e) => set("category", e.target.value)}>
-            {Object.entries(CATEGORY_SCHEMAS).map(([k, v]) => (<option key={k} value={k}>{v.label}</option>))}
-          </select>
-        </label>
-        <label className="text-sm">Template
-          <select className="w-full border rounded p-1" value={local.template} onChange={(e) => set("template", e.target.value)}>
-            {TEMPLATES.map((t) => (<option key={t.id} value={t.id}>{t.label}</option>))}
-          </select>
-        </label>
-      </div>
-
-      <div className="grid grid-cols-4 gap-2">
-        <label className="text-sm col-span-2">Width (mm)
-          <input type="number" className="w-full border rounded p-1" value={dims.widthMM} onChange={(e) => set("dims.widthMM", Number(e.target.value))} />
-        </label>
-        <label className="text-sm col-span-2">Height (mm)
-          <input type="number" className="w-full border rounded p-1" value={dims.heightMM} onChange={(e) => set("dims.heightMM", Number(e.target.value))} />
-        </label>
-        <label className="text-sm">Left margin
-          <input type="number" className="w-full border rounded p-1" value={dims.marginMM.left} onChange={(e) => set("dims.marginMM.left", Number(e.target.value))} />
-        </label>
-        <label className="text-sm">Right margin
-          <input type="number" className="w-full border rounded p-1" value={dims.marginMM.right} onChange={(e) => set("dims.marginMM.right", Number(e.target.value))} />
-        </label>
-        <label className="text-sm">Top margin
-          <input type="number" className="w-full border rounded p-1" value={dims.marginMM.top} onChange={(e) => set("dims.marginMM.top", Number(e.target.value))} />
-        </label>
-        <label className="text-sm">Bottom margin
-          <input type="number" className="w-full border rounded p-1" value={dims.marginMM.bottom} onChange={(e) => set("dims.marginMM.bottom", Number(e.target.value))} />
-        </label>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2">
-        <div>
-          <div className="text-xs font-semibold mb-1">Quick presets</div>
-          <div className="flex flex-wrap gap-2">
-            {TAPE_PRESETS.map((p) => (
-              <button key={p.label} className="text-xs border rounded px-2 py-1" onClick={() => { set("dims.widthMM", p.widthMM); set("dims.heightMM", p.heightMM); }}>{p.label}</button>
-            ))}
-          </div>
-        </div>
-        <label className="text-sm">Icon
-          <select className="w-full border rounded p-1" value={local.icon?.name} onChange={(e) => set("icon.name", e.target.value)}>
-            {Object.keys(ICONS).map((k) => (<option key={k} value={k}>{k}</option>))}
-          </select>
-        </label>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2">
-        {(schema.fields || []).map((f) => (
-          <label key={f} className="text-sm capitalize">{f.replace(/_/g, " ")}
-            <input className="w-full border rounded p-1" value={local.fields[f] || ""} onChange={(e) => set(`fields.${f}`, e.target.value)} />
-          </label>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-3 gap-2">
-        <label className="text-sm">Barcode Type
-          <select className="w-full border rounded p-1" value={local.barcode?.type || "none"} onChange={(e) => set("barcode.type", e.target.value)}>
-            <option value="none">None</option>
-            <option value="qr">QR</option>
-            <option value="code128">Code128</option>
-          </select>
-        </label>
-        <label className="text-sm col-span-2">Barcode Value (URL/SKU)
-          <input className="w-full border rounded p-1" value={local.barcode?.value || ""} onChange={(e) => set("barcode.value", e.target.value)} />
-        </label>
-      </div>
-
-      <div className="text-xs text-neutral-500">Custom: set title/subtitle/chips (pipe-separated) and notes.</div>
-    </div>
-  );
-};
-
+// ---- icon renderer ---------------------------------------------------------
 function renderIconToPath(name) {
   switch (name) {
     case "heat_insert":
@@ -210,7 +153,11 @@ function renderIconToPath(name) {
     case "wire":
       return `<g stroke-width=\"0.35\" stroke=\"black\" fill=\"none\"><path d=\"M0,8 C2,3 4,9 6,4\" /></g>`;
     case "screw":
-      return `<g stroke-width=\"0.35\" stroke=\"black\" fill=\"none\"><rect x=\"1.5\" y=\"3\" width=\"3\" height=\"6\" /><path d=\"M1.5,3 L4.5,3 M3,3 L3,9\" /></g>`;
+      return `<g stroke-width=\"0.35\" stroke=\"black\" fill=\"none\"><rect x=\"1.6\" y=\"3\" width=\"2.8\" height=\"6\" /><path d=\"M1.6,3 L4.4,3 M3,3 L3,9\" /></g>`;
+    case "nut":
+      return `<g stroke-width=\"0.35\" stroke=\"black\" fill=\"none\"><polygon points=\"1.2,6 3,3.8 4.8,6 3,8.2\" /><circle cx=\"3\" cy=\"6\" r=\"0.9\" /></g>`;
+    case "washer":
+      return `<g stroke-width=\"0.35\" stroke=\"black\" fill=\"none\"><circle cx=\"3\" cy=\"6\" r=\"2.6\" /><circle cx=\"3\" cy=\"6\" r=\"1.2\" /></g>`;
     default:
       return `<g stroke-width=\"0.35\" stroke=\"black\" fill=\"none\"><circle cx=\"3\" cy=\"6\" r=\"2.4\" /><path d=\"M3,3.6 L3,8.4 M0.6,6 L5.4,6\" /></g>`;
   }
@@ -218,13 +165,15 @@ function renderIconToPath(name) {
 
 function escapeXML(s) { return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
-function buildLabelSVG(rec) {
+// build SVG with options from the right panel
+function buildLabelSVG(rec, opts = { showChips: true, showIcon: true }) {
   const schema = CATEGORY_SCHEMAS[rec.category] || CATEGORY_SCHEMAS.custom;
   const width = rec.dims.widthMM, height = rec.dims.heightMM; const m = rec.dims.marginMM;
   const innerWidth = Math.max(0, width - (m.left + m.right));
   const innerHeight = Math.max(0, height - (m.top + m.bottom));
-  const chips = schema.chips(rec.fields); const title = schema.title(rec.fields); const subtitle = schema.subtitle(rec.fields);
-  const iconBox = 6, pad = 0.6;
+  const chips = (opts.showChips ? schema.chips(rec.fields) : []);
+  const title = schema.title(rec.fields); const subtitle = schema.subtitle(rec.fields);
+  const iconBox = opts.showIcon ? 6 : 0, pad = 0.6;
   const hasQR = rec.barcode?.type === "qr" && rec.barcode.value;
   const has128 = rec.barcode?.type === "code128" && rec.barcode.value;
 
@@ -242,7 +191,6 @@ function buildLabelSVG(rec) {
   const tmpl = rec.template || "specStack";
   const textX = tmpl === "iconRight" ? pad : iconBox + pad;
   const textW = innerWidth - iconBox - pad * 2;
-  const iconX = tmpl === "iconRight" ? innerWidth - iconBox : 0;
   const barcodeH = (hasQR || has128) ? Math.min(7, innerHeight * 0.55) : 0;
   const pillY = innerHeight - barcodeH - pillHeight - pad;
 
@@ -268,19 +216,21 @@ function buildLabelSVG(rec) {
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}mm" height="${height}mm" viewBox="0 0 ${width} ${height}">
   <rect x="0" y="0" width="${width}" height="${height}" fill="white"/>
   <rect x="${m.left}" y="${m.top}" width="${innerWidth}" height="${innerHeight}" rx="1" ry="1" fill="white" stroke="black" stroke-width="0.2"/>
-  <g transform="translate(${m.left + (tmpl === "iconRight" ? innerWidth - iconBox : 0)}, ${m.top})"><rect width="${iconBox}" height="${innerHeight}" fill="none" /><g>${renderIconToPath(rec.icon?.name || "custom")}</g></g>
+  ${opts.showIcon ? `<g transform="translate(${m.left}, ${m.top})"><rect width="${iconBox}" height="${innerHeight}" fill="none" /><g>${renderIconToPath(rec.icon?.name || "custom")}</g></g>` : ""}
   <text x="${m.left + textX}" y="${m.top + 2 + titleSize}" font-family="Inter,Arial" font-weight="700" font-size="${titleSize}">${escapeXML(title)}</text>
   ${subtitle ? `<text x="${m.left + textX}" y="${m.top + 2 + titleSize + subSize + 0.6}" font-family="Inter,Arial" font-size="${subSize}">${escapeXML(subtitle)}</text>` : ""}
-  ${pillSVGs.join("\n")}
+  ${pillSVGs.join("
+")}
   ${barcodeGroup}
   ${qrImg}
 </svg>`;
   return svg;
 }
 
-const ICONS = { heat_insert: true, fuse_blade: true, fuse_glass: true, resistor: true, capacitor: true, jst: true, wire: true, screw: true, custom: true };
+const ICONS = { heat_insert: true, fuse_blade: true, fuse_glass: true, resistor: true, capacitor: true, jst: true, wire: true, screw: true, nut: true, washer: true, custom: true };
 
-const LabelPreview = ({ rec }) => {
+// ---- preview ---------------------------------------------------------------
+const LabelPreview = ({ rec, opts }) => {
   const svgRef = useRef(null);
   useEffect(() => {
     if (!svgRef.current) return;
@@ -296,20 +246,21 @@ const LabelPreview = ({ rec }) => {
       }
     }
   }, [rec]);
-  const svgString = useMemo(() => buildLabelSVG(rec), [rec]);
+  const svgString = useMemo(() => buildLabelSVG(rec, opts), [rec, opts]);
   return (
     <div className="border bg-white" style={{ width: mmToPx(rec.dims.widthMM), height: mmToPx(rec.dims.heightMM) }} ref={svgRef} dangerouslySetInnerHTML={{ __html: svgString }} />
   );
 };
 
-async function exportPDF(records, page = PAGE_PRESETS[0], gapMM = 3) {
+// ---- export PDF ------------------------------------------------------------
+async function exportPDF(records, page = PAGE_PRESETS[0], gapMM = 3, opts={}) {
   const pdf = await PDFDocument.create();
   const pageWpt = mmToPt(page.widthMM), pageHpt = mmToPt(page.heightMM);
   let pageDoc = pdf.addPage([pageWpt, pageHpt]);
   let cursorX = 10, cursorY = 10;
   const addNewPage = () => { pageDoc = pdf.addPage([pageWpt, pageHpt]); cursorX = 10; cursorY = 10; };
   for (const rec of records) {
-    const svg = buildLabelSVG(rec);
+    const svg = buildLabelSVG(rec, opts);
     const imgDataUrl = await svgToPngDataUrl(svg, rec.dims.widthMM, rec.dims.heightMM);
     const png = await pdf.embedPng(imgDataUrl);
     const wpt = mmToPt(rec.dims.widthMM), hpt = mmToPt(rec.dims.heightMM);
@@ -341,111 +292,168 @@ async function svgToPngDataUrl(svgString, widthMM, heightMM) {
 
 function parseCSV(text) { return Papa.parse(text, { header: true, skipEmptyLines: true }).data; }
 
+// ---- main app --------------------------------------------------------------
 export default function App() {
-  const [records, setRecords] = useState([makeBlankRecord("heat_insert")]);
+  const [records, setRecords] = useState([makeBlankRecord("screw")]);
   const [selectedId, setSelectedId] = useState(records[0].id);
   const [pagePreset, setPagePreset] = useState(PAGE_PRESETS[0]);
   const [gapMM, setGapMM] = useState(3);
+  const [ui, setUi] = useState({ standardRef: true, showIcon: true, qr: false, system: "metric" });
+
   const sel = records.find((r) => r.id === selectedId) || records[0];
+  const schema = CATEGORY_SCHEMAS[sel.category] || CATEGORY_SCHEMAS.custom;
+  const printable = { w: sel.dims.widthMM - (sel.dims.marginMM.left + sel.dims.marginMM.right), h: sel.dims.heightMM - (sel.dims.marginMM.top + sel.dims.marginMM.bottom) };
+  const isReady = !schema.title(sel.fields).includes("?");
+
   const update = (next) => setRecords((prev) => prev.map((r) => (r.id === next.id ? next : r)));
-  const addRecord = (cat = "heat_insert") => { const r = makeBlankRecord(cat); setRecords((prev) => [...prev, r]); setSelectedId(r.id); };
-  const duplicateRecord = () => { if (!sel) return; const copy = JSON.parse(JSON.stringify(sel)); copy.id = copy.category + "-" + Date.now() + "-copy"; setRecords((prev) => [...prev, copy]); };
-  const removeRecord = () => { if (!sel) return; setRecords((prev) => prev.filter((r) => r.id !== sel.id)); };
+  const switchCat = (cat) => update({ ...sel, category: cat, icon: { name: CATEGORY_SCHEMAS[cat]?.icon || "custom" } });
+
+  // CSV/JSON helpers kept, accessible via the kebab menu later if you want
   const saveJSON = () => downloadBlob(new Blob([JSON.stringify(records, null, 2)], { type: "application/json" }), `labels_${Date.now()}.json`);
   const loadJSON = (file) => { const reader = new FileReader(); reader.onload = () => { try { const arr = JSON.parse(reader.result); if (Array.isArray(arr)) { setRecords(arr); setSelectedId(arr[0]?.id); } } catch { alert("Invalid JSON"); } }; reader.readAsText(file); };
   const importCSV = (file) => { const reader = new FileReader(); reader.onload = () => { const rows = parseCSV(reader.result); const mapped = rows.map((row) => { const cat = (row.category || "custom").trim(); const rec = makeBlankRecord(cat); rec.dims.widthMM = Number(row.widthMM || rec.dims.widthMM); rec.dims.heightMM = Number(row.heightMM || rec.dims.heightMM); if (row.barcode_type) rec.barcode.type = row.barcode_type; if (row.barcode_value) rec.barcode.value = row.barcode_value; const schema = CATEGORY_SCHEMAS[cat] || CATEGORY_SCHEMAS.custom; (schema.fields || []).forEach((f) => { if (row[f] !== undefined) rec.fields[f] = row[f]; }); if (cat === "custom") { if (row.title) rec.fields.title = row.title; if (row.subtitle) rec.fields.subtitle = row.subtitle; if (row.chips) rec.fields.chips = row.chips; if (row.notes) rec.fields.notes = row.notes; } return rec; }); setRecords((prev) => [...prev, ...mapped]); if (mapped.length) setSelectedId(mapped[0].id); }; reader.readAsText(file); };
-  const downloadSVG = () => { if (!sel) return; const svg = buildLabelSVG(sel); const blob = new Blob([svg], { type: "image/svg+xml" }); downloadBlob(blob, `${sel.category}_${Date.now()}.svg`); };
+
+  // right panel options influence the output
+  const opts = { showChips: ui.standardRef, showIcon: ui.showIcon };
+  if (ui.qr) sel.barcode.type = sel.barcode.value ? "qr" : "qr"; else if (sel.barcode.type === "qr") sel.barcode.type = "none";
+
   return (
     <div className="min-h-screen bg-neutral-100 text-neutral-900">
-      <div className="max-w-7xl mx-auto p-4">
-        <header className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold">Gridfinity Pro Labels</h1>
-          <div className="flex gap-2">
-            <button className="px-3 py-1.5 border rounded" onClick={() => addRecord()}>New</button>
-            <button className="px-3 py-1.5 border rounded" onClick={duplicateRecord}>Duplicate</button>
-            <button className="px-3 py-1.5 border rounded" onClick={removeRecord}>Delete</button>
-          </div>
-        </header>
+      <div className="max-w-6xl mx-auto p-6">
+        {/* header like the screenshot */}
+        <div className="text-center mb-6">
+          <h1 className="text-4xl font-extrabold tracking-tight">Gridfinity Label Generator</h1>
+          <p className="text-neutral-500 mt-1">Print-Ready Labels for Your Gridfinity System</p>
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-1 bg-white rounded-2xl shadow p-3">
-            <div className="flex items-center justify-between mb-2">
-              <div className="font-semibold">Labels ({records.length})</div>
-              <div className="text-xs text-neutral-500">Click to select</div>
+        <div className="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-6">
+          {/* LEFT: main card */}
+          <div className="bg-white rounded-2xl shadow p-4 lg:p-6">
+            {/* top tabs */}
+            <div className="flex items-center gap-2 mb-4">
+              {['screw','nut','washer'].map((cat) => (
+                <button key={cat} onClick={() => switchCat(cat)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium border ${sel.category===cat?"bg-blue-600 text-white border-blue-600":"bg-neutral-100 border-neutral-200 text-neutral-700"}`}>{CATEGORY_SCHEMAS[cat].label}</button>
+              ))}
+              <div className="ml-auto">
+                <Seg value={ui.system} onChange={(v)=>setUi({...ui, system:v})}
+                  options={[{label:'Metric', value:'metric'},{label:'Imperial', value:'imperial'}]} />
+              </div>
             </div>
-            <div className="max-h-[60vh] overflow-auto divide-y">
-              {records.map((r) => {
-                const schema = CATEGORY_SCHEMAS[r.category] || CATEGORY_SCHEMAS.custom;
-                return (
-                  <button key={r.id} onClick={() => setSelectedId(r.id)} className={`w-full text-left py-2 px-2 rounded hover:bg-neutral-50 ${selectedId===r.id?"bg-neutral-100": ""}`}>
-                    <div className="text-sm font-semibold flex items-center gap-2">
-                      <span className="inline-flex items-center justify-center w-6 h-6 border rounded">
-                        <svg viewBox="0 0 6 12" width="16" height="16" dangerouslySetInnerHTML={{ __html: renderIconToPath(r.icon?.name || "custom") }} />
-                      </span>
-                      {schema.title(r.fields)}
-                    </div>
-                    <div className="text-xs text-neutral-600">{schema.subtitle(r.fields)}</div>
-                    <div className="mt-1">{(schema.chips(r.fields)).slice(0,4).map((c, i) => <Pill key={i} text={c} />)}</div>
-                  </button>
-                );
-              })}
+
+            {/* inputs like screenshot */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <label className="text-sm">Thread size...
+                <input className="mt-1 w-full border rounded-lg px-3 py-2" placeholder={ui.system==='metric'?"e.g. M3":"e.g. #6-32"}
+                  value={sel.fields.thread||''} onChange={(e)=>update({...sel, fields:{...sel.fields, thread:e.target.value}})} />
+              </label>
+              <label className="text-sm">Optional notes
+                <input className="mt-1 w-full border rounded-lg px-3 py-2" placeholder="Notes (material, finish, etc.)"
+                  value={sel.fields.notes||''} onChange={(e)=>update({...sel, fields:{...sel.fields, notes:e.target.value}})} />
+              </label>
             </div>
-            <div className="mt-3">
-              <div className="text-sm font-semibold mb-1">Add from preset</div>
-              <div className="flex flex-wrap gap-2">
-                {Object.keys(CATEGORY_SCHEMAS).map((k) => (
-                  <button key={k} className="px-2 py-1 border rounded text-xs" onClick={() => addRecord(k)}>
-                    {CATEGORY_SCHEMAS[k].label}
-                  </button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+              <label className="text-sm">Hardware standard...
+                <input className="mt-1 w-full border rounded-lg px-3 py-2" placeholder="e.g. ISO 4762 / DIN 912"
+                  value={sel.fields.standard||''} onChange={(e)=>update({...sel, fields:{...sel.fields, standard:e.target.value}})} />
+              </label>
+              <div></div>
+            </div>
+
+            {/* label preview header */}
+            <div className="flex items-center justify-between mt-5 mb-2">
+              <div className="text-sm font-medium">Label Preview <span className="text-neutral-400">ⓘ</span></div>
+              <div className="text-xs text-neutral-500 text-right">
+                {sel.dims.widthMM}mm × {sel.dims.heightMM}mm <span className="text-neutral-400">(label size)</span><br/>
+                {Math.max(0, printable.w)}mm × {Math.max(0, printable.h)}mm <span className="text-neutral-400">(printable area)</span>
+              </div>
+            </div>
+
+            {/* preview area with checker bg */}
+            <div className="rounded-xl border p-4 bg-white" style={{
+              backgroundSize: '16px 16px',
+              backgroundImage: `linear-gradient(45deg,#f1f1f1 25%,transparent 25%),linear-gradient(-45deg,#f1f1f1 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#f1f1f1 75%),linear-gradient(-45deg,transparent 75%,#f1f1f1 75%)`,
+              backgroundPosition: '0 0, 0 8px, 8px -8px, -8px 0px'
+            }}>
+              <div className="w-full flex items-center justify-center min-h-[140px]">
+                {isReady ? (
+                  <LabelPreview rec={sel} opts={opts} />
+                ) : (
+                  <div className="flex items-center gap-2 text-neutral-400 text-sm">
+                    <span className="inline-flex border rounded-md px-2 py-1">🏷️</span>
+                    Fill out the form to generate a label
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* bottom buttons */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-5">
+              <button disabled={!isReady} onClick={()=>exportPDF([sel], pagePreset, gapMM, opts)}
+                className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl border font-medium ${isReady?"bg-blue-600 text-white border-blue-600 hover:bg-blue-700":"bg-neutral-200 text-neutral-500 border-neutral-200 cursor-not-allowed"}`}>
+                <span>⬇️</span> Download
+              </button>
+              <a className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl border bg-yellow-400/90 hover:bg-yellow-400 font-semibold" href="https://www.buymeacoffee.com/" target="_blank" rel="noreferrer">☕ Buy me a coffee</a>
+            </div>
+          </div>
+
+          {/* RIGHT: settings panel */}
+          <div className="bg-white rounded-2xl shadow p-4 lg:p-6 h-max">
+            <div className="space-y-3">
+              <div className="text-sm font-semibold">Label Settings</div>
+              <Toggle checked={ui.standardRef} onChange={(v)=>setUi({...ui, standardRef:v})}><span>Standard Reference</span></Toggle>
+              <Toggle checked={ui.showIcon} onChange={(v)=>setUi({...ui, showIcon:v})}><span>Image</span></Toggle>
+              <Toggle checked={ui.qr} onChange={(v)=>setUi({...ui, qr:v})}><span>QR Code</span></Toggle>
+
+              <div className="mt-4 text-sm">Label Width</div>
+              <div className="flex items-center gap-2">
+                <input type="number" className="w-24 border rounded-lg px-2 py-1" value={sel.dims.widthMM}
+                  onChange={(e)=>update({...sel, dims:{...sel.dims, widthMM: clamp(Number(e.target.value||0), 37, 100)}})} />
+                <span className="text-sm text-neutral-500">mm</span>
+              </div>
+              <input type="range" min={37} max={100} value={sel.dims.widthMM} onChange={(e)=>update({...sel, dims:{...sel.dims, widthMM: Number(e.target.value)}})} className="w-full" />
+              <div className="flex justify-between text-xs text-neutral-500"><span>37mm</span><span>100mm</span></div>
+
+              <div className="mt-4 text-sm">Label Height</div>
+              <div className="grid grid-cols-4 gap-2">
+                {HEIGHT_PRESETS.map(h => (
+                  <button key={h} onClick={()=>update({...sel, dims:{...sel.dims, heightMM:h}})}
+                    className={`px-3 py-1.5 rounded-lg border text-sm ${sel.dims.heightMM===h?"bg-blue-600 text-white border-blue-600":"bg-neutral-100 border-neutral-200"}`}>{h} mm</button>
                 ))}
               </div>
-            </div>
-            <div className="mt-4 border-t pt-3 space-y-2">
-              <div className="flex items-center gap-2">
-                <button className="px-3 py-1.5 border rounded" onClick={saveJSON}>Save JSON</button>
-                <label className="px-3 py-1.5 border rounded cursor-pointer">Load JSON
-                  <input type="file" accept="application/json" className="hidden" onChange={(e) => e.target.files && loadJSON(e.target.files[0])} />
+
+              <div className="mt-6 p-3 rounded-xl bg-neutral-50 border text-sm">
+                <div className="font-medium mb-2">Paper & export</div>
+                <label className="block mb-2">Paper size
+                  <select className="mt-1 w-full border rounded p-2 text-sm" value={pagePreset.id} onChange={(e)=>setPagePreset(PAGE_PRESETS.find(p=>p.id===e.target.value) || PAGE_PRESETS[0])}>
+                    {PAGE_PRESETS.map((p)=> <option key={p.id} value={p.id}>{p.label}</option>)}
+                  </select>
+                </label>
+                <label className="block">Gap (mm)
+                  <input type="number" className="mt-1 w-full border rounded p-2 text-sm" value={gapMM} onChange={(e)=>setGapMM(Number(e.target.value))} />
                 </label>
               </div>
-              <div className="flex items-center gap-2">
-                <label className="px-3 py-1.5 border rounded cursor-pointer">Import CSV
-                  <input type="file" accept=".csv,text/csv" className="hidden" onChange={(e) => e.target.files && importCSV(e.target.files[0])} />
-                </label>
+
+              <a href="https://github.com/2wenty2wo/2wenty2wo.github.io/issues" target="_blank" rel="noreferrer"
+                className="mt-4 inline-flex items-center justify-center w-full rounded-xl border px-4 py-2 text-sm font-medium bg-blue-50 border-blue-200 hover:bg-blue-100">💬 Provide feedback</a>
+
+              <div className="pt-3 text-xs text-neutral-500">
+                <div className="font-medium mb-1">Advanced</div>
+                <div className="flex gap-2">
+                  <button className="px-2 py-1 border rounded" onClick={saveJSON}>Save JSON</button>
+                  <label className="px-2 py-1 border rounded cursor-pointer">Load JSON
+                    <input type="file" accept="application/json" className="hidden" onChange={(e)=>e.target.files && loadJSON(e.target.files[0])} />
+                  </label>
+                  <label className="px-2 py-1 border rounded cursor-pointer">Import CSV
+                    <input type="file" accept=".csv,text/csv" className="hidden" onChange={(e)=>e.target.files && importCSV(e.target.files[0])} />
+                  </label>
+                </div>
               </div>
             </div>
-          </div>
-
-          <div className="lg:col-span-1 bg-white rounded-2xl shadow p-3">
-            {sel && <RecordEditor rec={sel} onChange={update} />}
-          </div>
-
-          <div className="lg:col-span-1 bg-white rounded-2xl shadow p-3 flex flex-col">
-            <div className="flex items-center justify-between mb-2">
-              <div className="font-semibold">Preview (mm-true)</div>
-              <div className="text-xs text-neutral-500">Print at “Actual size”</div>
-            </div>
-            <div className="flex justify-center items-center h-[180px] overflow-auto bg-neutral-50 rounded">
-              {sel && <LabelPreview rec={sel} />}
-            </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <button className="px-3 py-1.5 border rounded" onClick={downloadSVG}>Download SVG</button>
-              <button className="px-3 py-1.5 border rounded" onClick={() => exportPDF(records, pagePreset, gapMM)}>Export PDF</button>
-            </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <label className="text-sm">Paper size
-                <select className="w-full border rounded p-1" value={pagePreset.id} onChange={(e) => setPagePreset(PAGE_PRESETS.find((p)=>p.id===e.target.value) || PAGE_PRESETS[0])}>
-                  {PAGE_PRESETS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
-                </select>
-              </label>
-              <label className="text-sm">Gap (mm)
-                <input type="number" className="w-full border rounded p-1" value={gapMM} onChange={(e)=>setGapMM(Number(e.target.value))} />
-              </label>
-            </div>
-            <div className="mt-3 text-xs text-neutral-600">Use presets (9/12/18/24 mm) or custom mm sizes. SVG uses mm for true-to-size printing.</div>
           </div>
         </div>
 
-        <footer className="mt-6 text-center text-xs text-neutral-500">© {new Date().getFullYear()} Gridfinity Pro Labels — Offline-first, SVG/PDF.</footer>
+        <footer className="mt-8 text-center text-xs text-neutral-500">© {new Date().getFullYear()} Gridfinity Pro Labels — SVG/PDF, client‑side.</footer>
       </div>
     </div>
   );
