@@ -29,7 +29,10 @@
   // large the label appears onscreen.  The physical dimensions of the
   // downloaded image are independent of this ratio because html2canvas
   // rescaling is used at capture time.
-  const pxPerMm = 4; // adjust for comfortable preview sizing
+  // Increase the on‑screen pixels per millimetre to better mirror the
+  // proportions of the original application.  A higher value makes
+  // the preview larger and the hardware illustrations more legible.
+  const pxPerMm = 6;
 
   // Grab references to all relevant DOM nodes once at startup.
   const hardwareTypeGroup = document.getElementById('hardware-type-group');
@@ -49,6 +52,7 @@
   const labelSizeDisplay = document.getElementById('label-size-display');
   const printAreaDisplay = document.getElementById('print-area-display');
   const previewContainer = document.getElementById('preview-container');
+  const labelInner = document.getElementById('label-inner');
   const hardwareImageDiv = document.getElementById('hardware-image');
   const line1Div = document.getElementById('line1');
   const line2Div = document.getElementById('line2');
@@ -168,60 +172,87 @@
    * additional types are added, extend this function accordingly.  The
    * resulting markup is inserted into the preview.
    */
-  function getHardwareIcon() {
-    // Use a dark gray stroke to better match the original blueprint style
-    const color = '#4b5563';
+  function getHardwareIcon(iconHeight) {
+    /*
+     * Construct blueprint‑style illustrations for each hardware type.  We
+     * avoid using any external icon libraries so that the artwork is
+     * guaranteed to render in any environment.  Each icon is drawn in
+     * a 100×100 viewBox and scaled down via CSS to the desired
+     * height.  For screws and nuts two views are shown: a side view
+     * followed by a top view.  Bolts and screws are distinguished by
+     * their head shapes.  Nuts and washers use only geometric
+     * primitives.  Strokes remain black with round endcaps to echo the
+     * original application’s mechanical drawings.
+     */
+    const color = '#000000';
+    // Use a slightly thicker stroke for better visibility at small sizes
     const strokeWidth = 3;
-    // Use a 100×100 viewBox for consistent scaling
-    switch (state.hardwareType) {
-      case 'Screw': {
-        // Distinguish bolt vs screw using the screwType property
-        if (state.screwType === 'Bolt') {
-          // Bolt: hex head and threaded shaft
-          return `
-            <svg width="80" height="80" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <polygon points="30,10 70,10 90,40 70,70 30,70 10,40" stroke="${color}" fill="none" stroke-width="${strokeWidth}" />
-              <rect x="35" y="70" width="30" height="20" stroke="${color}" fill="none" stroke-width="${strokeWidth}" />
-              <line x1="30" y1="75" x2="70" y2="75" stroke="${color}" stroke-width="2" />
-              <line x1="30" y1="82" x2="70" y2="82" stroke="${color}" stroke-width="2" />
-              <line x1="30" y1="89" x2="70" y2="89" stroke="${color}" stroke-width="2" />
-            </svg>
-          `;
-        }
-        // Screw: round head with cross recess and threaded shaft
-        return `
-          <svg width="80" height="80" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="50" cy="25" r="18" stroke="${color}" fill="none" stroke-width="${strokeWidth}" />
-            <line x1="42" y1="25" x2="58" y2="25" stroke="${color}" stroke-width="${strokeWidth}" />
-            <line x1="50" y1="17" x2="50" y2="33" stroke="${color}" stroke-width="${strokeWidth}" />
-            <rect x="40" y="43" width="20" height="27" stroke="${color}" fill="none" stroke-width="${strokeWidth}" />
-            <line x1="35" y1="50" x2="65" y2="50" stroke="${color}" stroke-width="2" />
-            <line x1="35" y1="57" x2="65" y2="57" stroke="${color}" stroke-width="2" />
-            <line x1="35" y1="64" x2="65" y2="64" stroke="${color}" stroke-width="2" />
-          </svg>
-        `;
-      }
-      case 'Nut': {
-        // Nut: hexagon with hole in centre
-        return `
-          <svg width="80" height="80" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <polygon points="30,10 70,10 90,40 70,70 30,70 10,40" stroke="${color}" fill="none" stroke-width="${strokeWidth}" />
-            <circle cx="50" cy="40" r="12" stroke="${color}" fill="none" stroke-width="${strokeWidth}" />
-          </svg>
-        `;
-      }
-      case 'Washer': {
-        // Washer: ring shape
-        return `
-          <svg width="80" height="80" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="50" cy="50" r="28" stroke="${color}" fill="none" stroke-width="${strokeWidth}" />
-            <circle cx="50" cy="50" r="12" stroke="${color}" fill="none" stroke-width="${strokeWidth}" />
-          </svg>
-        `;
-      }
-      default:
-        return '';
+    // Helper: assemble an SVG with a standard viewBox and styling
+    function buildSvg(body) {
+      return `<svg viewBox="0 0 100 100" style="height:${iconHeight}px; width:auto;" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">${body}</svg>`;
     }
+    const pieces = [];
+    // Determine which artwork to draw based on the current state
+    const type = state.hardwareType;
+    if (type === 'Screw') {
+      if (state.screwType === 'Bolt') {
+        // Bolt side: hex head on left, threaded shaft on right
+        pieces.push(buildSvg(`
+          <!-- Bolt side view -->
+          <polygon points="5,50 20,30 40,30 55,50 40,70 20,70" />
+          <rect x="55" y="42" width="35" height="16" />
+          <line x1="55" y1="46" x2="90" y2="46" />
+          <line x1="55" y1="54" x2="90" y2="54" />
+          <line x1="55" y1="62" x2="90" y2="62" />
+        `));
+        // Bolt top: outer circle and hex cap; bolts typically do not have
+        // cross or slot markings on their head.  Omitting the cross
+        // emphasises the hex shape.
+        pieces.push(buildSvg(`
+          <!-- Bolt top view -->
+          <circle cx="50" cy="50" r="45" />
+          <polygon points="50,10 78,25 90,50 78,75 50,90 22,75 10,50 22,25" />
+        `));
+      } else {
+        // Screw side: round head with slot and tapered threaded body
+        pieces.push(buildSvg(`
+          <!-- Screw side view -->
+          <circle cx="25" cy="40" r="18" />
+          <line x1="15" y1="40" x2="35" y2="40" />
+          <rect x="35" y="45" width="40" height="12" />
+          <polyline points="75,57 88,52 95,60" />
+          <line x1="35" y1="48" x2="75" y2="48" />
+          <line x1="35" y1="54" x2="75" y2="54" />
+          <line x1="35" y1="60" x2="75" y2="60" />
+        `));
+        // Screw top: circle with single slot across
+        pieces.push(buildSvg(`
+          <!-- Screw top view -->
+          <circle cx="50" cy="50" r="45" />
+          <line x1="20" y1="50" x2="80" y2="50" />
+        `));
+      }
+    } else if (type === 'Nut') {
+      // Nut side: elongated hexagon
+      pieces.push(buildSvg(`
+        <!-- Nut side view -->
+        <polygon points="5,50 20,32 40,32 60,50 40,68 20,68" />
+      `));
+      // Nut top: outer hex and inner hex ring
+      pieces.push(buildSvg(`
+        <!-- Nut top view -->
+        <polygon points="5,50 20,32 40,32 60,50 40,68 20,68" />
+        <polygon points="25,50 33,42 44,42 55,50 44,58 33,58" />
+      `));
+    } else if (type === 'Washer') {
+      // Washer: simple ring
+      pieces.push(buildSvg(`
+        <!-- Washer -->
+        <circle cx="50" cy="50" r="45" />
+        <circle cx="50" cy="50" r="20" />
+      `));
+    }
+    return pieces.join('');
   }
 
   /**
@@ -237,15 +268,32 @@
     const printableHeight = Math.max(0, height - 2); // 1mm margin top/bottom
     labelSizeDisplay.innerHTML = `${width}&nbsp;mm ×&nbsp;${height}&nbsp;mm (label size)`;
     printAreaDisplay.innerHTML = `${printableWidth}&nbsp;mm ×&nbsp;${printableHeight}&nbsp;mm (printable area)`;
-    // Set preview container dimensions in pixels
+    // Compute preview container dimensions in pixels
     const pxWidth = width * pxPerMm;
     const pxHeight = height * pxPerMm;
     previewContainer.style.width = pxWidth + 'px';
     previewContainer.style.height = pxHeight + 'px';
-    // Icon
+    // Compute inner label margins (2mm side margins, 1mm top/bottom)
+    const marginX = 2 * pxPerMm;
+    const marginY = 1 * pxPerMm;
+    const innerWidthPx = Math.max(0, pxWidth - 2 * marginX);
+    const innerHeightPx = Math.max(0, pxHeight - 2 * marginY);
+    // Position and size the yellow label
+    labelInner.style.width = innerWidthPx + 'px';
+    labelInner.style.height = innerHeightPx + 'px';
+    labelInner.style.left = marginX + 'px';
+    labelInner.style.top = marginY + 'px';
+    // Icon area: determine number of icon rows and size per icon
+    let iconCount = 1;
+    if (state.hardwareType === 'Screw' || state.hardwareType === 'Nut') {
+      iconCount = 2;
+    }
+    const iconGap = 4;
+    const iconHeightPx = state.showImage ? (iconCount > 0 ? (innerHeightPx - (iconCount - 1) * iconGap) / iconCount : 0) : 0;
+    // Insert hardware illustration if enabled
     if (state.showImage) {
       hardwareImageDiv.style.display = 'flex';
-      hardwareImageDiv.innerHTML = getHardwareIcon();
+      hardwareImageDiv.innerHTML = getHardwareIcon(iconHeightPx);
     } else {
       hardwareImageDiv.style.display = 'none';
       hardwareImageDiv.innerHTML = '';
@@ -270,31 +318,36 @@
     }
     line2Div.textContent = line2;
     line2Div.style.display = line2 ? 'block' : 'none';
-    // Adjust font sizes based on container height
-    // Set primary line to occupy ~40% of height, secondary smaller
-    const primaryFontSize = Math.max(8, Math.floor(pxHeight * 0.35));
-    const secondaryFontSize = Math.max(6, Math.floor(pxHeight * 0.18));
+    // Adjust font sizes based on inner label height
+    const primaryFontSize = Math.max(8, Math.floor(innerHeightPx * 0.45));
+    const secondaryFontSize = Math.max(6, Math.floor(innerHeightPx * 0.2));
     line1Div.style.fontSize = primaryFontSize + 'px';
     line2Div.style.fontSize = secondaryFontSize + 'px';
-    // Layout: ensure text block does not overlap QR code
-    previewContainer.style.position = 'relative';
-    // QR code
+    // Adjust layout so that text does not overlap with the QR code
+    // QR code sizing
     if (state.showQr) {
+      // Determine a square size for the QR code (take 60% of inner height)
+      const qrSize = Math.floor(innerHeightPx * 0.6);
+      qrCanvas.width = qrSize;
+      qrCanvas.height = qrSize;
+      qrCanvas.style.width = qrSize + 'px';
+      qrCanvas.style.height = qrSize + 'px';
+      qrCanvas.style.right = pxPerMm + 'px'; // 1mm right margin
+      qrCanvas.style.top = '50%';
+      qrCanvas.style.transform = 'translateY(-50%)';
       qrCanvas.style.display = 'block';
       // Generate QR code into canvas.  Content includes line1 and line2
       const qrContent = line1 + (line2 ? '\n' + line2 : '');
       // Clear previous QR
       const ctx = qrCanvas.getContext('2d');
       ctx.clearRect(0, 0, qrCanvas.width, qrCanvas.height);
-      // Generate new QR.  Use smaller version for preview; html2canvas will
-      // upscale appropriately for download.
       try {
         QRCode.toCanvas(qrCanvas, qrContent || 'Gridfinity Label', {
           margin: 1,
-          width: qrCanvas.width,
+          width: qrSize,
           color: {
             dark: '#000',
-            light: '#FFFFFF00' // transparent background
+            light: '#00000000' // transparent background
           }
         });
       } catch (err) {

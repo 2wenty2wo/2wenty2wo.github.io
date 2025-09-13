@@ -353,34 +353,39 @@ main {
   flex-wrap: wrap;
   gap: 10px;
 }
+/*
+ * Preview container.  This element represents the full label including
+ * the 2mm side margins and the 1mm top/bottom margins.  A subtle
+ * checkerboard pattern fills the background to emulate the original
+ * application's blueprint backdrop.  The pattern is embedded as a
+ * base64 encoded SVG copied from the live site.  The container has a
+ * thin border and rounded corners, and is positioned relative so that
+ * the inner yellow label can be absolutely positioned within it.
+ */
 .label-preview {
-  border: 1px dashed var(--gray-medium);
-  /* subtle checker pattern similar to original site */
-  background:
-    linear-gradient(45deg, rgba(0,0,0,0.04) 25%, transparent 25%) 0 0,
-    linear-gradient(-45deg, rgba(0,0,0,0.04) 25%, transparent 25%) 0 0,
-    linear-gradient(45deg, transparent 75%, rgba(0,0,0,0.04) 75%) 0 0,
-    linear-gradient(-45deg, transparent 75%, rgba(0,0,0,0.04) 75%) 0 0;
-  background-size: 12px 12px;
-  background-position: 0 0,0 6px,6px -6px,-6px 0;
-  display: flex;
-  align-items: center;
-  overflow: hidden;
   position: relative;
+  border: 1px solid var(--gray-medium);
+  border-radius: 8px;
+  overflow: hidden;
+  background-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImNoZWNrZXJlZCIgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIiBwYXR0ZXJuVHJhbnNmb3JtPSJyb3RhdGUoMCkiPjxyZWN0IHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCIgZmlsbD0iI2YzZjRmNiIvPjxyZWN0IHg9IjEwIiB5PSIxMCIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZjNmNGY2Ii8+PHJlY3QgeD0iMTAiIHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCIgZmlsbD0iI2U1ZTdlYiIvPjxyZWN0IHk9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiNlNWU3ZWIiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjY2hlY2tlcmVkKSIvPjwvc3ZnPg==");
+  background-size: 20px 20px;
 }
+/* Container for hardware illustrations inside the yellow label.  The
+   icons are arranged vertically (for screws and nuts) or as a single
+   centred icon (for washers). */
 .hardware-icon {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding-left: 4px;
-  height: 100%;
+  gap: 4px;
 }
 
 /* Scale SVG illustrations to fit comfortably inside the label preview.  Without
    explicit rules the intrinsic width and height on the SVG elements may
    overflow their container at small label heights. */
 .hardware-icon svg {
-  height: 70%;
+  /* Dimensions are set dynamically via inline styles from script.js */
   width: auto;
 }
 .text-block {
@@ -389,6 +394,7 @@ main {
   justify-content: center;
   padding-left: 6px;
   white-space: nowrap;
+  flex: 1;
 }
 .text-line {
   line-height: 1;
@@ -400,10 +406,28 @@ main {
 }
 .qr-code {
   position: absolute;
-  right: 4px;
-  top: 50%;
-  transform: translateY(-50%);
   display: none; /* toggled via JS */
+}
+
+/*
+ * The inner yellow label.  This element sits within the preview
+ * container and is sized and positioned by script.js.  It uses a
+ * vibrant yellow background with a solid black border to match the
+ * original app's label aesthetic.  Flexbox is used to lay out the
+ * hardware icons, text and optional QR code horizontally.
+ */
+.label-inner {
+  background-color: #ffe500;
+  border: 2px solid #000;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  position: absolute;
+  overflow: hidden;
+  box-sizing: border-box;
+  gap: 8px;
+  padding-left: 6px;
+  padding-right: 6px;
 }
 
 /* Action button */
