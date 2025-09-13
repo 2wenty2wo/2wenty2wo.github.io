@@ -1,4 +1,4 @@
-import Iconify from '@iconify/iconify';
+import Iconify from 'https://code.iconify.design/3/3.1.1/iconify.min.js';
 
 Iconify.addCollection({
   prefix: 'screw-head',
