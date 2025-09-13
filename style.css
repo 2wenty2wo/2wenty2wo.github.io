@@ -1,0 +1,248 @@
+/*
+ * Basic styling for the Gridfinity label generator clone.
+ * Colors and component shapes are inspired by the original application
+ * while remaining custom defined.  The layout adapts to narrow
+ * viewports by stacking the sections vertically.  Utility classes
+ * defined here avoid external dependencies like Tailwind.
+ */
+
+/* Color palette */
+:root {
+  --primary: #2563eb; /* blue‑600 */
+  --primary-light: #dbeafe; /* blue‑100 */
+  --gray-light: #f9fafb; /* gray‑50 */
+  --gray: #f3f4f6;       /* gray‑100 */
+  --gray-medium: #d1d5db; /* gray‑300 */
+  --gray-dark: #4b5563;  /* gray‑600 */
+  --text: #374151;       /* gray‑700 */
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--text);
+  background: linear-gradient(to bottom, var(--gray-light), var(--gray));
+}
+
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Title styling */
+.title-section {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.title-section h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+}
+.title-section p {
+  margin-top: 4px;
+  font-size: 1rem;
+  color: var(--gray-dark);
+}
+
+/* Panel layout */
+.config-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+.form-section, .settings-section {
+  flex: 1;
+  min-width: 280px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  padding: 20px;
+  box-sizing: border-box;
+}
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.settings-section h2 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+/* Segmented button groups */
+.segmented-group {
+  display: flex;
+  gap: 4px;
+}
+.segment {
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.segment:hover {
+  background: var(--gray-light);
+}
+.segment.selected {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* Form field styling */
+.field-row {
+  display: flex;
+  flex-direction: column;
+}
+.field-row label {
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+  color: var(--gray-dark);
+}
+.field-row input[type="number"], .field-row input[type="text"], .field-row select {
+  padding: 10px;
+  border: 1px solid var(--gray-medium);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border 0.2s;
+}
+.field-row input:focus, .field-row select:focus {
+  border-color: var(--primary);
+}
+
+/* Settings panel toggles and sliders */
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.setting-row label {
+  font-size: 0.9rem;
+  color: var(--text);
+  margin-right: 8px;
+}
+.height-options {
+  display: flex;
+  gap: 8px;
+}
+.height-options label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.setting-row input[type="range"] {
+  flex: 1;
+  margin-left: 10px;
+}
+
+/* Preview section */
+.preview-section {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  padding: 20px;
+  margin-top: 20px;
+}
+.preview-section h2 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+.size-info {
+  font-size: 0.85rem;
+  color: var(--gray-dark);
+  margin-bottom: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.label-preview {
+  border: 1px dashed var(--gray-medium);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  position: relative;
+}
+.hardware-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: 4px;
+  height: 100%;
+}
+
+/* Scale SVG illustrations to fit comfortably inside the label preview.  Without
+   explicit rules the intrinsic width and height on the SVG elements may
+   overflow their container at small label heights. */
+.hardware-icon svg {
+  height: 70%;
+  width: auto;
+}
+.text-block {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 6px;
+  white-space: nowrap;
+}
+.text-line {
+  line-height: 1;
+  font-weight: 700;
+}
+.text-line.small {
+  font-size: 0.7em;
+  font-weight: 500;
+}
+.qr-code {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: none; /* toggled via JS */
+}
+
+/* Action button */
+.actions {
+  text-align: center;
+  margin-top: 20px;
+}
+#download-button {
+  padding: 12px 28px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  background: var(--primary);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+#download-button:hover:not([disabled]) {
+  background: #1d4ed8; /* darker blue */
+}
+#download-button[disabled] {
+  background: var(--gray-medium);
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .config-panel {
+    flex-direction: column;
+  }
+}

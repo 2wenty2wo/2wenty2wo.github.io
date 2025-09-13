@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gridfinity Label Generator Clone</title>
+  <!--
+    This page is a re‑implementation of the public Gridfinity Label Generator.
+    It mimics the look and feel of the original application and implements
+    nearly identical functionality without sharing any of the original source
+    code.  All styling is defined in a standalone CSS file.  Two small
+    third‑party libraries are loaded via CDN: html2canvas to capture the
+    label preview as an image and qrcode to generate optional QR codes.
+  -->
+  <link rel="stylesheet" href="style.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+  <script defer src="script.js"></script>
+</head>
+<body>
+  <main>
+    <header class="title-section">
+      <h1>Gridfinity Label Generator</h1>
+      <p>Print‑Ready Labels for Your Gridfinity System</p>
+    </header>
+    <!-- Two column layout: form (left) and settings (right). On small screens
+         the sections stack vertically. -->
+    <div class="config-panel">
+      <!-- Form controls for selecting hardware type, measurement system,
+           and physical parameters. -->
+      <section class="form-section">
+        <!-- Hardware type selector (Screw/Nut/Washer) -->
+        <div class="segmented-group" id="hardware-type-group">
+          <button class="segment selected" data-value="Screw">Screw</button>
+          <button class="segment" data-value="Nut">Nut</button>
+          <button class="segment" data-value="Washer">Washer</button>
+        </div>
+        <!-- Measurement system (metric/imperial) -->
+        <div class="segmented-group" id="system-type-group">
+          <button class="segment selected" data-value="Metric">Metric</button>
+          <button class="segment" data-value="Imperial">Imperial</button>
+        </div>
+        <!-- Screw specific: choose bolt or screw (hidden for other hardware types) -->
+        <div class="field-row" id="screw-type-container">
+          <label>Screw Type</label>
+          <div class="segmented-group" id="screw-type-group">
+            <button class="segment selected" data-value="Bolt">Bolt</button>
+            <button class="segment" data-value="Screw">Screw</button>
+          </div>
+        </div>
+        <!-- Thread size selection -->
+        <div class="field-row">
+          <label for="thread-size-select">Thread size</label>
+          <select id="thread-size-select"></select>
+        </div>
+        <!-- Length field: visible for screws, hidden for nuts and washers -->
+        <div class="field-row" id="length-container">
+          <label for="length-input">Length</label>
+          <input type="number" id="length-input" placeholder="e.g., 10" min="1" />
+        </div>
+        <!-- Optional notes -->
+        <div class="field-row">
+          <label for="notes-input">Optional notes</label>
+          <input type="text" id="notes-input" placeholder="Notes (optional)" />
+        </div>
+        <!-- Hardware standard selection -->
+        <div class="field-row">
+          <label for="standard-select">Hardware standard</label>
+          <select id="standard-select"></select>
+        </div>
+      </section>
+      <!-- Settings panel for toggles and label size -->
+      <section class="settings-section">
+        <h2>Label Settings</h2>
+        <!-- Toggle standard reference line -->
+        <div class="setting-row">
+          <label for="standard-toggle">Standard Reference</label>
+          <input type="checkbox" id="standard-toggle" checked />
+        </div>
+        <!-- Toggle hardware illustration -->
+        <div class="setting-row">
+          <label for="image-toggle">Image</label>
+          <input type="checkbox" id="image-toggle" checked />
+        </div>
+        <!-- Toggle QR code display -->
+        <div class="setting-row">
+          <label for="qrcode-toggle">QR Code</label>
+          <input type="checkbox" id="qrcode-toggle" />
+        </div>
+        <!-- Label width slider -->
+        <div class="setting-row">
+          <label for="width-range">Label Width: <span id="width-value">55</span> mm</label>
+          <input type="range" id="width-range" min="37" max="100" value="55" />
+        </div>
+        <!-- Label height radio buttons -->
+        <div class="setting-row">
+          <span>Label Height</span>
+          <div class="height-options">
+            <label><input type="radio" name="label-height" value="9" /> 9&nbsp;mm</label>
+            <label><input type="radio" name="label-height" value="12" checked /> 12&nbsp;mm</label>
+            <label><input type="radio" name="label-height" value="18" /> 18&nbsp;mm</label>
+            <label><input type="radio" name="label-height" value="24" /> 24&nbsp;mm</label>
+          </div>
+        </div>
+      </section>
+    </div>
+    <!-- Preview panel below controls -->
+    <section class="preview-section">
+      <h2>Label Preview</h2>
+      <div class="size-info">
+        <div id="label-size-display">55&nbsp;mm ×&nbsp;12&nbsp;mm (label size)</div>
+        <div id="print-area-display">51&nbsp;mm ×&nbsp;10&nbsp;mm (printable area)</div>
+      </div>
+      <div id="preview-container" class="label-preview">
+        <div id="hardware-image" class="hardware-icon"></div>
+        <div id="preview-text" class="text-block">
+          <div id="line1" class="text-line"></div>
+          <div id="line2" class="text-line small"></div>
+        </div>
+        <canvas id="qr-canvas" class="qr-code" width="80" height="80"></canvas>
+      </div>
+    </section>
+    <div class="actions">
+      <button id="download-button" disabled>Download</button>
+    </div>
+  </main>
+</body>
+</html>
