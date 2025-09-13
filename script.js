@@ -169,8 +169,9 @@
    * resulting markup is inserted into the preview.
    */
   function getHardwareIcon() {
-    const color = '#000';
-    const strokeWidth = 4;
+    // Use a dark gray stroke to better match the original blueprint style
+    const color = '#4b5563';
+    const strokeWidth = 3;
     // Use a 100×100 viewBox for consistent scaling
     switch (state.hardwareType) {
       case 'Screw': {
@@ -399,12 +400,31 @@
       r.addEventListener('change', () => {
         if (r.checked) {
           state.heightMm = parseInt(r.value, 10);
+          // Update visual selection on height buttons
+          heightRadios.forEach(btn => {
+            const label = btn.closest('label');
+            if (label) {
+              if (btn.checked) {
+                label.classList.add('selected');
+              } else {
+                label.classList.remove('selected');
+              }
+            }
+          });
           updatePreview();
         }
       });
     });
     // Download button
     downloadButton.addEventListener('click', downloadLabel);
+
+    // Feedback button
+    const feedbackButton = document.getElementById('feedback-button');
+    if (feedbackButton) {
+      feedbackButton.addEventListener('click', () => {
+        alert('Thank you for your feedback!');
+      });
+    }
   }
 
   /**
@@ -419,6 +439,17 @@
     initEventHandlers();
     updateDownloadState();
     updatePreview();
+    // Set initial selected class on height buttons
+    heightRadios.forEach(r => {
+      const label = r.closest('label');
+      if (label) {
+        if (r.checked) {
+          label.classList.add('selected');
+        } else {
+          label.classList.remove('selected');
+        }
+      }
+    });
   }
 
   // Wait until DOM content is loaded before initialising the app

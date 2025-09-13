@@ -123,31 +123,212 @@ main {
 }
 
 /* Settings panel toggles and sliders */
+/* Settings panel rows */
 .setting-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
-.setting-row label {
+/* Label and icon */
+.setting-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 0.9rem;
   color: var(--text);
-  margin-right: 8px;
+  flex-grow: 1;
+}
+.setting-icon {
+  width: 18px;
+  height: 18px;
+  stroke: var(--gray-dark);
+}
+/* Custom toggle switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+}
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--gray-medium);
+  transition: background-color 0.2s;
+  border-radius: 20px;
+}
+.slider::before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  top: 2px;
+  background-color: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+.switch input:checked + .slider {
+  background-color: var(--primary);
+}
+.switch input:checked + .slider::before {
+  transform: translateX(20px);
+}
+/* Range row styling */
+.range-row {
+  margin-bottom: 16px;
+}
+.range-label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.range-row input[type="range"] {
+  width: 100%;
+  cursor: pointer;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--gray-medium);
+  outline: none;
+}
+.range-row input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--primary);
+  cursor: pointer;
+  margin-top: -5px;
+}
+.range-row input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: none;
+  cursor: pointer;
+}
+.range-minmax {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--gray-dark);
+  margin-top: 2px;
+}
+/* Height options */
+.height-row {
+  margin-bottom: 16px;
 }
 .height-options {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
-.height-options label {
+.height-btn {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 0.85rem;
+  justify-content: center;
+  background: var(--gray-light);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  font-weight: 500;
   cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
 }
-.setting-row input[type="range"] {
-  flex: 1;
-  margin-left: 10px;
+.height-btn input {
+  display: none;
+}
+.height-btn input:checked + span {
+  color: #fff;
+}
+.height-btn input:checked ~ span {
+  /* fallback if not next sibling */
+  color: #fff;
+}
+.height-btn input:checked {
+  /* nothing here, the parent color is controlled by JS */
+}
+
+/* highlight selected height button via JS */
+.height-btn.selected {
+  background: var(--primary);
+  color: #fff;
+}
+.height-btn.selected span {
+  color: #fff;
+}
+/* Feedback button */
+.feedback-row {
+  margin-top: 12px;
+}
+.feedback-button {
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: var(--gray-light);
+  color: var(--text);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.feedback-button:hover {
+  background: var(--gray);
+}
+/* Coffee button */
+.actions {
+  text-align: center;
+  margin-top: 20px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+#download-button {
+  padding: 12px 28px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  background: var(--primary);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+#download-button:hover:not([disabled]) {
+  background: #1d4ed8; /* darker blue */
+}
+#download-button[disabled] {
+  background: var(--gray-medium);
+  cursor: not-allowed;
+}
+.coffee-button {
+  padding: 12px 24px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  background: #facc15; /* yellow */
+  color: #3f3f3f;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+.coffee-button:hover {
+  filter: brightness(0.95);
 }
 
 /* Preview section */
@@ -174,7 +355,14 @@ main {
 }
 .label-preview {
   border: 1px dashed var(--gray-medium);
-  background: #fff;
+  /* subtle checker pattern similar to original site */
+  background:
+    linear-gradient(45deg, rgba(0,0,0,0.04) 25%, transparent 25%) 0 0,
+    linear-gradient(-45deg, rgba(0,0,0,0.04) 25%, transparent 25%) 0 0,
+    linear-gradient(45deg, transparent 75%, rgba(0,0,0,0.04) 75%) 0 0,
+    linear-gradient(-45deg, transparent 75%, rgba(0,0,0,0.04) 75%) 0 0;
+  background-size: 12px 12px;
+  background-position: 0 0,0 6px,6px -6px,-6px 0;
   display: flex;
   align-items: center;
   overflow: hidden;
