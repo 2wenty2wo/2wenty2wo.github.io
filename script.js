@@ -18,12 +18,153 @@
   const imperialThreadSizes = [
     '#4‑40', '#6‑32', '#8‑32', '#10‑24', '1/4‑20', '5/16‑18', '3/8‑16', '7/16‑14', '1/2‑13'
   ];
-  // Generic list of hardware standards.  Real‑world applications may
-  // restrict these lists per hardware type.  We provide a handful of
-  // common DIN and ISO standards.
-  const hardwareStandards = [
-    'DIN 11014', 'DIN 912', 'DIN 933', 'DIN 7991', 'ISO 4032', 'ISO 4762', 'ISO 7380'
-  ];
+  // Hardware standards grouped by hardware category (Bolt, Screw, Nut,
+  // Washer).  Each entry contains both the standard code and a short
+  // descriptive name so the dropdown can present meaningful context to
+  // the user.  Only DIN/ISO standards provided by the user are included
+  // here, organised by the hardware they apply to.
+  const hardwareCatalog = {
+    Bolt: [
+      { code: 'DIN 11014', name: 'Hexagon Head Screw' },
+      { code: 'DIN 15237', name: 'Slotted Raised Countersunk Head Screw' },
+      { code: 'DIN 186', name: 'Square Head Bolt' },
+      { code: 'DIN 21346', name: 'Slotted Pan Head Screw' },
+      { code: 'DIN 22424', name: 'Slotted Pan Head Screw' },
+      { code: 'DIN 25193', name: 'Slotted Pan Head Screw' },
+      { code: 'DIN 261', name: 'Hexagon Head Screw' },
+      { code: 'DIN 316', name: 'Wing Screw' },
+      { code: 'DIN 34817', name: 'Pan Head Screw' },
+      { code: 'DIN 404', name: 'Square Head Set Screw' },
+      { code: 'DIN 444', name: 'Eye Bolt with Collar' },
+      { code: 'DIN 464', name: 'Knurled Thumb Screw' },
+      { code: 'DIN 478', name: 'Knurled Head Screw' },
+      { code: 'DIN 479', name: 'Knurled Head Screw with Shoulder' },
+      { code: 'DIN 480', name: 'Slotted Knurled Head Screw' },
+      { code: 'DIN 561', name: 'Square Head Set Screw' },
+      { code: 'DIN 564', name: 'Slotted Set Screw with Long Dog Point' },
+      { code: 'DIN 580', name: 'Lifting Eye Bolt' },
+      { code: 'DIN 5903', name: 'Slotted Pan Head Screw' },
+      { code: 'DIN 603', name: 'Mushroom Head Square Neck Bolt' },
+      { code: 'DIN 604', name: 'Square Head Bolt with Square Neck' },
+      { code: 'DIN 605', name: 'Square Head Bolt with Round Neck' },
+      { code: 'DIN 607', name: 'Round Head Square Neck Bolt' },
+      { code: 'DIN 608', name: 'Round Head Square Neck Bolt' },
+      { code: 'DIN 609', name: 'Fit Bolt with Hexagon Head' },
+      { code: 'DIN 610', name: 'Fit Bolt with Round Head' },
+      { code: 'DIN 653', name: 'Recessed Head Screw' },
+      { code: 'DIN 6912', name: 'Hexagon Socket Head Cap Screw with Low Head' },
+      { code: 'DIN 6914', name: 'High-Strength Hexagon Head Bolt' },
+      { code: 'DIN 6921', name: 'Hexagon Flange Head Bolt' },
+      { code: 'DIN 787', name: 'Round Head Screw with Square Neck' },
+      { code: 'DIN 792', name: 'Square Head Bolt with Square Shoulder' },
+      { code: 'DIN 7968', name: 'Hexagon Fit Bolt' },
+      { code: 'DIN 7969', name: 'Hexagon Head Bolt with Hexagon Collar' },
+      { code: 'DIN 7984', name: 'Hexagon Socket Head Cap Screw with Low Head' },
+      { code: 'DIN 7990', name: 'Hexagon Head Bolt for Steel Structures' },
+      { code: 'DIN 7991', name: 'Hexagon Socket Countersunk Head Cap Screw' },
+      { code: 'DIN 7999', name: 'Cross Recessed Pan Head Tapping Screw' },
+      { code: 'DIN 912', name: 'Hexagon Socket Head Cap Screw' },
+      { code: 'DIN 931', name: 'Hexagon Head Bolt' },
+      { code: 'DIN 933', name: 'Hexagon Head Screw' },
+      { code: 'DIN 960', name: 'Hexagon Head Fit Bolt' },
+      { code: 'DIN 961', name: 'Hexagon Head Fit Bolt' },
+      { code: 'ISO 7379', name: 'Hexagon Socket Head Shoulder Screw' },
+      { code: 'ISO 7380-1', name: 'Button Head Screw' },
+      { code: 'ISO 7380-2', name: 'Button Head Screw with Collar' }
+    ],
+    Screw: [
+      { code: 'DIN 571', name: 'Coach Screw (Wood Screw)' },
+      { code: 'DIN 7995', name: 'Cross Recessed Pan Head Wood Screw' },
+      { code: 'DIN 7996', name: 'Cross Recessed Countersunk Head Wood Screw' },
+      { code: 'DIN 7997', name: 'Cross Recessed Raised Countersunk Head Wood Screw' },
+      { code: 'DIN 95', name: 'Round Head Wood Screw' },
+      { code: 'DIN 96', name: 'Raised Countersunk Head Wood Screw' },
+      { code: 'DIN 97', name: 'Countersunk Head Wood Screw' }
+    ],
+    Nut: [
+      { code: 'DIN 1478', name: 'Wing Nut' },
+      { code: 'DIN 1479', name: 'Wing Nut' },
+      { code: 'DIN 1480', name: 'Wing Nut' },
+      { code: 'DIN 1587', name: 'Cap Nut' },
+      { code: 'DIN 1804', name: 'Slotted Round Nut' },
+      { code: 'DIN 1816', name: 'Square Weld Nut' },
+      { code: 'DIN 315', name: 'Wing Nut' },
+      { code: 'DIN 431', name: 'Square Nut' },
+      { code: 'DIN 439', name: 'Hexagon Thin Nut' },
+      { code: 'DIN 466', name: 'Square Nut' },
+      { code: 'DIN 467', name: 'Knurled Nut' },
+      { code: 'DIN 508', name: 'T-Slot Nut' },
+      { code: 'DIN 546', name: 'Small Hexagon Nut' },
+      { code: 'DIN 557', name: 'Square Nut' },
+      { code: 'DIN 562', name: 'Square Thin Nut' },
+      { code: 'DIN 582', name: 'Eye Nut' },
+      { code: 'DIN 6330', name: 'Hexagon Nut' },
+      { code: 'DIN 6331', name: 'Hexagon High Nut' },
+      { code: 'DIN 6334', name: 'Hexagon High Nut' },
+      { code: 'DIN 6915', name: 'High-Strength Hexagon Nut' },
+      { code: 'DIN 6923', name: 'Hexagon Flange Nut' },
+      { code: 'DIN 6925', name: 'Hexagon Weld Nut' },
+      { code: 'DIN 6926', name: 'Prevailing Torque Type Hexagon Nut' },
+      { code: 'DIN 6927', name: 'Prevailing Torque Type Hexagon Thin Nut' },
+      { code: 'DIN 70852', name: 'Hexagon Nut with Flange' },
+      { code: 'DIN 74361', name: 'Hexagon Nut with Flange' },
+      { code: 'DIN 7965', name: 'Square Weld Nut' },
+      { code: 'DIN 7967', name: 'Prevailing Torque Type Hexagon Nut' },
+      { code: 'DIN 80701', name: 'Hexagon Nut' },
+      { code: 'DIN 80705', name: 'Hexagon Nut' },
+      { code: 'DIN 917', name: 'Cap Nut' },
+      { code: 'DIN 928', name: 'Hexagon Weld Nut' },
+      { code: 'DIN 929', name: 'Hexagon Weld Nut' },
+      { code: 'DIN 934', name: 'Hexagon Nut' },
+      { code: 'DIN 935', name: 'Castle Nut' },
+      { code: 'DIN 936', name: 'Hexagon Thin Nut' },
+      { code: 'DIN 937', name: 'Hexagon Thin Slotted Nut' },
+      { code: 'DIN 979', name: 'Hexagon Slotted Nut' },
+      { code: 'DIN 980', name: 'Prevailing Torque Type Hexagon Nut' },
+      { code: 'DIN 981', name: 'Slotted Round Nut' },
+      { code: 'DIN 982', name: 'Prevailing Torque Type Hexagon Nut' },
+      { code: 'DIN 985', name: 'Prevailing Torque Type Hexagon Nut' },
+      { code: 'DIN 986', name: 'Prevailing Torque Type Hexagon Thin Nut' },
+      { code: 'ISO 7040', name: 'Prevailing Torque Type Hexagon Nut' }
+    ],
+    Washer: [
+      { code: 'DIN 1052', name: 'Washer for Wood Construction' },
+      { code: 'DIN 125', name: 'Plain Washer' },
+      { code: 'DIN 127', name: 'Spring Lock Washer' },
+      { code: 'DIN 128', name: 'Spring Lock Washer' },
+      { code: 'DIN 137', name: 'Spring Lock Washer' },
+      { code: 'DIN 1440', name: 'Plain Washer' },
+      { code: 'DIN 1441', name: 'Plain Washer' },
+      { code: 'DIN 2093', name: 'Disc Spring' },
+      { code: 'DIN 25201', name: 'Wedge Lock Washer' },
+      { code: 'DIN 432', name: 'Square Washer' },
+      { code: 'DIN 433', name: 'Plain Washer' },
+      { code: 'DIN 434', name: 'Square Taper Washer' },
+      { code: 'DIN 435', name: 'Square Taper Washer' },
+      { code: 'DIN 436', name: 'Square Washer' },
+      { code: 'DIN 440', name: 'Plain Washer' },
+      { code: 'DIN 462', name: 'Square Washer' },
+      { code: 'DIN 463', name: 'Square Washer' },
+      { code: 'DIN 5406', name: 'Tooth Lock Washer' },
+      { code: 'DIN 6319', name: 'Spherical Washer' },
+      { code: 'DIN 6340', name: 'Heavy Duty Plain Washer' },
+      { code: 'DIN 6796', name: 'Conical Spring Washer' },
+      { code: 'DIN 6797', name: 'Tooth Lock Washer' },
+      { code: 'DIN 6798', name: 'Tooth Lock Washer' },
+      { code: 'DIN 6916', name: 'High-Strength Structural Washer' },
+      { code: 'DIN 6917', name: 'Square Taper Washer' },
+      { code: 'DIN 6918', name: 'Square Taper Washer' },
+      { code: 'DIN 70952', name: 'Plain Washer' },
+      { code: 'DIN 7349', name: 'Heavy Duty Plain Washer' },
+      { code: 'DIN 74361', name: 'Plain Washer' },
+      { code: 'DIN 7603', name: 'Sealing Washer' },
+      { code: 'DIN 7980', name: 'Spring Lock Washer' },
+      { code: 'DIN 7989', name: 'Plain Washer' },
+      { code: 'DIN 9021', name: 'Plain Washer' },
+      { code: 'DIN 93', name: 'Tab Washer' },
+      { code: 'DIN 988', name: 'Shim Ring' }
+    ]
+  };
 
   // Ratio of preview pixels per millimetre.  This value controls how
   // large the label appears onscreen.  The physical dimensions of the
@@ -107,23 +248,47 @@
   }
 
   /**
-   * Populate the hardware standard <select> element.  Always uses
-   * the same list for every hardware type.
+   * Populate the hardware standard <select> element with the standards
+   * relevant to the current hardware selection.
    */
   function populateStandards() {
     standardSelect.innerHTML = '';
     const placeholder = document.createElement('option');
     placeholder.value = '';
-    placeholder.textContent = 'Select standard…';
-    standardSelect.appendChild(placeholder);
-    hardwareStandards.forEach(st => {
-      const opt = document.createElement('option');
-      opt.value = st;
-      opt.textContent = st;
-      standardSelect.appendChild(opt);
-    });
+
+    let standards = [];
+    if (state.hardwareType === 'Screw') {
+      const subset = hardwareCatalog[state.screwType];
+      standards = Array.isArray(subset) ? subset : [];
+    } else {
+      const subset = hardwareCatalog[state.hardwareType];
+      standards = Array.isArray(subset) ? subset : [];
+    }
+
+    if (standards.length === 0) {
+      placeholder.textContent = 'No standards available';
+      placeholder.disabled = false;
+      placeholder.selected = true;
+      standardSelect.appendChild(placeholder);
+      standardSelect.disabled = true;
+    } else {
+      placeholder.textContent = 'Select standard…';
+      placeholder.disabled = false;
+      placeholder.selected = true;
+      standardSelect.appendChild(placeholder);
+      standards.forEach(entry => {
+        const opt = document.createElement('option');
+        opt.value = entry.code;
+        opt.textContent = `${entry.code} — ${entry.name}`;
+        standardSelect.appendChild(opt);
+      });
+      standardSelect.disabled = false;
+    }
+
     state.standard = '';
     standardSelect.value = '';
+    standardSelect.selectedIndex = 0;
+    updatePreview();
   }
 
   /**
@@ -146,6 +311,7 @@
       populateThreadSizes();
     } else if (group.id === 'screw-type-group') {
       state.screwType = val;
+      populateStandards();
     }
     updatePreview();
   }
@@ -164,7 +330,7 @@
       lengthContainer.style.display = 'none';
     }
     populateThreadSizes();
-    updatePreview();
+    populateStandards();
   }
 
   /**
@@ -499,7 +665,12 @@
     });
     // Standard select
     standardSelect.addEventListener('change', () => {
-      state.standard = standardSelect.value;
+      const selectedOption = standardSelect.selectedOptions[0];
+      if (selectedOption && selectedOption.value) {
+        state.standard = selectedOption.textContent;
+      } else {
+        state.standard = '';
+      }
       updatePreview();
     });
     // Toggles
@@ -554,8 +725,6 @@
    * performing the first preview render.
    */
   function init() {
-    populateThreadSizes();
-    populateStandards();
     onHardwareTypeChange();
     initEventHandlers();
     updateDownloadState();
