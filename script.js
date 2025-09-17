@@ -176,10 +176,7 @@
   const pxPerMm = 6;
 
   // Grab references to all relevant DOM nodes once at startup.
-  const hardwareTypeGroup = document.getElementById('hardware-type-group');
-  const systemTypeGroup = document.getElementById('system-type-group');
   const screwTypeContainer = document.getElementById('screw-type-container');
-  const screwTypeGroup = document.getElementById('screw-type-group');
   const threadSizeSelect = document.getElementById('thread-size-select');
   const lengthContainer = document.getElementById('length-container');
   const lengthInput = document.getElementById('length-input');
@@ -201,7 +198,9 @@
   const downloadButton = document.getElementById('download-button');
   const printButton = document.getElementById('print-button');
 
-  // Height radio buttons: listen at parent level
+  const hardwareTypeRadios = document.querySelectorAll('input[name="hardware-type"]');
+  const systemTypeRadios = document.querySelectorAll('input[name="system-type"]');
+  const screwTypeRadios = document.querySelectorAll('input[name="screw-type"]');
   const heightRadios = document.querySelectorAll('input[name="label-height"]');
 
   // Keep track of current selections.  This state object drives the preview
@@ -289,31 +288,6 @@
     state.standard = '';
     standardSelect.value = '';
     standardSelect.selectedIndex = 0;
-    updatePreview();
-  }
-
-  /**
-   * Update the selected state when a segmented button is clicked.
-   * At most one button within a group can be selected at any time.
-   */
-  function handleSegmentClick(event) {
-    const btn = event.target.closest('.segment');
-    if (!btn) return;
-    const group = btn.parentNode;
-    // Remove selection from siblings
-    Array.from(group.children).forEach(el => el.classList.remove('selected'));
-    btn.classList.add('selected');
-    const val = btn.getAttribute('data-value');
-    if (group.id === 'hardware-type-group') {
-      state.hardwareType = val;
-      onHardwareTypeChange();
-    } else if (group.id === 'system-type-group') {
-      state.systemType = val;
-      populateThreadSizes();
-    } else if (group.id === 'screw-type-group') {
-      state.screwType = val;
-      populateStandards();
-    }
     updatePreview();
   }
 
@@ -642,10 +616,32 @@
    * clear how user interactions flow through the system.
    */
   function initEventHandlers() {
-    // Handle segmented buttons
-    hardwareTypeGroup.addEventListener('click', handleSegmentClick);
-    systemTypeGroup.addEventListener('click', handleSegmentClick);
-    screwTypeGroup.addEventListener('click', handleSegmentClick);
+    hardwareTypeRadios.forEach(radio => {
+      radio.addEventListener('change', () => {
+        if (radio.checked) {
+          state.hardwareType = radio.value;
+          onHardwareTypeChange();
+        }
+      });
+    });
+
+    systemTypeRadios.forEach(radio => {
+      radio.addEventListener('change', () => {
+        if (radio.checked) {
+          state.systemType = radio.value;
+          populateThreadSizes();
+        }
+      });
+    });
+
+    screwTypeRadios.forEach(radio => {
+      radio.addEventListener('change', () => {
+        if (radio.checked) {
+          state.screwType = radio.value;
+          populateStandards();
+        }
+      });
+    });
     // Thread size selection
     threadSizeSelect.addEventListener('change', () => {
       state.threadSize = threadSizeSelect.value;
@@ -699,17 +695,6 @@
       r.addEventListener('change', () => {
         if (r.checked) {
           state.heightMm = parseInt(r.value, 10);
-          // Update visual selection on height buttons
-          heightRadios.forEach(btn => {
-            const label = btn.closest('label');
-            if (label) {
-              if (btn.checked) {
-                label.classList.add('selected');
-              } else {
-                label.classList.remove('selected');
-              }
-            }
-          });
           updatePreview();
         }
       });
@@ -730,18 +715,8 @@
     onHardwareTypeChange();
     initEventHandlers();
     updateDownloadState();
+    widthValueSpan.textContent = state.widthMm;
     updatePreview();
-    // Set initial selected class on height buttons
-    heightRadios.forEach(r => {
-      const label = r.closest('label');
-      if (label) {
-        if (r.checked) {
-          label.classList.add('selected');
-        } else {
-          label.classList.remove('selected');
-        }
-      }
-    });
   }
 
   // Wait until DOM content is loaded before initialising the app

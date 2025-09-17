@@ -5,158 +5,266 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gridfinity Label Generator</title>
   <!--
-    Standalone tool for generating and printing Gridfinity labels.  All
-    styling is defined in a standalone CSS file.  Two small third‑party
-    libraries are loaded via CDN: html2canvas to capture the label preview
-    as an image and qrcode to generate optional QR codes.
+    Standalone tool for generating and printing Gridfinity labels.  Styling
+    now layers a lightweight Bootstrap 5 theme for modern form controls and
+    layout utilities.  Two small third-party libraries are loaded via CDN:
+    html2canvas to capture the label preview as an image and qrcode to
+    generate optional QR codes.
   -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+    crossorigin="anonymous"
+  />
   <link rel="stylesheet" href="style.css" />
   <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
   <script defer src="script.js"></script>
 </head>
-<body>
-  <main>
-    <header class="title-section">
-      <h1>Gridfinity Label Generator</h1>
+<body class="bg-body-tertiary">
+  <main class="container py-4">
+    <header class="title-section text-center mb-4">
+      <h1 class="display-5 fw-semibold">Gridfinity Label Generator</h1>
+      <p class="text-muted mb-0">Design and print perfectly sized storage labels.</p>
     </header>
-    <!-- Two column layout: form (left) and settings (right). On small screens
-         the sections stack vertically. -->
-    <div class="config-panel">
-      <!-- Form controls for selecting hardware type, measurement system,
-           and physical parameters. -->
-      <section class="form-section">
-        <!-- Hardware type selector (Screw/Nut/Washer) -->
-        <div class="segmented-group" id="hardware-type-group">
-          <button class="segment selected" data-value="Screw">Screw</button>
-          <button class="segment" data-value="Nut">Nut</button>
-          <button class="segment" data-value="Washer">Washer</button>
-        </div>
-        <!-- Measurement system (metric/imperial) -->
-        <div class="segmented-group" id="system-type-group">
-          <button class="segment selected" data-value="Metric">Metric</button>
-          <button class="segment" data-value="Imperial">Imperial</button>
-        </div>
-        <!-- Screw specific: choose bolt or screw (hidden for other hardware types) -->
-        <div class="field-row" id="screw-type-container">
-          <label>Screw Type</label>
-          <div class="segmented-group" id="screw-type-group">
-            <button class="segment selected" data-value="Bolt">Bolt</button>
-            <button class="segment" data-value="Screw">Screw</button>
+    <div class="row g-4">
+      <section class="form-section col-lg-7">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <h2 class="h5 mb-3">Hardware Details</h2>
+            <div class="vstack gap-3">
+              <div>
+                <label class="form-label fw-semibold">Hardware Type</label>
+                <div class="row g-2" id="hardware-type-group">
+                  <div class="col-12 col-sm-4">
+                    <input
+                      type="radio"
+                      class="btn-check"
+                      name="hardware-type"
+                      id="hardware-type-screw"
+                      value="Screw"
+                      autocomplete="off"
+                      checked
+                    />
+                    <label class="btn btn-outline-primary w-100" for="hardware-type-screw">Screw</label>
+                  </div>
+                  <div class="col-12 col-sm-4">
+                    <input
+                      type="radio"
+                      class="btn-check"
+                      name="hardware-type"
+                      id="hardware-type-nut"
+                      value="Nut"
+                      autocomplete="off"
+                    />
+                    <label class="btn btn-outline-primary w-100" for="hardware-type-nut">Nut</label>
+                  </div>
+                  <div class="col-12 col-sm-4">
+                    <input
+                      type="radio"
+                      class="btn-check"
+                      name="hardware-type"
+                      id="hardware-type-washer"
+                      value="Washer"
+                      autocomplete="off"
+                    />
+                    <label class="btn btn-outline-primary w-100" for="hardware-type-washer">Washer</label>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label class="form-label fw-semibold">Measurement System</label>
+                <div class="row g-2" id="system-type-group">
+                  <div class="col-12 col-sm-6">
+                    <input
+                      type="radio"
+                      class="btn-check"
+                      name="system-type"
+                      id="system-type-metric"
+                      value="Metric"
+                      autocomplete="off"
+                      checked
+                    />
+                    <label class="btn btn-outline-secondary w-100" for="system-type-metric">Metric</label>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <input
+                      type="radio"
+                      class="btn-check"
+                      name="system-type"
+                      id="system-type-imperial"
+                      value="Imperial"
+                      autocomplete="off"
+                    />
+                    <label class="btn btn-outline-secondary w-100" for="system-type-imperial">Imperial</label>
+                  </div>
+                </div>
+              </div>
+              <div id="screw-type-container">
+                <label class="form-label fw-semibold">Screw Type</label>
+                <div class="row g-2" id="screw-type-group">
+                  <div class="col-12 col-sm-6">
+                    <input
+                      type="radio"
+                      class="btn-check"
+                      name="screw-type"
+                      id="screw-type-bolt"
+                      value="Bolt"
+                      autocomplete="off"
+                      checked
+                    />
+                    <label class="btn btn-outline-secondary w-100" for="screw-type-bolt">Bolt</label>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <input
+                      type="radio"
+                      class="btn-check"
+                      name="screw-type"
+                      id="screw-type-screw"
+                      value="Screw"
+                      autocomplete="off"
+                    />
+                    <label class="btn btn-outline-secondary w-100" for="screw-type-screw">Screw</label>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label for="thread-size-select" class="form-label fw-semibold">Thread Size</label>
+                <select id="thread-size-select" class="form-select"></select>
+              </div>
+              <div id="length-container">
+                <label for="length-input" class="form-label fw-semibold">Length</label>
+                <input
+                  type="number"
+                  id="length-input"
+                  class="form-control"
+                  placeholder="e.g., 10"
+                  min="1"
+                />
+              </div>
+              <div>
+                <label for="notes-input" class="form-label fw-semibold">Optional Notes</label>
+                <input
+                  type="text"
+                  id="notes-input"
+                  class="form-control"
+                  placeholder="Notes (optional)"
+                />
+              </div>
+              <div>
+                <label for="standard-select" class="form-label fw-semibold">Hardware Standard</label>
+                <select id="standard-select" class="form-select"></select>
+              </div>
+            </div>
           </div>
         </div>
-        <!-- Thread size selection -->
-        <div class="field-row">
-          <label for="thread-size-select">Thread size</label>
-          <select id="thread-size-select"></select>
-        </div>
-        <!-- Length field: visible for screws, hidden for nuts and washers -->
-        <div class="field-row" id="length-container">
-          <label for="length-input">Length</label>
-          <input type="number" id="length-input" placeholder="e.g., 10" min="1" />
-        </div>
-        <!-- Optional notes -->
-        <div class="field-row">
-          <label for="notes-input">Optional notes</label>
-          <input type="text" id="notes-input" placeholder="Notes (optional)" />
-        </div>
-        <!-- Hardware standard selection -->
-        <div class="field-row">
-          <label for="standard-select">Hardware standard</label>
-          <select id="standard-select"></select>
-        </div>
       </section>
-      <!-- Settings panel for toggles and label size -->
-      <section class="settings-section">
-        <h2>Label Settings</h2>
-        <!-- Toggle rows with icons and custom switches -->
-        <div class="setting-row">
-          <span class="setting-label">
-            <!-- icon for standard reference -->
-            <svg class="setting-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
-              <path d="M8 8h2"></path>
-              <path d="M14 8h2"></path>
-              <path d="M8 12h8"></path>
-              <path d="M8 16h5"></path>
-            </svg>
-            Standard Reference
-          </span>
-          <label class="switch">
-            <input type="checkbox" id="standard-toggle" checked />
-            <span class="slider"></span>
-          </label>
-        </div>
-        <div class="setting-row">
-          <span class="setting-label">
-            <!-- icon for image -->
-            <svg class="setting-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
-              <circle cx="9" cy="9" r="2"></circle>
-              <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
-            </svg>
-            Image
-          </span>
-          <label class="switch">
-            <input type="checkbox" id="image-toggle" checked />
-            <span class="slider"></span>
-          </label>
-        </div>
-        <div class="setting-row">
-          <span class="setting-label">
-            <!-- icon for QR code -->
-            <svg class="setting-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6v6H4z"></path><path d="M14 4h6v2"></path><path d="M14 8h2v2h-2z"></path><path d="M18 8h2v2h-2z"></path><path d="M14 14h6v6h-6z"></path><path d="M4 14h6v6H4z"></path></svg>
-            QR Code
-          </span>
-          <label class="switch">
-            <input type="checkbox" id="qrcode-toggle" />
-            <span class="slider"></span>
-          </label>
-        </div>
-        <!-- Label width slider with min/max labels -->
-        <div class="range-row">
-          <label class="range-label">Label Width <span id="width-value">55</span> mm</label>
-          <input type="range" id="width-range" min="37" max="100" value="55" />
-          <div class="range-minmax"><span>37&nbsp;mm</span><span>100&nbsp;mm</span></div>
-        </div>
-        <!-- Label height buttons -->
-        <div class="height-row">
-          <span class="range-label">Label Height</span>
-          <div class="height-options">
-            <label class="height-btn"><input type="radio" name="label-height" value="9" /><span>9&nbsp;mm</span></label>
-            <label class="height-btn"><input type="radio" name="label-height" value="12" checked /><span>12&nbsp;mm</span></label>
-            <label class="height-btn"><input type="radio" name="label-height" value="18" /><span>18&nbsp;mm</span></label>
-            <label class="height-btn"><input type="radio" name="label-height" value="24" /><span>24&nbsp;mm</span></label>
+      <section class="settings-section col-lg-5">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <h2 class="h5 mb-3">Label Settings</h2>
+            <div class="vstack gap-3">
+              <div class="d-flex align-items-center justify-content-between p-3 rounded-4 border bg-body-secondary">
+                <span class="d-flex align-items-center gap-2 fw-semibold text-body">
+                  <svg class="text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+                    <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+                    <path d="M8 8h2"></path>
+                    <path d="M14 8h2"></path>
+                    <path d="M8 12h8"></path>
+                    <path d="M8 16h5"></path>
+                  </svg>
+                  Standard Reference
+                </span>
+                <div class="form-check form-switch m-0">
+                  <input class="form-check-input" type="checkbox" role="switch" id="standard-toggle" checked />
+                  <label class="form-check-label visually-hidden" for="standard-toggle">Toggle standard reference</label>
+                </div>
+              </div>
+              <div class="d-flex align-items-center justify-content-between p-3 rounded-4 border bg-body-secondary">
+                <span class="d-flex align-items-center gap-2 fw-semibold text-body">
+                  <svg class="text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+                    <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+                    <circle cx="9" cy="9" r="2"></circle>
+                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+                  </svg>
+                  Image
+                </span>
+                <div class="form-check form-switch m-0">
+                  <input class="form-check-input" type="checkbox" role="switch" id="image-toggle" checked />
+                  <label class="form-check-label visually-hidden" for="image-toggle">Toggle hardware image</label>
+                </div>
+              </div>
+              <div class="d-flex align-items-center justify-content-between p-3 rounded-4 border bg-body-secondary">
+                <span class="d-flex align-items-center gap-2 fw-semibold text-body">
+                  <svg class="text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+                    <path d="M4 4h6v6H4z"></path>
+                    <path d="M14 4h6v2"></path>
+                    <path d="M14 8h2v2h-2z"></path>
+                    <path d="M18 8h2v2h-2z"></path>
+                    <path d="M14 14h6v6h-6z"></path>
+                    <path d="M4 14h6v6H4z"></path>
+                  </svg>
+                  QR Code
+                </span>
+                <div class="form-check form-switch m-0">
+                  <input class="form-check-input" type="checkbox" role="switch" id="qrcode-toggle" />
+                  <label class="form-check-label visually-hidden" for="qrcode-toggle">Toggle QR code</label>
+                </div>
+              </div>
+              <div>
+                <label for="width-range" class="form-label fw-semibold">Label Width <span id="width-value">55</span> mm</label>
+                <input type="range" class="form-range" id="width-range" min="37" max="100" value="55" />
+                <div class="d-flex justify-content-between text-muted small"><span>37&nbsp;mm</span><span>100&nbsp;mm</span></div>
+              </div>
+              <div>
+                <span class="form-label d-block fw-semibold">Label Height</span>
+                <div class="row row-cols-2 g-2 height-options">
+                  <div class="col">
+                    <input type="radio" class="btn-check" name="label-height" id="height-9" value="9" autocomplete="off" />
+                    <label class="btn btn-outline-secondary w-100" for="height-9">9&nbsp;mm</label>
+                  </div>
+                  <div class="col">
+                    <input type="radio" class="btn-check" name="label-height" id="height-12" value="12" autocomplete="off" checked />
+                    <label class="btn btn-outline-secondary w-100" for="height-12">12&nbsp;mm</label>
+                  </div>
+                  <div class="col">
+                    <input type="radio" class="btn-check" name="label-height" id="height-18" value="18" autocomplete="off" />
+                    <label class="btn btn-outline-secondary w-100" for="height-18">18&nbsp;mm</label>
+                  </div>
+                  <div class="col">
+                    <input type="radio" class="btn-check" name="label-height" id="height-24" value="24" autocomplete="off" />
+                    <label class="btn btn-outline-secondary w-100" for="height-24">24&nbsp;mm</label>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
     </div>
-    <!-- Preview panel below controls -->
-    <section class="preview-section">
-      <h2>Label Preview</h2>
-      <div class="size-info">
-        <div id="label-size-display">55&nbsp;mm ×&nbsp;12&nbsp;mm (label size)</div>
-        <div id="print-area-display">51&nbsp;mm ×&nbsp;10&nbsp;mm (printable area)</div>
-      </div>
-      <div id="preview-container" class="label-preview">
-        <!-- The inner yellow label.  Positioned absolutely within the preview
-             container to leave a consistent margin on each side.  This
-             element holds the hardware illustration, the text lines and
-             an optional QR code.  Sizing and positioning are computed
-             dynamically in script.js. -->
-        <div id="label-inner" class="label-inner">
-          <div id="hardware-image" class="hardware-icon"></div>
-          <div id="preview-text" class="text-block">
-            <div id="line1" class="text-line"></div>
-            <div id="line2" class="text-line small"></div>
+    <section class="preview-section card shadow-sm mt-4">
+      <div class="card-body">
+        <h2 class="h5 mb-3">Label Preview</h2>
+        <div class="size-info text-muted small mb-3">
+          <div id="label-size-display">55&nbsp;mm ×&nbsp;12&nbsp;mm (label size)</div>
+          <div id="print-area-display">51&nbsp;mm ×&nbsp;10&nbsp;mm (printable area)</div>
+        </div>
+        <div id="preview-container" class="label-preview">
+          <div id="label-inner" class="label-inner">
+            <div id="hardware-image" class="hardware-icon"></div>
+            <div id="preview-text" class="text-block">
+              <div id="line1" class="text-line"></div>
+              <div id="line2" class="text-line small"></div>
+            </div>
+            <canvas id="qr-canvas" class="qr-code" width="80" height="80"></canvas>
           </div>
-          <canvas id="qr-canvas" class="qr-code" width="80" height="80"></canvas>
         </div>
       </div>
     </section>
-    <div class="actions">
-      <button id="download-button" disabled>Download</button>
-      <button id="print-button" type="button" disabled>Print</button>
+    <div class="actions d-flex flex-wrap justify-content-center gap-3 mt-4">
+      <button id="download-button" class="btn btn-primary btn-lg px-4" disabled>Download</button>
+      <button id="print-button" class="btn btn-outline-primary btn-lg px-4" type="button" disabled>Print</button>
     </div>
   </main>
 </body>
