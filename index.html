@@ -3,14 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gridfinity Label Generator Clone</title>
+  <title>Gridfinity Label Generator</title>
   <!--
-    This page is a re‑implementation of the public Gridfinity Label Generator.
-    It mimics the look and feel of the original application and implements
-    nearly identical functionality without sharing any of the original source
-    code.  All styling is defined in a standalone CSS file.  Two small
-    third‑party libraries are loaded via CDN: html2canvas to capture the
-    label preview as an image and qrcode to generate optional QR codes.
+    Standalone tool for generating and printing Gridfinity labels.  All
+    styling is defined in a standalone CSS file.  Two small third‑party
+    libraries are loaded via CDN: html2canvas to capture the label preview
+    as an image and qrcode to generate optional QR codes.
   -->
   <link rel="stylesheet" href="style.css" />
   <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -75,7 +73,7 @@
         <!-- Toggle rows with icons and custom switches -->
         <div class="setting-row">
           <span class="setting-label">
-            <!-- icon for standard reference (taken from the original application) -->
+            <!-- icon for standard reference -->
             <svg class="setting-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
               <path d="M8 8h2"></path>
@@ -92,7 +90,7 @@
         </div>
         <div class="setting-row">
           <span class="setting-label">
-            <!-- icon for image (taken from the original application) -->
+            <!-- icon for image -->
             <svg class="setting-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
               <circle cx="9" cy="9" r="2"></circle>

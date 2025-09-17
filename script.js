@@ -1,5 +1,5 @@
 /*
- * Client side logic for the Gridfinity label generator clone.  This script
+ * Client side logic for this Gridfinity label generator.  This script
  * orchestrates form interactions, populates the drop‑down menus, updates
  * the live preview, generates optional QR codes, and creates printable
  * images on demand.  The code is written without any external framework
@@ -30,7 +30,7 @@
   // downloaded image are independent of this ratio because html2canvas
   // rescaling is used at capture time.
   // Increase the on‑screen pixels per millimetre to better mirror the
-  // proportions of the original application.  A higher value makes
+  // intended proportions of the interface.  A higher value makes
   // the preview larger and the hardware illustrations more legible.
   const pxPerMm = 6;
 
@@ -182,8 +182,8 @@
      * height.  For screws and nuts two views are shown: a side view
      * followed by a top view.  Bolts and screws are distinguished by
      * their head shapes.  Nuts and washers use only geometric
-     * primitives.  Strokes remain black with round endcaps to echo the
-     * original application’s mechanical drawings.
+     * primitives.  Strokes remain black with round endcaps to echo
+     * classic mechanical drawings.
      */
     const color = '#000000';
     // Use a slightly thicker stroke for better visibility at small sizes
