@@ -195,6 +195,8 @@
   const line1Div = document.getElementById('line1');
   const line2Div = document.getElementById('line2');
   const qrCanvas = document.getElementById('qr-canvas');
+  const qrContentWrapper = document.getElementById('qr-content-wrapper');
+  const qrContentInput = document.getElementById('qr-content-input');
   const downloadButton = document.getElementById('download-button');
   const printButton = document.getElementById('print-button');
 
@@ -216,6 +218,7 @@
     showStandard: true,
     showImage: true,
     showQr: false,
+    qrContent: '',
     widthMm: 55,
     heightMm: 12
   };
@@ -498,8 +501,10 @@
       qrCanvas.style.top = '50%';
       qrCanvas.style.transform = 'translateY(-50%)';
       qrCanvas.style.display = 'block';
+      const customQrContent = state.qrContent ? state.qrContent.trim() : '';
+      const fallbackContent = line1 + (line2 ? '\n' + line2 : '');
+      const qrContent = customQrContent || fallbackContent || 'Gridfinity Label';
       // Generate QR code into canvas.  Content includes line1 and line2
-      const qrContent = line1 + (line2 ? '\n' + line2 : '');
       // Clear previous QR
       const ctx = qrCanvas.getContext('2d');
       ctx.clearRect(0, 0, qrCanvas.width, qrCanvas.height);
@@ -515,8 +520,33 @@
       } catch (err) {
         console.error('QR code generation failed', err);
       }
+      const qrPadding = Math.max(6, qrSize + pxPerMm * 2);
+      labelInner.style.paddingRight = qrPadding + 'px';
     } else {
       qrCanvas.style.display = 'none';
+      labelInner.style.removeProperty('padding-right');
+    }
+  }
+
+  /**
+   * Show or hide the QR content input based on the QR toggle state.  When
+   * visible, keep the input enabled and in sync with the stored value.
+   */
+  function updateQrContentVisibility(options = {}) {
+    if (!qrContentWrapper || !qrContentInput) {
+      return;
+    }
+    const { focus = false } = options;
+    if (state.showQr) {
+      qrContentWrapper.classList.remove('d-none');
+      qrContentInput.disabled = false;
+      qrContentInput.value = state.qrContent;
+      if (focus) {
+        qrContentInput.focus();
+      }
+    } else {
+      qrContentWrapper.classList.add('d-none');
+      qrContentInput.disabled = true;
     }
   }
 
@@ -682,8 +712,15 @@
     });
     qrcodeToggle.addEventListener('change', () => {
       state.showQr = qrcodeToggle.checked;
+      updateQrContentVisibility({ focus: state.showQr });
       updatePreview();
     });
+    if (qrContentInput) {
+      qrContentInput.addEventListener('input', () => {
+        state.qrContent = qrContentInput.value.trim();
+        updatePreview();
+      });
+    }
     // Width range
     widthRange.addEventListener('input', () => {
       state.widthMm = parseInt(widthRange.value, 10);
@@ -716,6 +753,7 @@
     initEventHandlers();
     updateDownloadState();
     widthValueSpan.textContent = state.widthMm;
+    updateQrContentVisibility();
     updatePreview();
   }
 
