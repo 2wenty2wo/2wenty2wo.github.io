@@ -156,6 +156,32 @@ main {
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.45);
 }
 
+@media (max-width: 575.98px) {
+  #thread-length-row {
+    --thread-length-gap: 0.75rem;
+    margin-left: 0;
+    margin-right: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--thread-length-gap);
+    row-gap: var(--thread-length-gap);
+  }
+
+  #thread-length-row > .thread-length-field {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  #thread-length-row.single-column {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+#thread-length-row.single-column > .thread-length-field {
+  flex: 0 0 100%;
+  max-width: 100%;
+}
+
 @media (max-width: 768px) {
   main {
     padding-left: 1rem;

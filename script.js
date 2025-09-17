@@ -178,6 +178,7 @@
   // Grab references to all relevant DOM nodes once at startup.
   const screwTypeContainer = document.getElementById('screw-type-container');
   const threadSizeSelect = document.getElementById('thread-size-select');
+  const threadLengthRow = document.getElementById('thread-length-row');
   const lengthContainer = document.getElementById('length-container');
   const lengthInput = document.getElementById('length-input');
   const notesInput = document.getElementById('notes-input');
@@ -300,15 +301,17 @@
    */
   function onHardwareTypeChange() {
     const type = state.hardwareType;
-    if (type === 'Screw') {
-      screwTypeContainer.style.display = '';
-      lengthContainer.style.display = '';
-    } else {
-      screwTypeContainer.style.display = 'none';
-      lengthContainer.style.display = 'none';
+    const showScrewFields = type === 'Screw';
+
+    screwTypeContainer.style.display = showScrewFields ? '' : 'none';
+    lengthContainer.style.display = showScrewFields ? '' : 'none';
+
+    if (threadLengthRow) {
+      threadLengthRow.classList.toggle('single-column', !showScrewFields);
     }
     populateThreadSizes();
     populateStandards();
+    updateDownloadState();
   }
 
   /**
