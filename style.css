@@ -270,25 +270,7 @@ main {
 .height-btn.selected span {
   color: #fff;
 }
-/* Feedback button */
-.feedback-row {
-  margin-top: 12px;
-}
-.feedback-button {
-  width: 100%;
-  padding: 8px 12px;
-  border: none;
-  border-radius: 8px;
-  background: var(--gray-light);
-  color: var(--text);
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.feedback-button:hover {
-  background: var(--gray);
-}
-/* Coffee button */
+/* Action buttons */
 .actions {
   text-align: center;
   margin-top: 20px;
@@ -314,21 +296,25 @@ main {
   background: var(--gray-medium);
   cursor: not-allowed;
 }
-.coffee-button {
+#print-button {
   padding: 12px 24px;
   font-size: 1rem;
-  border: none;
   border-radius: 8px;
-  background: #facc15; /* yellow */
-  color: #3f3f3f;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
+  border: 2px solid var(--primary);
+  background: #fff;
+  color: var(--primary);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
-.coffee-button:hover {
-  filter: brightness(0.95);
+#print-button:hover:not([disabled]) {
+  background: var(--primary);
+  color: #fff;
+}
+#print-button[disabled] {
+  border-color: var(--gray-medium);
+  color: var(--gray-dark);
+  background: var(--gray-light);
+  cursor: not-allowed;
 }
 
 /* Preview section */
