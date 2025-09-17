@@ -129,19 +129,21 @@
                   </div>
                 </div>
               </div>
-              <div>
-                <label for="thread-size-select" class="form-label fw-semibold">Thread Size</label>
-                <select id="thread-size-select" class="form-select"></select>
-              </div>
-              <div id="length-container">
-                <label for="length-input" class="form-label fw-semibold">Length</label>
-                <input
-                  type="number"
-                  id="length-input"
-                  class="form-control"
-                  placeholder="e.g., 10"
-                  min="1"
-                />
+              <div class="row g-3" id="thread-length-row">
+                <div class="col-12 col-sm-6">
+                  <label for="thread-size-select" class="form-label fw-semibold">Thread Size</label>
+                  <select id="thread-size-select" class="form-select"></select>
+                </div>
+                <div class="col-12 col-sm-6" id="length-container">
+                  <label for="length-input" class="form-label fw-semibold">Length</label>
+                  <input
+                    type="number"
+                    id="length-input"
+                    class="form-control"
+                    placeholder="e.g., 10"
+                    min="1"
+                  />
+                </div>
               </div>
               <div>
                 <label for="notes-input" class="form-label fw-semibold">Optional Notes</label>
