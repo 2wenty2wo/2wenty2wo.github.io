@@ -58,6 +58,7 @@
   const line2Div = document.getElementById('line2');
   const qrCanvas = document.getElementById('qr-canvas');
   const downloadButton = document.getElementById('download-button');
+  const printButton = document.getElementById('print-button');
 
   // Height radio buttons: listen at parent level
   const heightRadios = document.querySelectorAll('input[name="label-height"]');
@@ -386,7 +387,11 @@
   function updateDownloadState() {
     const hasSize = !!state.threadSize;
     const hasLength = state.hardwareType === 'Screw' ? !!state.length : true;
-    downloadButton.disabled = !(hasSize && hasLength);
+    const disabled = !(hasSize && hasLength);
+    downloadButton.disabled = disabled;
+    if (printButton) {
+      printButton.disabled = disabled;
+    }
   }
 
   /**
@@ -414,6 +419,33 @@
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+    });
+  }
+
+  /**
+   * Create a printable view of the current label preview.  The preview is
+   * rendered to a PNG at 300 DPI and injected into a lightweight popup
+   * window which immediately triggers the browser's print dialog.
+   */
+  function printLabel() {
+    const desiredDpi = 300;
+    const baseDpi = 96;
+    const scale = desiredDpi / baseDpi;
+    html2canvas(previewContainer, {
+      backgroundColor: null,
+      scale
+    }).then(canvas => {
+      const dataUrl = canvas.toDataURL('image/png');
+      const printWindow = window.open('', '_blank', 'noopener=yes,width=800,height=600');
+      if (!printWindow) {
+        alert('Please allow pop-ups to print the label.');
+        return;
+      }
+      printWindow.opener = null;
+      const html = `<!DOCTYPE html><html><head><title>Print Label</title><style>html,body{margin:0;height:100%;}body{display:flex;align-items:center;justify-content:center;background:#fff;}img{max-width:100%;max-height:100%;}</style></head><body><img src="${dataUrl}" alt="Gridfinity label" onload="window.focus();window.print();window.close();" /></body></html>`;
+      printWindow.document.open();
+      printWindow.document.write(html);
+      printWindow.document.close();
     });
   }
 
@@ -488,15 +520,10 @@
         }
       });
     });
-    // Download button
+    // Download and print buttons
     downloadButton.addEventListener('click', downloadLabel);
-
-    // Feedback button
-    const feedbackButton = document.getElementById('feedback-button');
-    if (feedbackButton) {
-      feedbackButton.addEventListener('click', () => {
-        alert('Thank you for your feedback!');
-      });
+    if (printButton) {
+      printButton.addEventListener('click', printLabel);
     }
   }
 
