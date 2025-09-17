@@ -212,6 +212,30 @@
                   <label class="form-check-label visually-hidden" for="qrcode-toggle">Toggle QR code</label>
                 </div>
               </div>
+              <div id="qr-content-wrapper" class="p-3 rounded-4 border bg-body-secondary d-none">
+                <label for="qr-content-input" class="form-label fw-semibold mb-2 d-flex align-items-center gap-2">
+                  QR Code Content
+                  <span
+                    class="qr-info-icon"
+                    tabindex="0"
+                    role="img"
+                    aria-label="Long URLs will be automatically shortened for better QR code readability. This makes the QR code simpler and easier to scan on small labels."
+                    data-tooltip="Long URLs will be automatically shortened for better QR code readability. This makes the QR code simpler and easier to scan on small labels."
+                  >
+                    i
+                  </span>
+                </label>
+                <input
+                  type="url"
+                  inputmode="url"
+                  id="qr-content-input"
+                  class="form-control"
+                  placeholder="URL or text for QR code"
+                  autocomplete="off"
+                  spellcheck="false"
+                  disabled
+                />
+              </div>
               <div>
                 <label for="width-range" class="form-label fw-semibold">Label Width <span id="width-value">55</span> mm</label>
                 <input type="range" class="form-range" id="width-range" min="37" max="100" value="55" />
