@@ -431,21 +431,42 @@
     const desiredDpi = 300;
     const baseDpi = 96;
     const scale = desiredDpi / baseDpi;
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    if (!printWindow) {
+      alert('Please allow pop-ups to print the label.');
+      return;
+    }
+    printWindow.opener = null;
+    const doc = printWindow.document;
+    doc.title = 'Print Label';
+    const style = doc.createElement('style');
+    style.textContent = 'html,body{margin:0;height:100%;font-family:system-ui,-apple-system,Segoe UI,sans-serif;}body{display:flex;align-items:center;justify-content:center;background:#fff;color:#111;} .status{padding:1rem;text-align:center;}';
+    doc.head.appendChild(style);
+    doc.body.innerHTML = '';
+    const statusDiv = doc.createElement('div');
+    statusDiv.className = 'status';
+    statusDiv.textContent = 'Preparing print preview…';
+    doc.body.appendChild(statusDiv);
     html2canvas(previewContainer, {
       backgroundColor: null,
       scale
     }).then(canvas => {
       const dataUrl = canvas.toDataURL('image/png');
-      const printWindow = window.open('', '_blank', 'noopener=yes,width=800,height=600');
-      if (!printWindow) {
-        alert('Please allow pop-ups to print the label.');
-        return;
-      }
-      printWindow.opener = null;
-      const html = `<!DOCTYPE html><html><head><title>Print Label</title><style>html,body{margin:0;height:100%;}body{display:flex;align-items:center;justify-content:center;background:#fff;}img{max-width:100%;max-height:100%;}</style></head><body><img src="${dataUrl}" alt="Gridfinity label" onload="window.focus();window.print();window.close();" /></body></html>`;
-      printWindow.document.open();
-      printWindow.document.write(html);
-      printWindow.document.close();
+      const img = doc.createElement('img');
+      img.src = dataUrl;
+      img.alt = 'Gridfinity label';
+      img.style.maxWidth = '100%';
+      img.style.maxHeight = '100%';
+      img.onload = () => {
+        printWindow.focus();
+        printWindow.print();
+        printWindow.close();
+      };
+      doc.body.innerHTML = '';
+      doc.body.appendChild(img);
+    }).catch(err => {
+      console.error('Print preview generation failed', err);
+      doc.body.innerHTML = '<div class="status">Unable to prepare the label for printing.</div>';
     });
   }
 
