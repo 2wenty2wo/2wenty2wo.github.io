@@ -283,20 +283,40 @@
     labelInner.style.height = innerHeightPx + 'px';
     labelInner.style.left = marginX + 'px';
     labelInner.style.top = marginY + 'px';
-    // Icon area: determine number of icon rows and size per icon
-    let iconCount = 1;
-    if (state.hardwareType === 'Screw' || state.hardwareType === 'Nut') {
-      iconCount = 2;
-    }
-    const iconGap = 4;
-    const iconHeightPx = state.showImage ? (iconCount > 0 ? (innerHeightPx - (iconCount - 1) * iconGap) / iconCount : 0) : 0;
-    // Insert hardware illustration if enabled
+    // Icon area: size artwork so that each SVG matches the printable height.
+    // For screws and nuts two views are displayed side-by-side; when the
+    // label is too narrow to accommodate their natural width they are scaled
+    // down uniformly to preserve their aspect ratio.
     if (state.showImage) {
-      hardwareImageDiv.style.display = 'flex';
-      hardwareImageDiv.innerHTML = getHardwareIcon(iconHeightPx);
+      const iconCount = (state.hardwareType === 'Screw' || state.hardwareType === 'Nut') ? 2 : 1;
+      const iconGapPx = 8; // Match the CSS gap on .hardware-icon
+      if (iconCount > 0) {
+        let iconHeightPx = innerHeightPx;
+        const maxStripWidth = innerWidthPx;
+        const naturalStripWidth = iconCount * iconHeightPx + (iconCount - 1) * iconGapPx;
+        if (naturalStripWidth > maxStripWidth) {
+          const availablePerIcon = Math.floor((maxStripWidth - (iconCount - 1) * iconGapPx) / iconCount);
+          iconHeightPx = Math.max(0, Math.min(iconHeightPx, availablePerIcon));
+        }
+        const finalStripWidth = Math.max(0, iconCount * iconHeightPx + (iconCount - 1) * iconGapPx);
+        hardwareImageDiv.style.display = 'flex';
+        hardwareImageDiv.style.maxWidth = finalStripWidth + 'px';
+        hardwareImageDiv.style.flexBasis = finalStripWidth + 'px';
+        hardwareImageDiv.style.flexShrink = '0';
+        hardwareImageDiv.innerHTML = getHardwareIcon(iconHeightPx);
+      } else {
+        hardwareImageDiv.style.display = 'none';
+        hardwareImageDiv.innerHTML = '';
+        hardwareImageDiv.style.removeProperty('max-width');
+        hardwareImageDiv.style.removeProperty('flex-basis');
+        hardwareImageDiv.style.removeProperty('flex-shrink');
+      }
     } else {
       hardwareImageDiv.style.display = 'none';
       hardwareImageDiv.innerHTML = '';
+      hardwareImageDiv.style.removeProperty('max-width');
+      hardwareImageDiv.style.removeProperty('flex-basis');
+      hardwareImageDiv.style.removeProperty('flex-shrink');
     }
     // Compose line1: size × length (when applicable)
     let line1 = '';
