@@ -490,7 +490,18 @@
     line2Div.style.fontSize = secondaryFontSize + 'px';
     // Adjust layout so that text does not overlap with the QR code
     // QR code sizing
-    if (state.showQr) {
+    const customQrContent = state.qrContent ? state.qrContent.trim() : '';
+    const fallbackPieces = [];
+    if (line1) {
+      fallbackPieces.push(line1);
+    }
+    if (line2) {
+      fallbackPieces.push(line2);
+    }
+    const fallbackContent = fallbackPieces.join('\n');
+    const qrContent = customQrContent || fallbackContent;
+
+    if (state.showQr && qrContent) {
       // Determine a square size for the QR code (take 60% of inner height)
       const qrSize = Math.floor(innerHeightPx * 0.6);
       qrCanvas.width = qrSize;
@@ -501,15 +512,14 @@
       qrCanvas.style.top = '50%';
       qrCanvas.style.transform = 'translateY(-50%)';
       qrCanvas.style.display = 'block';
-      const customQrContent = state.qrContent ? state.qrContent.trim() : '';
-      const fallbackContent = line1 + (line2 ? '\n' + line2 : '');
-      const qrContent = customQrContent || fallbackContent || 'Gridfinity Label';
       // Generate QR code into canvas.  Content includes line1 and line2
       // Clear previous QR
       const ctx = qrCanvas.getContext('2d');
-      ctx.clearRect(0, 0, qrCanvas.width, qrCanvas.height);
+      if (ctx) {
+        ctx.clearRect(0, 0, qrCanvas.width, qrCanvas.height);
+      }
       try {
-        QRCode.toCanvas(qrCanvas, qrContent || 'Gridfinity Label', {
+        QRCode.toCanvas(qrCanvas, qrContent, {
           margin: 1,
           width: qrSize,
           color: {
@@ -523,6 +533,10 @@
       const qrPadding = Math.max(6, qrSize + pxPerMm * 2);
       labelInner.style.paddingRight = qrPadding + 'px';
     } else {
+      const ctx = qrCanvas.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, qrCanvas.width, qrCanvas.height);
+      }
       qrCanvas.style.display = 'none';
       labelInner.style.removeProperty('padding-right');
     }
