@@ -280,6 +280,7 @@
         const opt = document.createElement('option');
         opt.value = entry.code;
         opt.textContent = `${entry.code} — ${entry.name}`;
+        opt.dataset.name = entry.name;
         standardSelect.appendChild(opt);
       });
       standardSelect.disabled = false;
@@ -667,7 +668,8 @@
     standardSelect.addEventListener('change', () => {
       const selectedOption = standardSelect.selectedOptions[0];
       if (selectedOption && selectedOption.value) {
-        state.standard = selectedOption.textContent;
+        const displayName = selectedOption.dataset.name || selectedOption.textContent;
+        state.standard = displayName;
       } else {
         state.standard = '';
       }
