@@ -1,7 +1,7 @@
 /*
- * Basic styling for the Gridfinity label generator clone.
- * Colors and component shapes are inspired by the original application
- * while remaining custom defined.  The layout adapts to narrow
+ * Basic styling for a custom Gridfinity label generator interface.
+ * Colors and component shapes are inspired by modern manufacturing
+ * tools while remaining custom defined.  The layout adapts to narrow
  * viewports by stacking the sections vertically.  Utility classes
  * defined here avoid external dependencies like Tailwind.
  */
@@ -342,11 +342,11 @@ main {
 /*
  * Preview container.  This element represents the full label including
  * the 2mm side margins and the 1mm top/bottom margins.  A subtle
- * checkerboard pattern fills the background to emulate the original
- * application's blueprint backdrop.  The pattern is embedded as a
- * base64 encoded SVG copied from the live site.  The container has a
- * thin border and rounded corners, and is positioned relative so that
- * the inner yellow label can be absolutely positioned within it.
+ * checkerboard pattern fills the background to evoke a technical
+ * blueprint backdrop.  The pattern is embedded as a base64 encoded SVG.
+ * The container has a thin border and rounded corners, and is positioned
+ * relative so that the inner yellow label can be absolutely positioned
+ * within it.
  */
 .label-preview {
   position: relative;
@@ -399,9 +399,9 @@ main {
 /*
  * The inner yellow label.  This element sits within the preview
  * container and is sized and positioned by script.js.  It uses a
- * vibrant yellow background with a solid black border to match the
- * original app's label aesthetic.  Flexbox is used to lay out the
- * hardware icons, text and optional QR code horizontally.
+ * vibrant yellow background with a solid black border to deliver the
+ * intended label aesthetic.  Flexbox is used to lay out the hardware
+ * icons, text and optional QR code horizontally.
  */
 .label-inner {
   background-color: #ffe500;
