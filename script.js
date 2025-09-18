@@ -22,6 +22,15 @@
     '0.25', '0.5', '0.75', '1', '1.5', '2', '2.5', '3', '4', '5', '6', '7.5', '8', '10', '12',
     '15', '20', '25', '30', '40'
   ];
+  const bearingOptions = [
+    { code: '608ZZ', description: '8 × 22 × 7 mm, metal shields' },
+    { code: '608-2RS', description: '8 × 22 × 7 mm, rubber seals' },
+    { code: '625ZZ', description: '5 × 16 × 5 mm, miniature shielded' },
+    { code: '6200ZZ', description: '10 × 30 × 9 mm, deep groove' },
+    { code: '6900ZZ', description: '10 × 22 × 6 mm, thin section' },
+    { code: '6701ZZ', description: '12 × 18 × 4 mm, thin section' },
+    { code: 'MR85-2RS', description: '5 × 8 × 2.5 mm, rubber seals' }
+  ];
   // Hardware standards grouped by hardware category (Bolt, Screw, Nut,
   // Washer, Heat Insert).  Each entry contains both the standard code and a short
   // descriptive name so the dropdown can present meaningful context to
@@ -169,6 +178,7 @@
       { code: 'DIN 988', name: 'Shim Ring' }
     ],
     'Heat Insert': [],
+    Bearing: [],
     Fuse: [
       { code: 'IEC 60127-2', name: 'Time-Lag Cartridge Fuse' },
       { code: 'IEC 60127-3', name: 'Fast-Acting Cartridge Fuse' },
@@ -274,6 +284,8 @@
   const connectorCategorySelect = document.getElementById('connector-category-select');
   const connectorCategoryHelp = document.getElementById('connector-category-help');
   const connectorNotesHint = document.getElementById('connector-notes-hint');
+  const bearingOptionsContainer = document.getElementById('bearing-options-container');
+  const bearingTypeSelect = document.getElementById('bearing-type-select');
   const customFieldsContainer = document.getElementById('custom-fields');
   const customImageInput = document.getElementById('custom-image-input');
   const customImageClearButton = document.getElementById('custom-image-clear');
@@ -334,6 +346,8 @@
     widthMm: 55,
     heightMm: 12,
     connectorCategory: '',
+    bearingType: '',
+    bearingDetails: '',
     customLine1: '',
     customLine2: '',
     customImageData: '',
@@ -368,6 +382,27 @@
       connectorCategorySelect.appendChild(opt);
     });
     connectorCategorySelect.value = state.connectorCategory || '';
+  }
+
+  function populateBearingOptions() {
+    if (!bearingTypeSelect) {
+      return;
+    }
+    bearingTypeSelect.innerHTML = '';
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Select bearing…';
+    placeholder.disabled = true;
+    placeholder.selected = !state.bearingType;
+    bearingTypeSelect.appendChild(placeholder);
+    bearingOptions.forEach(option => {
+      const opt = document.createElement('option');
+      opt.value = option.code;
+      opt.textContent = `${option.code} — ${option.description}`;
+      opt.dataset.description = option.description;
+      bearingTypeSelect.appendChild(opt);
+    });
+    bearingTypeSelect.value = state.bearingType || '';
   }
 
   function ensureConnectorCategory() {
@@ -418,7 +453,12 @@
    * hardware or system selection changes.
    */
   function populateThreadSizes() {
-    if (state.hardwareType === 'Fuse' || state.hardwareType === 'Connector' || state.hardwareType === 'Custom') {
+    if (
+      state.hardwareType === 'Fuse' ||
+      state.hardwareType === 'Connector' ||
+      state.hardwareType === 'Custom' ||
+      state.hardwareType === 'Bearing'
+    ) {
       if (threadSizeSelect) {
         threadSizeSelect.innerHTML = '';
         const placeholder = document.createElement('option');
@@ -762,12 +802,25 @@
     const showFuseFields = type === 'Fuse';
     const showConnectorFields = type === 'Connector';
     const showCustomFields = type === 'Custom';
+    const showBearingFields = type === 'Bearing';
 
     if (screwTypeContainer) {
       screwTypeContainer.style.display = showScrewFields ? '' : 'none';
     }
     if (lengthContainer) {
       lengthContainer.style.display = showScrewFields ? '' : 'none';
+    }
+
+    if (bearingOptionsContainer) {
+      const hidden = !showBearingFields;
+      bearingOptionsContainer.classList.toggle('d-none', hidden);
+      bearingOptionsContainer.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+    }
+    if (bearingTypeSelect) {
+      bearingTypeSelect.disabled = !showBearingFields;
+      if (showBearingFields) {
+        bearingTypeSelect.value = state.bearingType || '';
+      }
     }
 
     if (customFieldsContainer) {
@@ -779,24 +832,25 @@
       connectorCategoryContainer.setAttribute('aria-hidden', hidden ? 'true' : 'false');
     }
     if (measurementSystemContainer) {
-      const hideMeasurementSystem = showFuseFields || showConnectorFields || showCustomFields;
+      const hideMeasurementSystem = showFuseFields || showConnectorFields || showCustomFields || showBearingFields;
       measurementSystemContainer.style.display = hideMeasurementSystem ? 'none' : '';
       measurementSystemContainer.setAttribute('aria-hidden', hideMeasurementSystem ? 'true' : 'false');
     }
     systemTypeRadios.forEach(radio => {
-      radio.disabled = showFuseFields || showConnectorFields || showCustomFields;
+      radio.disabled = showFuseFields || showConnectorFields || showCustomFields || showBearingFields;
     });
 
     if (threadLengthRow) {
-      const hideThreadLength = showFuseFields || showConnectorFields || showCustomFields;
+      const hideThreadLength = showFuseFields || showConnectorFields || showCustomFields || showBearingFields;
       threadLengthRow.classList.toggle(
         'single-column',
-        !showScrewFields && !showFuseFields && !showConnectorFields && !showCustomFields
+        !showScrewFields && !showFuseFields && !showConnectorFields && !showCustomFields && !showBearingFields
       );
       threadLengthRow.style.display = hideThreadLength ? 'none' : '';
     }
     if (threadSizeContainer) {
-      threadSizeContainer.style.display = showFuseFields || showConnectorFields || showCustomFields ? 'none' : '';
+      threadSizeContainer.style.display =
+        showFuseFields || showConnectorFields || showCustomFields || showBearingFields ? 'none' : '';
     }
     if (fuseTypeContainer) {
       fuseTypeContainer.classList.toggle('d-none', !showFuseFields);
@@ -820,10 +874,14 @@
       notesLabel.textContent = showConnectorFields ? 'Connector Details' : defaultNotesLabel;
     }
     if (standardField) {
-      standardField.classList.toggle('d-none', showCustomFields);
+      standardField.classList.toggle('d-none', showCustomFields || showBearingFields);
     }
     if (standardLabel) {
-      standardLabel.textContent = showConnectorFields ? 'Connector Series' : defaultStandardLabel;
+      if (showConnectorFields) {
+        standardLabel.textContent = 'Connector Series';
+      } else {
+        standardLabel.textContent = defaultStandardLabel;
+      }
     }
     if (notesInput) {
       if (showConnectorFields) {
@@ -955,6 +1013,29 @@
         <circle cx="50" cy="50" r="42" />
         <polygon points="50,18 72,30 82,50 72,70 50,82 28,70 18,50 28,30" />
         <circle cx="50" cy="50" r="18" />
+      `));
+    } else if (type === 'Bearing') {
+      const ballStroke = Math.max(1, strokeWidth - 1);
+      pieces.push(buildSvg(`
+        <!-- Bearing front view -->
+        <circle cx="50" cy="50" r="45" />
+        <circle cx="50" cy="50" r="30" />
+        <circle cx="50" cy="50" r="15" />
+        <g stroke-width="${ballStroke}">
+          <circle cx="50" cy="20" r="6" />
+          <circle cx="74" cy="32" r="6" />
+          <circle cx="80" cy="58" r="6" />
+          <circle cx="64" cy="78" r="6" />
+          <circle cx="36" cy="78" r="6" />
+          <circle cx="20" cy="58" r="6" />
+          <circle cx="26" cy="32" r="6" />
+        </g>
+      `));
+      pieces.push(buildSvg(`
+        <!-- Bearing side profile -->
+        <rect x="22" y="28" width="56" height="44" rx="18" />
+        <rect x="32" y="34" width="36" height="32" rx="14" />
+        <line x1="22" y1="50" x2="78" y2="50" />
       `));
     } else if (type === 'Connector') {
       // Connector: pair of insulated crimp terminals, showing sleeve and mating end
@@ -1122,7 +1203,7 @@
           hardwareImageDiv.appendChild(placeholder);
         }
       } else {
-        const multiViewTypes = ['Screw', 'Nut', 'Heat Insert'];
+        const multiViewTypes = ['Screw', 'Nut', 'Heat Insert', 'Bearing'];
         const iconCount = multiViewTypes.includes(state.hardwareType) ? 2 : 1;
         const iconGapPx = 8; // Match the CSS gap on .hardware-icon
         if (iconCount > 0) {
@@ -1197,6 +1278,10 @@
         if (noteText && line1 !== noteText) {
           connectorLine2Parts.push(noteText);
         }
+      } else if (state.hardwareType === 'Bearing') {
+        if (state.bearingType) {
+          line1 = state.bearingType;
+        }
       } else {
         if (state.threadSize) {
           line1 = state.threadSize;
@@ -1231,6 +1316,15 @@
         if (connectorLine2Parts && connectorLine2Parts.length > 0) {
           line2 = connectorLine2Parts.join(' • ');
         }
+      } else if (state.hardwareType === 'Bearing') {
+        const bearingDetails = [];
+        if (state.showStandard && state.bearingDetails) {
+          bearingDetails.push(state.bearingDetails);
+        }
+        if (state.notes) {
+          bearingDetails.push(state.notes);
+        }
+        line2 = bearingDetails.join(' • ');
       } else {
         if (state.showStandard && state.standard) {
           line2 = state.standard;
@@ -1331,6 +1425,8 @@
       ready = !!state.notes && !!state.connectorCategory;
     } else if (state.hardwareType === 'Custom') {
       ready = !!(state.customLine1 && state.customLine1.trim());
+    } else if (state.hardwareType === 'Bearing') {
+      ready = !!state.bearingType;
     } else if (state.hardwareType === 'Screw') {
       ready = !!state.threadSize && !!state.length;
     } else {
@@ -1396,6 +1492,13 @@
         }
         if (state.customLine2) {
           fileParts.push(state.customLine2);
+        }
+      } else if (state.hardwareType === 'Bearing') {
+        if (state.bearingType) {
+          fileParts.push(state.bearingType);
+        }
+        if (state.showStandard && state.bearingDetails) {
+          fileParts.push(state.bearingDetails);
         }
       } else {
         if (state.threadSize) {
@@ -1488,6 +1591,17 @@
         state.connectorCategory = connectorCategorySelect.value;
         updateConnectorCategoryUi();
         populateStandards();
+        updateDownloadState();
+        updatePreview();
+      });
+    }
+
+    if (bearingTypeSelect) {
+      bearingTypeSelect.addEventListener('change', () => {
+        const value = bearingTypeSelect.value;
+        const selectedOption = bearingTypeSelect.selectedOptions[0];
+        state.bearingType = value;
+        state.bearingDetails = selectedOption && selectedOption.dataset.description ? selectedOption.dataset.description : '';
         updateDownloadState();
         updatePreview();
       });
@@ -1670,6 +1784,7 @@
   function init() {
     populateFuseValues();
     populateConnectorCategories();
+    populateBearingOptions();
     updateCustomImageUi();
     onHardwareTypeChange();
     initEventHandlers();
