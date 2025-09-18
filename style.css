@@ -61,8 +61,12 @@ main {
 }
 
 .preview-placeholder .placeholder-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 2.25rem;
   height: 2.25rem;
+  font-size: 1.75rem;
   opacity: 0.65;
 }
 
@@ -160,17 +164,20 @@ main {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.75rem;
+  height: 1.75rem;
   border-radius: 999px;
   background-color: rgba(15, 23, 42, 0.08);
   color: #0f172a;
-  font-weight: 700;
-  font-size: 0.85rem;
+  font-size: 1rem;
   line-height: 1;
   cursor: default;
   flex-shrink: 0;
   user-select: none;
+}
+
+.qr-info-icon i {
+  line-height: 1;
 }
 
 .qr-info-icon::after {
