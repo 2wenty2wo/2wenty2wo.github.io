@@ -201,7 +201,7 @@
   const glassSlowBlowCheckbox = document.getElementById('glass-slow-blow');
   const glassFastBlowCheckbox = document.getElementById('glass-fast-blow');
   const notesInput = document.getElementById('notes-input');
-  const connectorInfo = document.getElementById('connector-info');
+  const measurementSystemContainer = document.getElementById('measurement-system-container');
   const connectorNotesHint = document.getElementById('connector-notes-hint');
   const notesLabel = document.querySelector('label[for="notes-input"]');
   const defaultNotesLabel = notesLabel ? notesLabel.textContent : '';
@@ -527,6 +527,15 @@
       lengthContainer.style.display = showScrewFields ? '' : 'none';
     }
 
+    if (measurementSystemContainer) {
+      const hideMeasurementSystem = showFuseFields || showConnectorFields;
+      measurementSystemContainer.style.display = hideMeasurementSystem ? 'none' : '';
+      measurementSystemContainer.setAttribute('aria-hidden', hideMeasurementSystem ? 'true' : 'false');
+    }
+    systemTypeRadios.forEach(radio => {
+      radio.disabled = showFuseFields || showConnectorFields;
+    });
+
     if (threadLengthRow) {
       const hideThreadLength = showFuseFields || showConnectorFields;
       threadLengthRow.classList.toggle(
@@ -549,9 +558,6 @@
       if (showFuseFields) {
         fuseValueSelect.value = state.fuseValue || '';
       }
-    }
-    if (connectorInfo) {
-      connectorInfo.classList.toggle('d-none', !showConnectorFields);
     }
     if (connectorNotesHint) {
       connectorNotesHint.classList.toggle('d-none', !showConnectorFields);
