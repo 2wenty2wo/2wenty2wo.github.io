@@ -352,6 +352,7 @@
   const labelSizeDisplay = document.getElementById('label-size-display');
   const printAreaDisplay = document.getElementById('print-area-display');
   const previewContainer = document.getElementById('preview-container');
+  const previewPlaceholder = document.getElementById('preview-placeholder');
   const labelInner = document.getElementById('label-inner');
   const hardwareImageDiv = document.getElementById('hardware-image');
   const textBlockDiv = document.getElementById('preview-text');
@@ -1221,6 +1222,37 @@
     labelInner.style.height = innerHeightPx + 'px';
     labelInner.style.left = marginX + 'px';
     labelInner.style.top = marginY + 'px';
+    const readyForPreview = isLabelReady();
+
+    if (!readyForPreview) {
+      if (previewPlaceholder) {
+        previewPlaceholder.style.display = 'flex';
+        previewPlaceholder.setAttribute('aria-hidden', 'false');
+      }
+      labelInner.style.display = 'none';
+      hardwareImageDiv.style.display = 'none';
+      hardwareImageDiv.innerHTML = '';
+      hardwareImageDiv.style.removeProperty('max-width');
+      hardwareImageDiv.style.removeProperty('flex-basis');
+      hardwareImageDiv.style.removeProperty('flex-shrink');
+      hardwareImageDiv.style.removeProperty('min-height');
+      line1Div.textContent = '';
+      line2Div.textContent = '';
+      line2Div.style.display = 'none';
+      const ctx = qrCanvas.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, qrCanvas.width, qrCanvas.height);
+      }
+      qrCanvas.style.display = 'none';
+      labelInner.style.removeProperty('padding-right');
+      return;
+    }
+
+    if (previewPlaceholder) {
+      previewPlaceholder.style.display = 'none';
+      previewPlaceholder.setAttribute('aria-hidden', 'true');
+    }
+    labelInner.style.display = 'flex';
     // Icon area: size artwork so that each SVG matches the printable height.
     // For screws and nuts two views are displayed side-by-side; when the
     // label is too narrow to accommodate their natural width they are scaled
@@ -1488,6 +1520,26 @@
     }
   }
 
+  function isLabelReady() {
+    if (state.hardwareType === 'Fuse') {
+      return Boolean(state.fuseValue);
+    }
+    if (state.hardwareType === 'Connector') {
+      const hasNotes = Boolean(state.notes && state.notes.trim());
+      return hasNotes && Boolean(state.connectorCategory);
+    }
+    if (state.hardwareType === 'Custom') {
+      return Boolean(state.customLine1 && state.customLine1.trim());
+    }
+    if (state.hardwareType === 'Bearing') {
+      return Boolean(state.bearingType);
+    }
+    if (state.hardwareType === 'Screw') {
+      return Boolean(state.threadSize && state.length);
+    }
+    return Boolean(state.threadSize);
+  }
+
   /**
    * Enable or disable the download button based on whether enough
    * information has been provided.  For screws, both size and length
@@ -1495,20 +1547,7 @@
    * thread size is required.  For fuses, the amp rating is required.
    */
   function updateDownloadState() {
-    let ready = false;
-    if (state.hardwareType === 'Fuse') {
-      ready = !!state.fuseValue;
-    } else if (state.hardwareType === 'Connector') {
-      ready = !!state.notes && !!state.connectorCategory;
-    } else if (state.hardwareType === 'Custom') {
-      ready = !!(state.customLine1 && state.customLine1.trim());
-    } else if (state.hardwareType === 'Bearing') {
-      ready = !!state.bearingType;
-    } else if (state.hardwareType === 'Screw') {
-      ready = !!state.threadSize && !!state.length;
-    } else {
-      ready = !!state.threadSize;
-    }
+    const ready = isLabelReady();
     const disabled = !ready;
     downloadButton.disabled = disabled;
     if (printButton) {
