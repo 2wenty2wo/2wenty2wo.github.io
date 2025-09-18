@@ -224,6 +224,11 @@
     heightMm: 12
   };
 
+  const STANDARD_PLACEHOLDER_TEXT = 'Select standard… (type to filter, Esc clears)';
+  const standardFilterState = {
+    query: ''
+  };
+
   /**
    * Populate the thread size <select> element based on the current
    * measurement system (metric or imperial).  Called whenever the
@@ -268,14 +273,19 @@
       standards = Array.isArray(subset) ? subset : [];
     }
 
+    standardFilterState.query = '';
+
     if (standards.length === 0) {
       placeholder.textContent = 'No standards available';
+      placeholder.dataset.defaultText = placeholder.textContent;
       placeholder.disabled = false;
       placeholder.selected = true;
       standardSelect.appendChild(placeholder);
       standardSelect.disabled = true;
+      standardSelect.title = '';
     } else {
-      placeholder.textContent = 'Select standard…';
+      placeholder.textContent = STANDARD_PLACEHOLDER_TEXT;
+      placeholder.dataset.defaultText = placeholder.textContent;
       placeholder.disabled = false;
       placeholder.selected = true;
       standardSelect.appendChild(placeholder);
@@ -287,12 +297,124 @@
         standardSelect.appendChild(opt);
       });
       standardSelect.disabled = false;
+      standardSelect.title = 'Type to filter standards (Esc clears filter)';
+      filterStandardOptions('');
     }
 
     state.standard = '';
     standardSelect.value = '';
     standardSelect.selectedIndex = 0;
     updatePreview();
+  }
+
+  function filterStandardOptions(query) {
+    if (!standardSelect || standardSelect.disabled) {
+      return;
+    }
+    const normalized = (query || '').trim().toLowerCase();
+    let selectionCleared = false;
+    let matchesFound = false;
+    Array.from(standardSelect.options).forEach(option => {
+      if (!option.value) {
+        option.hidden = false;
+        option.style.display = '';
+        return;
+      }
+      const code = option.value.toLowerCase();
+      const name = (option.dataset.name || '').toLowerCase();
+      const matches = !normalized || code.includes(normalized) || name.includes(normalized);
+      option.hidden = !matches;
+      option.style.display = matches ? '' : 'none';
+      if (matches) {
+        matchesFound = true;
+      } else if (option.selected) {
+        selectionCleared = true;
+      }
+    });
+
+    if (selectionCleared) {
+      standardSelect.value = '';
+      if (state.standard) {
+        state.standard = '';
+        updatePreview();
+      }
+    }
+
+    const placeholder = standardSelect.querySelector('option[value=""]');
+    if (placeholder) {
+      const defaultText = placeholder.dataset.defaultText || STANDARD_PLACEHOLDER_TEXT;
+      if (!normalized) {
+        placeholder.textContent = defaultText;
+        placeholder.disabled = false;
+        placeholder.style.display = '';
+        placeholder.hidden = false;
+        if (!standardSelect.value) {
+          placeholder.selected = true;
+        }
+      } else if (!matchesFound) {
+        placeholder.textContent = 'No matches found';
+        placeholder.disabled = true;
+        placeholder.style.display = '';
+        placeholder.hidden = false;
+        placeholder.selected = true;
+      } else {
+        placeholder.textContent = defaultText;
+        placeholder.disabled = false;
+        placeholder.style.display = '';
+        placeholder.hidden = false;
+      }
+    }
+  }
+
+  function clearStandardFilter() {
+    standardFilterState.query = '';
+    if (!standardSelect || standardSelect.disabled) {
+      return;
+    }
+    filterStandardOptions('');
+  }
+
+  function handleStandardSelectKeydown(event) {
+    if (!standardSelect || standardSelect.disabled) {
+      return;
+    }
+
+    if (event.ctrlKey || event.metaKey || event.altKey) {
+      return;
+    }
+
+    const key = event.key;
+
+    if (key === 'Escape') {
+      if (standardFilterState.query) {
+        event.preventDefault();
+        clearStandardFilter();
+      }
+      return;
+    }
+
+    if (key === 'Backspace') {
+      if (standardFilterState.query) {
+        event.preventDefault();
+        standardFilterState.query = standardFilterState.query.slice(0, -1);
+        filterStandardOptions(standardFilterState.query);
+      }
+      return;
+    }
+
+    if (key === 'Delete') {
+      if (standardFilterState.query) {
+        event.preventDefault();
+        clearStandardFilter();
+      }
+      return;
+    }
+
+    if (key.length === 1) {
+      event.preventDefault();
+      standardFilterState.query += key.toLowerCase();
+      filterStandardOptions(standardFilterState.query);
+    }
   }
 
   /**
@@ -718,6 +840,8 @@
       }
       updatePreview();
     });
+    standardSelect.addEventListener('keydown', handleStandardSelectKeydown);
+    standardSelect.addEventListener('blur', clearStandardFilter);
     // Toggles
     standardToggle.addEventListener('change', () => {
       state.showStandard = standardToggle.checked;
