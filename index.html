@@ -37,7 +37,7 @@
               <div>
                 <label class="form-label fw-semibold">Hardware Type</label>
                 <div class="row g-2" id="hardware-type-group">
-                  <div class="col-12 col-sm-4">
+                  <div class="col-12 col-sm-6 col-lg-3">
                     <input
                       type="radio"
                       class="btn-check"
@@ -49,7 +49,7 @@
                     />
                     <label class="btn btn-outline-primary w-100" for="hardware-type-screw">Screw</label>
                   </div>
-                  <div class="col-12 col-sm-4">
+                  <div class="col-12 col-sm-6 col-lg-3">
                     <input
                       type="radio"
                       class="btn-check"
@@ -60,7 +60,7 @@
                     />
                     <label class="btn btn-outline-primary w-100" for="hardware-type-nut">Nut</label>
                   </div>
-                  <div class="col-12 col-sm-4">
+                  <div class="col-12 col-sm-6 col-lg-3">
                     <input
                       type="radio"
                       class="btn-check"
@@ -70,6 +70,17 @@
                       autocomplete="off"
                     />
                     <label class="btn btn-outline-primary w-100" for="hardware-type-washer">Washer</label>
+                  </div>
+                  <div class="col-12 col-sm-6 col-lg-3">
+                    <input
+                      type="radio"
+                      class="btn-check"
+                      name="hardware-type"
+                      id="hardware-type-fuse"
+                      value="Fuse"
+                      autocomplete="off"
+                    />
+                    <label class="btn btn-outline-primary w-100" for="hardware-type-fuse">Fuse</label>
                   </div>
                 </div>
               </div>
@@ -143,6 +154,58 @@
                     placeholder="e.g., 10"
                     min="1"
                   />
+                </div>
+              </div>
+              <div id="fuse-type-container" class="d-none">
+                <label class="form-label fw-semibold">Fuse Type</label>
+                <div class="row g-2" id="fuse-type-group">
+                  <div class="col-12 col-sm-6">
+                    <input
+                      type="radio"
+                      class="btn-check"
+                      name="fuse-type"
+                      id="fuse-type-glass"
+                      value="Glass"
+                      autocomplete="off"
+                      checked
+                    />
+                    <label class="btn btn-outline-secondary w-100" for="fuse-type-glass">Glass Fuse</label>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <input
+                      type="radio"
+                      class="btn-check"
+                      name="fuse-type"
+                      id="fuse-type-blade"
+                      value="Blade"
+                      autocomplete="off"
+                    />
+                    <label class="btn btn-outline-secondary w-100" for="fuse-type-blade">Blade Fuse</label>
+                  </div>
+                </div>
+              </div>
+              <div id="fuse-value-container" class="d-none">
+                <label for="fuse-value-select" class="form-label fw-semibold">Fuse Value (amps)</label>
+                <select id="fuse-value-select" class="form-select"></select>
+              </div>
+              <div id="glass-options-container" class="d-none">
+                <span class="form-label d-block fw-semibold">Glass Fuse Options</span>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="glass-slow-blow" />
+                  <label class="form-check-label" for="glass-slow-blow">Slow-blow (time delay)</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="glass-fast-blow" />
+                  <label class="form-check-label" for="glass-fast-blow">Fast-blow</label>
+                </div>
+                <div class="mt-2">
+                  <label for="glass-size-select" class="form-label fw-semibold">Glass Fuse Size</label>
+                  <select id="glass-size-select" class="form-select">
+                    <option value="">Select size…</option>
+                    <option value="5 × 20 mm">5 × 20 mm</option>
+                    <option value="6.3 × 32 mm (1/4″ × 1-1/4″)">6.3 × 32 mm (1/4″ × 1-1/4″)</option>
+                  </select>
+                  <div class="form-text">Standard glass fuse sizes: 5 × 20 mm and 6.3 × 32 mm.</div>
                 </div>
               </div>
               <div>
