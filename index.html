@@ -104,6 +104,17 @@
                     />
                     <label class="btn btn-outline-primary w-100" for="hardware-type-connector">Connector</label>
                   </div>
+                  <div class="col-12 col-sm-6 col-lg-3">
+                    <input
+                      type="radio"
+                      class="btn-check"
+                      name="hardware-type"
+                      id="hardware-type-custom"
+                      value="Custom"
+                      autocomplete="off"
+                    />
+                    <label class="btn btn-outline-primary w-100" for="hardware-type-custom">Custom</label>
+                  </div>
                 </div>
               </div>
               <div id="measurement-system-container">
@@ -132,6 +143,38 @@
                     />
                     <label class="btn btn-outline-secondary w-100" for="system-type-imperial">Imperial</label>
                   </div>
+                </div>
+              </div>
+              <div id="custom-fields" class="d-none">
+                <span class="form-label d-block fw-semibold">Custom Image</span>
+                <input type="file" class="form-control" id="custom-image-input" accept="image/*" />
+                <div class="form-text">Square images work best. PNG, JPG and SVG files are supported.</div>
+                <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+                  <button type="button" class="btn btn-outline-secondary btn-sm" id="custom-image-clear" disabled>
+                    Remove image
+                  </button>
+                  <span id="custom-image-name" class="text-muted small d-none"></span>
+                </div>
+                <div class="mt-3">
+                  <label for="custom-line1-input" class="form-label fw-semibold">Top Line</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="custom-line1-input"
+                    placeholder="e.g., 5 mm Drill Bits"
+                    maxlength="60"
+                  />
+                  <div class="form-text">Shown as the large title on the label.</div>
+                </div>
+                <div>
+                  <label for="custom-line2-input" class="form-label fw-semibold">Bottom Line</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="custom-line2-input"
+                    placeholder="Description or name (optional)"
+                    maxlength="80"
+                  />
                 </div>
               </div>
               <div id="connector-category-container" class="d-none">
@@ -235,7 +278,7 @@
                   <div class="form-text">Standard glass fuse sizes: 5 × 20 mm and 6.3 × 32 mm.</div>
                 </div>
               </div>
-              <div>
+              <div id="notes-field">
                 <label for="notes-input" class="form-label fw-semibold">Optional Notes</label>
                 <input
                   type="text"
@@ -247,7 +290,7 @@
                   Provide the connector series, pin count, wire size, and terminal style when labelling connectors.
                 </div>
               </div>
-              <div>
+              <div id="standard-field">
                 <label for="standard-select" class="form-label fw-semibold">Hardware Standard</label>
                 <select id="standard-select" class="form-select"></select>
               </div>
