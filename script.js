@@ -179,6 +179,7 @@
     ],
     'Heat Insert': [],
     Bearing: [],
+    Component: [],
     Fuse: [
       { code: 'IEC 60127-2', name: 'Time-Lag Cartridge Fuse' },
       { code: 'IEC 60127-3', name: 'Fast-Acting Cartridge Fuse' },
@@ -336,6 +337,8 @@
   const connectorCategorySelect = document.getElementById('connector-category-select');
   const connectorCategoryHelp = document.getElementById('connector-category-help');
   const connectorNotesHint = document.getElementById('connector-notes-hint');
+  const componentCategoryContainer = document.getElementById('component-category-container');
+  const componentMountContainer = document.getElementById('component-mount-container');
   const bearingOptionsContainer = document.getElementById('bearing-options-container');
   const bearingTypeSelect = document.getElementById('bearing-type-select');
   const customFieldsContainer = document.getElementById('custom-fields');
@@ -377,6 +380,8 @@
   const screwTypeRadios = document.querySelectorAll('input[name="screw-type"]');
   const fuseTypeRadios = document.querySelectorAll('input[name="fuse-type"]');
   const heightRadios = document.querySelectorAll('input[name="label-height"]');
+  const componentCategoryRadios = document.querySelectorAll('input[name="component-category"]');
+  const componentMountRadios = document.querySelectorAll('input[name="component-mount"]');
 
   // Keep track of current selections.  This state object drives the preview
   // and can be extended easily in the future.
@@ -400,6 +405,8 @@
     widthMm: 55,
     heightMm: 12,
     connectorCategory: '',
+    componentCategory: 'Resistor',
+    componentMount: 'Through-Hole',
     bearingType: '',
     bearingDetails: '',
     customLine1: '',
@@ -597,7 +604,8 @@
       state.hardwareType === 'Fuse' ||
       state.hardwareType === 'Connector' ||
       state.hardwareType === 'Custom' ||
-      state.hardwareType === 'Bearing'
+      state.hardwareType === 'Bearing' ||
+      state.hardwareType === 'Component'
     ) {
       if (threadSizeSelect) {
         threadSizeSelect.innerHTML = '';
@@ -748,6 +756,22 @@
     standardSelect.innerHTML = '';
     const placeholder = document.createElement('option');
     placeholder.value = '';
+
+    if (state.hardwareType === 'Component') {
+      placeholder.textContent = 'Not used for component labels';
+      placeholder.disabled = true;
+      placeholder.selected = true;
+      placeholder.dataset.defaultText = placeholder.textContent;
+      standardSelect.appendChild(placeholder);
+      standardSelect.disabled = true;
+      standardSelect.title = '';
+      state.standard = '';
+      state.standardCode = '';
+      standardSelect.value = '';
+      standardSelect.selectedIndex = 0;
+      updatePreview();
+      return;
+    }
 
     if (state.hardwareType === 'Custom') {
       placeholder.textContent = 'Not used for custom labels';
@@ -944,6 +968,7 @@
     const showScrewFields = type === 'Screw';
     const showFuseFields = type === 'Fuse';
     const showConnectorFields = type === 'Connector';
+    const showComponentFields = type === 'Component';
     const showCustomFields = type === 'Custom';
     const showBearingFields = type === 'Bearing';
 
@@ -974,26 +999,77 @@
       connectorCategoryContainer.classList.toggle('d-none', hidden);
       connectorCategoryContainer.setAttribute('aria-hidden', hidden ? 'true' : 'false');
     }
+    if (componentCategoryContainer) {
+      const hidden = !showComponentFields;
+      componentCategoryContainer.classList.toggle('d-none', hidden);
+      componentCategoryContainer.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+    }
+    if (componentMountContainer) {
+      const hidden = !showComponentFields;
+      componentMountContainer.classList.toggle('d-none', hidden);
+      componentMountContainer.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+    }
+    if (componentCategoryRadios) {
+      const desiredCategory = state.componentCategory || 'Resistor';
+      componentCategoryRadios.forEach(radio => {
+        radio.disabled = !showComponentFields;
+        if (showComponentFields) {
+          radio.checked = radio.value === desiredCategory;
+        }
+      });
+      if (showComponentFields) {
+        const activeCategory = Array.from(componentCategoryRadios).find(radio => radio.checked);
+        if (activeCategory) {
+          state.componentCategory = activeCategory.value;
+        }
+      }
+    }
+    if (componentMountRadios) {
+      const desiredMount = state.componentMount || 'Through-Hole';
+      componentMountRadios.forEach(radio => {
+        radio.disabled = !showComponentFields;
+        if (showComponentFields) {
+          radio.checked = radio.value === desiredMount;
+        }
+      });
+      if (showComponentFields) {
+        const activeMount = Array.from(componentMountRadios).find(radio => radio.checked);
+        if (activeMount) {
+          state.componentMount = activeMount.value;
+        }
+      }
+    }
+
     if (measurementSystemContainer) {
-      const hideMeasurementSystem = showFuseFields || showConnectorFields || showCustomFields || showBearingFields;
+      const hideMeasurementSystem =
+        showFuseFields || showConnectorFields || showCustomFields || showBearingFields || showComponentFields;
       measurementSystemContainer.style.display = hideMeasurementSystem ? 'none' : '';
       measurementSystemContainer.setAttribute('aria-hidden', hideMeasurementSystem ? 'true' : 'false');
     }
     systemTypeRadios.forEach(radio => {
-      radio.disabled = showFuseFields || showConnectorFields || showCustomFields || showBearingFields;
+      radio.disabled =
+        showFuseFields || showConnectorFields || showCustomFields || showBearingFields || showComponentFields;
     });
 
     if (threadLengthRow) {
-      const hideThreadLength = showFuseFields || showConnectorFields || showCustomFields || showBearingFields;
+      const hideThreadLength =
+        showFuseFields || showConnectorFields || showCustomFields || showBearingFields || showComponentFields;
       threadLengthRow.classList.toggle(
         'single-column',
-        !showScrewFields && !showFuseFields && !showConnectorFields && !showCustomFields && !showBearingFields
+        !showScrewFields &&
+          !showFuseFields &&
+          !showConnectorFields &&
+          !showCustomFields &&
+          !showBearingFields &&
+          !showComponentFields
       );
       threadLengthRow.style.display = hideThreadLength ? 'none' : '';
     }
     if (threadSizeContainer) {
       threadSizeContainer.style.display =
-        showFuseFields || showConnectorFields || showCustomFields || showBearingFields ? 'none' : '';
+        showFuseFields || showConnectorFields || showCustomFields || showBearingFields || showComponentFields
+          ? 'none'
+          : '';
     }
     if (fuseTypeContainer) {
       fuseTypeContainer.classList.toggle('d-none', !showFuseFields);
@@ -1014,10 +1090,16 @@
       notesField.classList.toggle('d-none', showCustomFields);
     }
     if (notesLabel) {
-      notesLabel.textContent = showConnectorFields ? 'Connector Details' : defaultNotesLabel;
+      if (showConnectorFields) {
+        notesLabel.textContent = 'Connector Details';
+      } else if (showComponentFields) {
+        notesLabel.textContent = 'Component Notes';
+      } else {
+        notesLabel.textContent = defaultNotesLabel;
+      }
     }
     if (standardField) {
-      standardField.classList.toggle('d-none', showCustomFields || showBearingFields);
+      standardField.classList.toggle('d-none', showCustomFields || showBearingFields || showComponentFields);
     }
     if (standardLabel) {
       if (showConnectorFields) {
@@ -1035,6 +1117,9 @@
         notesInput.placeholder = defaultNotesPlaceholder;
         notesInput.required = false;
         notesInput.setAttribute('aria-required', 'false');
+        if (showComponentFields) {
+          notesInput.placeholder = 'Value, tolerance, voltage rating (optional)';
+        }
       }
     }
     if (showConnectorFields) {
@@ -1191,6 +1276,51 @@
         <line x1="48" y1="52" x2="62" y2="46" />
         <line x1="46" y1="60" x2="60" y2="54" />
       `));
+    } else if (type === 'Component') {
+      const category = state.componentCategory;
+      const mount = state.componentMount;
+      if (category === 'Capacitor') {
+        pieces.push(buildSvg(`
+          <!-- Capacitor symbol -->
+          <line x1="18" y1="50" x2="36" y2="50" />
+          <line x1="36" y1="30" x2="36" y2="70" />
+          <line x1="64" y1="30" x2="64" y2="70" />
+          <line x1="64" y1="50" x2="82" y2="50" />
+        `));
+      } else if (category === 'Diode') {
+        pieces.push(buildSvg(`
+          <!-- Diode symbol -->
+          <line x1="18" y1="50" x2="36" y2="50" />
+          <polygon points="36,30 68,50 36,70" />
+          <line x1="68" y1="30" x2="68" y2="70" />
+          <line x1="68" y1="50" x2="82" y2="50" />
+        `));
+      } else {
+        pieces.push(buildSvg(`
+          <!-- Resistor symbol -->
+          <line x1="14" y1="50" x2="28" y2="50" />
+          <polyline points="28,50 36,38 44,62 52,38 60,62 68,38 76,62" />
+          <line x1="76" y1="50" x2="90" y2="50" />
+        `));
+      }
+
+      if (mount === 'SMD') {
+        pieces.push(buildSvg(`
+          <!-- SMD package -->
+          <rect x="20" y="32" width="60" height="36" rx="10" />
+          <rect x="8" y="38" width="12" height="24" rx="4" />
+          <rect x="80" y="38" width="12" height="24" rx="4" />
+        `));
+      } else {
+        pieces.push(buildSvg(`
+          <!-- Through-hole package -->
+          <rect x="26" y="28" width="48" height="28" rx="8" />
+          <line x1="32" y1="56" x2="32" y2="72" />
+          <line x1="68" y1="56" x2="68" y2="72" />
+          <circle cx="32" cy="74" r="6" />
+          <circle cx="68" cy="74" r="6" />
+        `));
+      }
     } else if (type === 'Fuse') {
       if (state.fuseType === 'Glass') {
         pieces.push(buildSvg(`
@@ -1411,7 +1541,7 @@
             hardwareImageDiv.style.removeProperty('min-height');
           }
         } else {
-          const multiViewTypes = ['Screw', 'Nut', 'Heat Insert', 'Bearing'];
+          const multiViewTypes = ['Screw', 'Nut', 'Heat Insert', 'Bearing', 'Component'];
           const iconCount = multiViewTypes.includes(state.hardwareType) ? 2 : 1;
           const iconGapPx = 8; // Match the CSS gap on .hardware-icon
           if (iconCount > 0) {
@@ -1491,6 +1621,15 @@
         if (state.bearingType) {
           line1 = state.bearingType;
         }
+      } else if (state.hardwareType === 'Component') {
+        const componentParts = [];
+        if (state.componentCategory) {
+          componentParts.push(state.componentCategory);
+        }
+        if (state.componentMount) {
+          componentParts.push(state.componentMount);
+        }
+        line1 = componentParts.join(' — ');
       } else {
         if (state.threadSize) {
           line1 = state.threadSize;
@@ -1534,6 +1673,10 @@
           bearingDetails.push(state.notes);
         }
         line2 = bearingDetails.join(' • ');
+      } else if (state.hardwareType === 'Component') {
+        if (state.notes) {
+          line2 = state.notes;
+        }
       } else {
         if (state.showStandard && state.standard) {
           line2 = state.standard;
@@ -1635,6 +1778,9 @@
     }
     if (state.hardwareType === 'Bearing') {
       return Boolean(state.bearingType);
+    }
+    if (state.hardwareType === 'Component') {
+      return Boolean(state.componentCategory && state.componentMount);
     }
     if (state.hardwareType === 'Screw') {
       return Boolean(state.threadSize && state.length);
@@ -1873,6 +2019,26 @@
         updatePreview();
       });
     }
+
+    componentCategoryRadios.forEach(radio => {
+      radio.addEventListener('change', () => {
+        if (radio.checked) {
+          state.componentCategory = radio.value;
+          updateDownloadState();
+          updatePreview();
+        }
+      });
+    });
+
+    componentMountRadios.forEach(radio => {
+      radio.addEventListener('change', () => {
+        if (radio.checked) {
+          state.componentMount = radio.value;
+          updateDownloadState();
+          updatePreview();
+        }
+      });
+    });
 
     if (bearingTypeSelect) {
       bearingTypeSelect.addEventListener('change', () => {

@@ -158,6 +158,17 @@
                       type="radio"
                       class="btn-check"
                       name="hardware-type"
+                      id="hardware-type-component"
+                      value="Component"
+                      autocomplete="off"
+                    />
+                    <label class="btn btn-outline-primary w-100" for="hardware-type-component">Component</label>
+                  </div>
+                  <div class="col-12 col-sm-6 col-lg-3">
+                    <input
+                      type="radio"
+                      class="btn-check"
+                      name="hardware-type"
                       id="hardware-type-bearing"
                       value="Bearing"
                       autocomplete="off"
@@ -241,6 +252,73 @@
                 <label for="connector-category-select" class="form-label fw-semibold">Connector Category</label>
                 <select id="connector-category-select" class="form-select"></select>
                 <div id="connector-category-help" class="form-text d-none"></div>
+              </div>
+              <div id="component-category-container" class="d-none">
+                <span class="form-label d-block fw-semibold">Component Type</span>
+                <div class="row g-2" id="component-category-group">
+                  <div class="col-12 col-sm-6 col-lg-4">
+                    <input
+                      type="radio"
+                      class="btn-check"
+                      name="component-category"
+                      id="component-type-resistor"
+                      value="Resistor"
+                      autocomplete="off"
+                      checked
+                    />
+                    <label class="btn btn-outline-secondary w-100" for="component-type-resistor">Resistor</label>
+                  </div>
+                  <div class="col-12 col-sm-6 col-lg-4">
+                    <input
+                      type="radio"
+                      class="btn-check"
+                      name="component-category"
+                      id="component-type-capacitor"
+                      value="Capacitor"
+                      autocomplete="off"
+                    />
+                    <label class="btn btn-outline-secondary w-100" for="component-type-capacitor">Capacitor</label>
+                  </div>
+                  <div class="col-12 col-sm-6 col-lg-4">
+                    <input
+                      type="radio"
+                      class="btn-check"
+                      name="component-category"
+                      id="component-type-diode"
+                      value="Diode"
+                      autocomplete="off"
+                    />
+                    <label class="btn btn-outline-secondary w-100" for="component-type-diode">Diode</label>
+                  </div>
+                </div>
+              </div>
+              <div id="component-mount-container" class="d-none">
+                <span class="form-label d-block fw-semibold">Mounting Style</span>
+                <div class="row g-2" id="component-mount-group">
+                  <div class="col-12 col-sm-6">
+                    <input
+                      type="radio"
+                      class="btn-check"
+                      name="component-mount"
+                      id="component-mount-through-hole"
+                      value="Through-Hole"
+                      autocomplete="off"
+                      checked
+                    />
+                    <label class="btn btn-outline-secondary w-100" for="component-mount-through-hole">Through-Hole</label>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <input
+                      type="radio"
+                      class="btn-check"
+                      name="component-mount"
+                      id="component-mount-smd"
+                      value="SMD"
+                      autocomplete="off"
+                    />
+                    <label class="btn btn-outline-secondary w-100" for="component-mount-smd">SMD</label>
+                  </div>
+                </div>
               </div>
               <div id="bearing-options-container" class="d-none">
                 <label for="bearing-type-select" class="form-label fw-semibold">Bearing Selection</label>
