@@ -19,6 +19,12 @@ main {
 
 .title-section h1 {
   font-family: "Farsan", cursive;
+  font-size: clamp(3.25rem, 6vw, 4.5rem);
+  line-height: 1.05;
+}
+
+.section-heading {
+  font-family: "Farsan", cursive;
 }
 
 .size-info {
