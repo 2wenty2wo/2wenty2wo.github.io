@@ -23,7 +23,7 @@
     '15', '20', '25', '30', '40'
   ];
   // Hardware standards grouped by hardware category (Bolt, Screw, Nut,
-  // Washer).  Each entry contains both the standard code and a short
+  // Washer, Heat Insert).  Each entry contains both the standard code and a short
   // descriptive name so the dropdown can present meaningful context to
   // the user.  Only DIN/ISO standards provided by the user are included
   // here, organised by the hardware they apply to.
@@ -168,6 +168,7 @@
       { code: 'DIN 93', name: 'Tab Washer' },
       { code: 'DIN 988', name: 'Shim Ring' }
     ],
+    'Heat Insert': [],
     Fuse: [
       { code: 'IEC 60127-2', name: 'Time-Lag Cartridge Fuse' },
       { code: 'IEC 60127-3', name: 'Fast-Acting Cartridge Fuse' },
@@ -629,6 +630,23 @@
         <circle cx="50" cy="50" r="45" />
         <circle cx="50" cy="50" r="20" />
       `));
+    } else if (type === 'Heat Insert') {
+      // Heat insert: tapered body with knurling and a top view showing the bore
+      pieces.push(buildSvg(`
+        <!-- Heat insert side view -->
+        <path d="M30 20H70L82 48 70 80H30L18 48Z" />
+        <line x1="32" y1="30" x2="68" y2="30" />
+        <line x1="28" y1="40" x2="72" y2="40" />
+        <line x1="26" y1="50" x2="74" y2="50" />
+        <line x1="28" y1="60" x2="72" y2="60" />
+        <line x1="32" y1="70" x2="68" y2="70" />
+      `));
+      pieces.push(buildSvg(`
+        <!-- Heat insert top view -->
+        <circle cx="50" cy="50" r="42" />
+        <polygon points="50,18 72,30 82,50 72,70 50,82 28,70 18,50 28,30" />
+        <circle cx="50" cy="50" r="18" />
+      `));
     } else if (type === 'Fuse') {
       if (state.fuseType === 'Glass') {
         pieces.push(buildSvg(`
@@ -685,7 +703,8 @@
     // label is too narrow to accommodate their natural width they are scaled
     // down uniformly to preserve their aspect ratio.
     if (state.showImage) {
-      const iconCount = (state.hardwareType === 'Screw' || state.hardwareType === 'Nut') ? 2 : 1;
+      const multiViewTypes = ['Screw', 'Nut', 'Heat Insert'];
+      const iconCount = multiViewTypes.includes(state.hardwareType) ? 2 : 1;
       const iconGapPx = 8; // Match the CSS gap on .hardware-icon
       if (iconCount > 0) {
         let iconHeightPx = innerHeightPx;
@@ -734,7 +753,8 @@
         line1 += line1 ? ` × ${state.length}` : state.length;
       }
     }
-    line1Div.textContent = line1 || (state.hardwareType === 'Fuse' ? 'Fuse' : '');
+    const fallbackLabel = state.hardwareType === 'Fuse' ? 'Fuse' : state.hardwareType;
+    line1Div.textContent = line1 || fallbackLabel;
     // Compose line2: standard, fuse characteristics and optional notes
     let line2 = '';
     if (state.hardwareType === 'Fuse') {
@@ -848,7 +868,8 @@
   /**
    * Enable or disable the download button based on whether enough
    * information has been provided.  For screws, both size and length
-   * must be specified.  For nuts and washers, only size is required.
+   * must be specified.  For nuts, washers and heat inserts, only the
+   * thread size is required.  For fuses, the amp rating is required.
    */
   function updateDownloadState() {
     let ready = false;
