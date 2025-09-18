@@ -186,6 +186,13 @@
     ]
   };
 
+  const hardwareImageFolders = {
+    Bolt: 'bolts',
+    Screw: 'screws',
+    Nut: 'nuts',
+    Washer: 'washers'
+  };
+
   const connectorCatalog = [
     {
       id: 'pre-insulated-crimp',
@@ -254,6 +261,43 @@
       ]
     }
   ];
+
+  function normalizeStandardCode(code) {
+    return (code || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9-]+/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_+|_+$/g, '');
+  }
+
+  function getHardwareImageInfo() {
+    let catalogKey = state.hardwareType;
+    if (state.hardwareType === 'Screw') {
+      catalogKey = state.screwType;
+    }
+    if (!catalogKey) {
+      return null;
+    }
+    const folder = hardwareImageFolders[catalogKey];
+    if (!folder) {
+      return null;
+    }
+    const code = state.standardCode;
+    if (!code) {
+      return null;
+    }
+    const filename = normalizeStandardCode(code);
+    if (!filename) {
+      return null;
+    }
+    const src = `images/${folder}/${filename}.png`;
+    const standardName = state.standard || '';
+    const altBase = standardName && standardName !== code ? `${code} — ${standardName}` : code;
+    return {
+      src,
+      alt: altBase ? `${altBase} reference illustration` : 'Hardware reference illustration'
+    };
+  }
 
   // Ratio of preview pixels per millimetre.  This value controls how
   // large the label appears onscreen.  The physical dimensions of the
@@ -339,6 +383,7 @@
     glassSize: '',
     notes: '',
     standard: '',
+    standardCode: '',
     showStandard: true,
     showImage: true,
     showQr: false,
@@ -618,6 +663,7 @@
       standardSelect.disabled = true;
       standardSelect.title = '';
       state.standard = '';
+      state.standardCode = '';
       standardSelect.value = '';
       standardSelect.selectedIndex = 0;
       updatePreview();
@@ -677,6 +723,7 @@
     }
 
     state.standard = '';
+    state.standardCode = '';
     standardSelect.value = '';
     standardSelect.selectedIndex = 0;
     updatePreview();
@@ -711,6 +758,7 @@
       standardSelect.value = '';
       if (state.standard) {
         state.standard = '';
+        state.standardCode = '';
         updatePreview();
       }
     }
@@ -1203,31 +1251,60 @@
           hardwareImageDiv.appendChild(placeholder);
         }
       } else {
-        const multiViewTypes = ['Screw', 'Nut', 'Heat Insert', 'Bearing'];
-        const iconCount = multiViewTypes.includes(state.hardwareType) ? 2 : 1;
-        const iconGapPx = 8; // Match the CSS gap on .hardware-icon
-        if (iconCount > 0) {
-          let iconHeightPx = innerHeightPx;
-          const maxStripWidth = innerWidthPx;
-          const naturalStripWidth = iconCount * iconHeightPx + (iconCount - 1) * iconGapPx;
-          if (naturalStripWidth > maxStripWidth) {
-            const availablePerIcon = Math.floor((maxStripWidth - (iconCount - 1) * iconGapPx) / iconCount);
-            iconHeightPx = Math.max(0, Math.min(iconHeightPx, availablePerIcon));
+        const photoInfo = getHardwareImageInfo();
+        if (photoInfo && innerHeightPx > 0 && innerWidthPx > 0) {
+          const maxWidthForPhoto = Math.max(0, Math.min(innerHeightPx, innerWidthPx * 0.45));
+          if (maxWidthForPhoto > 0) {
+            hardwareImageDiv.style.display = 'flex';
+            hardwareImageDiv.style.maxWidth = maxWidthForPhoto + 'px';
+            hardwareImageDiv.style.flexBasis = maxWidthForPhoto + 'px';
+            hardwareImageDiv.style.flexShrink = '0';
+            hardwareImageDiv.style.removeProperty('min-height');
+            hardwareImageDiv.innerHTML = '';
+            const img = document.createElement('img');
+            img.src = photoInfo.src;
+            img.alt = photoInfo.alt;
+            img.className = 'hardware-photo';
+            img.decoding = 'async';
+            img.loading = 'lazy';
+            img.style.maxHeight = innerHeightPx + 'px';
+            img.style.maxWidth = maxWidthForPhoto + 'px';
+            hardwareImageDiv.appendChild(img);
+          } else {
+            hardwareImageDiv.style.display = 'none';
+            hardwareImageDiv.innerHTML = '';
+            hardwareImageDiv.style.removeProperty('max-width');
+            hardwareImageDiv.style.removeProperty('flex-basis');
+            hardwareImageDiv.style.removeProperty('flex-shrink');
+            hardwareImageDiv.style.removeProperty('min-height');
           }
-          const finalStripWidth = Math.max(0, iconCount * iconHeightPx + (iconCount - 1) * iconGapPx);
-          hardwareImageDiv.style.display = 'flex';
-          hardwareImageDiv.style.maxWidth = finalStripWidth + 'px';
-          hardwareImageDiv.style.flexBasis = finalStripWidth + 'px';
-          hardwareImageDiv.style.flexShrink = '0';
-          hardwareImageDiv.style.removeProperty('min-height');
-          hardwareImageDiv.innerHTML = getHardwareIcon(iconHeightPx);
         } else {
-          hardwareImageDiv.style.display = 'none';
-          hardwareImageDiv.innerHTML = '';
-          hardwareImageDiv.style.removeProperty('max-width');
-          hardwareImageDiv.style.removeProperty('flex-basis');
-          hardwareImageDiv.style.removeProperty('flex-shrink');
-          hardwareImageDiv.style.removeProperty('min-height');
+          const multiViewTypes = ['Screw', 'Nut', 'Heat Insert', 'Bearing'];
+          const iconCount = multiViewTypes.includes(state.hardwareType) ? 2 : 1;
+          const iconGapPx = 8; // Match the CSS gap on .hardware-icon
+          if (iconCount > 0) {
+            let iconHeightPx = innerHeightPx;
+            const maxStripWidth = innerWidthPx;
+            const naturalStripWidth = iconCount * iconHeightPx + (iconCount - 1) * iconGapPx;
+            if (naturalStripWidth > maxStripWidth) {
+              const availablePerIcon = Math.floor((maxStripWidth - (iconCount - 1) * iconGapPx) / iconCount);
+              iconHeightPx = Math.max(0, Math.min(iconHeightPx, availablePerIcon));
+            }
+            const finalStripWidth = Math.max(0, iconCount * iconHeightPx + (iconCount - 1) * iconGapPx);
+            hardwareImageDiv.style.display = 'flex';
+            hardwareImageDiv.style.maxWidth = finalStripWidth + 'px';
+            hardwareImageDiv.style.flexBasis = finalStripWidth + 'px';
+            hardwareImageDiv.style.flexShrink = '0';
+            hardwareImageDiv.style.removeProperty('min-height');
+            hardwareImageDiv.innerHTML = getHardwareIcon(iconHeightPx);
+          } else {
+            hardwareImageDiv.style.display = 'none';
+            hardwareImageDiv.innerHTML = '';
+            hardwareImageDiv.style.removeProperty('max-width');
+            hardwareImageDiv.style.removeProperty('flex-basis');
+            hardwareImageDiv.style.removeProperty('flex-shrink');
+            hardwareImageDiv.style.removeProperty('min-height');
+          }
         }
       }
     } else {
@@ -1508,7 +1585,10 @@
           fileParts.push(`x${state.length}`);
         }
       }
-      if (state.standard) {
+      if (state.standardCode) {
+        fileParts.push(state.standardCode);
+      }
+      if (state.standard && state.standard !== state.standardCode) {
         fileParts.push(state.standard);
       }
       const safeName = fileParts
@@ -1727,8 +1807,10 @@
       if (selectedOption && selectedOption.value) {
         const displayName = selectedOption.dataset.name || selectedOption.textContent;
         state.standard = displayName;
+        state.standardCode = selectedOption.value;
       } else {
         state.standard = '';
+        state.standardCode = '';
       }
       updatePreview();
     });
