@@ -376,6 +376,7 @@
   const printButton = document.getElementById('print-button');
 
   const hardwareTypeRadios = document.querySelectorAll('input[name="hardware-type"]');
+  const hardwareTypeSelect = document.getElementById('hardware-type-select');
   const systemTypeRadios = document.querySelectorAll('input[name="system-type"]');
   const screwTypeRadios = document.querySelectorAll('input[name="screw-type"]');
   const fuseTypeRadios = document.querySelectorAll('input[name="fuse-type"]');
@@ -959,12 +960,23 @@
     }
   }
 
+  function syncHardwareTypeControls(nextType) {
+    const desiredType = nextType || state.hardwareType;
+    if (hardwareTypeSelect) {
+      hardwareTypeSelect.value = desiredType;
+    }
+    hardwareTypeRadios.forEach(radio => {
+      radio.checked = radio.value === desiredType;
+    });
+  }
+
   /**
    * Handle changes when the hardware type (Screw, Nut, Washer) changes.
    * Show or hide relevant form fields accordingly.
    */
   function onHardwareTypeChange() {
     const type = state.hardwareType;
+    syncHardwareTypeControls(type);
     const showScrewFields = type === 'Screw';
     const showFuseFields = type === 'Fuse';
     const showConnectorFields = type === 'Connector';
@@ -2009,6 +2021,16 @@
         }
       });
     });
+
+    if (hardwareTypeSelect) {
+      hardwareTypeSelect.addEventListener('change', () => {
+        const selectedType = hardwareTypeSelect.value;
+        if (selectedType) {
+          state.hardwareType = selectedType;
+          onHardwareTypeChange();
+        }
+      });
+    }
 
     if (connectorCategorySelect) {
       connectorCategorySelect.addEventListener('change', () => {
