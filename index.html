@@ -109,6 +109,17 @@
                       type="radio"
                       class="btn-check"
                       name="hardware-type"
+                      id="hardware-type-bearing"
+                      value="Bearing"
+                      autocomplete="off"
+                    />
+                    <label class="btn btn-outline-primary w-100" for="hardware-type-bearing">Bearing</label>
+                  </div>
+                  <div class="col-12 col-sm-6 col-lg-3">
+                    <input
+                      type="radio"
+                      class="btn-check"
+                      name="hardware-type"
                       id="hardware-type-custom"
                       value="Custom"
                       autocomplete="off"
@@ -181,6 +192,11 @@
                 <label for="connector-category-select" class="form-label fw-semibold">Connector Category</label>
                 <select id="connector-category-select" class="form-select"></select>
                 <div id="connector-category-help" class="form-text d-none"></div>
+              </div>
+              <div id="bearing-options-container" class="d-none">
+                <label for="bearing-type-select" class="form-label fw-semibold">Bearing Selection</label>
+                <select id="bearing-type-select" class="form-select"></select>
+                <div class="form-text">Common miniature and deep-groove bearings used in hobby projects.</div>
               </div>
               <div id="screw-type-container">
                 <label class="form-label fw-semibold">Screw Type</label>
