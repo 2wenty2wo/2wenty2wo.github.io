@@ -17,6 +17,10 @@ main {
   margin: 0.5rem auto 0;
 }
 
+.title-section h1 {
+  font-family: "Farsan", cursive;
+}
+
 .size-info {
   display: flex;
   flex-wrap: wrap;
