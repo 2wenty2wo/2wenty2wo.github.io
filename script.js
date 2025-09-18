@@ -169,7 +169,17 @@
       { code: 'DIN 988', name: 'Shim Ring' }
     ],
     'Heat Insert': [],
-    Connector: [],
+    Connector: [
+      { code: 'JST-PH', name: '2.0 mm wire-to-board plug (PH series)' },
+      { code: 'JST-XH', name: '2.5 mm wire-to-board plug (XH series)' },
+      { code: 'JST-SH', name: '1.0 mm wire-to-board plug (SH series)' },
+      { code: 'JST-GH', name: '1.25 mm wire-to-board plug (GH series)' },
+      { code: 'JST-ZH', name: '1.5 mm wire-to-board plug (ZH series)' },
+      { code: 'JST-VH', name: '3.96 mm wire-to-board plug (VH series)' },
+      { code: 'JST-SM', name: '2.54 mm wire-to-wire plug (SM series)' },
+      { code: 'JST-JWPF', name: '2.0 mm sealed connector (JWPF series)' },
+      { code: 'JST-RCY', name: '2.54 mm battery connector (RCY series)' }
+    ],
     Fuse: [
       { code: 'IEC 60127-2', name: 'Time-Lag Cartridge Fuse' },
       { code: 'IEC 60127-3', name: 'Fast-Acting Cartridge Fuse' },
@@ -567,7 +577,7 @@
     }
     if (notesInput) {
       if (showConnectorFields) {
-        notesInput.placeholder = 'e.g., Red quick-disconnect, 16–14 AWG';
+        notesInput.placeholder = 'e.g., 3-pin JST-PH plug, 26 AWG leads';
         notesInput.required = true;
         notesInput.setAttribute('aria-required', 'true');
       } else {
