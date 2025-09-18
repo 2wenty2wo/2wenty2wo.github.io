@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gridfinity Label Generator</title>
+  <title>Gridfinity Label Maker</title>
   <!--
     Standalone tool for generating and printing Gridfinity labels.  Styling
     now layers a lightweight Bootstrap 5 theme for modern form controls and
@@ -17,6 +17,12 @@
     integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
     crossorigin="anonymous"
   />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Farsan&display=swap"
+    rel="stylesheet"
+  />
   <link rel="stylesheet" href="style.css" />
   <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
@@ -25,14 +31,14 @@
 <body class="bg-body-tertiary">
   <main class="container py-4">
     <header class="title-section text-center mb-4">
-      <h1 class="display-5 fw-semibold">Gridfinity Label Generator</h1>
+      <h1 class="display-5 fw-semibold">Gridfinity Label Maker</h1>
       <p class="text-muted mb-0">Design and print perfectly sized storage labels.</p>
     </header>
     <div class="row g-4">
       <section class="form-section col-lg-7">
         <div class="card shadow-sm h-100">
           <div class="card-body">
-            <h2 class="h5 mb-3">Hardware Details</h2>
+            <h2 class="section-heading h5 mb-3">Hardware Details</h2>
             <div class="vstack gap-3">
               <div>
                 <label class="form-label fw-semibold">Hardware Type</label>
@@ -317,7 +323,7 @@
       <section class="settings-section col-lg-5">
         <div class="card shadow-sm h-100">
           <div class="card-body">
-            <h2 class="h5 mb-3">Label Settings</h2>
+            <h2 class="section-heading h5 mb-3">Label Settings</h2>
             <div class="vstack gap-3">
               <div class="d-flex align-items-center justify-content-between p-3 rounded-4 border bg-body-secondary">
                 <span class="d-flex align-items-center gap-2 fw-semibold text-body">
@@ -423,7 +429,7 @@
     </div>
     <section class="preview-section card shadow-sm mt-4">
       <div class="card-body">
-        <h2 class="h5 mb-3">Label Preview</h2>
+        <h2 class="section-heading h5 mb-3">Label Preview</h2>
         <div class="size-info text-muted small mb-3">
           <div id="label-size-display">55&nbsp;mm ×&nbsp;12&nbsp;mm (label size)</div>
           <div id="print-area-display">51&nbsp;mm ×&nbsp;10&nbsp;mm (printable area)</div>
