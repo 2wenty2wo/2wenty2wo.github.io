@@ -290,6 +290,7 @@
   const previewContainer = document.getElementById('preview-container');
   const labelInner = document.getElementById('label-inner');
   const hardwareImageDiv = document.getElementById('hardware-image');
+  const textBlockDiv = document.getElementById('preview-text');
   const line1Div = document.getElementById('line1');
   const line2Div = document.getElementById('line2');
   const qrCanvas = document.getElementById('qr-canvas');
@@ -890,6 +891,80 @@
     return pieces.join('');
   }
 
+  function applyTextFitting(primaryFontSize, secondaryFontSize) {
+    if (!textBlockDiv || !line1Div) {
+      return;
+    }
+
+    line1Div.style.fontSize = primaryFontSize + 'px';
+    if (line2Div) {
+      line2Div.style.fontSize = secondaryFontSize + 'px';
+    }
+
+    const availableWidth = textBlockDiv.clientWidth;
+    const availableHeight = labelInner ? labelInner.clientHeight : textBlockDiv.clientHeight;
+    if (availableWidth <= 0 || availableHeight <= 0) {
+      return;
+    }
+
+    const hasLine2 = Boolean(
+      line2Div &&
+        line2Div.style.display !== 'none' &&
+        line2Div.textContent &&
+        line2Div.textContent.trim()
+    );
+
+    let line1Size = primaryFontSize;
+    let line2Size = secondaryFontSize;
+
+    const absolutePrimaryMin = 4;
+    const absoluteSecondaryMin = 3.5;
+    let minLine1 = Math.min(primaryFontSize, 6);
+    minLine1 = Math.max(absolutePrimaryMin, minLine1);
+    let minLine2 = 0;
+    if (hasLine2) {
+      minLine2 = Math.min(secondaryFontSize, 5);
+      minLine2 = Math.max(absoluteSecondaryMin, minLine2);
+    }
+
+    const tolerance = 0.5;
+    let iterations = 0;
+    const maxIterations = 200;
+    while (iterations < maxIterations) {
+      let adjusted = false;
+
+      if (line1Div.scrollWidth - tolerance > availableWidth && line1Size > minLine1) {
+        line1Size = Math.max(minLine1, line1Size - 0.5);
+        line1Div.style.fontSize = line1Size + 'px';
+        adjusted = true;
+      }
+
+      if (hasLine2 && line2Div.scrollWidth - tolerance > availableWidth && line2Size > minLine2) {
+        line2Size = Math.max(minLine2, line2Size - 0.5);
+        line2Div.style.fontSize = line2Size + 'px';
+        adjusted = true;
+      }
+
+      if (textBlockDiv.scrollHeight - tolerance > availableHeight) {
+        if (line1Size > minLine1 && (!hasLine2 || line1Size >= line2Size || line2Size <= minLine2)) {
+          line1Size = Math.max(minLine1, line1Size - 0.5);
+          line1Div.style.fontSize = line1Size + 'px';
+          adjusted = true;
+        } else if (hasLine2 && line2Size > minLine2) {
+          line2Size = Math.max(minLine2, line2Size - 0.5);
+          line2Div.style.fontSize = line2Size + 'px';
+          adjusted = true;
+        }
+      }
+
+      if (!adjusted) {
+        break;
+      }
+
+      iterations += 1;
+    }
+  }
+
   /**
    * Update the label preview area.  This function reads the state
    * object, computes the label dimensions, populates the texts and
@@ -1034,8 +1109,6 @@
     // Adjust font sizes based on inner label height
     const primaryFontSize = Math.max(8, Math.floor(innerHeightPx * 0.45));
     const secondaryFontSize = Math.max(6, Math.floor(innerHeightPx * 0.2));
-    line1Div.style.fontSize = primaryFontSize + 'px';
-    line2Div.style.fontSize = secondaryFontSize + 'px';
     // Adjust layout so that text does not overlap with the QR code
     // QR code sizing
     // Only render a QR code when the user has entered explicit content in
@@ -1082,6 +1155,8 @@
       qrCanvas.style.display = 'none';
       labelInner.style.removeProperty('padding-right');
     }
+
+    applyTextFitting(primaryFontSize, secondaryFontSize);
   }
 
   /**

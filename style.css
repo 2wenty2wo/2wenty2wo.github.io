@@ -51,7 +51,9 @@ main {
   flex-direction: column;
   justify-content: center;
   padding-left: 6px;
-  white-space: nowrap;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
   flex: 1;
 }
 
