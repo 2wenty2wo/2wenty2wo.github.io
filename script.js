@@ -169,6 +169,7 @@
       { code: 'DIN 988', name: 'Shim Ring' }
     ],
     'Heat Insert': [],
+    Connector: [],
     Fuse: [
       { code: 'IEC 60127-2', name: 'Time-Lag Cartridge Fuse' },
       { code: 'IEC 60127-3', name: 'Fast-Acting Cartridge Fuse' },
@@ -200,6 +201,11 @@
   const glassSlowBlowCheckbox = document.getElementById('glass-slow-blow');
   const glassFastBlowCheckbox = document.getElementById('glass-fast-blow');
   const notesInput = document.getElementById('notes-input');
+  const connectorInfo = document.getElementById('connector-info');
+  const connectorNotesHint = document.getElementById('connector-notes-hint');
+  const notesLabel = document.querySelector('label[for="notes-input"]');
+  const defaultNotesLabel = notesLabel ? notesLabel.textContent : '';
+  const defaultNotesPlaceholder = notesInput ? notesInput.getAttribute('placeholder') || '' : '';
   const standardSelect = document.getElementById('standard-select');
   const standardToggle = document.getElementById('standard-toggle');
   const imageToggle = document.getElementById('image-toggle');
@@ -258,7 +264,7 @@
    * hardware or system selection changes.
    */
   function populateThreadSizes() {
-    if (state.hardwareType === 'Fuse') {
+    if (state.hardwareType === 'Fuse' || state.hardwareType === 'Connector') {
       if (threadSizeSelect) {
         threadSizeSelect.innerHTML = '';
         const placeholder = document.createElement('option');
@@ -512,6 +518,7 @@
     const type = state.hardwareType;
     const showScrewFields = type === 'Screw';
     const showFuseFields = type === 'Fuse';
+    const showConnectorFields = type === 'Connector';
 
     if (screwTypeContainer) {
       screwTypeContainer.style.display = showScrewFields ? '' : 'none';
@@ -521,11 +528,15 @@
     }
 
     if (threadLengthRow) {
-      threadLengthRow.classList.toggle('single-column', !showScrewFields && !showFuseFields);
-      threadLengthRow.style.display = showFuseFields ? 'none' : '';
+      const hideThreadLength = showFuseFields || showConnectorFields;
+      threadLengthRow.classList.toggle(
+        'single-column',
+        !showScrewFields && !showFuseFields && !showConnectorFields
+      );
+      threadLengthRow.style.display = hideThreadLength ? 'none' : '';
     }
     if (threadSizeContainer) {
-      threadSizeContainer.style.display = showFuseFields ? 'none' : '';
+      threadSizeContainer.style.display = showFuseFields || showConnectorFields ? 'none' : '';
     }
     if (fuseTypeContainer) {
       fuseTypeContainer.classList.toggle('d-none', !showFuseFields);
@@ -537,6 +548,26 @@
       fuseValueSelect.disabled = !showFuseFields;
       if (showFuseFields) {
         fuseValueSelect.value = state.fuseValue || '';
+      }
+    }
+    if (connectorInfo) {
+      connectorInfo.classList.toggle('d-none', !showConnectorFields);
+    }
+    if (connectorNotesHint) {
+      connectorNotesHint.classList.toggle('d-none', !showConnectorFields);
+    }
+    if (notesLabel) {
+      notesLabel.textContent = showConnectorFields ? 'Connector Details' : defaultNotesLabel;
+    }
+    if (notesInput) {
+      if (showConnectorFields) {
+        notesInput.placeholder = 'e.g., Red quick-disconnect, 16–14 AWG';
+        notesInput.required = true;
+        notesInput.setAttribute('aria-required', 'true');
+      } else {
+        notesInput.placeholder = defaultNotesPlaceholder;
+        notesInput.required = false;
+        notesInput.setAttribute('aria-required', 'false');
       }
     }
     updateGlassOptionVisibility({ resetIfHidden: !showFuseFields });
@@ -647,6 +678,17 @@
         <polygon points="50,18 72,30 82,50 72,70 50,82 28,70 18,50 28,30" />
         <circle cx="50" cy="50" r="18" />
       `));
+    } else if (type === 'Connector') {
+      // Connector: pair of insulated crimp terminals, showing sleeve and mating end
+      pieces.push(buildSvg(`
+        <!-- Insulated crimp connectors -->
+        <path d="M22 72L34 28H56L44 72Z" />
+        <rect x="34" y="20" width="12" height="8" />
+        <rect x="62" y="32" width="26" height="34" rx="8" />
+        <polygon points="70,20 82,20 90,34 78,34" />
+        <line x1="48" y1="52" x2="62" y2="46" />
+        <line x1="46" y1="60" x2="60" y2="54" />
+      `));
     } else if (type === 'Fuse') {
       if (state.fuseType === 'Glass') {
         pieces.push(buildSvg(`
@@ -744,6 +786,10 @@
         fuseParts.push(`${state.fuseValue} A`);
       }
       line1 = fuseParts.filter(Boolean).join(' — ');
+    } else if (state.hardwareType === 'Connector') {
+      if (state.notes) {
+        line1 = state.notes;
+      }
     } else {
       if (state.threadSize) {
         line1 = state.threadSize;
@@ -774,6 +820,10 @@
         fuseDetails.push(state.notes);
       }
       line2 = fuseDetails.join(' • ');
+    } else if (state.hardwareType === 'Connector') {
+      if (state.showStandard && state.standard) {
+        line2 = state.standard;
+      }
     } else {
       if (state.showStandard && state.standard) {
         line2 = state.standard;
@@ -875,6 +925,8 @@
     let ready = false;
     if (state.hardwareType === 'Fuse') {
       ready = !!state.fuseValue;
+    } else if (state.hardwareType === 'Connector') {
+      ready = !!state.notes;
     } else if (state.hardwareType === 'Screw') {
       ready = !!state.threadSize && !!state.length;
     } else {
@@ -921,6 +973,11 @@
           if (state.glassSpeed) {
             fileParts.push(state.glassSpeed);
           }
+        }
+      } else if (state.hardwareType === 'Connector') {
+        fileParts.push('Connector');
+        if (state.notes) {
+          fileParts.push(state.notes);
         }
       } else {
         if (state.threadSize) {
@@ -1095,6 +1152,7 @@
     // Notes
     notesInput.addEventListener('input', () => {
       state.notes = notesInput.value.trim();
+      updateDownloadState();
       updatePreview();
     });
     // Standard select
