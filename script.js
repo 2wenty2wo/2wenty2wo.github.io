@@ -857,16 +857,10 @@
     line2Div.style.fontSize = secondaryFontSize + 'px';
     // Adjust layout so that text does not overlap with the QR code
     // QR code sizing
-    const customQrContent = state.qrContent ? state.qrContent.trim() : '';
-    const fallbackPieces = [];
-    if (line1) {
-      fallbackPieces.push(line1);
-    }
-    if (line2) {
-      fallbackPieces.push(line2);
-    }
-    const fallbackContent = fallbackPieces.join('\n');
-    const qrContent = customQrContent || fallbackContent;
+    // Only render a QR code when the user has entered explicit content in
+    // the QR input field.  This prevents placeholder QR codes from appearing
+    // as soon as the toggle is enabled.
+    const qrContent = state.qrContent ? state.qrContent.trim() : '';
 
     if (state.showQr && qrContent) {
       // Determine a square size for the QR code (take 60% of inner height)
