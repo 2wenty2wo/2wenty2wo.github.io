@@ -274,6 +274,14 @@
   const connectorCategorySelect = document.getElementById('connector-category-select');
   const connectorCategoryHelp = document.getElementById('connector-category-help');
   const connectorNotesHint = document.getElementById('connector-notes-hint');
+  const customFieldsContainer = document.getElementById('custom-fields');
+  const customImageInput = document.getElementById('custom-image-input');
+  const customImageClearButton = document.getElementById('custom-image-clear');
+  const customImageNameDisplay = document.getElementById('custom-image-name');
+  const customLine1Input = document.getElementById('custom-line1-input');
+  const customLine2Input = document.getElementById('custom-line2-input');
+  const notesField = document.getElementById('notes-field');
+  const standardField = document.getElementById('standard-field');
   const notesLabel = document.querySelector('label[for="notes-input"]');
   const defaultNotesLabel = notesLabel ? notesLabel.textContent : '';
   const defaultNotesPlaceholder = notesInput ? notesInput.getAttribute('placeholder') || '' : '';
@@ -325,7 +333,11 @@
     qrContent: '',
     widthMm: 55,
     heightMm: 12,
-    connectorCategory: ''
+    connectorCategory: '',
+    customLine1: '',
+    customLine2: '',
+    customImageData: '',
+    customImageName: ''
   };
 
   const STANDARD_PLACEHOLDER_TEXT = 'Select standard… (type to filter, Esc clears)';
@@ -406,7 +418,7 @@
    * hardware or system selection changes.
    */
   function populateThreadSizes() {
-    if (state.hardwareType === 'Fuse' || state.hardwareType === 'Connector') {
+    if (state.hardwareType === 'Fuse' || state.hardwareType === 'Connector' || state.hardwareType === 'Custom') {
       if (threadSizeSelect) {
         threadSizeSelect.innerHTML = '';
         const placeholder = document.createElement('option');
@@ -490,6 +502,64 @@
     }
   }
 
+  function updateCustomImageUi() {
+    const hasImage = !!state.customImageData;
+    if (customImageClearButton) {
+      customImageClearButton.disabled = !hasImage;
+    }
+    if (customImageNameDisplay) {
+      if (state.customImageName) {
+        customImageNameDisplay.textContent = state.customImageName;
+        customImageNameDisplay.classList.remove('d-none');
+      } else {
+        customImageNameDisplay.textContent = '';
+        customImageNameDisplay.classList.add('d-none');
+      }
+    }
+  }
+
+  function clearCustomImage({ resetInput = true } = {}) {
+    state.customImageData = '';
+    state.customImageName = '';
+    if (resetInput && customImageInput) {
+      customImageInput.value = '';
+    }
+    updateCustomImageUi();
+    updatePreview();
+    updateDownloadState();
+  }
+
+  function handleCustomImageFile(file) {
+    if (!file) {
+      return;
+    }
+    const isImage = !file.type || file.type.startsWith('image/');
+    if (!isImage) {
+      alert('Please select an image file (PNG, JPG, SVG, GIF).');
+      if (customImageInput) {
+        customImageInput.value = '';
+      }
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : '';
+      state.customImageData = result;
+      state.customImageName = file.name || 'Custom image';
+      updateCustomImageUi();
+      updatePreview();
+      updateDownloadState();
+      if (customImageInput) {
+        customImageInput.value = '';
+      }
+    };
+    reader.onerror = () => {
+      console.error('Unable to load custom image', reader.error);
+      clearCustomImage({ resetInput: false });
+    };
+    reader.readAsDataURL(file);
+  }
+
   /**
    * Populate the hardware standard <select> element with the standards
    * relevant to the current hardware selection.
@@ -498,6 +568,21 @@
     standardSelect.innerHTML = '';
     const placeholder = document.createElement('option');
     placeholder.value = '';
+
+    if (state.hardwareType === 'Custom') {
+      placeholder.textContent = 'Not used for custom labels';
+      placeholder.disabled = true;
+      placeholder.selected = true;
+      placeholder.dataset.defaultText = placeholder.textContent;
+      standardSelect.appendChild(placeholder);
+      standardSelect.disabled = true;
+      standardSelect.title = '';
+      state.standard = '';
+      standardSelect.value = '';
+      standardSelect.selectedIndex = 0;
+      updatePreview();
+      return;
+    }
 
     let standards = [];
     let placeholderText = STANDARD_PLACEHOLDER_TEXT;
@@ -676,6 +761,7 @@
     const showScrewFields = type === 'Screw';
     const showFuseFields = type === 'Fuse';
     const showConnectorFields = type === 'Connector';
+    const showCustomFields = type === 'Custom';
 
     if (screwTypeContainer) {
       screwTypeContainer.style.display = showScrewFields ? '' : 'none';
@@ -684,29 +770,33 @@
       lengthContainer.style.display = showScrewFields ? '' : 'none';
     }
 
+    if (customFieldsContainer) {
+      customFieldsContainer.classList.toggle('d-none', !showCustomFields);
+    }
     if (connectorCategoryContainer) {
-      connectorCategoryContainer.classList.toggle('d-none', !showConnectorFields);
-      connectorCategoryContainer.setAttribute('aria-hidden', showConnectorFields ? 'false' : 'true');
+      const hidden = !showConnectorFields;
+      connectorCategoryContainer.classList.toggle('d-none', hidden);
+      connectorCategoryContainer.setAttribute('aria-hidden', hidden ? 'true' : 'false');
     }
     if (measurementSystemContainer) {
-      const hideMeasurementSystem = showFuseFields || showConnectorFields;
+      const hideMeasurementSystem = showFuseFields || showConnectorFields || showCustomFields;
       measurementSystemContainer.style.display = hideMeasurementSystem ? 'none' : '';
       measurementSystemContainer.setAttribute('aria-hidden', hideMeasurementSystem ? 'true' : 'false');
     }
     systemTypeRadios.forEach(radio => {
-      radio.disabled = showFuseFields || showConnectorFields;
+      radio.disabled = showFuseFields || showConnectorFields || showCustomFields;
     });
 
     if (threadLengthRow) {
-      const hideThreadLength = showFuseFields || showConnectorFields;
+      const hideThreadLength = showFuseFields || showConnectorFields || showCustomFields;
       threadLengthRow.classList.toggle(
         'single-column',
-        !showScrewFields && !showFuseFields && !showConnectorFields
+        !showScrewFields && !showFuseFields && !showConnectorFields && !showCustomFields
       );
       threadLengthRow.style.display = hideThreadLength ? 'none' : '';
     }
     if (threadSizeContainer) {
-      threadSizeContainer.style.display = showFuseFields || showConnectorFields ? 'none' : '';
+      threadSizeContainer.style.display = showFuseFields || showConnectorFields || showCustomFields ? 'none' : '';
     }
     if (fuseTypeContainer) {
       fuseTypeContainer.classList.toggle('d-none', !showFuseFields);
@@ -723,8 +813,14 @@
     if (connectorNotesHint) {
       connectorNotesHint.classList.toggle('d-none', !showConnectorFields);
     }
+    if (notesField) {
+      notesField.classList.toggle('d-none', showCustomFields);
+    }
     if (notesLabel) {
       notesLabel.textContent = showConnectorFields ? 'Connector Details' : defaultNotesLabel;
+    }
+    if (standardField) {
+      standardField.classList.toggle('d-none', showCustomFields);
     }
     if (standardLabel) {
       standardLabel.textContent = showConnectorFields ? 'Connector Series' : defaultStandardLabel;
@@ -748,6 +844,9 @@
         connectorCategoryHelp.textContent = '';
         connectorCategoryHelp.classList.add('d-none');
       }
+    }
+    if (showCustomFields) {
+      updateCustomImageUi();
     }
     updateGlassOptionVisibility({ resetIfHidden: !showFuseFields });
     populateThreadSizes();
@@ -998,29 +1097,57 @@
     // label is too narrow to accommodate their natural width they are scaled
     // down uniformly to preserve their aspect ratio.
     if (state.showImage) {
-      const multiViewTypes = ['Screw', 'Nut', 'Heat Insert'];
-      const iconCount = multiViewTypes.includes(state.hardwareType) ? 2 : 1;
-      const iconGapPx = 8; // Match the CSS gap on .hardware-icon
-      if (iconCount > 0) {
-        let iconHeightPx = innerHeightPx;
-        const maxStripWidth = innerWidthPx;
-        const naturalStripWidth = iconCount * iconHeightPx + (iconCount - 1) * iconGapPx;
-        if (naturalStripWidth > maxStripWidth) {
-          const availablePerIcon = Math.floor((maxStripWidth - (iconCount - 1) * iconGapPx) / iconCount);
-          iconHeightPx = Math.max(0, Math.min(iconHeightPx, availablePerIcon));
-        }
-        const finalStripWidth = Math.max(0, iconCount * iconHeightPx + (iconCount - 1) * iconGapPx);
+      if (state.hardwareType === 'Custom') {
+        const targetSize = Math.max(0, innerHeightPx);
+        const displaySize = Math.max(32, targetSize);
         hardwareImageDiv.style.display = 'flex';
-        hardwareImageDiv.style.maxWidth = finalStripWidth + 'px';
-        hardwareImageDiv.style.flexBasis = finalStripWidth + 'px';
+        hardwareImageDiv.style.maxWidth = displaySize + 'px';
+        hardwareImageDiv.style.flexBasis = displaySize + 'px';
         hardwareImageDiv.style.flexShrink = '0';
-        hardwareImageDiv.innerHTML = getHardwareIcon(iconHeightPx);
-      } else {
-        hardwareImageDiv.style.display = 'none';
+        hardwareImageDiv.style.minHeight = displaySize + 'px';
         hardwareImageDiv.innerHTML = '';
-        hardwareImageDiv.style.removeProperty('max-width');
-        hardwareImageDiv.style.removeProperty('flex-basis');
-        hardwareImageDiv.style.removeProperty('flex-shrink');
+        if (state.customImageData) {
+          const img = document.createElement('img');
+          img.src = state.customImageData;
+          img.alt = state.customImageName || 'Custom image';
+          img.className = 'custom-image-preview';
+          img.style.maxHeight = displaySize + 'px';
+          img.style.maxWidth = displaySize + 'px';
+          hardwareImageDiv.appendChild(img);
+        } else {
+          const placeholder = document.createElement('div');
+          placeholder.className = 'custom-image-placeholder';
+          placeholder.textContent = 'Add image';
+          placeholder.style.height = displaySize + 'px';
+          hardwareImageDiv.appendChild(placeholder);
+        }
+      } else {
+        const multiViewTypes = ['Screw', 'Nut', 'Heat Insert'];
+        const iconCount = multiViewTypes.includes(state.hardwareType) ? 2 : 1;
+        const iconGapPx = 8; // Match the CSS gap on .hardware-icon
+        if (iconCount > 0) {
+          let iconHeightPx = innerHeightPx;
+          const maxStripWidth = innerWidthPx;
+          const naturalStripWidth = iconCount * iconHeightPx + (iconCount - 1) * iconGapPx;
+          if (naturalStripWidth > maxStripWidth) {
+            const availablePerIcon = Math.floor((maxStripWidth - (iconCount - 1) * iconGapPx) / iconCount);
+            iconHeightPx = Math.max(0, Math.min(iconHeightPx, availablePerIcon));
+          }
+          const finalStripWidth = Math.max(0, iconCount * iconHeightPx + (iconCount - 1) * iconGapPx);
+          hardwareImageDiv.style.display = 'flex';
+          hardwareImageDiv.style.maxWidth = finalStripWidth + 'px';
+          hardwareImageDiv.style.flexBasis = finalStripWidth + 'px';
+          hardwareImageDiv.style.flexShrink = '0';
+          hardwareImageDiv.style.removeProperty('min-height');
+          hardwareImageDiv.innerHTML = getHardwareIcon(iconHeightPx);
+        } else {
+          hardwareImageDiv.style.display = 'none';
+          hardwareImageDiv.innerHTML = '';
+          hardwareImageDiv.style.removeProperty('max-width');
+          hardwareImageDiv.style.removeProperty('flex-basis');
+          hardwareImageDiv.style.removeProperty('flex-shrink');
+          hardwareImageDiv.style.removeProperty('min-height');
+        }
       }
     } else {
       hardwareImageDiv.style.display = 'none';
@@ -1028,84 +1155,93 @@
       hardwareImageDiv.style.removeProperty('max-width');
       hardwareImageDiv.style.removeProperty('flex-basis');
       hardwareImageDiv.style.removeProperty('flex-shrink');
+      hardwareImageDiv.style.removeProperty('min-height');
     }
     // Compose line1: size × length or fuse information
-    let line1 = '';
-    let connectorLine2Parts = null;
-    if (state.hardwareType === 'Fuse') {
-      const fuseParts = [];
-      const fuseLabel = state.fuseType ? `${state.fuseType} Fuse` : 'Fuse';
-      fuseParts.push(fuseLabel);
-      if (state.fuseValue) {
-        fuseParts.push(`${state.fuseValue} A`);
-      }
-      line1 = fuseParts.filter(Boolean).join(' — ');
-    } else if (state.hardwareType === 'Connector') {
-      const category = findConnectorCategory(state.connectorCategory);
-      const categoryLabel = category ? category.label : '';
-      const seriesLabel = state.showStandard && state.standard ? state.standard : '';
-      const noteText = state.notes;
-      if (seriesLabel) {
-        line1 = seriesLabel;
-      } else if (categoryLabel) {
-        line1 = categoryLabel;
-      } else if (noteText) {
-        line1 = noteText;
-      }
-      connectorLine2Parts = [];
-      if (seriesLabel && categoryLabel && seriesLabel !== categoryLabel) {
-        connectorLine2Parts.push(categoryLabel);
-      }
-      if (!seriesLabel && categoryLabel && line1 !== categoryLabel) {
-        connectorLine2Parts.push(categoryLabel);
-      }
-      if (noteText && line1 !== noteText) {
-        connectorLine2Parts.push(noteText);
-      }
+    if (state.hardwareType === 'Custom') {
+      const topLine = (state.customLine1 || '').trim();
+      const bottomLine = (state.customLine2 || '').trim();
+      line1Div.textContent = topLine || 'Custom Label';
+      line2Div.textContent = bottomLine;
+      line2Div.style.display = bottomLine ? 'block' : 'none';
     } else {
-      if (state.threadSize) {
-        line1 = state.threadSize;
-      }
-      if (state.hardwareType === 'Screw' && state.length) {
-        // Only append length if present
-        line1 += line1 ? ` × ${state.length}` : state.length;
-      }
-    }
-    const fallbackLabel = state.hardwareType === 'Fuse' ? 'Fuse' : state.hardwareType;
-    line1Div.textContent = line1 || fallbackLabel;
-    // Compose line2: standard, fuse characteristics and optional notes
-    let line2 = '';
-    if (state.hardwareType === 'Fuse') {
-      const fuseDetails = [];
-      if (state.showStandard && state.standard) {
-        fuseDetails.push(state.standard);
-      }
-      if (state.fuseType === 'Glass') {
-        if (state.glassSize) {
-          fuseDetails.push(state.glassSize);
+      let line1 = '';
+      let connectorLine2Parts = null;
+      if (state.hardwareType === 'Fuse') {
+        const fuseParts = [];
+        const fuseLabel = state.fuseType ? `${state.fuseType} Fuse` : 'Fuse';
+        fuseParts.push(fuseLabel);
+        if (state.fuseValue) {
+          fuseParts.push(`${state.fuseValue} A`);
         }
-        if (state.glassSpeed) {
-          fuseDetails.push(state.glassSpeed);
+        line1 = fuseParts.filter(Boolean).join(' — ');
+      } else if (state.hardwareType === 'Connector') {
+        const category = findConnectorCategory(state.connectorCategory);
+        const categoryLabel = category ? category.label : '';
+        const seriesLabel = state.showStandard && state.standard ? state.standard : '';
+        const noteText = state.notes;
+        if (seriesLabel) {
+          line1 = seriesLabel;
+        } else if (categoryLabel) {
+          line1 = categoryLabel;
+        } else if (noteText) {
+          line1 = noteText;
+        }
+        connectorLine2Parts = [];
+        if (seriesLabel && categoryLabel && seriesLabel !== categoryLabel) {
+          connectorLine2Parts.push(categoryLabel);
+        }
+        if (!seriesLabel && categoryLabel && line1 !== categoryLabel) {
+          connectorLine2Parts.push(categoryLabel);
+        }
+        if (noteText && line1 !== noteText) {
+          connectorLine2Parts.push(noteText);
+        }
+      } else {
+        if (state.threadSize) {
+          line1 = state.threadSize;
+        }
+        if (state.hardwareType === 'Screw' && state.length) {
+          // Only append length if present
+          line1 += line1 ? ` × ${state.length}` : state.length;
         }
       }
-      if (state.notes) {
-        fuseDetails.push(state.notes);
+      const fallbackLabel = state.hardwareType === 'Fuse' ? 'Fuse' : state.hardwareType;
+      line1Div.textContent = line1 || fallbackLabel;
+      // Compose line2: standard, fuse characteristics and optional notes
+      let line2 = '';
+      if (state.hardwareType === 'Fuse') {
+        const fuseDetails = [];
+        if (state.showStandard && state.standard) {
+          fuseDetails.push(state.standard);
+        }
+        if (state.fuseType === 'Glass') {
+          if (state.glassSize) {
+            fuseDetails.push(state.glassSize);
+          }
+          if (state.glassSpeed) {
+            fuseDetails.push(state.glassSpeed);
+          }
+        }
+        if (state.notes) {
+          fuseDetails.push(state.notes);
+        }
+        line2 = fuseDetails.join(' • ');
+      } else if (state.hardwareType === 'Connector') {
+        if (connectorLine2Parts && connectorLine2Parts.length > 0) {
+          line2 = connectorLine2Parts.join(' • ');
+        }
+      } else {
+        if (state.showStandard && state.standard) {
+          line2 = state.standard;
+        }
+        if (state.notes) {
+          line2 += line2 ? ` • ${state.notes}` : state.notes;
+        }
       }
-      line2 = fuseDetails.join(' • ');
-    } else if (state.hardwareType === 'Connector') {
-      if (connectorLine2Parts && connectorLine2Parts.length > 0) {
-        line2 = connectorLine2Parts.join(' • ');
-      }
-    } else {
-      if (state.showStandard && state.standard) {
-        line2 = state.standard;
-      }
-      if (state.notes) {
-        line2 += line2 ? ` • ${state.notes}` : state.notes;
-      }
+      line2Div.textContent = line2;
+      line2Div.style.display = line2 ? 'block' : 'none';
     }
-    line2Div.textContent = line2;
-    line2Div.style.display = line2 ? 'block' : 'none';
     // Adjust font sizes based on inner label height
     const primaryFontSize = Math.max(8, Math.floor(innerHeightPx * 0.45));
     const secondaryFontSize = Math.max(6, Math.floor(innerHeightPx * 0.2));
@@ -1193,6 +1329,8 @@
       ready = !!state.fuseValue;
     } else if (state.hardwareType === 'Connector') {
       ready = !!state.notes && !!state.connectorCategory;
+    } else if (state.hardwareType === 'Custom') {
+      ready = !!(state.customLine1 && state.customLine1.trim());
     } else if (state.hardwareType === 'Screw') {
       ready = !!state.threadSize && !!state.length;
     } else {
@@ -1250,6 +1388,14 @@
         }
         if (state.notes) {
           fileParts.push(state.notes);
+        }
+      } else if (state.hardwareType === 'Custom') {
+        fileParts.push('Custom');
+        if (state.customLine1) {
+          fileParts.push(state.customLine1);
+        }
+        if (state.customLine2) {
+          fileParts.push(state.customLine2);
         }
       } else {
         if (state.threadSize) {
@@ -1437,6 +1583,30 @@
       updateDownloadState();
       updatePreview();
     });
+    if (customLine1Input) {
+      customLine1Input.addEventListener('input', () => {
+        state.customLine1 = customLine1Input.value;
+        updateDownloadState();
+        updatePreview();
+      });
+    }
+    if (customLine2Input) {
+      customLine2Input.addEventListener('input', () => {
+        state.customLine2 = customLine2Input.value;
+        updatePreview();
+      });
+    }
+    if (customImageInput) {
+      customImageInput.addEventListener('change', () => {
+        const file = customImageInput.files && customImageInput.files[0] ? customImageInput.files[0] : null;
+        handleCustomImageFile(file);
+      });
+    }
+    if (customImageClearButton) {
+      customImageClearButton.addEventListener('click', () => {
+        clearCustomImage();
+      });
+    }
     // Standard select
     standardSelect.addEventListener('change', () => {
       const selectedOption = standardSelect.selectedOptions[0];
@@ -1500,6 +1670,7 @@
   function init() {
     populateFuseValues();
     populateConnectorCategories();
+    updateCustomImageUi();
     onHardwareTypeChange();
     initEventHandlers();
     updateDownloadState();
