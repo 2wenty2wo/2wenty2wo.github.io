@@ -1555,6 +1555,69 @@
     }
   }
 
+  function renderLabelCanvas() {
+    if (!previewContainer || !labelInner) {
+      return Promise.reject(new Error('Label preview is not available.'));
+    }
+
+    const printableWidthMm = Math.max(0, state.widthMm - 4);
+    const printableHeightMm = Math.max(0, state.heightMm - 2);
+    const exportDpi = 300;
+    const pixelsPerMmAtExportDpi = exportDpi / 25.4;
+    const scale = pixelsPerMmAtExportDpi / pxPerMm;
+
+    const containerWidth = previewContainer.offsetWidth || previewContainer.clientWidth;
+    const containerHeight = previewContainer.offsetHeight || previewContainer.clientHeight;
+    if (!containerWidth || !containerHeight) {
+      return Promise.reject(new Error('Label preview has no measurable size.'));
+    }
+
+    return html2canvas(previewContainer, {
+      backgroundColor: null,
+      scale,
+      width: containerWidth,
+      height: containerHeight,
+      scrollX: 0,
+      scrollY: 0
+    }).then(canvas => {
+      const containerRect = previewContainer.getBoundingClientRect();
+      const innerRect = labelInner.getBoundingClientRect();
+      const ratioX = canvas.width / containerWidth;
+      const ratioY = canvas.height / containerHeight;
+      const cropX = Math.max(0, Math.floor((innerRect.left - containerRect.left) * ratioX));
+      const cropY = Math.max(0, Math.floor((innerRect.top - containerRect.top) * ratioY));
+      const cropWidth = Math.max(1, Math.ceil(innerRect.width * ratioX));
+      const cropHeight = Math.max(1, Math.ceil(innerRect.height * ratioY));
+      const sourceWidth = Math.min(cropWidth, canvas.width - cropX);
+      const sourceHeight = Math.min(cropHeight, canvas.height - cropY);
+
+      if (sourceWidth <= 0 || sourceHeight <= 0) {
+        throw new Error('Computed label dimensions are invalid.');
+      }
+
+      const outputCanvas = document.createElement('canvas');
+      const targetWidthPx = Math.max(1, Math.round(printableWidthMm * pixelsPerMmAtExportDpi));
+      const targetHeightPx = Math.max(1, Math.round(printableHeightMm * pixelsPerMmAtExportDpi));
+      outputCanvas.width = targetWidthPx;
+      outputCanvas.height = targetHeightPx;
+      const ctx = outputCanvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(
+          canvas,
+          cropX,
+          cropY,
+          sourceWidth,
+          sourceHeight,
+          0,
+          0,
+          outputCanvas.width,
+          outputCanvas.height
+        );
+      }
+      return outputCanvas;
+    });
+  }
+
   /**
    * Capture the label preview as an image and trigger a download.  The
    * resulting PNG file is sized to 300 DPI based on the selected
@@ -1562,85 +1625,83 @@
    * capture accordingly.
    */
   function downloadLabel() {
-    // Compute the DPI scaling factor.  On most screens 96 px = 25.4 mm.
-    const desiredDpi = 300;
-    const baseDpi = 96;
-    const scale = desiredDpi / baseDpi;
-    html2canvas(previewContainer, {
-      backgroundColor: null,
-      scale
-    }).then(canvas => {
-      const link = document.createElement('a');
-      link.href = canvas.toDataURL('image/png');
-      // Build a file name from the state, e.g., "M3x20_DIN11014.png"
-      const fileParts = [];
-      if (state.hardwareType === 'Fuse') {
-        fileParts.push('Fuse');
-        if (state.fuseType) {
-          fileParts.push(state.fuseType);
-        }
-        if (state.fuseValue) {
-          fileParts.push(`${state.fuseValue}A`);
-        }
-        if (state.fuseType === 'Glass') {
-          if (state.glassSize) {
-            fileParts.push(state.glassSize);
+    renderLabelCanvas()
+      .then(canvas => {
+        const link = document.createElement('a');
+        link.href = canvas.toDataURL('image/png');
+        // Build a file name from the state, e.g., "M3x20_DIN11014.png"
+        const fileParts = [];
+        if (state.hardwareType === 'Fuse') {
+          fileParts.push('Fuse');
+          if (state.fuseType) {
+            fileParts.push(state.fuseType);
           }
-          if (state.glassSpeed) {
-            fileParts.push(state.glassSpeed);
+          if (state.fuseValue) {
+            fileParts.push(`${state.fuseValue}A`);
+          }
+          if (state.fuseType === 'Glass') {
+            if (state.glassSize) {
+              fileParts.push(state.glassSize);
+            }
+            if (state.glassSpeed) {
+              fileParts.push(state.glassSpeed);
+            }
+          }
+        } else if (state.hardwareType === 'Connector') {
+          fileParts.push('Connector');
+          if (state.connectorCategory) {
+            const category = findConnectorCategory(state.connectorCategory);
+            if (category) {
+              fileParts.push(category.label);
+            }
+          }
+          if (state.notes) {
+            fileParts.push(state.notes);
+          }
+        } else if (state.hardwareType === 'Custom') {
+          fileParts.push('Custom');
+          if (state.customLine1) {
+            fileParts.push(state.customLine1);
+          }
+          if (state.customLine2) {
+            fileParts.push(state.customLine2);
+          }
+        } else if (state.hardwareType === 'Bearing') {
+          if (state.bearingType) {
+            fileParts.push(state.bearingType);
+          }
+          if (state.showStandard && state.bearingDetails) {
+            fileParts.push(state.bearingDetails);
+          }
+        } else {
+          if (state.threadSize) {
+            fileParts.push(state.threadSize);
+          }
+          if (state.hardwareType === 'Screw' && state.length) {
+            fileParts.push(`x${state.length}`);
           }
         }
-      } else if (state.hardwareType === 'Connector') {
-        fileParts.push('Connector');
-        if (state.connectorCategory) {
-          const category = findConnectorCategory(state.connectorCategory);
-          if (category) {
-            fileParts.push(category.label);
-          }
+        if (state.standardCode) {
+          fileParts.push(state.standardCode);
         }
-        if (state.notes) {
-          fileParts.push(state.notes);
+        if (state.standard && state.standard !== state.standardCode) {
+          fileParts.push(state.standard);
         }
-      } else if (state.hardwareType === 'Custom') {
-        fileParts.push('Custom');
-        if (state.customLine1) {
-          fileParts.push(state.customLine1);
-        }
-        if (state.customLine2) {
-          fileParts.push(state.customLine2);
-        }
-      } else if (state.hardwareType === 'Bearing') {
-        if (state.bearingType) {
-          fileParts.push(state.bearingType);
-        }
-        if (state.showStandard && state.bearingDetails) {
-          fileParts.push(state.bearingDetails);
-        }
-      } else {
-        if (state.threadSize) {
-          fileParts.push(state.threadSize);
-        }
-        if (state.hardwareType === 'Screw' && state.length) {
-          fileParts.push(`x${state.length}`);
-        }
-      }
-      if (state.standardCode) {
-        fileParts.push(state.standardCode);
-      }
-      if (state.standard && state.standard !== state.standardCode) {
-        fileParts.push(state.standard);
-      }
-      const safeName = fileParts
-        .filter(Boolean)
-        .map(part => part.replace(/[^a-zA-Z0-9]+/g, '_'))
-        .join('_')
-        .replace(/_+/g, '_')
-        .replace(/^_+|_+$/g, '');
-      link.download = `${safeName || 'label'}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    });
+        const safeName = fileParts
+          .filter(Boolean)
+          .map(part => part.replace(/[^a-zA-Z0-9]+/g, '_'))
+          .join('_')
+          .replace(/_+/g, '_')
+          .replace(/^_+|_+$/g, '');
+        link.download = `${safeName || 'label'}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      })
+      .catch(err => {
+        console.error('Label download failed', err);
+        alert('Unable to prepare the label image for download.');
+      });
   }
 
   /**
@@ -1649,9 +1710,6 @@
    * window which immediately triggers the browser's print dialog.
    */
   function printLabel() {
-    const desiredDpi = 300;
-    const baseDpi = 96;
-    const scale = desiredDpi / baseDpi;
     const printWindow = window.open('', '_blank', 'width=800,height=600');
     if (!printWindow) {
       alert('Please allow pop-ups to print the label.');
@@ -1668,27 +1726,26 @@
     statusDiv.className = 'status';
     statusDiv.textContent = 'Preparing print preview…';
     doc.body.appendChild(statusDiv);
-    html2canvas(previewContainer, {
-      backgroundColor: null,
-      scale
-    }).then(canvas => {
-      const dataUrl = canvas.toDataURL('image/png');
-      const img = doc.createElement('img');
-      img.src = dataUrl;
-      img.alt = 'Gridfinity label';
-      img.style.maxWidth = '100%';
-      img.style.maxHeight = '100%';
-      img.onload = () => {
-        printWindow.focus();
-        printWindow.print();
-        printWindow.close();
-      };
-      doc.body.innerHTML = '';
-      doc.body.appendChild(img);
-    }).catch(err => {
-      console.error('Print preview generation failed', err);
-      doc.body.innerHTML = '<div class="status">Unable to prepare the label for printing.</div>';
-    });
+    renderLabelCanvas()
+      .then(canvas => {
+        const dataUrl = canvas.toDataURL('image/png');
+        const img = doc.createElement('img');
+        img.src = dataUrl;
+        img.alt = 'Gridfinity label';
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '100%';
+        img.onload = () => {
+          printWindow.focus();
+          printWindow.print();
+          printWindow.close();
+        };
+        doc.body.innerHTML = '';
+        doc.body.appendChild(img);
+      })
+      .catch(err => {
+        console.error('Print preview generation failed', err);
+        doc.body.innerHTML = '<div class="status">Unable to prepare the label for printing.</div>';
+      });
   }
 
   /**
