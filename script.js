@@ -18,6 +18,10 @@
   const imperialThreadSizes = [
     '#4‑40', '#6‑32', '#8‑32', '#10‑24', '1/4‑20', '5/16‑18', '3/8‑16', '7/16‑14', '1/2‑13'
   ];
+  const fuseValues = [
+    '0.25', '0.5', '0.75', '1', '1.5', '2', '2.5', '3', '4', '5', '6', '7.5', '8', '10', '12',
+    '15', '20', '25', '30', '40'
+  ];
   // Hardware standards grouped by hardware category (Bolt, Screw, Nut,
   // Washer).  Each entry contains both the standard code and a short
   // descriptive name so the dropdown can present meaningful context to
@@ -163,6 +167,11 @@
       { code: 'DIN 9021', name: 'Plain Washer' },
       { code: 'DIN 93', name: 'Tab Washer' },
       { code: 'DIN 988', name: 'Shim Ring' }
+    ],
+    Fuse: [
+      { code: 'IEC 60127-2', name: 'Time-Lag Cartridge Fuse' },
+      { code: 'IEC 60127-3', name: 'Fast-Acting Cartridge Fuse' },
+      { code: 'UL 248-14', name: 'Supplementary Fuse' }
     ]
   };
 
@@ -177,10 +186,18 @@
 
   // Grab references to all relevant DOM nodes once at startup.
   const screwTypeContainer = document.getElementById('screw-type-container');
+  const threadSizeContainer = document.getElementById('thread-size-container');
   const threadSizeSelect = document.getElementById('thread-size-select');
   const threadLengthRow = document.getElementById('thread-length-row');
   const lengthContainer = document.getElementById('length-container');
   const lengthInput = document.getElementById('length-input');
+  const fuseTypeContainer = document.getElementById('fuse-type-container');
+  const fuseValueContainer = document.getElementById('fuse-value-container');
+  const glassOptionsContainer = document.getElementById('glass-options-container');
+  const fuseValueSelect = document.getElementById('fuse-value-select');
+  const glassSizeSelect = document.getElementById('glass-size-select');
+  const glassSlowBlowCheckbox = document.getElementById('glass-slow-blow');
+  const glassFastBlowCheckbox = document.getElementById('glass-fast-blow');
   const notesInput = document.getElementById('notes-input');
   const standardSelect = document.getElementById('standard-select');
   const standardToggle = document.getElementById('standard-toggle');
@@ -204,6 +221,7 @@
   const hardwareTypeRadios = document.querySelectorAll('input[name="hardware-type"]');
   const systemTypeRadios = document.querySelectorAll('input[name="system-type"]');
   const screwTypeRadios = document.querySelectorAll('input[name="screw-type"]');
+  const fuseTypeRadios = document.querySelectorAll('input[name="fuse-type"]');
   const heightRadios = document.querySelectorAll('input[name="label-height"]');
 
   // Keep track of current selections.  This state object drives the preview
@@ -212,8 +230,12 @@
     hardwareType: 'Screw',
     systemType: 'Metric',
     screwType: 'Bolt',
+    fuseType: 'Glass',
     threadSize: '',
     length: '',
+    fuseValue: '',
+    glassSpeed: '',
+    glassSize: '',
     notes: '',
     standard: '',
     showStandard: true,
@@ -235,6 +257,24 @@
    * hardware or system selection changes.
    */
   function populateThreadSizes() {
+    if (state.hardwareType === 'Fuse') {
+      if (threadSizeSelect) {
+        threadSizeSelect.innerHTML = '';
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = 'Not applicable';
+        threadSizeSelect.appendChild(placeholder);
+        threadSizeSelect.value = '';
+        threadSizeSelect.disabled = true;
+      }
+      state.threadSize = '';
+      updateDownloadState();
+      updatePreview();
+      return;
+    }
+    if (threadSizeSelect) {
+      threadSizeSelect.disabled = false;
+    }
     const list = state.systemType === 'Metric' ? metricThreadSizes : imperialThreadSizes;
     // Clear existing options
     threadSizeSelect.innerHTML = '';
@@ -253,6 +293,52 @@
     threadSizeSelect.value = '';
     updateDownloadState();
     updatePreview();
+  }
+
+  function populateFuseValues() {
+    if (!fuseValueSelect) {
+      return;
+    }
+    fuseValueSelect.innerHTML = '';
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Select value…';
+    fuseValueSelect.appendChild(placeholder);
+    fuseValues.forEach(value => {
+      const opt = document.createElement('option');
+      opt.value = value;
+      opt.textContent = `${value} A`;
+      fuseValueSelect.appendChild(opt);
+    });
+    fuseValueSelect.value = state.fuseValue || '';
+  }
+
+  function updateGlassOptionVisibility({ resetIfHidden = false } = {}) {
+    const shouldShow = state.hardwareType === 'Fuse' && state.fuseType === 'Glass';
+    if (glassOptionsContainer) {
+      glassOptionsContainer.classList.toggle('d-none', !shouldShow);
+    }
+    if (shouldShow) {
+      if (glassSizeSelect) {
+        glassSizeSelect.value = state.glassSize || '';
+      }
+      if (glassSlowBlowCheckbox && glassFastBlowCheckbox) {
+        glassSlowBlowCheckbox.checked = state.glassSpeed.startsWith('Slow');
+        glassFastBlowCheckbox.checked = state.glassSpeed.startsWith('Fast');
+      }
+    } else if (resetIfHidden) {
+      state.glassSpeed = '';
+      state.glassSize = '';
+      if (glassSlowBlowCheckbox) {
+        glassSlowBlowCheckbox.checked = false;
+      }
+      if (glassFastBlowCheckbox) {
+        glassFastBlowCheckbox.checked = false;
+      }
+      if (glassSizeSelect) {
+        glassSizeSelect.value = '';
+      }
+    }
   }
 
   /**
@@ -424,13 +510,35 @@
   function onHardwareTypeChange() {
     const type = state.hardwareType;
     const showScrewFields = type === 'Screw';
+    const showFuseFields = type === 'Fuse';
 
-    screwTypeContainer.style.display = showScrewFields ? '' : 'none';
-    lengthContainer.style.display = showScrewFields ? '' : 'none';
+    if (screwTypeContainer) {
+      screwTypeContainer.style.display = showScrewFields ? '' : 'none';
+    }
+    if (lengthContainer) {
+      lengthContainer.style.display = showScrewFields ? '' : 'none';
+    }
 
     if (threadLengthRow) {
-      threadLengthRow.classList.toggle('single-column', !showScrewFields);
+      threadLengthRow.classList.toggle('single-column', !showScrewFields && !showFuseFields);
+      threadLengthRow.style.display = showFuseFields ? 'none' : '';
     }
+    if (threadSizeContainer) {
+      threadSizeContainer.style.display = showFuseFields ? 'none' : '';
+    }
+    if (fuseTypeContainer) {
+      fuseTypeContainer.classList.toggle('d-none', !showFuseFields);
+    }
+    if (fuseValueContainer) {
+      fuseValueContainer.classList.toggle('d-none', !showFuseFields);
+    }
+    if (fuseValueSelect) {
+      fuseValueSelect.disabled = !showFuseFields;
+      if (showFuseFields) {
+        fuseValueSelect.value = state.fuseValue || '';
+      }
+    }
+    updateGlassOptionVisibility({ resetIfHidden: !showFuseFields });
     populateThreadSizes();
     populateStandards();
     updateDownloadState();
@@ -521,6 +629,25 @@
         <circle cx="50" cy="50" r="45" />
         <circle cx="50" cy="50" r="20" />
       `));
+    } else if (type === 'Fuse') {
+      if (state.fuseType === 'Glass') {
+        pieces.push(buildSvg(`
+          <!-- Glass fuse side view -->
+          <rect x="18" y="42" width="64" height="16" rx="8" />
+          <line x1="18" y1="42" x2="18" y2="58" />
+          <line x1="82" y1="42" x2="82" y2="58" />
+          <line x1="30" y1="50" x2="70" y2="50" />
+        `));
+      } else {
+        pieces.push(buildSvg(`
+          <!-- Blade fuse front view -->
+          <rect x="22" y="28" width="56" height="40" rx="8" />
+          <rect x="28" y="68" width="12" height="18" />
+          <rect x="60" y="68" width="12" height="18" />
+          <line x1="38" y1="44" x2="62" y2="44" />
+          <line x1="38" y1="52" x2="62" y2="52" />
+        `));
+      }
     }
     return pieces.join('');
   }
@@ -588,23 +715,52 @@
       hardwareImageDiv.style.removeProperty('flex-basis');
       hardwareImageDiv.style.removeProperty('flex-shrink');
     }
-    // Compose line1: size × length (when applicable)
+    // Compose line1: size × length or fuse information
     let line1 = '';
-    if (state.threadSize) {
-      line1 = state.threadSize;
+    if (state.hardwareType === 'Fuse') {
+      const fuseParts = [];
+      const fuseLabel = state.fuseType ? `${state.fuseType} Fuse` : 'Fuse';
+      fuseParts.push(fuseLabel);
+      if (state.fuseValue) {
+        fuseParts.push(`${state.fuseValue} A`);
+      }
+      line1 = fuseParts.filter(Boolean).join(' — ');
+    } else {
+      if (state.threadSize) {
+        line1 = state.threadSize;
+      }
+      if (state.hardwareType === 'Screw' && state.length) {
+        // Only append length if present
+        line1 += line1 ? ` × ${state.length}` : state.length;
+      }
     }
-    if (state.hardwareType === 'Screw' && state.length) {
-      // Only append length if present
-      line1 += line1 ? ` × ${state.length}` : state.length;
-    }
-    line1Div.textContent = line1;
-    // Compose line2: standard and optional notes
+    line1Div.textContent = line1 || (state.hardwareType === 'Fuse' ? 'Fuse' : '');
+    // Compose line2: standard, fuse characteristics and optional notes
     let line2 = '';
-    if (state.showStandard && state.standard) {
-      line2 = state.standard;
-    }
-    if (state.notes) {
-      line2 += line2 ? ` • ${state.notes}` : state.notes;
+    if (state.hardwareType === 'Fuse') {
+      const fuseDetails = [];
+      if (state.showStandard && state.standard) {
+        fuseDetails.push(state.standard);
+      }
+      if (state.fuseType === 'Glass') {
+        if (state.glassSize) {
+          fuseDetails.push(state.glassSize);
+        }
+        if (state.glassSpeed) {
+          fuseDetails.push(state.glassSpeed);
+        }
+      }
+      if (state.notes) {
+        fuseDetails.push(state.notes);
+      }
+      line2 = fuseDetails.join(' • ');
+    } else {
+      if (state.showStandard && state.standard) {
+        line2 = state.standard;
+      }
+      if (state.notes) {
+        line2 += line2 ? ` • ${state.notes}` : state.notes;
+      }
     }
     line2Div.textContent = line2;
     line2Div.style.display = line2 ? 'block' : 'none';
@@ -695,9 +851,15 @@
    * must be specified.  For nuts and washers, only size is required.
    */
   function updateDownloadState() {
-    const hasSize = !!state.threadSize;
-    const hasLength = state.hardwareType === 'Screw' ? !!state.length : true;
-    const disabled = !(hasSize && hasLength);
+    let ready = false;
+    if (state.hardwareType === 'Fuse') {
+      ready = !!state.fuseValue;
+    } else if (state.hardwareType === 'Screw') {
+      ready = !!state.threadSize && !!state.length;
+    } else {
+      ready = !!state.threadSize;
+    }
+    const disabled = !ready;
     downloadButton.disabled = disabled;
     if (printButton) {
       printButton.disabled = disabled;
@@ -722,10 +884,41 @@
       const link = document.createElement('a');
       link.href = canvas.toDataURL('image/png');
       // Build a file name from the state, e.g., "M3x20_DIN11014.png"
-      const safeSize = state.threadSize.replace(/[^a-zA-Z0-9]/g, '');
-      const safeLen = state.length ? `x${state.length}` : '';
-      const safeStandard = state.standard ? '_' + state.standard.replace(/[^a-zA-Z0-9]/g, '') : '';
-      link.download = `${safeSize}${safeLen}${safeStandard || ''}.png`;
+      const fileParts = [];
+      if (state.hardwareType === 'Fuse') {
+        fileParts.push('Fuse');
+        if (state.fuseType) {
+          fileParts.push(state.fuseType);
+        }
+        if (state.fuseValue) {
+          fileParts.push(`${state.fuseValue}A`);
+        }
+        if (state.fuseType === 'Glass') {
+          if (state.glassSize) {
+            fileParts.push(state.glassSize);
+          }
+          if (state.glassSpeed) {
+            fileParts.push(state.glassSpeed);
+          }
+        }
+      } else {
+        if (state.threadSize) {
+          fileParts.push(state.threadSize);
+        }
+        if (state.hardwareType === 'Screw' && state.length) {
+          fileParts.push(`x${state.length}`);
+        }
+      }
+      if (state.standard) {
+        fileParts.push(state.standard);
+      }
+      const safeName = fileParts
+        .filter(Boolean)
+        .map(part => part.replace(/[^a-zA-Z0-9]+/g, '_'))
+        .join('_')
+        .replace(/_+/g, '_')
+        .replace(/^_+|_+$/g, '');
+      link.download = `${safeName || 'label'}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -811,12 +1004,66 @@
         }
       });
     });
+    fuseTypeRadios.forEach(radio => {
+      radio.addEventListener('change', () => {
+        if (radio.checked) {
+          const previousType = state.fuseType;
+          state.fuseType = radio.value;
+          const shouldReset = previousType === 'Glass' && state.fuseType !== 'Glass';
+          updateGlassOptionVisibility({ resetIfHidden: shouldReset });
+          updatePreview();
+        }
+      });
+    });
     // Thread size selection
     threadSizeSelect.addEventListener('change', () => {
       state.threadSize = threadSizeSelect.value;
       updateDownloadState();
       updatePreview();
     });
+    if (fuseValueSelect) {
+      fuseValueSelect.addEventListener('change', () => {
+        state.fuseValue = fuseValueSelect.value;
+        updateDownloadState();
+        updatePreview();
+      });
+    }
+    if (glassSlowBlowCheckbox) {
+      glassSlowBlowCheckbox.addEventListener('change', () => {
+        if (!glassSlowBlowCheckbox.checked) {
+          if (!glassFastBlowCheckbox || !glassFastBlowCheckbox.checked) {
+            state.glassSpeed = '';
+          }
+        } else {
+          state.glassSpeed = 'Slow Blow (Time Delay)';
+          if (glassFastBlowCheckbox) {
+            glassFastBlowCheckbox.checked = false;
+          }
+        }
+        updatePreview();
+      });
+    }
+    if (glassFastBlowCheckbox) {
+      glassFastBlowCheckbox.addEventListener('change', () => {
+        if (!glassFastBlowCheckbox.checked) {
+          if (!glassSlowBlowCheckbox || !glassSlowBlowCheckbox.checked) {
+            state.glassSpeed = '';
+          }
+        } else {
+          state.glassSpeed = 'Fast Blow';
+          if (glassSlowBlowCheckbox) {
+            glassSlowBlowCheckbox.checked = false;
+          }
+        }
+        updatePreview();
+      });
+    }
+    if (glassSizeSelect) {
+      glassSizeSelect.addEventListener('change', () => {
+        state.glassSize = glassSizeSelect.value;
+        updatePreview();
+      });
+    }
     // Length input
     lengthInput.addEventListener('input', () => {
       const v = lengthInput.value;
@@ -890,6 +1137,7 @@
    * performing the first preview render.
    */
   function init() {
+    populateFuseValues();
     onHardwareTypeChange();
     initEventHandlers();
     updateDownloadState();
