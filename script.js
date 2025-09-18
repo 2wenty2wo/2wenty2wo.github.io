@@ -711,7 +711,7 @@
         if (state.hardwareType === 'Connector') {
           const display = entry.name ? `${entry.code} — ${entry.name}` : entry.code;
           opt.textContent = display;
-          opt.dataset.name = display;
+          opt.dataset.name = entry.name || entry.code;
         } else {
           opt.textContent = `${entry.code} — ${entry.name}`;
           opt.dataset.name = entry.name;
@@ -1203,25 +1203,22 @@
     // Compute the physical sizes and printable area
     const width = state.widthMm;
     const height = state.heightMm;
-    const printableWidth = Math.max(0, width - 4); // 2mm margin each side
-    const printableHeight = Math.max(0, height - 2); // 1mm margin top/bottom
+    const printableWidth = width;
+    const printableHeight = height;
     labelSizeDisplay.innerHTML = `${width}&nbsp;mm ×&nbsp;${height}&nbsp;mm (label size)`;
-    printAreaDisplay.innerHTML = `${printableWidth}&nbsp;mm ×&nbsp;${printableHeight}&nbsp;mm (printable area)`;
+    printAreaDisplay.innerHTML = `${printableWidth}&nbsp;mm ×&nbsp;${printableHeight}&nbsp;mm (print-ready image size)`;
     // Compute preview container dimensions in pixels
     const pxWidth = width * pxPerMm;
     const pxHeight = height * pxPerMm;
     previewContainer.style.width = pxWidth + 'px';
     previewContainer.style.height = pxHeight + 'px';
-    // Compute inner label margins (2mm side margins, 1mm top/bottom)
-    const marginX = 2 * pxPerMm;
-    const marginY = 1 * pxPerMm;
-    const innerWidthPx = Math.max(0, pxWidth - 2 * marginX);
-    const innerHeightPx = Math.max(0, pxHeight - 2 * marginY);
-    // Position and size the yellow label
+    const innerWidthPx = pxWidth;
+    const innerHeightPx = pxHeight;
+    // Position and size the label so it fills the preview
     labelInner.style.width = innerWidthPx + 'px';
     labelInner.style.height = innerHeightPx + 'px';
-    labelInner.style.left = marginX + 'px';
-    labelInner.style.top = marginY + 'px';
+    labelInner.style.left = '0px';
+    labelInner.style.top = '0px';
     const readyForPreview = isLabelReady();
 
     if (!readyForPreview) {
@@ -1244,7 +1241,7 @@
         ctx.clearRect(0, 0, qrCanvas.width, qrCanvas.height);
       }
       qrCanvas.style.display = 'none';
-      labelInner.style.removeProperty('padding-right');
+      labelInner.style.setProperty('--label-padding-right-extra', '0px');
       return;
     }
 
@@ -1253,6 +1250,15 @@
       previewPlaceholder.setAttribute('aria-hidden', 'true');
     }
     labelInner.style.display = 'flex';
+    const basePaddingX = Math.max(10, Math.round(innerHeightPx * 0.22));
+    const basePaddingY = Math.max(6, Math.round(innerHeightPx * 0.16));
+    const baseGap = Math.max(8, Math.round(innerHeightPx * 0.12));
+    const accentWidth = Math.min(Math.max(6, Math.round(innerHeightPx * 0.1)), Math.round(basePaddingX * 0.85));
+    labelInner.style.setProperty('--label-padding-x', `${basePaddingX}px`);
+    labelInner.style.setProperty('--label-padding-y', `${basePaddingY}px`);
+    labelInner.style.setProperty('--label-gap', `${baseGap}px`);
+    labelInner.style.setProperty('--label-accent-width', `${accentWidth}px`);
+    labelInner.style.setProperty('--label-padding-right-extra', '0px');
     // Icon area: size artwork so that each SVG matches the printable height.
     // For screws and nuts two views are displayed side-by-side; when the
     // label is too narrow to accommodate their natural width they are scaled
@@ -1462,7 +1468,8 @@
       qrCanvas.height = qrSize;
       qrCanvas.style.width = qrSize + 'px';
       qrCanvas.style.height = qrSize + 'px';
-      qrCanvas.style.right = pxPerMm + 'px'; // 1mm right margin
+      const qrOffset = Math.max(pxPerMm, Math.round(basePaddingX * 0.5));
+      qrCanvas.style.right = qrOffset + 'px';
       qrCanvas.style.top = '50%';
       qrCanvas.style.transform = 'translateY(-50%)';
       qrCanvas.style.display = 'block';
@@ -1484,15 +1491,16 @@
       } catch (err) {
         console.error('QR code generation failed', err);
       }
-      const qrPadding = Math.max(6, qrSize + pxPerMm * 2);
-      labelInner.style.paddingRight = qrPadding + 'px';
+      const qrPadding = Math.max(basePaddingX, Math.round(qrSize + pxPerMm * 1.5));
+      const extraRight = Math.max(0, qrPadding - basePaddingX);
+      labelInner.style.setProperty('--label-padding-right-extra', `${extraRight}px`);
     } else {
       const ctx = qrCanvas.getContext('2d');
       if (ctx) {
         ctx.clearRect(0, 0, qrCanvas.width, qrCanvas.height);
       }
       qrCanvas.style.display = 'none';
-      labelInner.style.removeProperty('padding-right');
+      labelInner.style.setProperty('--label-padding-right-extra', '0px');
     }
 
     applyTextFitting(primaryFontSize, secondaryFontSize);
@@ -1560,8 +1568,8 @@
       return Promise.reject(new Error('Label preview is not available.'));
     }
 
-    const printableWidthMm = Math.max(0, state.widthMm - 4);
-    const printableHeightMm = Math.max(0, state.heightMm - 2);
+    const printableWidthMm = state.widthMm;
+    const printableHeightMm = state.heightMm;
     const exportDpi = 300;
     const pixelsPerMmAtExportDpi = exportDpi / 25.4;
     const scale = pixelsPerMmAtExportDpi / pxPerMm;
