@@ -169,23 +169,81 @@
       { code: 'DIN 988', name: 'Shim Ring' }
     ],
     'Heat Insert': [],
-    Connector: [
-      { code: 'JST-PH', name: '2.0 mm wire-to-board plug (PH series)' },
-      { code: 'JST-XH', name: '2.5 mm wire-to-board plug (XH series)' },
-      { code: 'JST-SH', name: '1.0 mm wire-to-board plug (SH series)' },
-      { code: 'JST-GH', name: '1.25 mm wire-to-board plug (GH series)' },
-      { code: 'JST-ZH', name: '1.5 mm wire-to-board plug (ZH series)' },
-      { code: 'JST-VH', name: '3.96 mm wire-to-board plug (VH series)' },
-      { code: 'JST-SM', name: '2.54 mm wire-to-wire plug (SM series)' },
-      { code: 'JST-JWPF', name: '2.0 mm sealed connector (JWPF series)' },
-      { code: 'JST-RCY', name: '2.54 mm battery connector (RCY series)' }
-    ],
     Fuse: [
       { code: 'IEC 60127-2', name: 'Time-Lag Cartridge Fuse' },
       { code: 'IEC 60127-3', name: 'Fast-Acting Cartridge Fuse' },
       { code: 'UL 248-14', name: 'Supplementary Fuse' }
     ]
   };
+
+  const connectorCatalog = [
+    {
+      id: 'pre-insulated-crimp',
+      label: 'Pre-insulated Crimp Terminals (Red/Blue/Yellow)',
+      help: 'Colour-coded PVC or nylon insulated crimp lugs for 22–10 AWG conductors.',
+      example: 'e.g., Blue ring terminal, 16–14 AWG, M4 stud',
+      series: [
+        { code: 'Ring Terminal (Red)', name: '22–16 AWG (0.5–1.5 mm²) PVC insulated' },
+        { code: 'Ring Terminal (Blue)', name: '16–14 AWG (1.5–2.5 mm²) PVC insulated' },
+        { code: 'Ring Terminal (Yellow)', name: '12–10 AWG (4.0–6.0 mm²) PVC insulated' },
+        { code: 'Fork Terminal (Blue)', name: '16–14 AWG (1.5–2.5 mm²) insulated spade' },
+        { code: 'Butt Splice (Red)', name: '22–16 AWG (0.5–1.5 mm²) straight splice' },
+        { code: 'Male Quick Disconnect (Blue)', name: '16–14 AWG (1.5–2.5 mm²) fully insulated tab' },
+        { code: 'Female Quick Disconnect (Blue)', name: '16–14 AWG (1.5–2.5 mm²) fully insulated receptacle' }
+      ]
+    },
+    {
+      id: 'molex',
+      label: 'Molex Connectors',
+      help: 'Common Molex wire-to-board and power connector series. Note circuit count, pitch and housing gender.',
+      example: 'e.g., Molex Micro-Fit 3.0, 6-circuit plug, 20 AWG leads',
+      series: [
+        { code: 'Molex KK 254', name: '2.54 mm pitch friction ramp wire-to-board' },
+        { code: 'Molex KK 396', name: '3.96 mm pitch wire-to-board' },
+        { code: 'Molex Mini-Fit Jr.', name: '4.2 mm pitch power connector' },
+        { code: 'Molex Micro-Fit 3.0', name: '3.0 mm pitch compact power connector' },
+        { code: 'Molex Mega-Fit', name: '5.7 mm pitch high-current connector' },
+        { code: 'Molex SL Series', name: '2.54 mm pitch crimp housing (SL)' },
+        { code: 'Molex Nano-Fit', name: '2.50 mm pitch fully isolated terminals' },
+        { code: 'Molex Sabre', name: '7.50 mm pitch high-power connector' }
+      ]
+    },
+    {
+      id: 'jst',
+      label: 'JST Connectors',
+      help: 'Popular JST wire-to-board and wire-to-wire series. Record circuit count, pitch and mating parts.',
+      example: 'e.g., JST-XH 5-pin housing with matching crimp terminals',
+      series: [
+        { code: 'JST-PH', name: '2.0 mm wire-to-board plug (PH series)' },
+        { code: 'JST-XH', name: '2.5 mm wire-to-board plug (XH series)' },
+        { code: 'JST-EH', name: '2.5 mm wire-to-board plug (EH series)' },
+        { code: 'JST-SH', name: '1.0 mm wire-to-board plug (SH series)' },
+        { code: 'JST-GH', name: '1.25 mm wire-to-board plug (GH series)' },
+        { code: 'JST-ZH', name: '1.5 mm wire-to-board plug (ZH series)' },
+        { code: 'JST-VH', name: '3.96 mm wire-to-board plug (VH series)' },
+        { code: 'JST-SM', name: '2.54 mm wire-to-wire plug (SM series)' },
+        { code: 'JST-JWPF', name: '2.0 mm sealed connector (JWPF series)' },
+        { code: 'JST-RCY', name: '2.54 mm battery connector (RCY series)' }
+      ]
+    },
+    {
+      id: 'bootlace-ferrule',
+      label: 'Bootlace Ferrules (Cord End Terminals)',
+      help: 'Cord end ferrules sized to DIN 46228. Specify conductor size, entry style and colour code.',
+      example: 'e.g., Twin bootlace ferrule, 2 × 1.5 mm², DIN 46228-4',
+      series: [
+        { code: 'Bootlace Ferrule 0.5 mm²', name: 'Insulated ferrule per DIN 46228-4' },
+        { code: 'Bootlace Ferrule 0.75 mm²', name: 'Insulated ferrule per DIN 46228-4' },
+        { code: 'Bootlace Ferrule 1.0 mm²', name: 'Insulated ferrule per DIN 46228-4' },
+        { code: 'Bootlace Ferrule 1.5 mm²', name: 'Insulated ferrule per DIN 46228-4' },
+        { code: 'Bootlace Ferrule 2.5 mm²', name: 'Insulated ferrule per DIN 46228-4' },
+        { code: 'Bootlace Ferrule 4.0 mm²', name: 'Insulated ferrule per DIN 46228-4' },
+        { code: 'Twin Bootlace Ferrule 2 × 1.5 mm²', name: 'Twin entry insulated ferrule per DIN 46228-4' },
+        { code: 'Twin Bootlace Ferrule 2 × 2.5 mm²', name: 'Twin entry insulated ferrule per DIN 46228-4' },
+        { code: 'Uninsulated Bootlace Ferrule 1.0 mm²', name: 'Plain copper ferrule per DIN 46228-1' }
+      ]
+    }
+  ];
 
   // Ratio of preview pixels per millimetre.  This value controls how
   // large the label appears onscreen.  The physical dimensions of the
@@ -212,11 +270,16 @@
   const glassFastBlowCheckbox = document.getElementById('glass-fast-blow');
   const notesInput = document.getElementById('notes-input');
   const measurementSystemContainer = document.getElementById('measurement-system-container');
+  const connectorCategoryContainer = document.getElementById('connector-category-container');
+  const connectorCategorySelect = document.getElementById('connector-category-select');
+  const connectorCategoryHelp = document.getElementById('connector-category-help');
   const connectorNotesHint = document.getElementById('connector-notes-hint');
   const notesLabel = document.querySelector('label[for="notes-input"]');
   const defaultNotesLabel = notesLabel ? notesLabel.textContent : '';
   const defaultNotesPlaceholder = notesInput ? notesInput.getAttribute('placeholder') || '' : '';
   const standardSelect = document.getElementById('standard-select');
+  const standardLabel = document.querySelector('label[for="standard-select"]');
+  const defaultStandardLabel = standardLabel ? standardLabel.textContent : '';
   const standardToggle = document.getElementById('standard-toggle');
   const imageToggle = document.getElementById('image-toggle');
   const qrcodeToggle = document.getElementById('qrcode-toggle');
@@ -260,13 +323,81 @@
     showQr: false,
     qrContent: '',
     widthMm: 55,
-    heightMm: 12
+    heightMm: 12,
+    connectorCategory: ''
   };
 
   const STANDARD_PLACEHOLDER_TEXT = 'Select standard… (type to filter, Esc clears)';
+  const CONNECTOR_PLACEHOLDER_TEXT = 'Select connector series… (type to filter, Esc clears)';
   const standardFilterState = {
     query: ''
   };
+
+  function findConnectorCategory(id) {
+    return connectorCatalog.find(category => category.id === id);
+  }
+
+  function populateConnectorCategories() {
+    if (!connectorCategorySelect) {
+      return;
+    }
+    connectorCategorySelect.innerHTML = '';
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Select connector category…';
+    placeholder.disabled = true;
+    placeholder.selected = !state.connectorCategory;
+    connectorCategorySelect.appendChild(placeholder);
+    connectorCatalog.forEach(category => {
+      const opt = document.createElement('option');
+      opt.value = category.id;
+      opt.textContent = category.label;
+      connectorCategorySelect.appendChild(opt);
+    });
+    connectorCategorySelect.value = state.connectorCategory || '';
+  }
+
+  function ensureConnectorCategory() {
+    if (!state.connectorCategory) {
+      const first = connectorCatalog[0];
+      if (first) {
+        state.connectorCategory = first.id;
+      }
+    }
+    if (connectorCategorySelect) {
+      connectorCategorySelect.value = state.connectorCategory || '';
+    }
+  }
+
+  function updateConnectorCategoryUi() {
+    if (state.hardwareType !== 'Connector') {
+      if (connectorCategoryHelp) {
+        connectorCategoryHelp.textContent = '';
+        connectorCategoryHelp.classList.add('d-none');
+      }
+      if (notesInput) {
+        notesInput.placeholder = defaultNotesPlaceholder;
+      }
+      return;
+    }
+    const category = findConnectorCategory(state.connectorCategory);
+    if (connectorCategorySelect) {
+      connectorCategorySelect.value = state.connectorCategory || '';
+    }
+    if (connectorCategoryHelp) {
+      if (category && category.help) {
+        connectorCategoryHelp.textContent = category.help;
+        connectorCategoryHelp.classList.remove('d-none');
+      } else {
+        connectorCategoryHelp.textContent = '';
+        connectorCategoryHelp.classList.add('d-none');
+      }
+    }
+    if (notesInput) {
+      const example = category && category.example ? category.example : 'e.g., 3-pin JST-PH plug, 26 AWG leads';
+      notesInput.placeholder = example;
+    }
+  }
 
   /**
    * Populate the thread size <select> element based on the current
@@ -368,9 +499,18 @@
     placeholder.value = '';
 
     let standards = [];
+    let placeholderText = STANDARD_PLACEHOLDER_TEXT;
+    let noOptionsText = 'No standards available';
+    let titleText = 'Type to filter standards (Esc clears filter)';
     if (state.hardwareType === 'Screw') {
       const subset = hardwareCatalog[state.screwType];
       standards = Array.isArray(subset) ? subset : [];
+    } else if (state.hardwareType === 'Connector') {
+      const category = findConnectorCategory(state.connectorCategory);
+      standards = category && Array.isArray(category.series) ? category.series : [];
+      placeholderText = CONNECTOR_PLACEHOLDER_TEXT;
+      noOptionsText = 'No connector series available';
+      titleText = 'Type to filter connector series (Esc clears filter)';
     } else {
       const subset = hardwareCatalog[state.hardwareType];
       standards = Array.isArray(subset) ? subset : [];
@@ -379,7 +519,7 @@
     standardFilterState.query = '';
 
     if (standards.length === 0) {
-      placeholder.textContent = 'No standards available';
+      placeholder.textContent = noOptionsText;
       placeholder.dataset.defaultText = placeholder.textContent;
       placeholder.disabled = false;
       placeholder.selected = true;
@@ -387,7 +527,7 @@
       standardSelect.disabled = true;
       standardSelect.title = '';
     } else {
-      placeholder.textContent = STANDARD_PLACEHOLDER_TEXT;
+      placeholder.textContent = placeholderText;
       placeholder.dataset.defaultText = placeholder.textContent;
       placeholder.disabled = false;
       placeholder.selected = true;
@@ -395,12 +535,18 @@
       standards.forEach(entry => {
         const opt = document.createElement('option');
         opt.value = entry.code;
-        opt.textContent = `${entry.code} — ${entry.name}`;
-        opt.dataset.name = entry.name;
+        if (state.hardwareType === 'Connector') {
+          const display = entry.name ? `${entry.code} — ${entry.name}` : entry.code;
+          opt.textContent = display;
+          opt.dataset.name = display;
+        } else {
+          opt.textContent = `${entry.code} — ${entry.name}`;
+          opt.dataset.name = entry.name;
+        }
         standardSelect.appendChild(opt);
       });
       standardSelect.disabled = false;
-      standardSelect.title = 'Type to filter standards (Esc clears filter)';
+      standardSelect.title = titleText;
       filterStandardOptions('');
     }
 
@@ -537,6 +683,10 @@
       lengthContainer.style.display = showScrewFields ? '' : 'none';
     }
 
+    if (connectorCategoryContainer) {
+      connectorCategoryContainer.classList.toggle('d-none', !showConnectorFields);
+      connectorCategoryContainer.setAttribute('aria-hidden', showConnectorFields ? 'false' : 'true');
+    }
     if (measurementSystemContainer) {
       const hideMeasurementSystem = showFuseFields || showConnectorFields;
       measurementSystemContainer.style.display = hideMeasurementSystem ? 'none' : '';
@@ -575,15 +725,27 @@
     if (notesLabel) {
       notesLabel.textContent = showConnectorFields ? 'Connector Details' : defaultNotesLabel;
     }
+    if (standardLabel) {
+      standardLabel.textContent = showConnectorFields ? 'Connector Series' : defaultStandardLabel;
+    }
     if (notesInput) {
       if (showConnectorFields) {
-        notesInput.placeholder = 'e.g., 3-pin JST-PH plug, 26 AWG leads';
         notesInput.required = true;
         notesInput.setAttribute('aria-required', 'true');
+        updateConnectorCategoryUi();
       } else {
         notesInput.placeholder = defaultNotesPlaceholder;
         notesInput.required = false;
         notesInput.setAttribute('aria-required', 'false');
+      }
+    }
+    if (showConnectorFields) {
+      ensureConnectorCategory();
+      updateConnectorCategoryUi();
+    } else {
+      if (connectorCategoryHelp) {
+        connectorCategoryHelp.textContent = '';
+        connectorCategoryHelp.classList.add('d-none');
       }
     }
     updateGlassOptionVisibility({ resetIfHidden: !showFuseFields });
@@ -794,6 +956,7 @@
     }
     // Compose line1: size × length or fuse information
     let line1 = '';
+    let connectorLine2Parts = null;
     if (state.hardwareType === 'Fuse') {
       const fuseParts = [];
       const fuseLabel = state.fuseType ? `${state.fuseType} Fuse` : 'Fuse';
@@ -803,8 +966,26 @@
       }
       line1 = fuseParts.filter(Boolean).join(' — ');
     } else if (state.hardwareType === 'Connector') {
-      if (state.notes) {
-        line1 = state.notes;
+      const category = findConnectorCategory(state.connectorCategory);
+      const categoryLabel = category ? category.label : '';
+      const seriesLabel = state.showStandard && state.standard ? state.standard : '';
+      const noteText = state.notes;
+      if (seriesLabel) {
+        line1 = seriesLabel;
+      } else if (categoryLabel) {
+        line1 = categoryLabel;
+      } else if (noteText) {
+        line1 = noteText;
+      }
+      connectorLine2Parts = [];
+      if (seriesLabel && categoryLabel && seriesLabel !== categoryLabel) {
+        connectorLine2Parts.push(categoryLabel);
+      }
+      if (!seriesLabel && categoryLabel && line1 !== categoryLabel) {
+        connectorLine2Parts.push(categoryLabel);
+      }
+      if (noteText && line1 !== noteText) {
+        connectorLine2Parts.push(noteText);
       }
     } else {
       if (state.threadSize) {
@@ -837,8 +1018,8 @@
       }
       line2 = fuseDetails.join(' • ');
     } else if (state.hardwareType === 'Connector') {
-      if (state.showStandard && state.standard) {
-        line2 = state.standard;
+      if (connectorLine2Parts && connectorLine2Parts.length > 0) {
+        line2 = connectorLine2Parts.join(' • ');
       }
     } else {
       if (state.showStandard && state.standard) {
@@ -936,7 +1117,7 @@
     if (state.hardwareType === 'Fuse') {
       ready = !!state.fuseValue;
     } else if (state.hardwareType === 'Connector') {
-      ready = !!state.notes;
+      ready = !!state.notes && !!state.connectorCategory;
     } else if (state.hardwareType === 'Screw') {
       ready = !!state.threadSize && !!state.length;
     } else {
@@ -986,6 +1167,12 @@
         }
       } else if (state.hardwareType === 'Connector') {
         fileParts.push('Connector');
+        if (state.connectorCategory) {
+          const category = findConnectorCategory(state.connectorCategory);
+          if (category) {
+            fileParts.push(category.label);
+          }
+        }
         if (state.notes) {
           fileParts.push(state.notes);
         }
@@ -1074,6 +1261,16 @@
         }
       });
     });
+
+    if (connectorCategorySelect) {
+      connectorCategorySelect.addEventListener('change', () => {
+        state.connectorCategory = connectorCategorySelect.value;
+        updateConnectorCategoryUi();
+        populateStandards();
+        updateDownloadState();
+        updatePreview();
+      });
+    }
 
     systemTypeRadios.forEach(radio => {
       radio.addEventListener('change', () => {
@@ -1227,6 +1424,7 @@
    */
   function init() {
     populateFuseValues();
+    populateConnectorCategories();
     onHardwareTypeChange();
     initEventHandlers();
     updateDownloadState();
