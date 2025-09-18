@@ -435,7 +435,31 @@
           <div id="print-area-display">51&nbsp;mm ×&nbsp;10&nbsp;mm (printable area)</div>
         </div>
         <div id="preview-container" class="label-preview">
-          <div id="label-inner" class="label-inner">
+          <div id="preview-placeholder" class="preview-placeholder">
+            <svg
+              class="placeholder-icon"
+              width="36"
+              height="36"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <path
+                d="M4.75 5.75a1 1 0 0 1 1-1h9.086a1 1 0 0 1 .707.293l3.414 3.414a1 1 0 0 1 .293.707V18.25a1 1 0 0 1-1 1H5.75a1 1 0 0 1-1-1V5.75Z"
+                stroke="currentColor"
+                stroke-width="1.5"
+              />
+              <path
+                d="M9 9.75h3.5M9 12.75h6"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+            </svg>
+            <p class="placeholder-text mb-0">Fill out the form to generate a label</p>
+          </div>
+          <div id="label-inner" class="label-inner" style="display: none;">
             <div id="hardware-image" class="hardware-icon"></div>
             <div id="preview-text" class="text-block">
               <div id="line1" class="text-line"></div>
