@@ -84,8 +84,25 @@
             <h2 class="h5 mb-3 section-heading">Hardware Details</h2>
             <div class="vstack gap-3">
               <div>
-                <label class="form-label fw-semibold">Hardware Type</label>
-                <div class="row g-2" id="hardware-type-group">
+                <label class="form-label fw-semibold" id="hardware-type-label">Hardware Type</label>
+                <div class="d-sm-none">
+                  <select
+                    id="hardware-type-select"
+                    class="form-select"
+                    aria-labelledby="hardware-type-label"
+                  >
+                    <option value="Screw">Screw</option>
+                    <option value="Nut">Nut</option>
+                    <option value="Heat Insert">Heat Insert</option>
+                    <option value="Washer">Washer</option>
+                    <option value="Fuse">Fuse</option>
+                    <option value="Connector">Connector</option>
+                    <option value="Component">Component</option>
+                    <option value="Bearing">Bearing</option>
+                    <option value="Custom">Custom</option>
+                  </select>
+                </div>
+                <div class="row g-2 d-none d-sm-flex" id="hardware-type-group">
                   <div class="col-12 col-sm-6 col-lg-3">
                     <input
                       type="radio"
