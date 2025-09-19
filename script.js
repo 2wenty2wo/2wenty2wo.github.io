@@ -377,6 +377,15 @@
 
   const hardwareTypeRadios = document.querySelectorAll('input[name="hardware-type"]');
   const hardwareTypeSelect = document.getElementById('hardware-type-select');
+  const hardwareTypeOptions = new Set(
+    Array.from(hardwareTypeRadios, radio => radio.value)
+      .concat(
+        hardwareTypeSelect
+          ? Array.from(hardwareTypeSelect.options, option => option.value)
+          : []
+      )
+      .filter(Boolean)
+  );
   const systemTypeRadios = document.querySelectorAll('input[name="system-type"]');
   const screwTypeRadios = document.querySelectorAll('input[name="screw-type"]');
   const fuseTypeRadios = document.querySelectorAll('input[name="fuse-type"]');
@@ -968,6 +977,24 @@
     hardwareTypeRadios.forEach(radio => {
       radio.checked = radio.value === desiredType;
     });
+  }
+
+  function applyHardwareTypeSelection(nextType) {
+    if (typeof nextType !== 'string') {
+      syncHardwareTypeControls();
+      return;
+    }
+    const trimmed = nextType.trim();
+    if (!trimmed || !hardwareTypeOptions.has(trimmed)) {
+      syncHardwareTypeControls();
+      return;
+    }
+    if (trimmed === state.hardwareType) {
+      syncHardwareTypeControls(trimmed);
+      return;
+    }
+    state.hardwareType = trimmed;
+    onHardwareTypeChange();
   }
 
   /**
@@ -2016,20 +2043,17 @@
     hardwareTypeRadios.forEach(radio => {
       radio.addEventListener('change', () => {
         if (radio.checked) {
-          state.hardwareType = radio.value;
-          onHardwareTypeChange();
+          applyHardwareTypeSelection(radio.value);
         }
       });
     });
 
     if (hardwareTypeSelect) {
-      hardwareTypeSelect.addEventListener('change', () => {
-        const selectedType = hardwareTypeSelect.value;
-        if (selectedType) {
-          state.hardwareType = selectedType;
-          onHardwareTypeChange();
-        }
-      });
+      const handleSelectChange = () => {
+        applyHardwareTypeSelection(hardwareTypeSelect.value);
+      };
+      hardwareTypeSelect.addEventListener('change', handleSelectChange);
+      hardwareTypeSelect.addEventListener('input', handleSelectChange);
     }
 
     if (connectorCategorySelect) {
