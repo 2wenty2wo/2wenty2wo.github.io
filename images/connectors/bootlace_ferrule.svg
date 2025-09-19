@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="256" viewBox="0 0 128 256">
+  <g fill="none" stroke="black" stroke-width="6" stroke-linejoin="round">
+    <!-- metal tube -->
+    <rect x="52" y="10" width="24" height="90" rx="6"></rect>
+    <!-- flared transition -->
+    <path d="M52 100 L40 120 L88 120 L76 100 Z"></path>
+    <!-- plastic sleeve -->
+    <rect x="28" y="120" width="72" height="120" rx="4"></rect>
+  </g>
+</svg>
