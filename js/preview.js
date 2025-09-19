@@ -307,11 +307,8 @@ function getHardwareImageInfo() {
 }
 
 function getHardwareIcon(iconHeight) {
-  const color = '#000000';
-  const strokeWidth = 3;
-  function buildSvg(body) {
-    return `<svg viewBox="0 0 100 100" style="height:${iconHeight}px; width:auto;" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">${body}</svg>`;
-  }
+  const normalizedHeight = Number.isFinite(iconHeight) && iconHeight > 0 ? iconHeight : 0;
+  const imgStyle = normalizedHeight > 0 ? ` style="height:${normalizedHeight}px; width:auto;"` : '';
   function escapeHtmlAttribute(value) {
     return String(value)
       .replace(/&/g, '&amp;')
@@ -319,6 +316,13 @@ function getHardwareIcon(iconHeight) {
       .replace(/'/g, '&#39;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
+  }
+  function buildImgMarkup(src, alt) {
+    if (!src) {
+      return '';
+    }
+    const safeAlt = escapeHtmlAttribute(alt || 'Hardware illustration');
+    return `<img src="${src}" alt="${safeAlt}" class="hardware-fallback-image" loading="lazy" decoding="async"${imgStyle}>`;
   }
   function getConnectorSeriesIconMarkup(height) {
     const categoryId = state.connectorCategory;
@@ -379,179 +383,50 @@ function getHardwareIcon(iconHeight) {
     }
     const altTextBase = altPieces.length > 0 ? altPieces.join(' — ') : 'Connector';
     const altText = `${altTextBase} illustration`;
-    return `<img src="images/connectors/${matchedCandidate.file}" alt="${escapeHtmlAttribute(altText)}" style="height:${height}px; width:auto;" loading="lazy" decoding="async">`;
+    const styleAttr = Number.isFinite(height) && height > 0 ? ` style="height:${height}px; width:auto;"` : '';
+    return `<img src="images/connectors/${matchedCandidate.file}" alt="${escapeHtmlAttribute(altText)}" class="hardware-fallback-image" loading="lazy" decoding="async"${styleAttr}>`;
   }
-  const pieces = [];
   const type = state.hardwareType;
-  if (type === 'Screw') {
-    if (state.screwType === 'Bolt') {
-      pieces.push(buildSvg(`
-          <!-- Bolt side view -->
-          <polygon points="5,50 20,30 40,30 55,50 40,70 20,70" />
-          <rect x="55" y="42" width="35" height="16" />
-          <line x1="55" y1="46" x2="90" y2="46" />
-          <line x1="55" y1="54" x2="90" y2="54" />
-          <line x1="55" y1="62" x2="90" y2="62" />
-        `));
-      pieces.push(buildSvg(`
-          <!-- Bolt top view -->
-          <circle cx="50" cy="50" r="45" />
-          <polygon points="50,10 78,25 90,50 78,75 50,90 22,75 10,50 22,25" />
-        `));
-    } else {
-      pieces.push(buildSvg(`
-          <!-- Screw side view -->
-          <circle cx="25" cy="40" r="18" />
-          <line x1="15" y1="40" x2="35" y2="40" />
-          <rect x="35" y="45" width="40" height="12" />
-          <polyline points="75,57 88,52 95,60" />
-          <line x1="35" y1="48" x2="75" y2="48" />
-          <line x1="35" y1="54" x2="75" y2="54" />
-          <line x1="35" y1="60" x2="75" y2="60" />
-        `));
-      pieces.push(buildSvg(`
-          <!-- Screw top view -->
-          <circle cx="50" cy="50" r="45" />
-          <line x1="20" y1="50" x2="80" y2="50" />
-        `));
+  if (type === 'Connector') {
+    const matchedMarkup = getConnectorSeriesIconMarkup(normalizedHeight);
+    if (matchedMarkup) {
+      return { markup: matchedMarkup, count: 1 };
     }
-  } else if (type === 'Nut') {
-    pieces.push(buildSvg(`
-        <!-- Nut side view -->
-        <polygon points="5,50 20,32 40,32 60,50 40,68 20,68" />
-      `));
-    pieces.push(buildSvg(`
-        <!-- Nut top view -->
-        <polygon points="5,50 20,32 40,32 60,50 40,68 20,68" />
-        <polygon points="25,50 33,42 44,42 55,50 44,58 33,58" />
-      `));
-  } else if (type === 'Washer') {
-    pieces.push(buildSvg(`
-        <!-- Washer -->
-        <circle cx="50" cy="50" r="45" />
-        <circle cx="50" cy="50" r="20" />
-      `));
-  } else if (type === 'Heat Insert') {
-    pieces.push(buildSvg(`
-        <!-- Heat insert side view -->
-        <path d="M30 20H70L82 48 70 80H30L18 48Z" />
-        <line x1="32" y1="30" x2="68" y2="30" />
-        <line x1="28" y1="40" x2="72" y2="40" />
-        <line x1="26" y1="50" x2="74" y2="50" />
-        <line x1="28" y1="60" x2="72" y2="60" />
-        <line x1="32" y1="70" x2="68" y2="70" />
-      `));
-    pieces.push(buildSvg(`
-        <!-- Heat insert top view -->
-        <circle cx="50" cy="50" r="42" />
-        <polygon points="50,18 72,30 82,50 72,70 50,82 28,70 18,50 28,30" />
-        <circle cx="50" cy="50" r="18" />
-      `));
-  } else if (type === 'Bearing') {
-    const ballStroke = Math.max(1, strokeWidth - 1);
-    pieces.push(buildSvg(`
-        <!-- Bearing front view -->
-        <circle cx="50" cy="50" r="45" />
-        <circle cx="50" cy="50" r="30" />
-        <circle cx="50" cy="50" r="15" />
-        <g stroke-width="${ballStroke}">
-          <circle cx="50" cy="20" r="6" />
-          <circle cx="74" cy="32" r="6" />
-          <circle cx="80" cy="58" r="6" />
-          <circle cx="64" cy="78" r="6" />
-          <circle cx="36" cy="78" r="6" />
-          <circle cx="20" cy="58" r="6" />
-          <circle cx="26" cy="32" r="6" />
-        </g>
-      `));
-    pieces.push(buildSvg(`
-        <!-- Bearing side profile -->
-        <rect x="22" y="28" width="56" height="44" rx="18" />
-        <rect x="32" y="34" width="36" height="32" rx="14" />
-        <line x1="22" y1="50" x2="78" y2="50" />
-      `));
-  } else if (type === 'Connector') {
-    const connectorIconMarkup = getConnectorSeriesIconMarkup(iconHeight);
-    if (connectorIconMarkup) {
-      pieces.push(connectorIconMarkup);
-    } else {
-      pieces.push(buildSvg(`
-          <!-- Insulated crimp connectors -->
-          <path d="M22 72L34 28H56L44 72Z" />
-          <rect x="34" y="20" width="12" height="8" />
-          <rect x="62" y="32" width="26" height="34" rx="8" />
-          <polygon points="70,20 82,20 90,34 78,34" />
-          <line x1="48" y1="52" x2="62" y2="46" />
-          <line x1="46" y1="60" x2="60" y2="54" />
-        `));
-    }
-  } else if (type === 'Component') {
-    const category = state.componentCategory;
-    const mount = state.componentMount;
-    if (category === 'Capacitor') {
-      pieces.push(buildSvg(`
-          <!-- Capacitor symbol -->
-          <line x1="18" y1="50" x2="36" y2="50" />
-          <line x1="36" y1="30" x2="36" y2="70" />
-          <line x1="64" y1="30" x2="64" y2="70" />
-          <line x1="64" y1="50" x2="82" y2="50" />
-        `));
-    } else if (category === 'Diode') {
-      pieces.push(buildSvg(`
-          <!-- Diode symbol -->
-          <line x1="18" y1="50" x2="36" y2="50" />
-          <polygon points="36,30 68,50 36,70" />
-          <line x1="68" y1="30" x2="68" y2="70" />
-          <line x1="68" y1="50" x2="82" y2="50" />
-        `));
-    } else {
-      pieces.push(buildSvg(`
-          <!-- Resistor symbol -->
-          <line x1="14" y1="50" x2="28" y2="50" />
-          <polyline points="28,50 36,38 44,62 52,38 60,62 68,38 76,62" />
-          <line x1="76" y1="50" x2="90" y2="50" />
-        `));
-    }
-
-    if (mount === 'SMD') {
-      pieces.push(buildSvg(`
-          <!-- SMD package -->
-          <rect x="20" y="32" width="60" height="36" rx="10" />
-          <rect x="8" y="38" width="12" height="24" rx="4" />
-          <rect x="80" y="38" width="12" height="24" rx="4" />
-        `));
-    } else {
-      pieces.push(buildSvg(`
-          <!-- Through-hole package -->
-          <rect x="26" y="28" width="48" height="28" rx="8" />
-          <line x1="32" y1="56" x2="32" y2="72" />
-          <line x1="68" y1="56" x2="68" y2="72" />
-          <circle cx="32" cy="74" r="6" />
-          <circle cx="68" cy="74" r="6" />
-        `));
-    }
-  } else if (type === 'Fuse') {
-    if (state.fuseType === 'Glass') {
-      pieces.push(buildSvg(`
-          <!-- Glass fuse side view -->
-          <rect x="18" y="42" width="64" height="16" rx="8" />
-          <line x1="18" y1="42" x2="18" y2="58" />
-          <line x1="82" y1="42" x2="82" y2="58" />
-          <line x1="30" y1="50" x2="70" y2="50" />
-        `));
-    } else {
-      pieces.push(buildSvg(`
-          <!-- Blade fuse front view -->
-          <rect x="22" y="28" width="56" height="40" rx="8" />
-          <rect x="28" y="68" width="12" height="18" />
-          <rect x="60" y="68" width="12" height="18" />
-          <line x1="38" y1="44" x2="62" y2="44" />
-          <line x1="38" y1="52" x2="62" y2="52" />
-        `));
-    }
+    return null;
   }
-  return pieces.join('');
+  const fallbackIcons = [];
+  if (type === 'Screw') {
+    const isBolt = state.screwType === 'Bolt';
+    const variantFolder = isBolt ? 'socket_head' : 'button_head';
+    const label = isBolt ? 'Bolt' : 'Screw';
+    fallbackIcons.push(
+      {
+        src: `images/bolts/${variantFolder}/side.svg`,
+        alt: `${label} side profile illustration`
+      },
+      {
+        src: `images/bolts/${variantFolder}/head.svg`,
+        alt: `${label} head view illustration`
+      }
+    );
+  } else if (type === 'Nut') {
+    fallbackIcons.push(
+      { src: 'images/nuts/hex_nut.svg', alt: 'Hex nut illustration' },
+      { src: 'images/nuts/square_nut.svg', alt: 'Square nut illustration' }
+    );
+  } else if (type === 'Washer') {
+    fallbackIcons.push({ src: 'images/washers/M5.svg', alt: 'Flat washer illustration' });
+  }
+  if (fallbackIcons.length > 0) {
+    return {
+      markup: fallbackIcons.map(icon => buildImgMarkup(icon.src, icon.alt)).join(''),
+      count: fallbackIcons.length
+    };
+  }
+  return null;
 }
+
+
 
 function applyTextFitting(primaryFontSize, secondaryFontSize) {
   if (!textBlockDiv || !line1Div) {
@@ -745,11 +620,9 @@ export function updatePreview() {
   const basePaddingX = Math.max(10, Math.round(innerHeightPx * 0.22));
   const basePaddingY = Math.max(6, Math.round(innerHeightPx * 0.16));
   const baseGap = Math.max(8, Math.round(innerHeightPx * 0.12));
-  const accentWidth = Math.min(Math.max(6, Math.round(innerHeightPx * 0.1)), Math.round(basePaddingX * 0.85));
   labelInner.style.setProperty('--label-padding-x', `${basePaddingX}px`);
   labelInner.style.setProperty('--label-padding-y', `${basePaddingY}px`);
   labelInner.style.setProperty('--label-gap', `${baseGap}px`);
-  labelInner.style.setProperty('--label-accent-width', `${accentWidth}px`);
   labelInner.style.setProperty('--label-padding-right-extra', '0px');
 
   if (state.showImage) {
@@ -779,9 +652,11 @@ export function updatePreview() {
       }
     } else {
       const renderFallbackIcon = () => {
-        const multiViewTypes = ['Screw', 'Nut', 'Heat Insert', 'Bearing', 'Component'];
-        const iconCount = multiViewTypes.includes(state.hardwareType) ? 2 : 1;
         const iconGapPx = 8;
+        const initialFallback = getHardwareIcon(innerHeightPx);
+        const iconCount = initialFallback && Number.isFinite(initialFallback.count)
+          ? Math.max(0, initialFallback.count)
+          : 0;
         if (iconCount > 0) {
           let iconHeightPx = innerHeightPx;
           const maxStripWidth = innerWidthPx;
@@ -790,21 +665,30 @@ export function updatePreview() {
             const availablePerIcon = Math.floor((maxStripWidth - (iconCount - 1) * iconGapPx) / iconCount);
             iconHeightPx = Math.max(0, Math.min(iconHeightPx, availablePerIcon));
           }
-          const finalStripWidth = Math.max(0, iconCount * iconHeightPx + (iconCount - 1) * iconGapPx);
-          hardwareImageDiv.style.display = 'flex';
-          hardwareImageDiv.style.maxWidth = finalStripWidth + 'px';
-          hardwareImageDiv.style.flexBasis = finalStripWidth + 'px';
-          hardwareImageDiv.style.flexShrink = '0';
-          hardwareImageDiv.style.removeProperty('min-height');
-          hardwareImageDiv.innerHTML = getHardwareIcon(iconHeightPx);
-        } else {
-          hardwareImageDiv.style.display = 'none';
-          hardwareImageDiv.innerHTML = '';
-          hardwareImageDiv.style.removeProperty('max-width');
-          hardwareImageDiv.style.removeProperty('flex-basis');
-          hardwareImageDiv.style.removeProperty('flex-shrink');
-          hardwareImageDiv.style.removeProperty('min-height');
+          const finalFallback = iconHeightPx === innerHeightPx
+            ? initialFallback
+            : getHardwareIcon(iconHeightPx);
+          const finalCount = finalFallback && Number.isFinite(finalFallback.count)
+            ? Math.max(0, finalFallback.count)
+            : iconCount;
+          const markup = finalFallback ? finalFallback.markup : '';
+          if (finalCount > 0 && markup) {
+            const finalStripWidth = Math.max(0, finalCount * iconHeightPx + (finalCount - 1) * iconGapPx);
+            hardwareImageDiv.style.display = 'flex';
+            hardwareImageDiv.style.maxWidth = finalStripWidth + 'px';
+            hardwareImageDiv.style.flexBasis = finalStripWidth + 'px';
+            hardwareImageDiv.style.flexShrink = '0';
+            hardwareImageDiv.style.removeProperty('min-height');
+            hardwareImageDiv.innerHTML = markup;
+            return;
+          }
         }
+        hardwareImageDiv.style.display = 'none';
+        hardwareImageDiv.innerHTML = '';
+        hardwareImageDiv.style.removeProperty('max-width');
+        hardwareImageDiv.style.removeProperty('flex-basis');
+        hardwareImageDiv.style.removeProperty('flex-shrink');
+        hardwareImageDiv.style.removeProperty('min-height');
       };
 
       const photoInfo = getHardwareImageInfo();
