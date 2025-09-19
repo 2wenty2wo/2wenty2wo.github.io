@@ -307,12 +307,13 @@ main {
 }
 
 .qr-code {
-  position: absolute;
   display: none;
   border-radius: 0;
   background-color: transparent;
   border: none;
   box-shadow: none;
+  flex-shrink: 0;
+  align-self: center;
 }
 
 .label-inner {
@@ -330,14 +331,16 @@ main {
   font-family: 'Barlow', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   overflow: hidden;
   z-index: 1;
+  --label-gap: 12px;
   --label-padding-x: 14px;
   --label-padding-y: 10px;
-  --label-padding-right-extra: 0px;
+  --label-padding-inline-start: var(--label-padding-x);
+  --label-padding-inline-end: var(--label-padding-x);
   padding:
     var(--label-padding-y)
-    calc(var(--label-padding-x) + var(--label-padding-right-extra))
+    var(--label-padding-inline-end)
     var(--label-padding-y)
-    var(--label-padding-x);
+    var(--label-padding-inline-start);
 }
 
 .label-inner::before {
