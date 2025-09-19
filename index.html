@@ -241,7 +241,7 @@
                   </button>
                   <span id="custom-image-name" class="text-muted small d-none"></span>
                 </div>
-                <div class="mt-3">
+                <div class="mt-3" id="custom-line1-field">
                   <label for="custom-line1-input" class="form-label fw-semibold">Top Line</label>
                   <input
                     type="text"
@@ -249,8 +249,13 @@
                     id="custom-line1-input"
                     placeholder="e.g., 5 mm Drill Bits"
                     maxlength="60"
+                    aria-describedby="custom-line1-hint custom-line1-message"
                   />
-                  <div class="form-text">Shown as the large title on the label.</div>
+                  <div class="form-text" id="custom-line1-hint">Shown as the large title on the label.</div>
+                  <div
+                    id="custom-line1-message"
+                    class="validation-message text-danger small mt-2 d-none"
+                  ></div>
                 </div>
                 <div>
                   <label for="custom-line2-input" class="form-label fw-semibold">Bottom Line</label>
@@ -265,8 +270,16 @@
               </div>
               <div id="connector-category-container" class="d-none">
                 <label for="connector-category-select" class="form-label fw-semibold">Connector Category</label>
-                <select id="connector-category-select" class="form-select"></select>
+                <select
+                  id="connector-category-select"
+                  class="form-select"
+                  aria-describedby="connector-category-message"
+                ></select>
                 <div id="connector-category-help" class="form-text d-none"></div>
+                <div
+                  id="connector-category-message"
+                  class="validation-message text-danger small mt-2 d-none"
+                ></div>
               </div>
               <div id="component-category-container" class="d-none">
                 <span class="form-label d-block fw-semibold">Component Type</span>
@@ -306,6 +319,10 @@
                     <label class="btn btn-outline-secondary w-100" for="component-type-diode">Diode</label>
                   </div>
                 </div>
+                <div
+                  id="component-category-message"
+                  class="validation-message text-danger small mt-2 d-none"
+                ></div>
               </div>
               <div id="component-mount-container" class="d-none">
                 <span class="form-label d-block fw-semibold">Mounting Style</span>
@@ -334,11 +351,23 @@
                     <label class="btn btn-outline-secondary w-100" for="component-mount-smd">SMD</label>
                   </div>
                 </div>
+                <div
+                  id="component-mount-message"
+                  class="validation-message text-danger small mt-2 d-none"
+                ></div>
               </div>
               <div id="bearing-options-container" class="d-none">
                 <label for="bearing-type-select" class="form-label fw-semibold">Bearing Selection</label>
-                <select id="bearing-type-select" class="form-select"></select>
+                <select
+                  id="bearing-type-select"
+                  class="form-select"
+                  aria-describedby="bearing-type-message"
+                ></select>
                 <div class="form-text">Common miniature and deep-groove bearings used in hobby projects.</div>
+                <div
+                  id="bearing-type-message"
+                  class="validation-message text-danger small mt-2 d-none"
+                ></div>
               </div>
               <div id="screw-type-container">
                 <label class="form-label fw-semibold">Screw Type</label>
@@ -371,7 +400,15 @@
               <div class="row g-3" id="thread-length-row">
                 <div class="col-12 col-sm-6 thread-length-field" id="thread-size-container">
                   <label for="thread-size-select" class="form-label fw-semibold">Thread Size</label>
-                  <select id="thread-size-select" class="form-select"></select>
+                  <select
+                    id="thread-size-select"
+                    class="form-select"
+                    aria-describedby="thread-size-message"
+                  ></select>
+                  <div
+                    id="thread-size-message"
+                    class="validation-message text-danger small mt-2 d-none"
+                  ></div>
                 </div>
                 <div class="col-12 col-sm-6 thread-length-field" id="length-container">
                   <label for="length-input" class="form-label fw-semibold">Length</label>
@@ -381,7 +418,32 @@
                     class="form-control"
                     placeholder="e.g., 10"
                     min="1"
+                    aria-describedby="length-tip length-message"
                   />
+                  <div id="length-tip" class="form-text">
+                    Measure from under the head for socket and hex fasteners; include the head for
+                    countersunk screws.
+                  </div>
+                  <details class="field-help mt-2" id="length-help">
+                    <summary class="field-help-summary">
+                      <i class="fa-solid fa-ruler-combined" aria-hidden="true"></i>
+                      <span>How to measure screw length</span>
+                    </summary>
+                    <div class="field-help-body">
+                      <p class="mb-2">
+                        Use a caliper or ruler and follow the conventions below when entering the length value:
+                      </p>
+                      <ul class="mb-0 ps-3">
+                        <li>Socket head, button head, and hex bolts: measure from under the head to the tip.</li>
+                        <li>Flat head or countersunk screws: measure the full length including the head.</li>
+                        <li>Set screws and grub screws: measure the overall body length end to end.</li>
+                      </ul>
+                    </div>
+                  </details>
+                  <div
+                    id="length-message"
+                    class="validation-message text-danger small mt-2 d-none"
+                  ></div>
                 </div>
               </div>
               <div id="fuse-type-container" class="d-none">
@@ -414,7 +476,15 @@
               </div>
               <div id="fuse-value-container" class="d-none">
                 <label for="fuse-value-select" class="form-label fw-semibold">Fuse Value (amps)</label>
-                <select id="fuse-value-select" class="form-select"></select>
+                <select
+                  id="fuse-value-select"
+                  class="form-select"
+                  aria-describedby="fuse-value-message"
+                ></select>
+                <div
+                  id="fuse-value-message"
+                  class="validation-message text-danger small mt-2 d-none"
+                ></div>
               </div>
               <div id="glass-options-container" class="d-none">
                 <span class="form-label d-block fw-semibold">Glass Fuse Options</span>
@@ -443,10 +513,15 @@
                   id="notes-input"
                   class="form-control"
                   placeholder="Notes (optional)"
+                  aria-describedby="connector-notes-hint connector-notes-message"
                 />
                 <div id="connector-notes-hint" class="form-text d-none">
                   Provide the connector series, pin count, wire size, and terminal style when labelling connectors.
                 </div>
+                <div
+                  id="connector-notes-message"
+                  class="validation-message text-danger small mt-2 d-none"
+                ></div>
               </div>
               <div id="standard-field">
                 <label for="standard-select" class="form-label fw-semibold">Hardware Standard</label>
@@ -575,6 +650,12 @@
         </div>
       </div>
     </section>
+    <div
+      id="form-status-message"
+      class="alert alert-warning d-none mt-4"
+      role="status"
+      aria-live="polite"
+    ></div>
     <div class="actions d-flex flex-wrap justify-content-center gap-3 mt-4">
       <button id="download-button" class="btn btn-primary btn-lg px-4" disabled>Download</button>
       <button id="print-button" class="btn btn-outline-primary btn-lg px-4" type="button" disabled>Print</button>

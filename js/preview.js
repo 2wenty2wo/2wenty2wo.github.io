@@ -17,10 +17,236 @@ const {
   qrContentWrapper,
   qrContentInput,
   downloadButton,
-  printButton
+  printButton,
+  threadSizeSelect,
+  threadSizeContainer,
+  lengthInput,
+  lengthContainer,
+  fuseValueSelect,
+  fuseValueContainer,
+  connectorCategorySelect,
+  connectorCategoryContainer,
+  notesInput,
+  notesField,
+  bearingTypeSelect,
+  bearingOptionsContainer,
+  componentCategoryContainer,
+  componentCategoryRadios,
+  componentMountContainer,
+  componentMountRadios,
+  customLine1Input,
+  customLine1Field,
+  threadSizeMessage,
+  lengthMessage,
+  fuseValueMessage,
+  connectorCategoryMessage,
+  connectorNotesMessage,
+  bearingTypeMessage,
+  componentCategoryMessage,
+  componentMountMessage,
+  customLine1Message,
+  formStatusMessage
 } = elements;
 
 let qrRenderRequestId = 0;
+
+function setMessageVisibility(messageElement, message, show) {
+  if (!messageElement) {
+    return;
+  }
+  if (show) {
+    messageElement.textContent = message;
+    messageElement.classList.remove('d-none');
+    messageElement.setAttribute('aria-hidden', 'false');
+  } else {
+    messageElement.textContent = '';
+    messageElement.classList.add('d-none');
+    messageElement.setAttribute('aria-hidden', 'true');
+  }
+}
+
+function updateInputFieldState({ input, container, messageElement, valid, message }) {
+  if (input) {
+    if (valid) {
+      input.classList.remove('is-invalid');
+      input.removeAttribute('aria-invalid');
+    } else {
+      input.classList.add('is-invalid');
+      input.setAttribute('aria-invalid', 'true');
+    }
+  }
+  if (container) {
+    container.classList.toggle('field-invalid', !valid);
+  }
+  setMessageVisibility(messageElement, message, !valid);
+}
+
+function updateRadioGroupFeedback({ radios, container, messageElement, valid, message }) {
+  if (Array.isArray(radios)) {
+    radios.forEach(radio => {
+      if (!radio) {
+        return;
+      }
+      if (valid) {
+        radio.removeAttribute('aria-invalid');
+      } else {
+        radio.setAttribute('aria-invalid', 'true');
+      }
+    });
+  }
+  if (container) {
+    container.classList.toggle('field-invalid', !valid);
+  }
+  setMessageVisibility(messageElement, message, !valid);
+}
+
+function formatRequirementSummary(requirements) {
+  if (!Array.isArray(requirements) || requirements.length === 0) {
+    return '';
+  }
+  if (requirements.length === 1) {
+    return requirements[0];
+  }
+  const allButLast = requirements.slice(0, -1);
+  const last = requirements[requirements.length - 1];
+  return `${allButLast.join(', ')} and ${last}`;
+}
+
+function applyValidationFeedback(disabled) {
+  const requirements = [];
+  const hardwareType = state.hardwareType;
+  const hardwareLabel = hardwareType ? hardwareType.toLowerCase() : 'hardware';
+  const screwLabel = (state.screwType || 'screw').toLowerCase();
+
+  const needsThreadSize = !['Fuse', 'Connector', 'Custom', 'Bearing', 'Component'].includes(hardwareType);
+  const threadValid = !needsThreadSize || Boolean(state.threadSize);
+  const threadMessage = `Select a thread size for your ${hardwareType === 'Screw' ? screwLabel : hardwareLabel} to continue.`;
+  updateInputFieldState({
+    input: threadSizeSelect,
+    container: threadSizeContainer,
+    messageElement: threadSizeMessage,
+    valid: threadValid,
+    message: threadMessage
+  });
+  if (!threadValid) {
+    requirements.push('select a thread size');
+  }
+
+  const needsLength = hardwareType === 'Screw';
+  const lengthValue = Number.parseFloat(state.length);
+  const lengthValid = !needsLength || (Number.isFinite(lengthValue) && lengthValue > 0);
+  updateInputFieldState({
+    input: lengthInput,
+    container: lengthContainer,
+    messageElement: lengthMessage,
+    valid: lengthValid,
+    message: `Enter the ${screwLabel} length in millimeters to continue.`
+  });
+  if (!lengthValid) {
+    requirements.push(`enter the ${screwLabel} length`);
+  }
+
+  const needsFuseValue = hardwareType === 'Fuse';
+  const fuseValid = !needsFuseValue || Boolean(state.fuseValue);
+  updateInputFieldState({
+    input: fuseValueSelect,
+    container: fuseValueContainer,
+    messageElement: fuseValueMessage,
+    valid: fuseValid,
+    message: 'Choose a fuse value to continue.'
+  });
+  if (!fuseValid) {
+    requirements.push('choose a fuse value');
+  }
+
+  const needsConnectorDetails = hardwareType === 'Connector';
+  const connectorCategoryValid = !needsConnectorDetails || Boolean(state.connectorCategory);
+  updateInputFieldState({
+    input: connectorCategorySelect,
+    container: connectorCategoryContainer,
+    messageElement: connectorCategoryMessage,
+    valid: connectorCategoryValid,
+    message: 'Choose a connector category to continue.'
+  });
+  if (!connectorCategoryValid) {
+    requirements.push('choose a connector category');
+  }
+
+  const connectorNotesValid = !needsConnectorDetails || Boolean(state.notes && state.notes.trim().length > 0);
+  updateInputFieldState({
+    input: notesInput,
+    container: notesField,
+    messageElement: connectorNotesMessage,
+    valid: connectorNotesValid,
+    message: 'Add connector details (series, pin count, wire gauge) to continue.'
+  });
+  if (!connectorNotesValid) {
+    requirements.push('add connector details');
+  }
+
+  const needsBearingSelection = hardwareType === 'Bearing';
+  const bearingValid = !needsBearingSelection || Boolean(state.bearingType);
+  updateInputFieldState({
+    input: bearingTypeSelect,
+    container: bearingOptionsContainer,
+    messageElement: bearingTypeMessage,
+    valid: bearingValid,
+    message: 'Select a bearing to continue.'
+  });
+  if (!bearingValid) {
+    requirements.push('select a bearing');
+  }
+
+  const needsComponentSelection = hardwareType === 'Component';
+  const componentCategoryValid = !needsComponentSelection || Boolean(state.componentCategory);
+  updateRadioGroupFeedback({
+    radios: componentCategoryRadios,
+    container: componentCategoryContainer,
+    messageElement: componentCategoryMessage,
+    valid: componentCategoryValid,
+    message: 'Choose a component type to continue.'
+  });
+  if (!componentCategoryValid) {
+    requirements.push('choose a component type');
+  }
+
+  const componentMountValid = !needsComponentSelection || Boolean(state.componentMount);
+  updateRadioGroupFeedback({
+    radios: componentMountRadios,
+    container: componentMountContainer,
+    messageElement: componentMountMessage,
+    valid: componentMountValid,
+    message: 'Choose a mounting style to continue.'
+  });
+  if (!componentMountValid) {
+    requirements.push('choose a mounting style');
+  }
+
+  const needsCustomTitle = hardwareType === 'Custom';
+  const customTitle = (state.customLine1 || '').trim();
+  const customTitleValid = !needsCustomTitle || customTitle.length > 0;
+  updateInputFieldState({
+    input: customLine1Input,
+    container: customLine1Field,
+    messageElement: customLine1Message,
+    valid: customTitleValid,
+    message: 'Add a title for your custom label to continue.'
+  });
+  if (!customTitleValid) {
+    requirements.push('add a custom label title');
+  }
+
+  if (formStatusMessage) {
+    if (disabled) {
+      const summary = requirements.length > 0 ? formatRequirementSummary(requirements) : 'complete the required fields';
+      formStatusMessage.textContent = `To enable Download and Print, ${summary}.`;
+      formStatusMessage.classList.remove('d-none');
+    } else {
+      formStatusMessage.textContent = '';
+      formStatusMessage.classList.add('d-none');
+    }
+  }
+}
 
 function normalizeStandardCode(code) {
   return (code || '')
@@ -338,6 +564,7 @@ export function updateDownloadState() {
   if (printButton) {
     printButton.disabled = disabled;
   }
+  applyValidationFeedback(disabled);
 }
 
 export function updateQrContentVisibility(options = {}) {

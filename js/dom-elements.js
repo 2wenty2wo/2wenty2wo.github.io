@@ -8,6 +8,8 @@ const threadSizeSelect = document.getElementById('thread-size-select');
 const threadLengthRow = document.getElementById('thread-length-row');
 const lengthContainer = document.getElementById('length-container');
 const lengthInput = document.getElementById('length-input');
+const threadSizeMessage = document.getElementById('thread-size-message');
+const lengthMessage = document.getElementById('length-message');
 const fuseTypeContainer = document.getElementById('fuse-type-container');
 const fuseValueContainer = document.getElementById('fuse-value-container');
 const glassOptionsContainer = document.getElementById('glass-options-container');
@@ -15,22 +17,28 @@ const fuseValueSelect = document.getElementById('fuse-value-select');
 const glassSizeSelect = document.getElementById('glass-size-select');
 const glassSlowBlowCheckbox = document.getElementById('glass-slow-blow');
 const glassFastBlowCheckbox = document.getElementById('glass-fast-blow');
+const fuseValueMessage = document.getElementById('fuse-value-message');
 const notesInput = document.getElementById('notes-input');
 const measurementSystemContainer = document.getElementById('measurement-system-container');
 const connectorCategoryContainer = document.getElementById('connector-category-container');
 const connectorCategorySelect = document.getElementById('connector-category-select');
 const connectorCategoryHelp = document.getElementById('connector-category-help');
 const connectorNotesHint = document.getElementById('connector-notes-hint');
+const connectorCategoryMessage = document.getElementById('connector-category-message');
+const connectorNotesMessage = document.getElementById('connector-notes-message');
 const componentCategoryContainer = document.getElementById('component-category-container');
 const componentMountContainer = document.getElementById('component-mount-container');
 const bearingOptionsContainer = document.getElementById('bearing-options-container');
 const bearingTypeSelect = document.getElementById('bearing-type-select');
+const bearingTypeMessage = document.getElementById('bearing-type-message');
 const customFieldsContainer = document.getElementById('custom-fields');
 const customImageInput = document.getElementById('custom-image-input');
 const customImageClearButton = document.getElementById('custom-image-clear');
 const customImageNameDisplay = document.getElementById('custom-image-name');
 const customLine1Input = document.getElementById('custom-line1-input');
 const customLine2Input = document.getElementById('custom-line2-input');
+const customLine1Field = document.getElementById('custom-line1-field');
+const customLine1Message = document.getElementById('custom-line1-message');
 const notesField = document.getElementById('notes-field');
 const standardField = document.getElementById('standard-field');
 const notesLabel = document.querySelector('label[for="notes-input"]');
@@ -77,6 +85,9 @@ const fuseTypeRadios = Array.from(document.querySelectorAll('input[name="fuse-ty
 const heightRadios = Array.from(document.querySelectorAll('input[name="label-height"]'));
 const componentCategoryRadios = Array.from(document.querySelectorAll('input[name="component-category"]'));
 const componentMountRadios = Array.from(document.querySelectorAll('input[name="component-mount"]'));
+const componentCategoryMessage = document.getElementById('component-category-message');
+const componentMountMessage = document.getElementById('component-mount-message');
+const formStatusMessage = document.getElementById('form-status-message');
 
 export const elements = {
   themeToggleButton,
@@ -88,6 +99,8 @@ export const elements = {
   threadLengthRow,
   lengthContainer,
   lengthInput,
+  threadSizeMessage,
+  lengthMessage,
   fuseTypeContainer,
   fuseValueContainer,
   glassOptionsContainer,
@@ -95,22 +108,28 @@ export const elements = {
   glassSizeSelect,
   glassSlowBlowCheckbox,
   glassFastBlowCheckbox,
+  fuseValueMessage,
   notesInput,
   measurementSystemContainer,
   connectorCategoryContainer,
   connectorCategorySelect,
   connectorCategoryHelp,
   connectorNotesHint,
+  connectorCategoryMessage,
+  connectorNotesMessage,
   componentCategoryContainer,
   componentMountContainer,
   bearingOptionsContainer,
   bearingTypeSelect,
+  bearingTypeMessage,
   customFieldsContainer,
   customImageInput,
   customImageClearButton,
   customImageNameDisplay,
   customLine1Input,
   customLine2Input,
+  customLine1Field,
+  customLine1Message,
   notesField,
   standardField,
   notesLabel,
@@ -146,5 +165,8 @@ export const elements = {
   fuseTypeRadios,
   heightRadios,
   componentCategoryRadios,
-  componentMountRadios
+  componentMountRadios,
+  componentCategoryMessage,
+  componentMountMessage,
+  formStatusMessage
 };
