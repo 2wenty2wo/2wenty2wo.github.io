@@ -70,7 +70,7 @@ main {
 }
 
 .section-heading {
-  font-family: "Tagesschrift", sans-serif;
+  font-family: 'Barlow', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   font-size: clamp(1.5rem, 2.5vw, 1.9rem);
 }
 
