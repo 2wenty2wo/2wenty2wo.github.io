@@ -927,12 +927,15 @@ export function updatePreview() {
   const qrContent = state.qrContent ? state.qrContent.trim() : '';
 
   if (state.showQr && qrContent && qrCanvas) {
-    const qrSize = Math.floor(innerHeightPx * 0.6);
-    qrCanvas.width = qrSize;
-    qrCanvas.height = qrSize;
-    qrCanvas.style.width = qrSize + 'px';
-    qrCanvas.style.height = qrSize + 'px';
-    const qrOffset = Math.max(mmToPx(1), Math.round(basePaddingX * 0.5));
+    const qrMechanicalClearancePx = Math.max(mmToPx(1), 1);
+    const qrSafetyMarginPx = Math.max(2, Math.round(mmToPx(0.5)));
+    const maxQrExtentPx = Math.max(0, Math.floor(innerHeightPx - qrSafetyMarginPx * 2));
+    const estimatedQrSizePx = Math.max(1, maxQrExtentPx);
+    qrCanvas.width = estimatedQrSizePx;
+    qrCanvas.height = estimatedQrSizePx;
+    qrCanvas.style.width = estimatedQrSizePx + 'px';
+    qrCanvas.style.height = estimatedQrSizePx + 'px';
+    const qrOffset = qrMechanicalClearancePx;
     qrCanvas.style.right = qrOffset + 'px';
     qrCanvas.style.top = '50%';
     qrCanvas.style.transform = 'translateY(-50%)';
@@ -957,14 +960,55 @@ export function updatePreview() {
           throw new Error('QR code library is missing the toCanvas function.');
         }
         try {
-          renderFn.call(qrCodeLib, qrCanvas, latestContent, {
-            margin: 1,
-            width: qrSize,
+          const qrMarginModules = 1;
+          let moduleCount = null;
+          const createFn = qrCodeLib && typeof qrCodeLib.create === 'function' ? qrCodeLib.create : null;
+          if (createFn) {
+            try {
+              const qrMatrix = createFn.call(qrCodeLib, latestContent);
+              if (qrMatrix && qrMatrix.modules && Number.isFinite(qrMatrix.modules.size)) {
+                moduleCount = Math.max(0, qrMatrix.modules.size);
+              }
+            } catch (creationError) {
+              console.error('QR code matrix generation failed', creationError);
+            }
+          }
+
+          const totalModules = moduleCount && moduleCount > 0 ? moduleCount + qrMarginModules * 2 : null;
+          let modulePixelSize = 0;
+          let qrPixelSize = estimatedQrSizePx;
+          if (totalModules && totalModules > 0) {
+            modulePixelSize = Math.max(1, Math.floor(maxQrExtentPx / totalModules));
+            qrPixelSize = Math.max(1, modulePixelSize * totalModules);
+          }
+
+          if (qrPixelSize > 0) {
+            qrCanvas.width = qrPixelSize;
+            qrCanvas.height = qrPixelSize;
+            qrCanvas.style.width = qrPixelSize + 'px';
+            qrCanvas.style.height = qrPixelSize + 'px';
+          }
+
+          const renderOptions = {
+            margin: qrMarginModules,
             color: {
               dark: '#000',
               light: '#00000000'
             }
-          });
+          };
+
+          if (modulePixelSize > 0 && totalModules && totalModules > 0) {
+            renderOptions.scale = modulePixelSize;
+          } else {
+            renderOptions.width = qrPixelSize;
+          }
+
+          renderFn.call(qrCodeLib, qrCanvas, latestContent, renderOptions);
+
+          const qrMarginPx = mmToPx(1.2);
+          const qrPadding = Math.max(basePaddingX + qrMarginPx, qrCanvas.width + qrMarginPx);
+          const extraRight = Math.max(0, qrPadding - basePaddingX);
+          labelInner.style.setProperty('--label-padding-right-extra', `${extraRight}px`);
         } catch (err) {
           console.error('QR code generation failed', err);
         }
@@ -982,7 +1026,7 @@ export function updatePreview() {
       });
 
     const qrMarginPx = mmToPx(1.2);
-    const qrPadding = Math.max(basePaddingX + qrMarginPx, qrSize + qrMarginPx);
+    const qrPadding = Math.max(basePaddingX + qrMarginPx, estimatedQrSizePx + qrMarginPx);
     const extraRight = Math.max(0, qrPadding - basePaddingX);
     labelInner.style.setProperty('--label-padding-right-extra', `${extraRight}px`);
   } else if (qrCanvas) {
