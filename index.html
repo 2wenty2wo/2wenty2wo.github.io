@@ -7,9 +7,9 @@
   <!--
     Standalone tool for generating and printing Gridfinity labels.  Styling
     now layers a lightweight Bootstrap 5 theme for modern form controls and
-    layout utilities.  Two small third-party libraries are loaded via CDN:
-    html2canvas to capture the label preview as an image and qrcode to
-    generate optional QR codes.
+    layout utilities.  Two small third-party libraries are loaded on demand
+    via CDN: html2canvas to capture the label preview as an image and qrcode
+    to generate optional QR codes.
   -->
   <link
     rel="stylesheet"
@@ -54,8 +54,6 @@
     })();
   </script>
   <link rel="stylesheet" href="style.css" />
-  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
   <script type="module" src="js/main.js"></script>
 </head>
 <body>
