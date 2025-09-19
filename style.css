@@ -63,7 +63,7 @@ main {
 }
 
 .title-section h1 {
-  font-family: "Walter Turncoat", cursive;
+  font-family: "Montserrat", sans-serif;
   font-size: clamp(3.25rem, 6vw, 4.5rem);
   line-height: 1.05;
 }
