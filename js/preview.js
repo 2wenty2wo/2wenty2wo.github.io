@@ -266,7 +266,7 @@ function getHardwareImageInfo() {
   if (!folder) {
     return null;
   }
-  const code = state.standardCode;
+  const code = (state.standardCode || '').trim();
   if (!code) {
     return null;
   }
@@ -274,10 +274,36 @@ function getHardwareImageInfo() {
   if (!filename) {
     return null;
   }
+  const standardName = (state.standard || '').trim();
+  const altPieces = [];
+  if (code) {
+    altPieces.push(code);
+  }
+  if (standardName && standardName.toLowerCase() !== code.toLowerCase()) {
+    altPieces.push(standardName);
+  }
+  if (state.screwType === 'Bolt') {
+    const baseSource = code || standardName || 'Bolt';
+    const normalizedBase = baseSource.toLowerCase().trim().replace(/\s+/g, ' ');
+    let boltLabel = normalizedBase
+      ? normalizedBase.charAt(0).toUpperCase() + normalizedBase.slice(1)
+      : 'Bolt';
+    if (!/bolt\b/i.test(boltLabel)) {
+      boltLabel = `${boltLabel} bolt`;
+    }
+    boltLabel = boltLabel.trim();
+    return {
+      type: 'boltSvg',
+      headSrc: `images/${folder}/${filename}/head.svg`,
+      sideSrc: `images/${folder}/${filename}/side.svg`,
+      headAlt: `${boltLabel} — head view`,
+      sideAlt: `${boltLabel} — side view`
+    };
+  }
   const src = `images/${folder}/${filename}.png`;
-  const standardName = state.standard || '';
-  const altBase = standardName && standardName !== code ? `${code} — ${standardName}` : code;
+  const altBase = altPieces.length > 0 ? altPieces.join(' — ') : '';
   return {
+    type: 'photo',
     src,
     alt: altBase ? `${altBase} reference illustration` : 'Hardware reference illustration'
   };
@@ -756,34 +782,7 @@ export function updatePreview() {
         hardwareImageDiv.appendChild(placeholder);
       }
     } else {
-      const photoInfo = getHardwareImageInfo();
-      if (photoInfo && innerHeightPx > 0 && innerWidthPx > 0) {
-        const maxWidthForPhoto = Math.max(0, Math.min(innerHeightPx, innerWidthPx * 0.45));
-        if (maxWidthForPhoto > 0) {
-          hardwareImageDiv.style.display = 'flex';
-          hardwareImageDiv.style.maxWidth = maxWidthForPhoto + 'px';
-          hardwareImageDiv.style.flexBasis = maxWidthForPhoto + 'px';
-          hardwareImageDiv.style.flexShrink = '0';
-          hardwareImageDiv.style.removeProperty('min-height');
-          hardwareImageDiv.innerHTML = '';
-          const img = document.createElement('img');
-          img.src = photoInfo.src;
-          img.alt = photoInfo.alt;
-          img.className = 'hardware-photo';
-          img.decoding = 'async';
-          img.loading = 'lazy';
-          img.style.maxHeight = innerHeightPx + 'px';
-          img.style.maxWidth = maxWidthForPhoto + 'px';
-          hardwareImageDiv.appendChild(img);
-        } else {
-          hardwareImageDiv.style.display = 'none';
-          hardwareImageDiv.innerHTML = '';
-          hardwareImageDiv.style.removeProperty('max-width');
-          hardwareImageDiv.style.removeProperty('flex-basis');
-          hardwareImageDiv.style.removeProperty('flex-shrink');
-          hardwareImageDiv.style.removeProperty('min-height');
-        }
-      } else {
+      const renderFallbackIcon = () => {
         const multiViewTypes = ['Screw', 'Nut', 'Heat Insert', 'Bearing', 'Component'];
         const iconCount = multiViewTypes.includes(state.hardwareType) ? 2 : 1;
         const iconGapPx = 8;
@@ -810,6 +809,88 @@ export function updatePreview() {
           hardwareImageDiv.style.removeProperty('flex-shrink');
           hardwareImageDiv.style.removeProperty('min-height');
         }
+      };
+
+      const photoInfo = getHardwareImageInfo();
+      if (photoInfo && innerHeightPx > 0 && innerWidthPx > 0) {
+        const maxWidthForPhoto = Math.max(0, Math.min(innerHeightPx, innerWidthPx * 0.45));
+        if (maxWidthForPhoto > 0) {
+          hardwareImageDiv.style.display = 'flex';
+          hardwareImageDiv.style.maxWidth = maxWidthForPhoto + 'px';
+          hardwareImageDiv.style.flexBasis = maxWidthForPhoto + 'px';
+          hardwareImageDiv.style.flexShrink = '0';
+          hardwareImageDiv.style.removeProperty('min-height');
+          hardwareImageDiv.innerHTML = '';
+
+          if (photoInfo.type === 'boltSvg') {
+            let fallbackTriggered = false;
+            const handleMissingAsset = () => {
+              if (fallbackTriggered) {
+                return;
+              }
+              fallbackTriggered = true;
+              renderFallbackIcon();
+            };
+            const boltGroup = document.createElement('div');
+            boltGroup.className = 'bolt-image-group';
+            boltGroup.style.maxHeight = innerHeightPx + 'px';
+            hardwareImageDiv.appendChild(boltGroup);
+            const boltImages = [
+              {
+                src: photoInfo.headSrc,
+                alt: photoInfo.headAlt,
+                className: 'hardware-photo bolt-head-view'
+              },
+              {
+                src: photoInfo.sideSrc,
+                alt: photoInfo.sideAlt,
+                className: 'hardware-photo bolt-side-view'
+              }
+            ];
+            let maxWidthPerImage = Math.floor(maxWidthForPhoto / boltImages.length);
+            if (!Number.isFinite(maxWidthPerImage) || maxWidthPerImage <= 0) {
+              maxWidthPerImage = maxWidthForPhoto;
+            }
+            boltImages.forEach(imageInfo => {
+              if (fallbackTriggered) {
+                return;
+              }
+              if (!imageInfo.src) {
+                handleMissingAsset();
+                return;
+              }
+              const boltImg = document.createElement('img');
+              boltImg.src = imageInfo.src;
+              boltImg.alt = imageInfo.alt;
+              boltImg.className = imageInfo.className;
+              boltImg.decoding = 'async';
+              boltImg.loading = 'lazy';
+              boltImg.style.maxHeight = innerHeightPx + 'px';
+              boltImg.style.maxWidth = maxWidthPerImage + 'px';
+              boltImg.addEventListener('error', handleMissingAsset);
+              boltGroup.appendChild(boltImg);
+            });
+          } else {
+            const img = document.createElement('img');
+            img.src = photoInfo.src;
+            img.alt = photoInfo.alt;
+            img.className = 'hardware-photo';
+            img.decoding = 'async';
+            img.loading = 'lazy';
+            img.style.maxHeight = innerHeightPx + 'px';
+            img.style.maxWidth = maxWidthForPhoto + 'px';
+            hardwareImageDiv.appendChild(img);
+          }
+        } else {
+          hardwareImageDiv.style.display = 'none';
+          hardwareImageDiv.innerHTML = '';
+          hardwareImageDiv.style.removeProperty('max-width');
+          hardwareImageDiv.style.removeProperty('flex-basis');
+          hardwareImageDiv.style.removeProperty('flex-shrink');
+          hardwareImageDiv.style.removeProperty('min-height');
+        }
+      } else {
+        renderFallbackIcon();
       }
     }
   } else {
