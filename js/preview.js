@@ -54,8 +54,11 @@ function setMessageVisibility(messageElement, message, show) {
   if (!messageElement) {
     return;
   }
-  if (show) {
-    messageElement.textContent = message;
+  const normalizedMessage = typeof message === 'string' ? message : '';
+  const trimmedMessage = normalizedMessage.trim();
+  const shouldShow = Boolean(show && trimmedMessage.length > 0);
+  if (shouldShow) {
+    messageElement.textContent = trimmedMessage;
     messageElement.classList.remove('d-none');
     messageElement.setAttribute('aria-hidden', 'false');
   } else {
@@ -78,7 +81,10 @@ function updateInputFieldState({ input, container, messageElement, valid, messag
   if (container) {
     container.classList.toggle('field-invalid', !valid);
   }
-  setMessageVisibility(messageElement, message, !valid);
+  const normalizedMessage = typeof message === 'string' ? message : '';
+  const trimmedMessage = normalizedMessage.trim();
+  const shouldShowMessage = !valid && trimmedMessage.length > 0;
+  setMessageVisibility(messageElement, normalizedMessage, shouldShowMessage);
 }
 
 function updateRadioGroupFeedback({ radios, container, messageElement, valid, message }) {
@@ -97,7 +103,10 @@ function updateRadioGroupFeedback({ radios, container, messageElement, valid, me
   if (container) {
     container.classList.toggle('field-invalid', !valid);
   }
-  setMessageVisibility(messageElement, message, !valid);
+  const normalizedMessage = typeof message === 'string' ? message : '';
+  const trimmedMessage = normalizedMessage.trim();
+  const shouldShowMessage = !valid && trimmedMessage.length > 0;
+  setMessageVisibility(messageElement, normalizedMessage, shouldShowMessage);
 }
 
 function formatRequirementSummary(requirements) {
@@ -115,18 +124,15 @@ function formatRequirementSummary(requirements) {
 function applyValidationFeedback(disabled) {
   const requirements = [];
   const hardwareType = state.hardwareType;
-  const hardwareLabel = hardwareType ? hardwareType.toLowerCase() : 'hardware';
   const screwLabel = (state.screwType || 'screw').toLowerCase();
 
   const needsThreadSize = !['Fuse', 'Connector', 'Custom', 'Bearing', 'Component'].includes(hardwareType);
   const threadValid = !needsThreadSize || Boolean(state.threadSize);
-  const threadMessage = `Select a thread size for your ${hardwareType === 'Screw' ? screwLabel : hardwareLabel} to continue.`;
   updateInputFieldState({
     input: threadSizeSelect,
     container: threadSizeContainer,
     messageElement: threadSizeMessage,
-    valid: threadValid,
-    message: threadMessage
+    valid: threadValid
   });
   if (!threadValid) {
     requirements.push('select a thread size');
@@ -139,8 +145,7 @@ function applyValidationFeedback(disabled) {
     input: lengthInput,
     container: lengthContainer,
     messageElement: lengthMessage,
-    valid: lengthValid,
-    message: `Enter the ${screwLabel} length in millimeters to continue.`
+    valid: lengthValid
   });
   if (!lengthValid) {
     requirements.push(`enter the ${screwLabel} length`);
@@ -152,8 +157,7 @@ function applyValidationFeedback(disabled) {
     input: fuseValueSelect,
     container: fuseValueContainer,
     messageElement: fuseValueMessage,
-    valid: fuseValid,
-    message: 'Choose a fuse value to continue.'
+    valid: fuseValid
   });
   if (!fuseValid) {
     requirements.push('choose a fuse value');
@@ -165,8 +169,7 @@ function applyValidationFeedback(disabled) {
     input: connectorCategorySelect,
     container: connectorCategoryContainer,
     messageElement: connectorCategoryMessage,
-    valid: connectorCategoryValid,
-    message: 'Choose a connector category to continue.'
+    valid: connectorCategoryValid
   });
   if (!connectorCategoryValid) {
     requirements.push('choose a connector category');
@@ -177,8 +180,7 @@ function applyValidationFeedback(disabled) {
     input: notesInput,
     container: notesField,
     messageElement: connectorNotesMessage,
-    valid: connectorNotesValid,
-    message: 'Add connector details (series, pin count, wire gauge) to continue.'
+    valid: connectorNotesValid
   });
   if (!connectorNotesValid) {
     requirements.push('add connector details');
@@ -190,8 +192,7 @@ function applyValidationFeedback(disabled) {
     input: bearingTypeSelect,
     container: bearingOptionsContainer,
     messageElement: bearingTypeMessage,
-    valid: bearingValid,
-    message: 'Select a bearing to continue.'
+    valid: bearingValid
   });
   if (!bearingValid) {
     requirements.push('select a bearing');
@@ -203,8 +204,7 @@ function applyValidationFeedback(disabled) {
     radios: componentCategoryRadios,
     container: componentCategoryContainer,
     messageElement: componentCategoryMessage,
-    valid: componentCategoryValid,
-    message: 'Choose a component type to continue.'
+    valid: componentCategoryValid
   });
   if (!componentCategoryValid) {
     requirements.push('choose a component type');
@@ -215,8 +215,7 @@ function applyValidationFeedback(disabled) {
     radios: componentMountRadios,
     container: componentMountContainer,
     messageElement: componentMountMessage,
-    valid: componentMountValid,
-    message: 'Choose a mounting style to continue.'
+    valid: componentMountValid
   });
   if (!componentMountValid) {
     requirements.push('choose a mounting style');
@@ -229,8 +228,7 @@ function applyValidationFeedback(disabled) {
     input: customLine1Input,
     container: customLine1Field,
     messageElement: customLine1Message,
-    valid: customTitleValid,
-    message: 'Add a title for your custom label to continue.'
+    valid: customTitleValid
   });
   if (!customTitleValid) {
     requirements.push('add a custom label title');
