@@ -289,6 +289,75 @@ function getHardwareIcon(iconHeight) {
   function buildSvg(body) {
     return `<svg viewBox="0 0 100 100" style="height:${iconHeight}px; width:auto;" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">${body}</svg>`;
   }
+  function escapeHtmlAttribute(value) {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+  function getConnectorSeriesIconMarkup(height) {
+    const categoryId = state.connectorCategory;
+    if (!categoryId) {
+      return null;
+    }
+    const standardCode = (state.standardCode || '').trim();
+    const normalizedCode = standardCode.toLowerCase();
+    const connectorCategory = findConnectorCategory(categoryId);
+    const categoryLabel = connectorCategory ? connectorCategory.label : '';
+    const iconCandidates = {
+      'pre-insulated-crimp': [
+        {
+          patterns: [/ring terminal/],
+          file: 'ring_terminal.svg',
+          altLabel: 'ring terminal'
+        },
+        {
+          patterns: [/fork terminal/, /spade/],
+          file: 'fork_terminal.svg',
+          altLabel: 'fork terminal'
+        },
+        {
+          patterns: [/butt splice/],
+          file: 'butt_connector.svg',
+          altLabel: 'butt splice'
+        }
+      ],
+      'bootlace-ferrule': [
+        {
+          patterns: [/bootlace ferrule/],
+          file: 'bootlace_ferrule.svg',
+          altLabel: 'bootlace ferrule'
+        }
+      ]
+    };
+    const candidates = iconCandidates[categoryId];
+    if (!Array.isArray(candidates) || candidates.length === 0) {
+      return null;
+    }
+    const matchedCandidate = candidates.find(candidate => {
+      if (!Array.isArray(candidate.patterns)) {
+        return false;
+      }
+      return candidate.patterns.some(pattern => pattern.test(normalizedCode));
+    }) || (categoryId === 'bootlace-ferrule' && candidates[0]);
+    if (!matchedCandidate) {
+      return null;
+    }
+    const altPieces = [];
+    if (standardCode) {
+      altPieces.push(standardCode);
+    } else if (matchedCandidate.altLabel) {
+      altPieces.push(matchedCandidate.altLabel);
+    }
+    if (categoryLabel && (!standardCode || categoryLabel.toLowerCase().indexOf(standardCode.toLowerCase()) === -1)) {
+      altPieces.push(categoryLabel);
+    }
+    const altTextBase = altPieces.length > 0 ? altPieces.join(' — ') : 'Connector';
+    const altText = `${altTextBase} illustration`;
+    return `<img src="images/connectors/${matchedCandidate.file}" alt="${escapeHtmlAttribute(altText)}" style="height:${height}px; width:auto;" loading="lazy" decoding="async">`;
+  }
   const pieces = [];
   const type = state.hardwareType;
   if (type === 'Screw') {
@@ -379,15 +448,20 @@ function getHardwareIcon(iconHeight) {
         <line x1="22" y1="50" x2="78" y2="50" />
       `));
   } else if (type === 'Connector') {
-    pieces.push(buildSvg(`
-        <!-- Insulated crimp connectors -->
-        <path d="M22 72L34 28H56L44 72Z" />
-        <rect x="34" y="20" width="12" height="8" />
-        <rect x="62" y="32" width="26" height="34" rx="8" />
-        <polygon points="70,20 82,20 90,34 78,34" />
-        <line x1="48" y1="52" x2="62" y2="46" />
-        <line x1="46" y1="60" x2="60" y2="54" />
-      `));
+    const connectorIconMarkup = getConnectorSeriesIconMarkup(iconHeight);
+    if (connectorIconMarkup) {
+      pieces.push(connectorIconMarkup);
+    } else {
+      pieces.push(buildSvg(`
+          <!-- Insulated crimp connectors -->
+          <path d="M22 72L34 28H56L44 72Z" />
+          <rect x="34" y="20" width="12" height="8" />
+          <rect x="62" y="32" width="26" height="34" rx="8" />
+          <polygon points="70,20 82,20 90,34 78,34" />
+          <line x1="48" y1="52" x2="62" y2="46" />
+          <line x1="46" y1="60" x2="60" y2="54" />
+        `));
+    }
   } else if (type === 'Component') {
     const category = state.componentCategory;
     const mount = state.componentMount;
