@@ -919,7 +919,14 @@ export function updatePreview() {
       const category = findConnectorCategory(state.connectorCategory);
       const categoryLabel = category ? category.label : '';
       const seriesLabel = state.showStandard && state.standard ? state.standard : '';
+      const standardCode = (state.standardCode || '').trim();
       const noteText = state.notes;
+      const isPreInsulatedCrimp = state.connectorCategory === 'pre-insulated-crimp';
+      let connectorColour = '';
+      if (isPreInsulatedCrimp && standardCode) {
+        const firstToken = standardCode.split(/\s+/)[0] || '';
+        connectorColour = firstToken.replace(/[\s,;]+$/g, '');
+      }
       if (seriesLabel) {
         line1 = seriesLabel;
       } else if (categoryLabel) {
@@ -928,10 +935,13 @@ export function updatePreview() {
         line1 = noteText;
       }
       connectorLine2Parts = [];
-      if (seriesLabel && categoryLabel && seriesLabel !== categoryLabel) {
-        connectorLine2Parts.push(categoryLabel);
-      }
-      if (!seriesLabel && categoryLabel && line1 !== categoryLabel) {
+      if (seriesLabel) {
+        if (isPreInsulatedCrimp && connectorColour) {
+          connectorLine2Parts.push(connectorColour);
+        } else if (categoryLabel && seriesLabel !== categoryLabel) {
+          connectorLine2Parts.push(categoryLabel);
+        }
+      } else if (categoryLabel && line1 !== categoryLabel) {
         connectorLine2Parts.push(categoryLabel);
       }
       if (noteText && line1 !== noteText) {
