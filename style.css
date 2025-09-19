@@ -209,14 +209,23 @@ main {
   gap: 8px;
   flex: 0 0 auto;
   padding: 6px;
-  border-radius: 0.5rem;
-  background-color: #ffffff;
-  border: 1px solid #000000;
+  border-radius: 0;
+  background-color: transparent;
+  border: none;
   box-shadow: none;
 }
 
 .hardware-icon svg {
   width: auto;
+}
+
+.hardware-icon img.hardware-fallback-image {
+  display: block;
+  max-height: 100%;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  filter: grayscale(100%);
 }
 
 .hardware-icon img.hardware-photo {
@@ -262,8 +271,8 @@ main {
   height: 100%;
   min-width: 48px;
   padding: 4px;
-  border: 1px dashed #000000;
-  border-radius: 0.45rem;
+  border: none;
+  border-radius: 0;
   text-transform: uppercase;
   font-size: 0.65rem;
   letter-spacing: 0.08em;
@@ -300,9 +309,9 @@ main {
 .qr-code {
   position: absolute;
   display: none;
-  border-radius: 0.45rem;
-  background-color: #ffffff;
-  border: 1px solid #000000;
+  border-radius: 0;
+  background-color: transparent;
+  border: none;
   box-shadow: none;
 }
 
@@ -313,7 +322,7 @@ main {
   align-items: center;
   gap: var(--label-gap, 12px);
   box-sizing: border-box;
-  border-radius: 0.65rem;
+  border-radius: 0;
   background: #ffffff;
   border: 2px solid #000000;
   box-shadow: none;
@@ -324,25 +333,15 @@ main {
   --label-padding-x: 14px;
   --label-padding-y: 10px;
   --label-padding-right-extra: 0px;
-  --label-accent-width: 12px;
   padding:
     var(--label-padding-y)
     calc(var(--label-padding-x) + var(--label-padding-right-extra))
     var(--label-padding-y)
-    calc(var(--label-padding-x) + var(--label-accent-width));
+    var(--label-padding-x);
 }
 
 .label-inner::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: var(--label-accent-width);
-  background: #000000;
-  border-top-left-radius: inherit;
-  border-bottom-left-radius: inherit;
-  z-index: 0;
+  content: none;
 }
 
 .label-inner > * {
