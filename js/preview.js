@@ -607,8 +607,14 @@ export function updatePreview() {
         ctx.clearRect(0, 0, qrCanvas.width, qrCanvas.height);
       }
       qrCanvas.style.display = 'none';
+      qrCanvas.style.removeProperty('margin-right');
+      qrCanvas.style.removeProperty('margin-left');
     }
-    labelInner.style.setProperty('--label-padding-right-extra', '0px');
+    labelInner.style.removeProperty('--label-padding-inline-start');
+    labelInner.style.removeProperty('--label-padding-inline-end');
+    labelInner.style.removeProperty('--label-gap');
+    labelInner.style.removeProperty('--label-padding-y');
+    labelInner.style.removeProperty('--label-padding-x');
     return;
   }
 
@@ -641,10 +647,12 @@ export function updatePreview() {
   );
   const basePaddingY = Math.max(mmToPx(1.0 * verticalScale), mmToPx(0.8));
   const baseGap = Math.max(mmToPx(0.8 * gapScale), mmToPx(0.6));
-  labelInner.style.setProperty('--label-padding-x', `${basePaddingX}px`);
-  labelInner.style.setProperty('--label-padding-y', `${basePaddingY}px`);
-  labelInner.style.setProperty('--label-gap', `${baseGap}px`);
-  labelInner.style.setProperty('--label-padding-right-extra', '0px');
+  let paddingLeftPx = basePaddingX;
+  let paddingRightPx = basePaddingX;
+  let paddingY = basePaddingY;
+  let gapPx = baseGap;
+  let hardwareWidthPx = 0;
+  let hardwareVisible = false;
 
   if (state.showImage) {
     if (state.hardwareType === 'Custom') {
@@ -656,6 +664,8 @@ export function updatePreview() {
       hardwareImageDiv.style.flexShrink = '0';
       hardwareImageDiv.style.minHeight = displaySize + 'px';
       hardwareImageDiv.innerHTML = '';
+      hardwareWidthPx = displaySize;
+      hardwareVisible = true;
       if (state.customImageData) {
         const img = document.createElement('img');
         img.src = state.customImageData;
@@ -701,6 +711,8 @@ export function updatePreview() {
             hardwareImageDiv.style.flexShrink = '0';
             hardwareImageDiv.style.removeProperty('min-height');
             hardwareImageDiv.innerHTML = markup;
+            hardwareWidthPx = finalStripWidth;
+            hardwareVisible = true;
             return;
           }
         }
@@ -710,6 +722,8 @@ export function updatePreview() {
         hardwareImageDiv.style.removeProperty('flex-basis');
         hardwareImageDiv.style.removeProperty('flex-shrink');
         hardwareImageDiv.style.removeProperty('min-height');
+        hardwareWidthPx = 0;
+        hardwareVisible = false;
       };
 
       const photoInfo = getHardwareImageInfo();
@@ -722,6 +736,8 @@ export function updatePreview() {
           hardwareImageDiv.style.flexShrink = '0';
           hardwareImageDiv.style.removeProperty('min-height');
           hardwareImageDiv.innerHTML = '';
+          hardwareWidthPx = maxWidthForPhoto;
+          hardwareVisible = true;
 
           if (photoInfo.type === 'boltSvg') {
             let fallbackTriggered = false;
@@ -789,6 +805,8 @@ export function updatePreview() {
           hardwareImageDiv.style.removeProperty('flex-basis');
           hardwareImageDiv.style.removeProperty('flex-shrink');
           hardwareImageDiv.style.removeProperty('min-height');
+          hardwareWidthPx = 0;
+          hardwareVisible = false;
         }
       } else {
         renderFallbackIcon();
@@ -801,6 +819,8 @@ export function updatePreview() {
     hardwareImageDiv.style.removeProperty('flex-basis');
     hardwareImageDiv.style.removeProperty('flex-shrink');
     hardwareImageDiv.style.removeProperty('min-height');
+    hardwareWidthPx = 0;
+    hardwareVisible = false;
   }
 
   if (state.hardwareType === 'Custom') {
@@ -925,21 +945,25 @@ export function updatePreview() {
   const primaryFontSize = Math.max(8, Math.floor(innerHeightPx * 0.45));
   const secondaryFontSize = Math.max(6, Math.floor(innerHeightPx * 0.2));
   const qrContent = state.qrContent ? state.qrContent.trim() : '';
+  let qrVisible = false;
+  let qrEstimatedSizePx = 0;
+  let desiredQrEdgeClearancePx = 0;
 
   if (state.showQr && qrContent && qrCanvas) {
-    const qrMechanicalClearancePx = Math.max(mmToPx(1), 1);
     const qrSafetyMarginPx = Math.max(2, Math.round(mmToPx(0.5)));
     const maxQrExtentPx = Math.max(0, Math.floor(innerHeightPx - qrSafetyMarginPx * 2));
-    const estimatedQrSizePx = Math.max(1, maxQrExtentPx);
-    qrCanvas.width = estimatedQrSizePx;
-    qrCanvas.height = estimatedQrSizePx;
-    qrCanvas.style.width = estimatedQrSizePx + 'px';
-    qrCanvas.style.height = estimatedQrSizePx + 'px';
-    const qrOffset = qrMechanicalClearancePx;
-    qrCanvas.style.right = qrOffset + 'px';
-    qrCanvas.style.top = '50%';
-    qrCanvas.style.transform = 'translateY(-50%)';
+    qrEstimatedSizePx = Math.max(1, maxQrExtentPx);
+    const minimumEdgeClearancePx = Math.max(mmToPx(1), 1);
+    desiredQrEdgeClearancePx = Math.max(mmToPx(1.2), minimumEdgeClearancePx);
+    qrCanvas.width = qrEstimatedSizePx;
+    qrCanvas.height = qrEstimatedSizePx;
+    qrCanvas.style.width = qrEstimatedSizePx + 'px';
+    qrCanvas.style.height = qrEstimatedSizePx + 'px';
     qrCanvas.style.display = 'block';
+    qrCanvas.style.removeProperty('right');
+    qrCanvas.style.removeProperty('top');
+    qrCanvas.style.removeProperty('transform');
+    qrCanvas.style.marginLeft = '0px';
     const ctx = qrCanvas.getContext('2d');
     if (ctx) {
       ctx.clearRect(0, 0, qrCanvas.width, qrCanvas.height);
@@ -976,7 +1000,7 @@ export function updatePreview() {
 
           const totalModules = moduleCount && moduleCount > 0 ? moduleCount + qrMarginModules * 2 : null;
           let modulePixelSize = 0;
-          let qrPixelSize = estimatedQrSizePx;
+          let qrPixelSize = qrEstimatedSizePx;
           if (totalModules && totalModules > 0) {
             modulePixelSize = Math.max(1, Math.floor(maxQrExtentPx / totalModules));
             qrPixelSize = Math.max(1, modulePixelSize * totalModules);
@@ -1004,11 +1028,6 @@ export function updatePreview() {
           }
 
           renderFn.call(qrCodeLib, qrCanvas, latestContent, renderOptions);
-
-          const qrMarginPx = mmToPx(1.2);
-          const qrPadding = Math.max(basePaddingX + qrMarginPx, qrCanvas.width + qrMarginPx);
-          const extraRight = Math.max(0, qrPadding - basePaddingX);
-          labelInner.style.setProperty('--label-padding-right-extra', `${extraRight}px`);
         } catch (err) {
           console.error('QR code generation failed', err);
         }
@@ -1020,23 +1039,89 @@ export function updatePreview() {
             qrContext.clearRect(0, 0, qrCanvas.width, qrCanvas.height);
           }
           qrCanvas.style.display = 'none';
-          labelInner.style.setProperty('--label-padding-right-extra', '0px');
+          qrCanvas.style.removeProperty('margin-right');
+          qrCanvas.style.removeProperty('margin-left');
         }
         console.error('QR code library failed to load', err);
       });
-
-    const qrMarginPx = mmToPx(1.2);
-    const qrPadding = Math.max(basePaddingX + qrMarginPx, estimatedQrSizePx + qrMarginPx);
-    const extraRight = Math.max(0, qrPadding - basePaddingX);
-    labelInner.style.setProperty('--label-padding-right-extra', `${extraRight}px`);
+    qrVisible = true;
   } else if (qrCanvas) {
     const ctx = qrCanvas.getContext('2d');
     if (ctx) {
       ctx.clearRect(0, 0, qrCanvas.width, qrCanvas.height);
     }
     qrCanvas.style.display = 'none';
-    labelInner.style.setProperty('--label-padding-right-extra', '0px');
+    qrCanvas.style.removeProperty('margin-right');
+    qrCanvas.style.removeProperty('margin-left');
   }
+
+  const itemsCount = 1 + (hardwareVisible ? 1 : 0) + (qrVisible ? 1 : 0);
+  const gapCount = Math.max(0, itemsCount - 1);
+  gapPx = Math.max(0, gapPx);
+  const minGapPx = gapCount > 0 ? Math.max(mmToPx(0.35), 1) : 0;
+  const minPaddingBaseMm = heightMm <= 12 ? 0.7 : 0.9;
+  const minPaddingBasePx = Math.max(mmToPx(minPaddingBaseMm), 2);
+  const minPaddingLeftPx = Math.max(2, Math.min(paddingLeftPx, minPaddingBasePx));
+  const minPaddingRightTargetPx = qrVisible
+    ? Math.max(minPaddingBasePx, desiredQrEdgeClearancePx)
+    : minPaddingBasePx;
+  const minPaddingRightPx = Math.max(2, Math.min(paddingRightPx, minPaddingRightTargetPx));
+  const minTextWidthPx = Math.max(mmToPx(10), Math.floor(innerHeightPx * 1.45));
+
+  const computeAvailableTextWidth = () => {
+    const effectiveRightPadding = qrVisible
+      ? Math.max(paddingRightPx, desiredQrEdgeClearancePx)
+      : paddingRightPx;
+    const qrWidthContribution = qrVisible ? qrEstimatedSizePx : 0;
+    return innerWidthPx - (
+      paddingLeftPx +
+      effectiveRightPadding +
+      gapPx * gapCount +
+      hardwareWidthPx +
+      qrWidthContribution
+    );
+  };
+
+  let availableTextWidth = computeAvailableTextWidth();
+  let adjustmentIterations = 0;
+  const maxAdjustmentIterations = 80;
+  while (
+    availableTextWidth < minTextWidthPx &&
+    adjustmentIterations < maxAdjustmentIterations &&
+    (gapPx > minGapPx || paddingLeftPx > minPaddingLeftPx || paddingRightPx > minPaddingRightPx)
+  ) {
+    if (gapPx > minGapPx) {
+      gapPx = Math.max(minGapPx, gapPx - 1);
+    } else if (paddingLeftPx >= paddingRightPx && paddingLeftPx > minPaddingLeftPx) {
+      paddingLeftPx = Math.max(minPaddingLeftPx, paddingLeftPx - 1);
+    } else if (paddingRightPx > minPaddingRightPx) {
+      paddingRightPx = Math.max(minPaddingRightPx, paddingRightPx - 1);
+    } else if (paddingLeftPx > minPaddingLeftPx) {
+      paddingLeftPx = Math.max(minPaddingLeftPx, paddingLeftPx - 1);
+    } else {
+      break;
+    }
+    availableTextWidth = computeAvailableTextWidth();
+    adjustmentIterations += 1;
+  }
+
+  if (qrCanvas) {
+    if (qrVisible) {
+      const marginRightPx = Math.max(0, desiredQrEdgeClearancePx - paddingRightPx);
+      qrCanvas.style.marginRight = marginRightPx + 'px';
+      qrCanvas.style.marginLeft = '0px';
+    } else {
+      qrCanvas.style.marginRight = '0px';
+      qrCanvas.style.marginLeft = '0px';
+    }
+  }
+
+  const averagePaddingX = Math.round((paddingLeftPx + paddingRightPx) / 2);
+  labelInner.style.setProperty('--label-padding-x', `${averagePaddingX}px`);
+  labelInner.style.setProperty('--label-padding-y', `${paddingY}px`);
+  labelInner.style.setProperty('--label-padding-inline-start', `${paddingLeftPx}px`);
+  labelInner.style.setProperty('--label-padding-inline-end', `${paddingRightPx}px`);
+  labelInner.style.setProperty('--label-gap', `${gapPx}px`);
 
   applyTextFitting(primaryFontSize, secondaryFontSize);
 }
