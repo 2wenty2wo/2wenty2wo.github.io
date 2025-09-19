@@ -2,8 +2,21 @@
 <html lang="en" data-bs-theme="light" data-theme="light">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  />
   <title>Gridfinity Label Maker</title>
+  <meta name="color-scheme" content="light dark" />
+  <meta name="supported-color-schemes" content="light dark" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Gridfinity Label Maker" />
+  <meta
+    name="apple-mobile-web-app-status-bar-style"
+    content="default"
+    id="apple-mobile-web-app-status-bar-style"
+  />
+  <meta name="theme-color" content="#f8fafc" id="theme-color-meta" />
   <!--
     Standalone tool for generating and printing Gridfinity labels.  Styling
     now layers a lightweight Bootstrap 5 theme for modern form controls and
@@ -17,6 +30,7 @@
     integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
     crossorigin="anonymous"
   />
+  <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png" />
   <link
     rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
@@ -37,6 +51,8 @@
   <script>
     (function() {
       const storageKey = 'gridfinity-theme-preference';
+      const themeColors = { light: '#f8fafc', dark: '#0f172a' };
+      const statusBarStyles = { light: 'default', dark: 'black-translucent' };
       let theme = 'light';
       try {
         const storedTheme = localStorage.getItem(storageKey);
@@ -51,6 +67,14 @@
       }
       document.documentElement.setAttribute('data-theme', theme);
       document.documentElement.setAttribute('data-bs-theme', theme);
+      const themeColorMeta = document.getElementById('theme-color-meta');
+      if (themeColorMeta) {
+        themeColorMeta.setAttribute('content', themeColors[theme] || themeColors.light);
+      }
+      const statusBarMeta = document.getElementById('apple-mobile-web-app-status-bar-style');
+      if (statusBarMeta) {
+        statusBarMeta.setAttribute('content', statusBarStyles[theme] || statusBarStyles.light);
+      }
     })();
   </script>
   <link rel="stylesheet" href="style.css" />
