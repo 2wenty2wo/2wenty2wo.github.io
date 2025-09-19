@@ -121,20 +121,21 @@ main {
   font-weight: 600;
 }
 
+/*
+ * Previously `.field-invalid` added an outline via a pseudo-element.  That
+ * extra ring duplicated Bootstrap's native validation styling, so the
+ * pseudo-element is disabled and positioning resets to their defaults to keep
+ * the layout unchanged while letting `.is-invalid` controls provide the visual
+ * cue.
+ */
 .field-invalid {
-  position: relative;
-  z-index: 0;
-  isolation: isolate;
+  position: static;
+  z-index: auto;
+  isolation: auto;
 }
 
 .field-invalid::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 0.85rem;
-  border: 2px solid var(--field-invalid-ring);
-  pointer-events: none;
-  z-index: -1;
+  content: none;
 }
 
 .size-info {
