@@ -163,8 +163,8 @@ function applyValidationFeedback(disabled) {
     requirements.push('choose a fuse value');
   }
 
-  const needsConnectorDetails = hardwareType === 'Connector';
-  const connectorCategoryValid = !needsConnectorDetails || Boolean(state.connectorCategory);
+  const isConnector = hardwareType === 'Connector';
+  const connectorCategoryValid = !isConnector || Boolean(state.connectorCategory);
   updateInputFieldState({
     input: connectorCategorySelect,
     container: connectorCategoryContainer,
@@ -175,16 +175,13 @@ function applyValidationFeedback(disabled) {
     requirements.push('choose a connector category');
   }
 
-  const connectorNotesValid = !needsConnectorDetails || Boolean(state.notes && state.notes.trim().length > 0);
+  const connectorNotesValid = true;
   updateInputFieldState({
     input: notesInput,
     container: notesField,
     messageElement: connectorNotesMessage,
     valid: connectorNotesValid
   });
-  if (!connectorNotesValid) {
-    requirements.push('add connector details');
-  }
 
   const needsBearingSelection = hardwareType === 'Bearing';
   const bearingValid = !needsBearingSelection || Boolean(state.bearingType);
@@ -635,8 +632,7 @@ export function isLabelReady() {
     return Boolean(state.fuseValue);
   }
   if (state.hardwareType === 'Connector') {
-    const hasNotes = Boolean(state.notes && state.notes.trim());
-    return hasNotes && Boolean(state.connectorCategory);
+    return Boolean(state.connectorCategory);
   }
   if (state.hardwareType === 'Custom') {
     return Boolean(state.customLine1 && state.customLine1.trim());
