@@ -625,7 +625,20 @@ export function updatePreview() {
   const paddingScale = Math.max(1, Math.min(baseScale, 1.35));
   const verticalScale = Math.max(1, Math.min(baseScale, 1.2));
   const gapScale = Math.max(1, Math.min(baseScale, 1.15));
-  const basePaddingX = Math.max(mmToPx(1.5 * paddingScale), mmToPx(1.2));
+  let horizontalPaddingBaselineMm = 1.5;
+  let minHorizontalPaddingMm = 1.2;
+  if (heightMm <= 12) {
+    const normalizedHeight = Math.max(0, Math.min(heightMm, 12));
+    const heightRatio = normalizedHeight / 12;
+    const minBaselineMm = 1.0;
+    const maxBaselineMm = 1.35;
+    horizontalPaddingBaselineMm = minBaselineMm + (maxBaselineMm - minBaselineMm) * heightRatio;
+    minHorizontalPaddingMm = 0.9;
+  }
+  const basePaddingX = Math.max(
+    mmToPx(horizontalPaddingBaselineMm * paddingScale),
+    mmToPx(minHorizontalPaddingMm)
+  );
   const basePaddingY = Math.max(mmToPx(1.0 * verticalScale), mmToPx(0.8));
   const baseGap = Math.max(mmToPx(0.8 * gapScale), mmToPx(0.6));
   labelInner.style.setProperty('--label-padding-x', `${basePaddingX}px`);
