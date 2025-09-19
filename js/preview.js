@@ -1,6 +1,7 @@
 import { state } from './state.js';
 import { elements } from './dom-elements.js';
 import { pxPerMm, hardwareImageFolders, findConnectorCategory } from './data.js';
+import { loadHtml2Canvas, loadQrCodeLibrary } from './lazy-loaders.js';
 
 const {
   labelSizeDisplay,
@@ -18,6 +19,8 @@ const {
   downloadButton,
   printButton
 } = elements;
+
+let qrRenderRequestId = 0;
 
 function normalizeStandardCode(code) {
   return (code || '')
@@ -637,18 +640,46 @@ export function updatePreview() {
     if (ctx) {
       ctx.clearRect(0, 0, qrCanvas.width, qrCanvas.height);
     }
-    try {
-      QRCode.toCanvas(qrCanvas, qrContent, {
-        margin: 1,
-        width: qrSize,
-        color: {
-          dark: '#000',
-          light: '#00000000'
+
+    const requestId = ++qrRenderRequestId;
+    loadQrCodeLibrary()
+      .then(qrCodeLib => {
+        if (qrRenderRequestId !== requestId) {
+          return;
         }
+        const latestContent = state.qrContent ? state.qrContent.trim() : '';
+        if (!state.showQr || !latestContent || !qrCanvas) {
+          return;
+        }
+        const renderFn = qrCodeLib && typeof qrCodeLib.toCanvas === 'function' ? qrCodeLib.toCanvas : null;
+        if (!renderFn) {
+          throw new Error('QR code library is missing the toCanvas function.');
+        }
+        try {
+          renderFn.call(qrCodeLib, qrCanvas, latestContent, {
+            margin: 1,
+            width: qrSize,
+            color: {
+              dark: '#000',
+              light: '#00000000'
+            }
+          });
+        } catch (err) {
+          console.error('QR code generation failed', err);
+        }
+      })
+      .catch(err => {
+        if (qrRenderRequestId === requestId && qrCanvas) {
+          const qrContext = qrCanvas.getContext('2d');
+          if (qrContext) {
+            qrContext.clearRect(0, 0, qrCanvas.width, qrCanvas.height);
+          }
+          qrCanvas.style.display = 'none';
+          labelInner.style.setProperty('--label-padding-right-extra', '0px');
+        }
+        console.error('QR code library failed to load', err);
       });
-    } catch (err) {
-      console.error('QR code generation failed', err);
-    }
+
     const qrPadding = Math.max(basePaddingX, Math.round(qrSize + pxPerMm * 1.5));
     const extraRight = Math.max(0, qrPadding - basePaddingX);
     labelInner.style.setProperty('--label-padding-right-extra', `${extraRight}px`);
@@ -664,9 +695,9 @@ export function updatePreview() {
   applyTextFitting(primaryFontSize, secondaryFontSize);
 }
 
-export function renderLabelCanvas() {
+export async function renderLabelCanvas() {
   if (!previewContainer || !labelInner) {
-    return Promise.reject(new Error('Label preview is not available.'));
+    throw new Error('Label preview is not available.');
   }
 
   const printableWidthMm = state.widthMm;
@@ -678,51 +709,52 @@ export function renderLabelCanvas() {
   const containerWidth = previewContainer.offsetWidth || previewContainer.clientWidth;
   const containerHeight = previewContainer.offsetHeight || previewContainer.clientHeight;
   if (!containerWidth || !containerHeight) {
-    return Promise.reject(new Error('Label preview has no measurable size.'));
+    throw new Error('Label preview has no measurable size.');
   }
 
-  return html2canvas(previewContainer, {
+  const html2canvas = await loadHtml2Canvas();
+  const canvas = await html2canvas(previewContainer, {
     backgroundColor: null,
     scale,
     width: containerWidth,
     height: containerHeight,
     scrollX: 0,
     scrollY: 0
-  }).then(canvas => {
-    const containerRect = previewContainer.getBoundingClientRect();
-    const innerRect = labelInner.getBoundingClientRect();
-    const ratioX = canvas.width / containerWidth;
-    const ratioY = canvas.height / containerHeight;
-    const cropX = Math.max(0, Math.floor((innerRect.left - containerRect.left) * ratioX));
-    const cropY = Math.max(0, Math.floor((innerRect.top - containerRect.top) * ratioY));
-    const cropWidth = Math.max(1, Math.ceil(innerRect.width * ratioX));
-    const cropHeight = Math.max(1, Math.ceil(innerRect.height * ratioY));
-    const sourceWidth = Math.min(cropWidth, canvas.width - cropX);
-    const sourceHeight = Math.min(cropHeight, canvas.height - cropY);
-
-    if (sourceWidth <= 0 || sourceHeight <= 0) {
-      throw new Error('Computed label dimensions are invalid.');
-    }
-
-    const outputCanvas = document.createElement('canvas');
-    const targetWidthPx = Math.max(1, Math.round(printableWidthMm * pixelsPerMmAtExportDpi));
-    const targetHeightPx = Math.max(1, Math.round(printableHeightMm * pixelsPerMmAtExportDpi));
-    outputCanvas.width = targetWidthPx;
-    outputCanvas.height = targetHeightPx;
-    const ctx = outputCanvas.getContext('2d');
-    if (ctx) {
-      ctx.drawImage(
-        canvas,
-        cropX,
-        cropY,
-        sourceWidth,
-        sourceHeight,
-        0,
-        0,
-        outputCanvas.width,
-        outputCanvas.height
-      );
-    }
-    return outputCanvas;
   });
+
+  const containerRect = previewContainer.getBoundingClientRect();
+  const innerRect = labelInner.getBoundingClientRect();
+  const ratioX = canvas.width / containerWidth;
+  const ratioY = canvas.height / containerHeight;
+  const cropX = Math.max(0, Math.floor((innerRect.left - containerRect.left) * ratioX));
+  const cropY = Math.max(0, Math.floor((innerRect.top - containerRect.top) * ratioY));
+  const cropWidth = Math.max(1, Math.ceil(innerRect.width * ratioX));
+  const cropHeight = Math.max(1, Math.ceil(innerRect.height * ratioY));
+  const sourceWidth = Math.min(cropWidth, canvas.width - cropX);
+  const sourceHeight = Math.min(cropHeight, canvas.height - cropY);
+
+  if (sourceWidth <= 0 || sourceHeight <= 0) {
+    throw new Error('Computed label dimensions are invalid.');
+  }
+
+  const outputCanvas = document.createElement('canvas');
+  const targetWidthPx = Math.max(1, Math.round(printableWidthMm * pixelsPerMmAtExportDpi));
+  const targetHeightPx = Math.max(1, Math.round(printableHeightMm * pixelsPerMmAtExportDpi));
+  outputCanvas.width = targetWidthPx;
+  outputCanvas.height = targetHeightPx;
+  const ctx = outputCanvas.getContext('2d');
+  if (ctx) {
+    ctx.drawImage(
+      canvas,
+      cropX,
+      cropY,
+      sourceWidth,
+      sourceHeight,
+      0,
+      0,
+      outputCanvas.width,
+      outputCanvas.height
+    );
+  }
+  return outputCanvas;
 }
