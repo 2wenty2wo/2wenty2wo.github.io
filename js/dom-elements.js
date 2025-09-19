@@ -1,0 +1,150 @@
+const themeToggleButton = document.getElementById('theme-toggle');
+const themeToggleIcon = themeToggleButton ? themeToggleButton.querySelector('.theme-toggle-icon') : null;
+const themeToggleText = themeToggleButton ? themeToggleButton.querySelector('.theme-toggle-text') : null;
+
+const screwTypeContainer = document.getElementById('screw-type-container');
+const threadSizeContainer = document.getElementById('thread-size-container');
+const threadSizeSelect = document.getElementById('thread-size-select');
+const threadLengthRow = document.getElementById('thread-length-row');
+const lengthContainer = document.getElementById('length-container');
+const lengthInput = document.getElementById('length-input');
+const fuseTypeContainer = document.getElementById('fuse-type-container');
+const fuseValueContainer = document.getElementById('fuse-value-container');
+const glassOptionsContainer = document.getElementById('glass-options-container');
+const fuseValueSelect = document.getElementById('fuse-value-select');
+const glassSizeSelect = document.getElementById('glass-size-select');
+const glassSlowBlowCheckbox = document.getElementById('glass-slow-blow');
+const glassFastBlowCheckbox = document.getElementById('glass-fast-blow');
+const notesInput = document.getElementById('notes-input');
+const measurementSystemContainer = document.getElementById('measurement-system-container');
+const connectorCategoryContainer = document.getElementById('connector-category-container');
+const connectorCategorySelect = document.getElementById('connector-category-select');
+const connectorCategoryHelp = document.getElementById('connector-category-help');
+const connectorNotesHint = document.getElementById('connector-notes-hint');
+const componentCategoryContainer = document.getElementById('component-category-container');
+const componentMountContainer = document.getElementById('component-mount-container');
+const bearingOptionsContainer = document.getElementById('bearing-options-container');
+const bearingTypeSelect = document.getElementById('bearing-type-select');
+const customFieldsContainer = document.getElementById('custom-fields');
+const customImageInput = document.getElementById('custom-image-input');
+const customImageClearButton = document.getElementById('custom-image-clear');
+const customImageNameDisplay = document.getElementById('custom-image-name');
+const customLine1Input = document.getElementById('custom-line1-input');
+const customLine2Input = document.getElementById('custom-line2-input');
+const notesField = document.getElementById('notes-field');
+const standardField = document.getElementById('standard-field');
+const notesLabel = document.querySelector('label[for="notes-input"]');
+const defaultNotesLabel = notesLabel ? notesLabel.textContent : '';
+const defaultNotesPlaceholder = notesInput ? notesInput.getAttribute('placeholder') || '' : '';
+const standardSelect = document.getElementById('standard-select');
+const standardLabel = document.querySelector('label[for="standard-select"]');
+const defaultStandardLabel = standardLabel ? standardLabel.textContent : '';
+const standardToggle = document.getElementById('standard-toggle');
+const imageToggle = document.getElementById('image-toggle');
+const qrcodeToggle = document.getElementById('qrcode-toggle');
+const widthRange = document.getElementById('width-range');
+const widthValueSpan = document.getElementById('width-value');
+const labelSizeDisplay = document.getElementById('label-size-display');
+const printAreaDisplay = document.getElementById('print-area-display');
+const previewContainer = document.getElementById('preview-container');
+const previewPlaceholder = document.getElementById('preview-placeholder');
+const labelInner = document.getElementById('label-inner');
+const hardwareImageDiv = document.getElementById('hardware-image');
+const textBlockDiv = document.getElementById('preview-text');
+const line1Div = document.getElementById('line1');
+const line2Div = document.getElementById('line2');
+const qrCanvas = document.getElementById('qr-canvas');
+const qrContentWrapper = document.getElementById('qr-content-wrapper');
+const qrContentInput = document.getElementById('qr-content-input');
+const downloadButton = document.getElementById('download-button');
+const printButton = document.getElementById('print-button');
+
+const hardwareTypeRadios = Array.from(document.querySelectorAll('input[name="hardware-type"]'));
+const hardwareTypeSelect = document.getElementById('hardware-type-select');
+const hardwareTypeOptions = new Set(
+  hardwareTypeRadios
+    .map(radio => radio.value)
+    .concat(
+      hardwareTypeSelect
+        ? Array.from(hardwareTypeSelect.options, option => option.value)
+        : []
+    )
+    .filter(Boolean)
+);
+const systemTypeRadios = Array.from(document.querySelectorAll('input[name="system-type"]'));
+const screwTypeRadios = Array.from(document.querySelectorAll('input[name="screw-type"]'));
+const fuseTypeRadios = Array.from(document.querySelectorAll('input[name="fuse-type"]'));
+const heightRadios = Array.from(document.querySelectorAll('input[name="label-height"]'));
+const componentCategoryRadios = Array.from(document.querySelectorAll('input[name="component-category"]'));
+const componentMountRadios = Array.from(document.querySelectorAll('input[name="component-mount"]'));
+
+export const elements = {
+  themeToggleButton,
+  themeToggleIcon,
+  themeToggleText,
+  screwTypeContainer,
+  threadSizeContainer,
+  threadSizeSelect,
+  threadLengthRow,
+  lengthContainer,
+  lengthInput,
+  fuseTypeContainer,
+  fuseValueContainer,
+  glassOptionsContainer,
+  fuseValueSelect,
+  glassSizeSelect,
+  glassSlowBlowCheckbox,
+  glassFastBlowCheckbox,
+  notesInput,
+  measurementSystemContainer,
+  connectorCategoryContainer,
+  connectorCategorySelect,
+  connectorCategoryHelp,
+  connectorNotesHint,
+  componentCategoryContainer,
+  componentMountContainer,
+  bearingOptionsContainer,
+  bearingTypeSelect,
+  customFieldsContainer,
+  customImageInput,
+  customImageClearButton,
+  customImageNameDisplay,
+  customLine1Input,
+  customLine2Input,
+  notesField,
+  standardField,
+  notesLabel,
+  defaultNotesLabel,
+  defaultNotesPlaceholder,
+  standardSelect,
+  standardLabel,
+  defaultStandardLabel,
+  standardToggle,
+  imageToggle,
+  qrcodeToggle,
+  widthRange,
+  widthValueSpan,
+  labelSizeDisplay,
+  printAreaDisplay,
+  previewContainer,
+  previewPlaceholder,
+  labelInner,
+  hardwareImageDiv,
+  textBlockDiv,
+  line1Div,
+  line2Div,
+  qrCanvas,
+  qrContentWrapper,
+  qrContentInput,
+  downloadButton,
+  printButton,
+  hardwareTypeRadios,
+  hardwareTypeSelect,
+  hardwareTypeOptions,
+  systemTypeRadios,
+  screwTypeRadios,
+  fuseTypeRadios,
+  heightRadios,
+  componentCategoryRadios,
+  componentMountRadios
+};
