@@ -617,9 +617,17 @@ export function updatePreview() {
     previewPlaceholder.setAttribute('aria-hidden', 'true');
   }
   labelInner.style.display = 'flex';
-  const basePaddingX = Math.max(10, Math.round(innerHeightPx * 0.22));
-  const basePaddingY = Math.max(6, Math.round(innerHeightPx * 0.16));
-  const baseGap = Math.max(8, Math.round(innerHeightPx * 0.12));
+  const mmToPx = mm => Math.max(0, Math.round(mm * pxPerMm));
+  const widthMm = Number.isFinite(width) ? width : 0;
+  const heightMm = Number.isFinite(height) ? height : 0;
+  const longestEdgeMm = Math.max(widthMm, heightMm, 0);
+  const baseScale = Math.sqrt(Math.max(longestEdgeMm, 1) / 40);
+  const paddingScale = Math.max(1, Math.min(baseScale, 1.35));
+  const verticalScale = Math.max(1, Math.min(baseScale, 1.2));
+  const gapScale = Math.max(1, Math.min(baseScale, 1.15));
+  const basePaddingX = Math.max(mmToPx(1.5 * paddingScale), mmToPx(1.2));
+  const basePaddingY = Math.max(mmToPx(1.0 * verticalScale), mmToPx(0.8));
+  const baseGap = Math.max(mmToPx(0.8 * gapScale), mmToPx(0.6));
   labelInner.style.setProperty('--label-padding-x', `${basePaddingX}px`);
   labelInner.style.setProperty('--label-padding-y', `${basePaddingY}px`);
   labelInner.style.setProperty('--label-gap', `${baseGap}px`);
@@ -911,7 +919,7 @@ export function updatePreview() {
     qrCanvas.height = qrSize;
     qrCanvas.style.width = qrSize + 'px';
     qrCanvas.style.height = qrSize + 'px';
-    const qrOffset = Math.max(pxPerMm, Math.round(basePaddingX * 0.5));
+    const qrOffset = Math.max(mmToPx(1), Math.round(basePaddingX * 0.5));
     qrCanvas.style.right = qrOffset + 'px';
     qrCanvas.style.top = '50%';
     qrCanvas.style.transform = 'translateY(-50%)';
@@ -960,7 +968,8 @@ export function updatePreview() {
         console.error('QR code library failed to load', err);
       });
 
-    const qrPadding = Math.max(basePaddingX, Math.round(qrSize + pxPerMm * 1.5));
+    const qrMarginPx = mmToPx(1.2);
+    const qrPadding = Math.max(basePaddingX + qrMarginPx, qrSize + qrMarginPx);
     const extraRight = Math.max(0, qrPadding - basePaddingX);
     labelInner.style.setProperty('--label-padding-right-extra', `${extraRight}px`);
   } else if (qrCanvas) {
