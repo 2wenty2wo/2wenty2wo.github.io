@@ -657,8 +657,26 @@
       aria-live="polite"
     ></div>
     <div class="actions d-flex flex-wrap justify-content-center gap-3 mt-4">
-      <button id="download-button" class="btn btn-primary btn-lg px-4" disabled>Download</button>
-      <button id="print-button" class="btn btn-outline-primary btn-lg px-4" type="button" disabled>Print</button>
+      <button
+        id="download-button"
+        class="btn btn-primary btn-lg px-4"
+        type="button"
+        disabled
+        aria-label="Download label as a PNG image"
+        title="Download label as a PNG image"
+      >
+        Download
+      </button>
+      <button
+        id="print-button"
+        class="btn btn-outline-primary btn-lg px-4"
+        type="button"
+        disabled
+        aria-label="Open a print-ready preview of the label"
+        title="Open a print-ready preview of the label"
+      >
+        Print
+      </button>
     </div>
   </main>
 </body>

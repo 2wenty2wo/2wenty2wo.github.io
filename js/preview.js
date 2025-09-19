@@ -560,9 +560,19 @@ export function updateDownloadState() {
   const disabled = !ready;
   if (downloadButton) {
     downloadButton.disabled = disabled;
+    const downloadActionLabel = 'Download label as a PNG image';
+    downloadButton.setAttribute('aria-label', downloadActionLabel);
+    downloadButton.title = disabled
+      ? 'Complete the label details to enable downloading.'
+      : downloadActionLabel;
   }
   if (printButton) {
     printButton.disabled = disabled;
+    const printActionLabel = 'Open a print-ready preview of the label';
+    printButton.setAttribute('aria-label', printActionLabel);
+    printButton.title = disabled
+      ? 'Complete the label details to enable printing.'
+      : printActionLabel;
   }
   applyValidationFeedback(disabled);
 }
