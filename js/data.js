@@ -1,0 +1,260 @@
+export const metricThreadSizes = [
+  'M1', 'M1.2', 'M1.4', 'M1.6', 'M2', 'M2.5', 'M3', 'M3.5', 'M4',
+  'M5', 'M6', 'M7', 'M8', 'M10', 'M12', 'M14', 'M16', 'M18', 'M20',
+  'M22', 'M24', 'M30'
+];
+
+export const imperialThreadSizes = [
+  '#4-40', '#6-32', '#8-32', '#10-24', '1/4-20', '5/16-18', '3/8-16', '7/16-14', '1/2-13'
+];
+
+export const fuseValues = [
+  '0.25', '0.5', '0.75', '1', '1.5', '2', '2.5', '3', '4', '5', '6', '7.5', '8', '10', '12',
+  '15', '20', '25', '30', '40'
+];
+
+export const bearingOptions = [
+  { code: '608ZZ', description: '8 × 22 × 7 mm, metal shields' },
+  { code: '608-2RS', description: '8 × 22 × 7 mm, rubber seals' },
+  { code: '625ZZ', description: '5 × 16 × 5 mm, miniature shielded' },
+  { code: '6200ZZ', description: '10 × 30 × 9 mm, deep groove' },
+  { code: '6900ZZ', description: '10 × 22 × 6 mm, thin section' },
+  { code: '6701ZZ', description: '12 × 18 × 4 mm, thin section' },
+  { code: 'MR85-2RS', description: '5 × 8 × 2.5 mm, rubber seals' }
+];
+
+export const hardwareCatalog = {
+  Bolt: [
+    { code: 'DIN 11014', name: 'Hexagon Head Screw' },
+    { code: 'DIN 15237', name: 'Slotted Raised Countersunk Head Screw' },
+    { code: 'DIN 186', name: 'Square Head Bolt' },
+    { code: 'DIN 21346', name: 'Slotted Pan Head Screw' },
+    { code: 'DIN 22424', name: 'Slotted Pan Head Screw' },
+    { code: 'DIN 25193', name: 'Slotted Pan Head Screw' },
+    { code: 'DIN 261', name: 'Hexagon Head Screw' },
+    { code: 'DIN 316', name: 'Wing Screw' },
+    { code: 'DIN 34817', name: 'Pan Head Screw' },
+    { code: 'DIN 404', name: 'Square Head Set Screw' },
+    { code: 'DIN 444', name: 'Eye Bolt with Collar' },
+    { code: 'DIN 464', name: 'Knurled Thumb Screw' },
+    { code: 'DIN 478', name: 'Knurled Head Screw' },
+    { code: 'DIN 479', name: 'Knurled Head Screw with Shoulder' },
+    { code: 'DIN 480', name: 'Slotted Knurled Head Screw' },
+    { code: 'DIN 561', name: 'Square Head Set Screw' },
+    { code: 'DIN 564', name: 'Slotted Set Screw with Long Dog Point' },
+    { code: 'DIN 580', name: 'Lifting Eye Bolt' },
+    { code: 'DIN 5903', name: 'Slotted Pan Head Screw' },
+    { code: 'DIN 603', name: 'Mushroom Head Square Neck Bolt' },
+    { code: 'DIN 604', name: 'Square Head Bolt with Square Neck' },
+    { code: 'DIN 605', name: 'Square Head Bolt with Round Neck' },
+    { code: 'DIN 607', name: 'Round Head Square Neck Bolt' },
+    { code: 'DIN 608', name: 'Round Head Square Neck Bolt' },
+    { code: 'DIN 609', name: 'Fit Bolt with Hexagon Head' },
+    { code: 'DIN 610', name: 'Fit Bolt with Round Head' },
+    { code: 'DIN 653', name: 'Recessed Head Screw' },
+    { code: 'DIN 6912', name: 'Hexagon Socket Head Cap Screw with Low Head' },
+    { code: 'DIN 6914', name: 'High-Strength Hexagon Head Bolt' },
+    { code: 'DIN 6921', name: 'Hexagon Flange Head Bolt' },
+    { code: 'DIN 787', name: 'Round Head Screw with Square Neck' },
+    { code: 'DIN 792', name: 'Square Head Bolt with Square Shoulder' },
+    { code: 'DIN 7968', name: 'Hexagon Fit Bolt' },
+    { code: 'DIN 7969', name: 'Hexagon Head Bolt with Hexagon Collar' },
+    { code: 'DIN 7984', name: 'Hexagon Socket Head Cap Screw with Low Head' },
+    { code: 'DIN 7990', name: 'Hexagon Head Bolt for Steel Structures' },
+    { code: 'DIN 7991', name: 'Hexagon Socket Countersunk Head Cap Screw' },
+    { code: 'DIN 7999', name: 'Cross Recessed Pan Head Tapping Screw' },
+    { code: 'DIN 912', name: 'Hexagon Socket Head Cap Screw' },
+    { code: 'DIN 931', name: 'Hexagon Head Bolt' },
+    { code: 'DIN 933', name: 'Hexagon Head Screw' },
+    { code: 'DIN 960', name: 'Hexagon Head Fit Bolt' },
+    { code: 'DIN 961', name: 'Hexagon Head Fit Bolt' },
+    { code: 'ISO 7379', name: 'Hexagon Socket Head Shoulder Screw' },
+    { code: 'ISO 7380-1', name: 'Button Head Screw' },
+    { code: 'ISO 7380-2', name: 'Button Head Screw with Collar' }
+  ],
+  Screw: [
+    { code: 'DIN 571', name: 'Coach Screw (Wood Screw)' },
+    { code: 'DIN 7995', name: 'Cross Recessed Pan Head Wood Screw' },
+    { code: 'DIN 7996', name: 'Cross Recessed Countersunk Head Wood Screw' },
+    { code: 'DIN 7997', name: 'Cross Recessed Raised Countersunk Head Wood Screw' },
+    { code: 'DIN 95', name: 'Round Head Wood Screw' },
+    { code: 'DIN 96', name: 'Raised Countersunk Head Wood Screw' },
+    { code: 'DIN 97', name: 'Countersunk Head Wood Screw' }
+  ],
+  Nut: [
+    { code: 'DIN 1478', name: 'Wing Nut' },
+    { code: 'DIN 1479', name: 'Wing Nut' },
+    { code: 'DIN 1480', name: 'Wing Nut' },
+    { code: 'DIN 1587', name: 'Cap Nut' },
+    { code: 'DIN 1804', name: 'Slotted Round Nut' },
+    { code: 'DIN 1816', name: 'Square Weld Nut' },
+    { code: 'DIN 315', name: 'Wing Nut' },
+    { code: 'DIN 431', name: 'Square Nut' },
+    { code: 'DIN 439', name: 'Hexagon Thin Nut' },
+    { code: 'DIN 466', name: 'Square Nut' },
+    { code: 'DIN 467', name: 'Knurled Nut' },
+    { code: 'DIN 508', name: 'T-Slot Nut' },
+    { code: 'DIN 546', name: 'Small Hexagon Nut' },
+    { code: 'DIN 557', name: 'Square Nut' },
+    { code: 'DIN 562', name: 'Square Thin Nut' },
+    { code: 'DIN 582', name: 'Eye Nut' },
+    { code: 'DIN 6330', name: 'Hexagon Nut' },
+    { code: 'DIN 6331', name: 'Hexagon High Nut' },
+    { code: 'DIN 6334', name: 'Hexagon High Nut' },
+    { code: 'DIN 6915', name: 'High-Strength Hexagon Nut' },
+    { code: 'DIN 6923', name: 'Hexagon Flange Nut' },
+    { code: 'DIN 6925', name: 'Hexagon Weld Nut' },
+    { code: 'DIN 6926', name: 'Prevailing Torque Type Hexagon Nut' },
+    { code: 'DIN 6927', name: 'Prevailing Torque Type Hexagon Thin Nut' },
+    { code: 'DIN 70852', name: 'Hexagon Nut with Flange' },
+    { code: 'DIN 74361', name: 'Hexagon Nut with Flange' },
+    { code: 'DIN 7965', name: 'Square Weld Nut' },
+    { code: 'DIN 7967', name: 'Prevailing Torque Type Hexagon Nut' },
+    { code: 'DIN 80701', name: 'Hexagon Nut' },
+    { code: 'DIN 80705', name: 'Hexagon Nut' },
+    { code: 'DIN 917', name: 'Cap Nut' },
+    { code: 'DIN 928', name: 'Hexagon Weld Nut' },
+    { code: 'DIN 929', name: 'Hexagon Weld Nut' },
+    { code: 'DIN 934', name: 'Hexagon Nut' },
+    { code: 'DIN 935', name: 'Castle Nut' },
+    { code: 'DIN 936', name: 'Hexagon Thin Nut' },
+    { code: 'DIN 937', name: 'Hexagon Thin Slotted Nut' },
+    { code: 'DIN 979', name: 'Hexagon Slotted Nut' },
+    { code: 'DIN 980', name: 'Prevailing Torque Type Hexagon Nut' },
+    { code: 'DIN 981', name: 'Slotted Round Nut' },
+    { code: 'DIN 982', name: 'Prevailing Torque Type Hexagon Nut' },
+    { code: 'DIN 985', name: 'Prevailing Torque Type Hexagon Nut' },
+    { code: 'DIN 986', name: 'Prevailing Torque Type Hexagon Thin Nut' },
+    { code: 'ISO 7040', name: 'Prevailing Torque Type Hexagon Nut' }
+  ],
+  Washer: [
+    { code: 'DIN 1052', name: 'Washer for Wood Construction' },
+    { code: 'DIN 125', name: 'Plain Washer' },
+    { code: 'DIN 127', name: 'Spring Lock Washer' },
+    { code: 'DIN 128', name: 'Spring Lock Washer' },
+    { code: 'DIN 137', name: 'Spring Lock Washer' },
+    { code: 'DIN 1440', name: 'Plain Washer' },
+    { code: 'DIN 1441', name: 'Plain Washer' },
+    { code: 'DIN 2093', name: 'Disc Spring' },
+    { code: 'DIN 25201', name: 'Wedge Lock Washer' },
+    { code: 'DIN 432', name: 'Square Washer' },
+    { code: 'DIN 433', name: 'Plain Washer' },
+    { code: 'DIN 434', name: 'Square Taper Washer' },
+    { code: 'DIN 435', name: 'Square Taper Washer' },
+    { code: 'DIN 436', name: 'Square Washer' },
+    { code: 'DIN 440', name: 'Plain Washer' },
+    { code: 'DIN 462', name: 'Square Washer' },
+    { code: 'DIN 463', name: 'Square Washer' },
+    { code: 'DIN 5406', name: 'Tooth Lock Washer' },
+    { code: 'DIN 6319', name: 'Spherical Washer' },
+    { code: 'DIN 6340', name: 'Heavy Duty Plain Washer' },
+    { code: 'DIN 6796', name: 'Conical Spring Washer' },
+    { code: 'DIN 6797', name: 'Tooth Lock Washer' },
+    { code: 'DIN 6798', name: 'Tooth Lock Washer' },
+    { code: 'DIN 6916', name: 'High-Strength Structural Washer' },
+    { code: 'DIN 6917', name: 'Square Taper Washer' },
+    { code: 'DIN 6918', name: 'Square Taper Washer' },
+    { code: 'DIN 70952', name: 'Plain Washer' },
+    { code: 'DIN 7349', name: 'Heavy Duty Plain Washer' },
+    { code: 'DIN 74361', name: 'Plain Washer' },
+    { code: 'DIN 7603', name: 'Sealing Washer' },
+    { code: 'DIN 7980', name: 'Spring Lock Washer' },
+    { code: 'DIN 7989', name: 'Plain Washer' },
+    { code: 'DIN 9021', name: 'Plain Washer' },
+    { code: 'DIN 93', name: 'Tab Washer' },
+    { code: 'DIN 988', name: 'Shim Ring' }
+  ],
+  'Heat Insert': [],
+  Bearing: [],
+  Component: [],
+  Fuse: [
+    { code: 'IEC 60127-2', name: 'Time-Lag Cartridge Fuse' },
+    { code: 'IEC 60127-3', name: 'Fast-Acting Cartridge Fuse' },
+    { code: 'UL 248-14', name: 'Supplementary Fuse' }
+  ]
+};
+
+export const hardwareImageFolders = {
+  Bolt: 'bolts',
+  Screw: 'screws',
+  Nut: 'nuts',
+  Washer: 'washers'
+};
+
+export const connectorCatalog = [
+  {
+    id: 'pre-insulated-crimp',
+    label: 'Pre-insulated Crimp Terminals (Red/Blue/Yellow)',
+    help: 'Colour-coded PVC or nylon insulated crimp lugs for 22–10 AWG conductors.',
+    example: 'e.g., Blue ring terminal, 16–14 AWG, M4 stud',
+    series: [
+      { code: 'Ring Terminal (Red)', name: '22–16 AWG (0.5–1.5 mm²) PVC insulated' },
+      { code: 'Ring Terminal (Blue)', name: '16–14 AWG (1.5–2.5 mm²) PVC insulated' },
+      { code: 'Ring Terminal (Yellow)', name: '12–10 AWG (4.0–6.0 mm²) PVC insulated' },
+      { code: 'Fork Terminal (Blue)', name: '16–14 AWG (1.5–2.5 mm²) insulated spade' },
+      { code: 'Butt Splice (Red)', name: '22–16 AWG (0.5–1.5 mm²) straight splice' },
+      { code: 'Male Quick Disconnect (Blue)', name: '16–14 AWG (1.5–2.5 mm²) fully insulated tab' },
+      { code: 'Female Quick Disconnect (Blue)', name: '16–14 AWG (1.5–2.5 mm²) fully insulated receptacle' }
+    ]
+  },
+  {
+    id: 'molex',
+    label: 'Molex Connectors',
+    help: 'Common Molex wire-to-board and power connector series. Note circuit count, pitch and housing gender.',
+    example: 'e.g., Molex Micro-Fit 3.0, 6-circuit plug, 20 AWG leads',
+    series: [
+      { code: 'Molex KK 254', name: '2.54 mm pitch friction ramp wire-to-board' },
+      { code: 'Molex KK 396', name: '3.96 mm pitch wire-to-board' },
+      { code: 'Molex Mini-Fit Jr.', name: '4.2 mm pitch power connector' },
+      { code: 'Molex Micro-Fit 3.0', name: '3.0 mm pitch compact power connector' },
+      { code: 'Molex Mega-Fit', name: '5.7 mm pitch high-current connector' },
+      { code: 'Molex SL Series', name: '2.54 mm pitch crimp housing (SL)' },
+      { code: 'Molex Nano-Fit', name: '2.50 mm pitch fully isolated terminals' },
+      { code: 'Molex Sabre', name: '7.50 mm pitch high-power connector' }
+    ]
+  },
+  {
+    id: 'jst',
+    label: 'JST Connectors',
+    help: 'Popular JST wire-to-board and wire-to-wire series. Record circuit count, pitch and mating parts.',
+    example: 'e.g., JST-XH 5-pin housing with matching crimp terminals',
+    series: [
+      { code: 'JST-PH', name: '2.0 mm wire-to-board plug (PH series)' },
+      { code: 'JST-XH', name: '2.5 mm wire-to-board plug (XH series)' },
+      { code: 'JST-EH', name: '2.5 mm wire-to-board plug (EH series)' },
+      { code: 'JST-SH', name: '1.0 mm wire-to-board plug (SH series)' },
+      { code: 'JST-GH', name: '1.25 mm wire-to-board plug (GH series)' },
+      { code: 'JST-ZH', name: '1.5 mm wire-to-board plug (ZH series)' },
+      { code: 'JST-VH', name: '3.96 mm wire-to-board plug (VH series)' },
+      { code: 'JST-SM', name: '2.54 mm wire-to-wire plug (SM series)' },
+      { code: 'JST-JWPF', name: '2.0 mm sealed connector (JWPF series)' },
+      { code: 'JST-RCY', name: '2.54 mm battery connector (RCY series)' }
+    ]
+  },
+  {
+    id: 'bootlace-ferrule',
+    label: 'Bootlace Ferrules (Cord End Terminals)',
+    help: 'Cord end ferrules sized to DIN 46228. Specify conductor size, entry style and colour code.',
+    example: 'e.g., Twin bootlace ferrule, 2 × 1.5 mm², DIN 46228-4',
+    series: [
+      { code: 'Bootlace Ferrule 0.5 mm²', name: 'Insulated ferrule per DIN 46228-4' },
+      { code: 'Bootlace Ferrule 0.75 mm²', name: 'Insulated ferrule per DIN 46228-4' },
+      { code: 'Bootlace Ferrule 1.0 mm²', name: 'Insulated ferrule per DIN 46228-4' },
+      { code: 'Bootlace Ferrule 1.5 mm²', name: 'Insulated ferrule per DIN 46228-4' },
+      { code: 'Bootlace Ferrule 2.5 mm²', name: 'Insulated ferrule per DIN 46228-4' },
+      { code: 'Bootlace Ferrule 4.0 mm²', name: 'Insulated ferrule per DIN 46228-4' },
+      { code: 'Twin Bootlace Ferrule 2 × 1.5 mm²', name: 'Twin entry insulated ferrule per DIN 46228-4' },
+      { code: 'Twin Bootlace Ferrule 2 × 2.5 mm²', name: 'Twin entry insulated ferrule per DIN 46228-4' },
+      { code: 'Uninsulated Bootlace Ferrule 1.0 mm²', name: 'Plain copper ferrule per DIN 46228-1' }
+    ]
+  }
+];
+
+export const pxPerMm = 6;
+
+export const STANDARD_PLACEHOLDER_TEXT = 'Select standard… (type to filter, Esc clears)';
+export const CONNECTOR_PLACEHOLDER_TEXT = 'Select connector series… (type to filter, Esc clears)';
+
+export function findConnectorCategory(id) {
+  return connectorCatalog.find(category => category.id === id);
+}
