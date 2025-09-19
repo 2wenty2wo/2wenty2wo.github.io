@@ -130,8 +130,8 @@ main {
 .field-invalid::after {
   content: '';
   position: absolute;
-  inset: -0.35rem;
-  border-radius: 1rem;
+  inset: 0;
+  border-radius: 0.85rem;
   border: 2px solid var(--field-invalid-ring);
   pointer-events: none;
   z-index: -1;
@@ -454,6 +454,18 @@ main {
 
 .theme-toggle-text {
   font-size: 0.85rem;
+}
+
+@media (min-width: 576px) {
+  #thread-length-row {
+    --thread-length-gap: 1rem;
+    gap: var(--thread-length-gap);
+  }
+
+  #thread-length-row > .thread-length-field {
+    flex: 0 0 calc(50% - (var(--thread-length-gap) / 2));
+    max-width: calc(50% - (var(--thread-length-gap) / 2));
+  }
 }
 
 @media (max-width: 575.98px) {
