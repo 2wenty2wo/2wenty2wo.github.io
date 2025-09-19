@@ -644,7 +644,7 @@ export function onHardwareTypeChange() {
   }
   if (notesLabel) {
     if (showConnectorFields) {
-      notesLabel.textContent = 'Connector Details';
+      notesLabel.textContent = 'Connector Details (optional)';
     } else if (showComponentFields) {
       notesLabel.textContent = 'Component Notes';
     } else {
@@ -663,8 +663,8 @@ export function onHardwareTypeChange() {
   }
   if (notesInput) {
     if (showConnectorFields) {
-      notesInput.required = true;
-      notesInput.setAttribute('aria-required', 'true');
+      notesInput.required = false;
+      notesInput.setAttribute('aria-required', 'false');
       updateConnectorCategoryUi();
     } else {
       notesInput.placeholder = defaultNotesPlaceholder;
