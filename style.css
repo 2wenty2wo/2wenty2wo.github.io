@@ -48,9 +48,22 @@
 }
 
 body {
+  /*
+   * Opt-in to the dynamic viewport units used by mobile Safari and pad safe
+   * areas so the gradient background fills the notch and home indicator space
+   * when the site is saved to the home screen.
+   */
   background: linear-gradient(180deg, var(--page-bg-start) 0%, var(--page-bg-end) 100%);
   min-height: 100vh;
+  min-height: 100dvh;
+  min-height: 100svh;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
   transition: background 0.3s ease;
+  -webkit-font-smoothing: antialiased;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }
 
 main {

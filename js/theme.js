@@ -1,6 +1,10 @@
 import { elements } from './dom-elements.js';
 
 const themeStorageKey = 'gridfinity-theme-preference';
+const themeColorMeta = document.getElementById('theme-color-meta');
+const statusBarStyleMeta = document.getElementById('apple-mobile-web-app-status-bar-style');
+const themeColorByMode = { light: '#f8fafc', dark: '#0f172a' };
+const statusBarStyleByMode = { light: 'default', dark: 'black-translucent' };
 const prefersDarkScheme = typeof window.matchMedia === 'function'
   ? window.matchMedia('(prefers-color-scheme: dark)')
   : { matches: false };
@@ -63,6 +67,14 @@ function applyTheme(theme) {
   if (document.body) {
     document.body.setAttribute('data-theme', normalized);
     document.body.setAttribute('data-bs-theme', normalized);
+  }
+  if (themeColorMeta) {
+    const color = themeColorByMode[normalized] || themeColorByMode.light;
+    themeColorMeta.setAttribute('content', color);
+  }
+  if (statusBarStyleMeta) {
+    const statusBarStyle = statusBarStyleByMode[normalized] || statusBarStyleByMode.light;
+    statusBarStyleMeta.setAttribute('content', statusBarStyle);
   }
   updateThemeToggleUi(normalized);
 }
