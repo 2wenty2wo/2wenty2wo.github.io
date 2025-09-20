@@ -4,9 +4,22 @@
 
 Gridfinity Label Maker is a static web application for designing and printing
 labels sized for Gridfinity storage bins.  The app runs entirely in the browser
-and relies on modern HTML, CSS, and JavaScript.  Bootstrap utilities provide a
-responsive layout, while lightweight third-party libraries loaded from CDNs
-handle optional QR code generation and label export.
+and relies on modular JavaScript, modern HTML, and layered CSS for styling.
+Bootstrap utilities provide responsive layout primitives, while lightweight
+third-party libraries are lazy-loaded to power optional QR code generation and
+image export.
+
+Key capabilities exposed through `index.html` and the supporting scripts
+include:
+
+* Dark and light theme toggle with preference persistence.
+* Hardware presets that reconfigure the form for screws, nuts, inserts, fuses,
+  bearings, electronic components, and fully custom labels.
+* Contextual validation and helper messaging that keep the preview in sync with
+  selected options.
+* Optional QR code content with automatic library loading only when needed.
+* Download-and-print flows that use html2canvas to export the on-screen label
+  preview.
 
 The repository is structured as a traditional GitHub Pages site, making it easy
 to host the tool directly from the `main` branch.
@@ -14,11 +27,25 @@ to host the tool directly from the `main` branch.
 ## Project Structure
 
 ```
-├── index.html        # Application shell and UI markup
-├── style.css         # Custom styling layered on Bootstrap defaults
+├── index.html             # Application shell, form markup, and feature toggles
 ├── js/
-│   └── main.js       # Client-side logic for building and exporting labels
-└── images/           # Icons used for favicons and progressive web app assets
+│   ├── actions.js         # Shared action handlers invoked by UI events
+│   ├── controls.js        # Entry point that bootstraps modules and listeners
+│   ├── data.js            # Static measurements, presets, and asset lookups
+│   ├── dom-elements.js    # Cached DOM references for easier querying
+│   ├── events.js          # Wiring for form, download, and print events
+│   ├── forms.js           # Field population, validation, and UI helpers
+│   ├── lazy-loaders.js    # On-demand loading of html2canvas and QR libraries
+│   ├── render.js          # Label preview updates and export orchestration
+│   ├── state.js           # Centralized application state store
+│   ├── theme.js           # Theme toggle behavior and persistence helpers
+│   └── threadSizes.js     # Thread-size presets for hardware options
+├── style.css              # Custom styling layered on Bootstrap defaults
+├── style-print.css        # Print-specific overrides for labels
+├── print.css              # Utility styles applied to print views
+├── manifest.json          # Progressive Web App metadata
+└── images/
+    └── icons/             # Favicons and touch icons used across devices
 ```
 
 ## Building the Project
