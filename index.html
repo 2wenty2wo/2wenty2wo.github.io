@@ -236,34 +236,6 @@
                   </div>
                 </div>
               </div>
-              <div id="measurement-system-container">
-                <label class="form-label fw-semibold">Measurement System</label>
-                <div class="row g-2" id="system-type-group">
-                  <div class="col-12 col-sm-6">
-                    <input
-                      type="radio"
-                      class="btn-check"
-                      name="system-type"
-                      id="system-type-metric"
-                      value="Metric"
-                      autocomplete="off"
-                      checked
-                    />
-                    <label class="btn btn-outline-secondary w-100" for="system-type-metric">Metric</label>
-                  </div>
-                  <div class="col-12 col-sm-6">
-                    <input
-                      type="radio"
-                      class="btn-check"
-                      name="system-type"
-                      id="system-type-imperial"
-                      value="Imperial"
-                      autocomplete="off"
-                    />
-                    <label class="btn btn-outline-secondary w-100" for="system-type-imperial">Imperial</label>
-                  </div>
-                </div>
-              </div>
               <div id="custom-fields" class="d-none">
                 <label for="custom-image-input" class="form-label d-block fw-semibold">Custom Image</label>
                 <input type="file" class="form-control" id="custom-image-input" accept="image/*" />
@@ -402,31 +374,61 @@
                   class="validation-message text-danger small mt-2 d-none"
                 ></div>
               </div>
-              <div id="screw-type-container">
-                <label class="form-label fw-semibold">Screw Type</label>
-                <div class="row g-2" id="screw-type-group">
-                  <div class="col-12 col-sm-6">
-                    <input
-                      type="radio"
-                      class="btn-check"
-                      name="screw-type"
-                      id="screw-type-bolt"
-                      value="Bolt"
-                      autocomplete="off"
-                      checked
-                    />
-                    <label class="btn btn-outline-secondary w-100" for="screw-type-bolt">Bolt</label>
+              <div class="row g-3" id="screw-settings-row">
+                <div class="col-12 col-md-6" id="screw-type-container">
+                  <label class="form-label fw-semibold">Screw Type</label>
+                  <div class="row g-2" id="screw-type-group">
+                    <div class="col-12 col-sm-6">
+                      <input
+                        type="radio"
+                        class="btn-check"
+                        name="screw-type"
+                        id="screw-type-bolt"
+                        value="Bolt"
+                        autocomplete="off"
+                        checked
+                      />
+                      <label class="btn btn-outline-secondary w-100" for="screw-type-bolt">Bolt</label>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <input
+                        type="radio"
+                        class="btn-check"
+                        name="screw-type"
+                        id="screw-type-screw"
+                        value="Screw"
+                        autocomplete="off"
+                      />
+                      <label class="btn btn-outline-secondary w-100" for="screw-type-screw">Screw</label>
+                    </div>
                   </div>
-                  <div class="col-12 col-sm-6">
-                    <input
-                      type="radio"
-                      class="btn-check"
-                      name="screw-type"
-                      id="screw-type-screw"
-                      value="Screw"
-                      autocomplete="off"
-                    />
-                    <label class="btn btn-outline-secondary w-100" for="screw-type-screw">Screw</label>
+                </div>
+                <div class="col-12 col-md-6" id="measurement-system-container">
+                  <label class="form-label fw-semibold">Measurement System</label>
+                  <div class="row g-2" id="system-type-group">
+                    <div class="col-12 col-sm-6">
+                      <input
+                        type="radio"
+                        class="btn-check"
+                        name="system-type"
+                        id="system-type-metric"
+                        value="Metric"
+                        autocomplete="off"
+                        checked
+                      />
+                      <label class="btn btn-outline-secondary w-100" for="system-type-metric">Metric</label>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <input
+                        type="radio"
+                        class="btn-check"
+                        name="system-type"
+                        id="system-type-imperial"
+                        value="Imperial"
+                        autocomplete="off"
+                      />
+                      <label class="btn btn-outline-secondary w-100" for="system-type-imperial">Imperial</label>
+                    </div>
                   </div>
                 </div>
               </div>
