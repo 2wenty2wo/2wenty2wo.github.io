@@ -49,6 +49,20 @@ const {
   formStatusMessage
 } = elements;
 
+// Derived from the hardware label spec: a 37 × 12 mm label yields a 33 × 10 mm
+// printable area, implying 2 mm horizontal and 1 mm vertical safe margins per
+// side.
+const HORIZONTAL_SAFE_MARGIN_PER_SIDE_MM = 2;
+const VERTICAL_SAFE_MARGIN_PER_SIDE_MM = 1;
+
+function computePrintableDimension(dimensionMm, marginPerSideMm) {
+  if (!Number.isFinite(dimensionMm)) {
+    return 0;
+  }
+  const marginTotalMm = marginPerSideMm * 2;
+  return Math.max(0, dimensionMm - marginTotalMm);
+}
+
 let qrRenderRequestId = 0;
 let previewStatusFrameId = null;
 let previewReadyState = false;
@@ -604,10 +618,10 @@ export function updatePreview() {
   }
   const width = state.widthMm;
   const height = state.heightMm;
-  const printableWidth = width;
-  const printableHeight = height;
+  const printableWidth = computePrintableDimension(width, HORIZONTAL_SAFE_MARGIN_PER_SIDE_MM);
+  const printableHeight = computePrintableDimension(height, VERTICAL_SAFE_MARGIN_PER_SIDE_MM);
   labelSizeDisplay.innerHTML = `${width}&nbsp;mm ×&nbsp;${height}&nbsp;mm (label size)`;
-  printAreaDisplay.innerHTML = `${printableWidth}&nbsp;mm ×&nbsp;${printableHeight}&nbsp;mm (print-ready image size)`;
+  printAreaDisplay.innerHTML = `${printableWidth}&nbsp;mm ×&nbsp;${printableHeight}&nbsp;mm (printable area)`;
   const safeWidthMm = Number.isFinite(width) && width > 0 ? width : 1;
   const safeHeightMm = Number.isFinite(height) && height > 0 ? height : 1;
   document.documentElement.style.setProperty('--label-width-mm', `${safeWidthMm}mm`);
@@ -1177,8 +1191,8 @@ export async function renderLabelCanvas() {
     throw new Error('Label preview is not available.');
   }
 
-  const printableWidthMm = state.widthMm;
-  const printableHeightMm = state.heightMm;
+  const labelWidthMm = state.widthMm;
+  const labelHeightMm = state.heightMm;
   const exportDpi = 300;
   const pixelsPerMmAtExportDpi = exportDpi / 25.4;
   const scale = pixelsPerMmAtExportDpi / pxPerMm;
@@ -1215,8 +1229,8 @@ export async function renderLabelCanvas() {
   }
 
   const outputCanvas = document.createElement('canvas');
-  const targetWidthPx = Math.max(1, Math.round(printableWidthMm * pixelsPerMmAtExportDpi));
-  const targetHeightPx = Math.max(1, Math.round(printableHeightMm * pixelsPerMmAtExportDpi));
+  const targetWidthPx = Math.max(1, Math.round(labelWidthMm * pixelsPerMmAtExportDpi));
+  const targetHeightPx = Math.max(1, Math.round(labelHeightMm * pixelsPerMmAtExportDpi));
   outputCanvas.width = targetWidthPx;
   outputCanvas.height = targetHeightPx;
   const ctx = outputCanvas.getContext('2d');
