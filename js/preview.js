@@ -574,6 +574,10 @@ export function updatePreview() {
   const printableHeight = height;
   labelSizeDisplay.innerHTML = `${width}&nbsp;mm ×&nbsp;${height}&nbsp;mm (label size)`;
   printAreaDisplay.innerHTML = `${printableWidth}&nbsp;mm ×&nbsp;${printableHeight}&nbsp;mm (print-ready image size)`;
+  const safeWidthMm = Number.isFinite(width) && width > 0 ? width : 1;
+  const safeHeightMm = Number.isFinite(height) && height > 0 ? height : 1;
+  document.documentElement.style.setProperty('--label-width-mm', `${safeWidthMm}mm`);
+  document.documentElement.style.setProperty('--label-height-mm', `${safeHeightMm}mm`);
   const pxWidth = width * pxPerMm;
   const pxHeight = height * pxPerMm;
   previewContainer.style.width = pxWidth + 'px';
