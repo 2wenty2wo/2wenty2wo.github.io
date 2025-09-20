@@ -89,33 +89,71 @@ export function printLabel() {
   }
   printWindow.opener = null;
   const doc = printWindow.document;
-  doc.title = 'Print Label';
-  const style = doc.createElement('style');
-  style.textContent = 'html,body{margin:0;height:100%;font-family:system-ui,-apple-system,Segoe UI,sans-serif;}body{display:flex;align-items:center;justify-content:center;background:#fff;color:#111;} .status{padding:1rem;text-align:center;}';
-  doc.head.appendChild(style);
-  doc.body.innerHTML = '';
-  const statusDiv = doc.createElement('div');
-  statusDiv.className = 'status';
-  statusDiv.textContent = 'Preparing print preview…';
-  doc.body.appendChild(statusDiv);
+  const stylesheetHref = new URL('print.css', window.location.href).href;
+  const initialHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Print Label</title>
+<link rel="stylesheet" href="${stylesheetHref}" />
+</head>
+<body class="print-window" data-ready="false">
+  <main>
+    <div id="print-status" class="print-status" role="status" aria-live="polite">Preparing print preview…</div>
+    <img id="print-image" class="print-label-image" alt="Gridfinity label" decoding="async" />
+  </main>
+</body>
+</html>`;
+  doc.open();
+  doc.write(initialHtml);
+  doc.close();
+
+  const widthMm = Number.isFinite(state.widthMm) && state.widthMm > 0 ? state.widthMm : 1;
+  const heightMm = Number.isFinite(state.heightMm) && state.heightMm > 0 ? state.heightMm : 1;
+  const widthValue = `${widthMm}mm`;
+  const heightValue = `${heightMm}mm`;
+  doc.documentElement.style.setProperty('--label-width-mm', widthValue);
+  doc.documentElement.style.setProperty('--label-height-mm', heightValue);
+  const printBody = doc.body;
+  const statusDiv = doc.getElementById('print-status');
+  const img = doc.getElementById('print-image');
+  if (img instanceof HTMLImageElement) {
+    img.style.width = widthValue;
+    img.style.height = heightValue;
+    img.style.maxWidth = 'none';
+    img.style.maxHeight = 'none';
+    img.style.imageRendering = 'pixelated';
+  }
   renderLabelCanvas()
     .then(canvas => {
       const dataUrl = canvas.toDataURL('image/png');
-      const img = doc.createElement('img');
-      img.src = dataUrl;
-      img.alt = 'Gridfinity label';
-      img.style.maxWidth = '100%';
-      img.style.maxHeight = '100%';
-      img.onload = () => {
+      if (!(img instanceof HTMLImageElement)) {
+        throw new Error('Print image element was not created.');
+      }
+      img.setAttribute('width', String(canvas.width));
+      img.setAttribute('height', String(canvas.height));
+      const handleLoad = () => {
+        if (printBody) {
+          printBody.setAttribute('data-ready', 'true');
+        }
+        if (statusDiv) {
+          statusDiv.textContent = 'Label ready – opening printer dialog…';
+        }
         printWindow.focus();
         printWindow.print();
         printWindow.close();
       };
-      doc.body.innerHTML = '';
-      doc.body.appendChild(img);
+      img.addEventListener('load', handleLoad, { once: true });
+      img.src = dataUrl;
     })
     .catch(err => {
       console.error('Print preview generation failed', err);
-      doc.body.innerHTML = '<div class="status">Unable to prepare the label for printing.</div>';
+      if (printBody) {
+        printBody.setAttribute('data-ready', 'error');
+      }
+      if (statusDiv) {
+        statusDiv.textContent = 'Unable to prepare the label for printing.';
+      }
     });
 }

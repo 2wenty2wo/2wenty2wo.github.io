@@ -1,0 +1,129 @@
+@page {
+  margin: 0;
+}
+
+:root {
+  --label-width-mm: 55mm;
+  --label-height-mm: 12mm;
+}
+
+body.print-window {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: 'Barlow', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+}
+
+body.print-window main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(12mm, 5vw, 24mm);
+  width: 100%;
+  box-sizing: border-box;
+  gap: 1rem;
+}
+
+.print-status {
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.4;
+  color: inherit;
+}
+
+.print-label-image {
+  display: none;
+  width: var(--label-width-mm);
+  height: var(--label-height-mm);
+  max-width: none;
+  max-height: none;
+  image-rendering: pixelated;
+  background: #ffffff;
+  box-shadow: 0 0 0.5mm rgba(15, 23, 42, 0.12);
+}
+
+body.print-window[data-ready='true'] .print-label-image {
+  display: block;
+}
+
+body.print-window[data-ready='true'] .print-status {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  body.print-window {
+    background: #0f172a;
+    color: #e2e8f0;
+  }
+}
+
+@media print {
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  body.print-window {
+    padding: 0;
+  }
+
+  .print-status {
+    display: none !important;
+  }
+
+  img.print-label-image {
+    display: block !important;
+    width: var(--label-width-mm) !important;
+    height: var(--label-height-mm) !important;
+    max-width: none !important;
+    max-height: none !important;
+    image-rendering: pixelated;
+    background: #ffffff;
+    box-shadow: none;
+  }
+
+  .theme-toggle-wrapper,
+  .title-section,
+  .form-section,
+  .actions,
+  #form-status-message,
+  .size-info,
+  .preview-section .section-heading {
+    display: none !important;
+  }
+
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .preview-section,
+  .label-preview,
+  #preview-container,
+  #label-inner {
+    width: var(--label-width-mm) !important;
+    height: var(--label-height-mm) !important;
+    max-width: none !important;
+    max-height: none !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    background: #ffffff !important;
+    margin: 0 auto !important;
+  }
+
+  #label-inner {
+    overflow: visible;
+  }
+
+  .preview-placeholder {
+    display: none !important;
+  }
+}
