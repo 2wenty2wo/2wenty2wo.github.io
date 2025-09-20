@@ -1,0 +1,137 @@
+@page {
+  margin: 0;
+}
+
+@media print {
+  :root {
+    color-scheme: light;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+  }
+
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  main.container {
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  main.container > *:not(.preview-section) {
+    display: none !important;
+  }
+
+  .preview-section {
+    margin: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+
+  .preview-section .card-body {
+    padding: 0 !important;
+  }
+
+  .preview-section .section-heading,
+  .preview-section .size-info,
+  .preview-placeholder {
+    display: none !important;
+  }
+
+  .label-preview {
+    width: var(--label-width-mm) !important;
+    height: var(--label-height-mm) !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+  }
+
+  .label-preview::before {
+    content: none !important;
+  }
+
+  #label-inner {
+    width: var(--label-width-mm) !important;
+    height: var(--label-height-mm) !important;
+    inset: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+  }
+
+  #label-inner canvas {
+    display: block;
+  }
+
+  .print-ruler {
+    --print-ruler-line: rgba(15, 23, 42, 0.7);
+    --print-ruler-major: rgba(15, 23, 42, 0.4);
+    position: relative;
+    border: 0.2mm solid var(--print-ruler-line);
+    background-color: #ffffff;
+  }
+
+  .print-ruler.print-ruler--horizontal {
+    background-image: repeating-linear-gradient(
+      to right,
+      transparent,
+      transparent calc(1mm - 0.1mm),
+      var(--print-ruler-line) calc(1mm - 0.1mm),
+      var(--print-ruler-line) 1mm
+    );
+  }
+
+  .print-ruler.print-ruler--vertical {
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent calc(1mm - 0.1mm),
+      var(--print-ruler-line) calc(1mm - 0.1mm),
+      var(--print-ruler-line) 1mm
+    );
+  }
+
+  .print-ruler.print-ruler--with-majors.print-ruler--horizontal {
+    background-image: repeating-linear-gradient(
+        to right,
+        transparent,
+        transparent calc(5mm - 0.15mm),
+        var(--print-ruler-major) calc(5mm - 0.15mm),
+        var(--print-ruler-major) 5mm
+      ),
+      repeating-linear-gradient(
+        to right,
+        transparent,
+        transparent calc(1mm - 0.1mm),
+        var(--print-ruler-line) calc(1mm - 0.1mm),
+        var(--print-ruler-line) 1mm
+      );
+  }
+
+  .print-ruler.print-ruler--with-majors.print-ruler--vertical {
+    background-image: repeating-linear-gradient(
+        to bottom,
+        transparent,
+        transparent calc(5mm - 0.15mm),
+        var(--print-ruler-major) calc(5mm - 0.15mm),
+        var(--print-ruler-major) 5mm
+      ),
+      repeating-linear-gradient(
+        to bottom,
+        transparent,
+        transparent calc(1mm - 0.1mm),
+        var(--print-ruler-line) calc(1mm - 0.1mm),
+        var(--print-ruler-line) 1mm
+      );
+  }
+}
