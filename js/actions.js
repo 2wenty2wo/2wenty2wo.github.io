@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { findConnectorCategory } from './data.js';
-import { renderLabelCanvas } from './preview.js';
+import { renderLabelCanvas } from './render.js';
 
 export function downloadLabel() {
   renderLabelCanvas()

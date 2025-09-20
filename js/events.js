@@ -11,7 +11,7 @@ import {
   handleStandardSelectKeydown,
   clearStandardFilter
 } from './forms.js';
-import { updatePreview, updateDownloadState, updateQrContentVisibility } from './preview.js';
+import { updatePreview, updateDownloadState, updateQrContentVisibility } from './render.js';
 import { downloadLabel, printLabel } from './actions.js';
 
 const {

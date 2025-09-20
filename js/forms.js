@@ -9,7 +9,7 @@ import {
   CONNECTOR_PLACEHOLDER_TEXT,
   findConnectorCategory
 } from './data.js';
-import { updatePreview, updateDownloadState } from './preview.js';
+import { updatePreview, updateDownloadState } from './render.js';
 import { populateThreadSizes } from './threadSizes.js';
 
 const {

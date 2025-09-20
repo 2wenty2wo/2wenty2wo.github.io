@@ -8,7 +8,7 @@ import {
   updateCustomImageUi,
   onHardwareTypeChange
 } from './forms.js';
-import { updateDownloadState, updateQrContentVisibility, updatePreview } from './preview.js';
+import { updateDownloadState, updateQrContentVisibility, updatePreview } from './render.js';
 import { initEventHandlers } from './events.js';
 
 function init() {
@@ -32,3 +32,5 @@ if (document.readyState === 'loading') {
 } else {
   init();
 }
+
+export { init };
