@@ -30,7 +30,7 @@ jest.mock('../js/dom-elements.js', () => ({
   }
 }));
 
-jest.mock('../js/preview.js', () => ({
+jest.mock('../js/render.js', () => ({
   __esModule: true,
   updatePreview: mockUpdatePreview,
   updateDownloadState: mockUpdateDownloadState

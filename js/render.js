@@ -1193,3 +1193,31 @@ export async function renderLabelCanvas() {
   }
   return outputCanvas;
 }
+
+export async function renderLabelBlob(type = 'image/png', quality) {
+  const canvas = await renderLabelCanvas();
+  if (typeof canvas.toBlob === 'function') {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(
+        blob => {
+          if (blob) {
+            resolve(blob);
+            return;
+          }
+          reject(new Error('Unable to convert canvas to blob.'));
+        },
+        type,
+        quality
+      );
+    });
+  }
+
+  const dataUrl = canvas.toDataURL(type, quality);
+  const byteString = atob(dataUrl.split(',')[1] || '');
+  const mimeType = dataUrl.split(';')[0].split(':')[1] || type;
+  const buffer = new Uint8Array(byteString.length);
+  for (let i = 0; i < byteString.length; i += 1) {
+    buffer[i] = byteString.charCodeAt(i);
+  }
+  return new Blob([buffer], { type: mimeType });
+}

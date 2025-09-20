@@ -1,7 +1,7 @@
 import { state } from './state.js';
 import { elements } from './dom-elements.js';
 import { metricThreadSizes, imperialThreadSizes } from './data.js';
-import { updatePreview, updateDownloadState } from './preview.js';
+import { updatePreview, updateDownloadState } from './render.js';
 
 const { threadSizeSelect } = elements;
 
