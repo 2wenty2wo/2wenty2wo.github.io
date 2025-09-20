@@ -2,6 +2,28 @@ import { state } from './state.js';
 import { findConnectorCategory } from './data.js';
 import { renderLabelCanvas } from './render.js';
 
+function sanitizeTitle(str) {
+  if (!str) {
+    return '';
+  }
+  return str
+    .toLowerCase()
+    .replace(/[^a-z0-9-_]+/g, '-')
+    .replace(/-{2,}/g, '-')
+    .replace(/_+/g, '_')
+    .replace(/^[-_]+|[-_]+$/g, '');
+}
+
+function formatTimestamp(date) {
+  const pad = value => String(value).padStart(2, '0');
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+  return `${year}${month}${day}-${hours}${minutes}`;
+}
+
 export function downloadLabel() {
   renderLabelCanvas()
     .then(canvas => {
@@ -64,13 +86,18 @@ export function downloadLabel() {
       if (state.standard && state.standard !== state.standardCode) {
         fileParts.push(state.standard);
       }
-      const safeName = fileParts
-        .filter(Boolean)
-        .map(part => part.replace(/[^a-zA-Z0-9]+/g, '_'))
-        .join('_')
-        .replace(/_+/g, '_')
-        .replace(/^_+|_+$/g, '');
-      link.download = `${safeName || 'label'}.png`;
+      const rawTitle = fileParts.filter(Boolean).join(' ');
+      const sanitizedTitle = sanitizeTitle(rawTitle) || 'label';
+      const widthMm =
+        Number.isFinite(state.widthMm) && state.widthMm > 0
+          ? Math.round(state.widthMm)
+          : 1;
+      const heightMm =
+        Number.isFinite(state.heightMm) && state.heightMm > 0
+          ? Math.round(state.heightMm)
+          : 1;
+      const timestamp = formatTimestamp(new Date());
+      link.download = `gridfinity-label_${sanitizedTitle}_${widthMm}x${heightMm}mm_${timestamp}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
