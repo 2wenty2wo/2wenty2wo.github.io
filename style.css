@@ -25,6 +25,10 @@
   --field-invalid-ring: rgba(220, 53, 69, 0.45);
   --field-help-bg: rgba(148, 163, 184, 0.12);
   --field-help-border: rgba(148, 163, 184, 0.4);
+  --label-preview-bg: #f8fafc;
+  --label-preview-check-1: rgba(148, 163, 184, 0.24);
+  --label-preview-check-2: rgba(148, 163, 184, 0.1);
+  --label-preview-check-size: 24px;
   --focus-outline-width: 2px;
   --focus-outline-offset: 2px;
 }
@@ -51,6 +55,9 @@
   --field-invalid-ring: rgba(248, 113, 113, 0.6);
   --field-help-bg: rgba(148, 163, 184, 0.18);
   --field-help-border: rgba(148, 163, 184, 0.55);
+  --label-preview-bg: #0b1120;
+  --label-preview-check-1: rgba(148, 163, 184, 0.22);
+  --label-preview-check-2: rgba(148, 163, 184, 0.1);
 }
 
 body {
@@ -169,7 +176,12 @@ main {
   position: relative;
   margin: 0 auto;
   border-radius: 0;
-  background-color: #ffffff;
+  background-color: var(--label-preview-bg);
+  background-image: repeating-conic-gradient(
+    var(--label-preview-check-1) 0deg 90deg,
+    var(--label-preview-check-2) 90deg 180deg
+  );
+  background-size: var(--label-preview-check-size) var(--label-preview-check-size);
   overflow: visible;
   border: 0;
 }
@@ -179,7 +191,7 @@ main {
   position: absolute;
   inset: 0;
   border-radius: 0.75rem;
-  background: transparent;
+  background: none;
   box-shadow: none;
   pointer-events: none;
   z-index: 0;
