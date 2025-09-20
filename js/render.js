@@ -13,6 +13,7 @@ const {
   line1Div,
   line2Div,
   previewPlaceholder,
+  previewStatusText,
   qrCanvas,
   qrContentWrapper,
   qrContentInput,
@@ -49,6 +50,39 @@ const {
 } = elements;
 
 let qrRenderRequestId = 0;
+let previewStatusFrameId = null;
+let previewReadyState = false;
+
+function announcePreviewStatus(message) {
+  if (!previewStatusText) {
+    return;
+  }
+
+  if (previewStatusFrameId !== null) {
+    if (typeof window !== 'undefined' && typeof window.cancelAnimationFrame === 'function') {
+      window.cancelAnimationFrame(previewStatusFrameId);
+    }
+    previewStatusFrameId = null;
+  }
+
+  previewStatusText.textContent = '';
+
+  const normalizedMessage = typeof message === 'string' ? message.trim() : '';
+  if (!normalizedMessage) {
+    return;
+  }
+
+  const setMessage = () => {
+    previewStatusText.textContent = normalizedMessage;
+    previewStatusFrameId = null;
+  };
+
+  if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+    previewStatusFrameId = window.requestAnimationFrame(setMessage);
+  } else {
+    setTimeout(setMessage, 0);
+  }
+}
 
 function setMessageVisibility(messageElement, message, show) {
   if (!messageElement) {
@@ -619,6 +653,12 @@ export function updatePreview() {
     labelInner.style.removeProperty('--label-gap');
     labelInner.style.removeProperty('--label-padding-y');
     labelInner.style.removeProperty('--label-padding-x');
+    if (previewReadyState) {
+      announcePreviewStatus('Preview cleared.');
+    } else {
+      announcePreviewStatus('');
+    }
+    previewReadyState = false;
     return;
   }
 
@@ -1128,6 +1168,8 @@ export function updatePreview() {
   labelInner.style.setProperty('--label-gap', `${gapPx}px`);
 
   applyTextFitting(primaryFontSize, secondaryFontSize);
+  previewReadyState = true;
+  announcePreviewStatus('Preview updated.');
 }
 
 export async function renderLabelCanvas() {
