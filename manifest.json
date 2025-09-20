@@ -1,0 +1,11 @@
+{
+  "name": "Gridfinity Label Maker",
+  "short_name": "Label Maker",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#f8fafc",
+  "icons": [
+    { "src": "images/icons/apple-touch-icon-180x180.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}
