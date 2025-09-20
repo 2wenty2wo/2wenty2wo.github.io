@@ -56,6 +56,7 @@ const labelSizeDisplay = document.getElementById('label-size-display');
 const printAreaDisplay = document.getElementById('print-area-display');
 const previewContainer = document.getElementById('preview-container');
 const previewPlaceholder = document.getElementById('preview-placeholder');
+const previewStatusText = document.getElementById('preview-status-text');
 const labelInner = document.getElementById('label-inner');
 const hardwareImageDiv = document.getElementById('hardware-image');
 const textBlockDiv = document.getElementById('preview-text');
@@ -147,6 +148,7 @@ export const elements = {
   printAreaDisplay,
   previewContainer,
   previewPlaceholder,
+  previewStatusText,
   labelInner,
   hardwareImageDiv,
   textBlockDiv,
