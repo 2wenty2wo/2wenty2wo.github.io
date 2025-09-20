@@ -17,7 +17,7 @@ function getStoredTheme() {
   try {
     const storedTheme = localStorage.getItem(themeStorageKey);
     return isValidTheme(storedTheme) ? storedTheme : null;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -28,7 +28,7 @@ function setStoredTheme(theme) {
   }
   try {
     localStorage.setItem(themeStorageKey, theme);
-  } catch (error) {
+  } catch {
     // Ignore storage errors (e.g., private browsing modes).
   }
 }
