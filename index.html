@@ -118,7 +118,13 @@
             <h2 class="h5 mb-3 section-heading">Hardware Details</h2>
             <div class="vstack gap-3">
               <div>
-                <label class="form-label fw-semibold" id="hardware-type-label">Hardware Type</label>
+                <label
+                  class="form-label fw-semibold"
+                  for="hardware-type-select"
+                  id="hardware-type-label"
+                >
+                  Hardware Type
+                </label>
                 <div class="d-sm-none">
                   <select
                     id="hardware-type-select"
@@ -651,7 +657,7 @@
     <section class="preview-section card shadow-sm mt-4">
       <div class="card-body">
         <h2 class="h5 mb-3 section-heading">Label Preview</h2>
-        <div class="size-info text-muted small mb-3">
+        <div class="size-info text-muted small mb-3" role="status" aria-live="polite" aria-atomic="true">
           <div id="label-size-display">55&nbsp;mm ×&nbsp;12&nbsp;mm (label size)</div>
           <div id="print-area-display">55&nbsp;mm ×&nbsp;12&nbsp;mm (print-ready image size)</div>
         </div>
