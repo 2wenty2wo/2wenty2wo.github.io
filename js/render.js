@@ -30,6 +30,8 @@ const {
   connectorCategoryContainer,
   notesInput,
   notesField,
+  standardSelect,
+  standardField,
   bearingTypeSelect,
   bearingOptionsContainer,
   componentCategoryContainer,
@@ -199,6 +201,21 @@ function applyValidationFeedback(disabled) {
   if (!lengthValid) {
     const lengthDescription = hardwareLabel ? `${hardwareLabel} length` : 'length';
     requirements.push(`enter the ${lengthDescription}`);
+  }
+
+  const standardRequired =
+    (hardwareType === 'Bolt' || hardwareType === 'Screw') && Boolean(standardSelect) && Boolean(standardField);
+  const needsStandard =
+    standardRequired && Boolean(hardwareImageFolders[hardwareType]) && !standardSelect.disabled;
+  const standardValid = !needsStandard || Boolean(state.standardCode);
+  updateInputFieldState({
+    input: standardSelect,
+    container: standardField,
+    messageElement: null,
+    valid: standardValid
+  });
+  if (!standardValid) {
+    requirements.push('choose a hardware standard');
   }
 
   const needsFuseValue = hardwareType === 'Fuse';
@@ -577,7 +594,7 @@ export function isLabelReady() {
     return Boolean(state.componentCategory && state.componentMount);
   }
   if (state.hardwareType === 'Bolt' || state.hardwareType === 'Screw') {
-    return Boolean(state.threadSize && state.length);
+    return Boolean(state.threadSize && state.length && state.standardCode);
   }
   return Boolean(state.threadSize);
 }
@@ -662,6 +679,7 @@ export function updatePreview() {
       previewPlaceholder.setAttribute('aria-hidden', 'false');
     }
     labelInner.style.display = 'none';
+    labelInner.classList.remove('has-hardware-image');
     hardwareImageDiv.style.display = 'none';
     hardwareImageDiv.innerHTML = '';
     hardwareImageDiv.style.removeProperty('max-width');
@@ -804,7 +822,14 @@ export function updatePreview() {
 
       const photoInfo = getHardwareImageInfo();
       if (photoInfo && innerHeightPx > 0 && innerWidthPx > 0) {
-        const maxWidthForPhoto = Math.max(0, Math.min(innerHeightPx, innerWidthPx * 0.45));
+        let maxWidthForPhoto = Math.max(0, Math.min(innerHeightPx, innerWidthPx * 0.45));
+        if (photoInfo.type === 'boltSvg') {
+          const boltPreferredWidth = Math.max(0, Math.min(innerHeightPx * 1.4, innerWidthPx * 0.6));
+          maxWidthForPhoto = Math.max(maxWidthForPhoto, boltPreferredWidth);
+        } else {
+          const photoPreferredWidth = Math.max(0, Math.min(innerHeightPx * 1.2, innerWidthPx * 0.5));
+          maxWidthForPhoto = Math.max(maxWidthForPhoto, photoPreferredWidth);
+        }
         if (maxWidthForPhoto > 0) {
           hardwareImageDiv.style.display = 'flex';
           hardwareImageDiv.style.maxWidth = maxWidthForPhoto + 'px';
@@ -897,6 +922,10 @@ export function updatePreview() {
     hardwareImageDiv.style.removeProperty('min-height');
     hardwareWidthPx = 0;
     hardwareVisible = false;
+  }
+
+  if (labelInner) {
+    labelInner.classList.toggle('has-hardware-image', hardwareVisible);
   }
 
   if (state.hardwareType === 'Custom') {
