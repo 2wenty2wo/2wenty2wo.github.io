@@ -172,6 +172,166 @@ function formatRequirementSummary(requirements) {
   return `${allButLast.join(', ')} and ${last}`;
 }
 
+const boltSvgTrimCache = new Map();
+let svgMeasurementContainer = null;
+
+function ensureSvgMeasurementContainer() {
+  if (typeof document === 'undefined') {
+    return null;
+  }
+  if (!document.body) {
+    return null;
+  }
+  if (svgMeasurementContainer && svgMeasurementContainer.isConnected) {
+    return svgMeasurementContainer;
+  }
+  const container = document.createElement('div');
+  container.style.position = 'absolute';
+  container.style.width = '0';
+  container.style.height = '0';
+  container.style.overflow = 'hidden';
+  container.style.visibility = 'hidden';
+  container.style.pointerEvents = 'none';
+  container.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(container);
+  svgMeasurementContainer = container;
+  return container;
+}
+
+function deriveTrimmedSvgMarkup(svgText) {
+  if (!svgText || typeof svgText !== 'string') {
+    return null;
+  }
+  if (typeof DOMParser === 'undefined' || typeof XMLSerializer === 'undefined') {
+    return null;
+  }
+  let doc;
+  try {
+    const parser = new DOMParser();
+    doc = parser.parseFromString(svgText, 'image/svg+xml');
+  } catch {
+    return null;
+  }
+  if (!doc) {
+    return null;
+  }
+  const parserError = doc.querySelector('parsererror');
+  if (parserError) {
+    return null;
+  }
+  const svgElement = doc.documentElement;
+  if (!svgElement || svgElement.nodeName.toLowerCase() !== 'svg') {
+    return null;
+  }
+  const container = ensureSvgMeasurementContainer();
+  if (!container) {
+    return null;
+  }
+  const measuringSvg = svgElement.cloneNode(true);
+  container.appendChild(measuringSvg);
+  let bbox;
+  try {
+    bbox = measuringSvg.getBBox();
+  } catch {
+    container.removeChild(measuringSvg);
+    return null;
+  }
+  container.removeChild(measuringSvg);
+  if (!bbox || !Number.isFinite(bbox.width) || !Number.isFinite(bbox.height) || bbox.width <= 0 || bbox.height <= 0) {
+    return null;
+  }
+  const marginRatio = 0.02;
+  const marginX = bbox.width * marginRatio;
+  const marginY = bbox.height * marginRatio;
+  const trimmedSvg = svgElement.cloneNode(true);
+  trimmedSvg.removeAttribute('width');
+  trimmedSvg.removeAttribute('height');
+  trimmedSvg.setAttribute(
+    'viewBox',
+    `${bbox.x - marginX} ${bbox.y - marginY} ${bbox.width + marginX * 2} ${bbox.height + marginY * 2}`
+  );
+  try {
+    return new XMLSerializer().serializeToString(trimmedSvg);
+  } catch {
+    return null;
+  }
+}
+
+function fetchTrimmedSvgMarkup(src) {
+  if (!src) {
+    return null;
+  }
+  const cached = boltSvgTrimCache.get(src);
+  if (cached) {
+    return cached;
+  }
+  if (typeof fetch !== 'function') {
+    const fallback = Promise.resolve(null);
+    boltSvgTrimCache.set(src, fallback);
+    return fallback;
+  }
+  const promise = fetch(src)
+    .then(response => {
+      if (!response || !response.ok) {
+        return null;
+      }
+      return response.text();
+    })
+    .then(svgText => {
+      if (!svgText) {
+        return null;
+      }
+      return deriveTrimmedSvgMarkup(svgText);
+    })
+    .catch(() => null);
+  boltSvgTrimCache.set(src, promise);
+  return promise;
+}
+
+function applyTrimmedSvgToImage(img, originalSrc) {
+  if (!img || typeof originalSrc !== 'string' || !originalSrc) {
+    return;
+  }
+  if (img.dataset.trimmedSvgSource === originalSrc) {
+    return;
+  }
+  const normalizedSrc = originalSrc.toLowerCase();
+  if (!normalizedSrc.endsWith('.svg')) {
+    return;
+  }
+  const promise = fetchTrimmedSvgMarkup(originalSrc);
+  if (!promise || typeof promise.then !== 'function') {
+    return;
+  }
+  promise.then(trimmedMarkup => {
+    if (!trimmedMarkup) {
+      return;
+    }
+    if (!img.isConnected) {
+      return;
+    }
+    if (img.dataset.trimmedSvgSource === originalSrc) {
+      return;
+    }
+    if (typeof Blob === 'undefined' || typeof URL === 'undefined' || typeof URL.createObjectURL !== 'function') {
+      return;
+    }
+    try {
+      const blob = new Blob([trimmedMarkup], { type: 'image/svg+xml' });
+      const objectUrl = URL.createObjectURL(blob);
+      const revoke = () => {
+        URL.revokeObjectURL(objectUrl);
+      };
+      img.addEventListener('load', revoke, { once: true });
+      img.addEventListener('error', revoke, { once: true });
+      img.dataset.trimmedSvgSource = originalSrc;
+      img.src = objectUrl;
+    } catch {
+      // Silently ignore failures to construct the trimmed image.
+    }
+  });
+}
+
 function applyValidationFeedback(disabled) {
   const requirements = [];
   const hardwareType = state.hardwareType;
@@ -693,17 +853,18 @@ export function updatePreview() {
             const boltGroup = document.createElement('div');
             boltGroup.className = 'bolt-image-group';
             boltGroup.style.maxHeight = innerHeightPx + 'px';
+            boltGroup.style.height = innerHeightPx + 'px';
             hardwareImageDiv.appendChild(boltGroup);
             const boltImages = [
-              {
-                src: photoInfo.headSrc,
-                alt: photoInfo.headAlt,
-                className: 'hardware-photo bolt-head-view'
-              },
               {
                 src: photoInfo.driveSrc,
                 alt: photoInfo.driveAlt,
                 className: 'hardware-photo bolt-drive-view'
+              },
+              {
+                src: photoInfo.headSrc,
+                alt: photoInfo.headAlt,
+                className: 'hardware-photo bolt-head-view'
               }
             ];
             let maxWidthPerImage = Math.floor(maxWidthForPhoto / boltImages.length);
@@ -725,9 +886,11 @@ export function updatePreview() {
               boltImg.decoding = 'async';
               boltImg.loading = 'lazy';
               boltImg.style.maxHeight = innerHeightPx + 'px';
+              boltImg.style.height = innerHeightPx + 'px';
               boltImg.style.maxWidth = maxWidthPerImage + 'px';
               boltImg.addEventListener('error', handleMissingAsset);
               boltGroup.appendChild(boltImg);
+              applyTrimmedSvgToImage(boltImg, imageInfo.src);
             });
           } else {
             const img = document.createElement('img');
@@ -835,7 +998,7 @@ export function updatePreview() {
       if (state.threadSize) {
         line1 = state.threadSize;
       }
-      if (state.hardwareType === 'Screw' && state.length) {
+      if ((state.hardwareType === 'Screw' || state.hardwareType === 'Bolt') && state.length) {
         line1 += line1 ? ` × ${state.length}` : state.length;
       }
     }
