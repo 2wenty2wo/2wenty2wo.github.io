@@ -2,7 +2,6 @@ const themeToggleButton = document.getElementById('theme-toggle');
 const themeToggleIcon = themeToggleButton ? themeToggleButton.querySelector('.theme-toggle-icon') : null;
 const themeToggleText = themeToggleButton ? themeToggleButton.querySelector('.theme-toggle-text') : null;
 
-const screwTypeContainer = document.getElementById('screw-type-container');
 const threadSizeContainer = document.getElementById('thread-size-container');
 const threadSizeSelect = document.getElementById('thread-size-select');
 const threadLengthRow = document.getElementById('thread-length-row');
@@ -82,7 +81,6 @@ const hardwareTypeOptions = new Set(
     .filter(Boolean)
 );
 const systemTypeRadios = Array.from(document.querySelectorAll('input[name="system-type"]'));
-const screwTypeRadios = Array.from(document.querySelectorAll('input[name="screw-type"]'));
 const fuseTypeRadios = Array.from(document.querySelectorAll('input[name="fuse-type"]'));
 const heightRadios = Array.from(document.querySelectorAll('input[name="label-height"]'));
 const componentCategoryRadios = Array.from(document.querySelectorAll('input[name="component-category"]'));
@@ -95,7 +93,6 @@ export const elements = {
   themeToggleButton,
   themeToggleIcon,
   themeToggleText,
-  screwTypeContainer,
   threadSizeContainer,
   threadSizeSelect,
   threadLengthRow,
@@ -165,7 +162,6 @@ export const elements = {
   hardwareTypeSelect,
   hardwareTypeOptions,
   systemTypeRadios,
-  screwTypeRadios,
   fuseTypeRadios,
   heightRadios,
   componentCategoryRadios,

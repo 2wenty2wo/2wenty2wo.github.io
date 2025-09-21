@@ -133,6 +133,7 @@
                     aria-labelledby="hardware-type-label"
                   >
                     <option value="Screw">Screw</option>
+                    <option value="Bolt">Bolt</option>
                     <option value="Nut">Nut</option>
                     <option value="Heat Insert">Heat Insert</option>
                     <option value="Washer">Washer</option>
@@ -155,6 +156,17 @@
                       checked
                     />
                     <label class="btn btn-outline-primary w-100" for="hardware-type-screw">Screw</label>
+                  </div>
+                  <div class="col-12 col-sm-6 col-lg-3">
+                    <input
+                      type="radio"
+                      class="btn-check"
+                      name="hardware-type"
+                      id="hardware-type-bolt"
+                      value="Bolt"
+                      autocomplete="off"
+                    />
+                    <label class="btn btn-outline-primary w-100" for="hardware-type-bolt">Bolt</label>
                   </div>
                   <div class="col-12 col-sm-6 col-lg-3">
                     <input
@@ -384,35 +396,7 @@
                   class="validation-message text-danger small mt-2 d-none"
                 ></div>
               </div>
-              <div class="row g-3" id="screw-settings-row">
-                <div class="col-12 col-md-6" id="screw-type-container">
-                  <label class="form-label fw-semibold">Screw Type</label>
-                  <div class="row g-2" id="screw-type-group">
-                    <div class="col-12 col-sm-6">
-                      <input
-                        type="radio"
-                        class="btn-check"
-                        name="screw-type"
-                        id="screw-type-bolt"
-                        value="Bolt"
-                        autocomplete="off"
-                        checked
-                      />
-                      <label class="btn btn-outline-secondary w-100" for="screw-type-bolt">Bolt</label>
-                    </div>
-                    <div class="col-12 col-sm-6">
-                      <input
-                        type="radio"
-                        class="btn-check"
-                        name="screw-type"
-                        id="screw-type-screw"
-                        value="Screw"
-                        autocomplete="off"
-                      />
-                      <label class="btn btn-outline-secondary w-100" for="screw-type-screw">Screw</label>
-                    </div>
-                  </div>
-                </div>
+              <div class="row g-3" id="measurement-system-row">
                 <div class="col-12 col-md-6" id="measurement-system-container">
                   <label class="form-label fw-semibold">Measurement System</label>
                   <div class="row g-2" id="system-type-group">
