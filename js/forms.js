@@ -389,11 +389,12 @@ export function filterStandardOptions(query) {
 
   if (selectionCleared) {
     standardSelect.value = '';
-    if (state.standard) {
+    if (state.standard || state.standardCode) {
       state.standard = '';
       state.standardCode = '';
       updatePreview();
     }
+    updateDownloadState();
   }
 
   const placeholder = standardSelect.querySelector('option[value=""]');

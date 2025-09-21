@@ -237,6 +237,7 @@ export function initEventHandlers() {
         state.standard = '';
         state.standardCode = '';
       }
+      updateDownloadState();
       updatePreview();
     });
     standardSelect.addEventListener('keydown', handleStandardSelectKeydown);
