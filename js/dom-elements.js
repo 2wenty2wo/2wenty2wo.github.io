@@ -66,6 +66,7 @@ const qrCanvas = document.getElementById('qr-canvas');
 const qrContentWrapper = document.getElementById('qr-content-wrapper');
 const qrContentInput = document.getElementById('qr-content-input');
 const downloadButton = document.getElementById('download-button');
+const shareButton = document.getElementById('share-button');
 const printButton = document.getElementById('print-button');
 
 const hardwareTypeRadios = Array.from(document.querySelectorAll('input[name="hardware-type"]'));
@@ -158,6 +159,7 @@ export const elements = {
   qrContentWrapper,
   qrContentInput,
   downloadButton,
+  shareButton,
   printButton,
   hardwareTypeRadios,
   hardwareTypeSelect,

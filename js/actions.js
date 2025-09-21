@@ -1,6 +1,42 @@
 import { state } from './state.js';
 import { findConnectorCategory } from './data.js';
 import { renderLabelCanvas } from './render.js';
+import { buildShareUrl } from './url-state.js';
+
+async function copyLinkToClipboard(link) {
+  if (
+    typeof navigator !== 'undefined' &&
+    navigator.clipboard &&
+    typeof navigator.clipboard.writeText === 'function'
+  ) {
+    await navigator.clipboard.writeText(link);
+    return;
+  }
+
+  if (typeof document === 'undefined' || !document.body) {
+    throw new Error('Clipboard API not available');
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = link;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'absolute';
+  textarea.style.left = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  let succeeded = false;
+  try {
+    succeeded = typeof document.execCommand === 'function' ? document.execCommand('copy') : false;
+  } catch {
+    succeeded = false;
+  }
+  document.body.removeChild(textarea);
+
+  if (!succeeded) {
+    throw new Error('Copy command was unsuccessful');
+  }
+}
 
 function sanitizeTitle(str) {
   if (!str) {
@@ -183,4 +219,39 @@ export function printLabel() {
         statusDiv.textContent = 'Unable to prepare the label for printing.';
       }
     });
+}
+
+export async function shareLabel() {
+  const shareUrl = buildShareUrl();
+  if (!shareUrl) {
+    alert('Unable to generate a share link right now.');
+    return;
+  }
+
+  const shareData = {
+    title: 'Gridfinity Label Maker',
+    text: 'Gridfinity label preset',
+    url: shareUrl
+  };
+
+  const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+  if (canShare) {
+    try {
+      await navigator.share(shareData);
+      return;
+    } catch (error) {
+      if (error && error.name === 'AbortError') {
+        return;
+      }
+      console.warn('Native share failed, falling back to clipboard', error);
+    }
+  }
+
+  try {
+    await copyLinkToClipboard(shareUrl);
+    alert('Share link copied to your clipboard.');
+  } catch (error) {
+    console.error('Unable to copy share link', error);
+    alert(`Unable to copy the share link automatically. Copy this URL instead:\n${shareUrl}`);
+  }
 }

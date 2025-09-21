@@ -18,8 +18,8 @@ export function populateThreadSizes() {
       const placeholder = document.createElement('option');
       placeholder.value = '';
       placeholder.textContent = 'Not applicable';
+      placeholder.selected = true;
       threadSizeSelect.appendChild(placeholder);
-      threadSizeSelect.value = '';
       threadSizeSelect.disabled = true;
     }
     state.threadSize = '';
@@ -27,26 +27,37 @@ export function populateThreadSizes() {
     updatePreview();
     return;
   }
-  if (threadSizeSelect) {
-    threadSizeSelect.disabled = false;
-  }
+
   const list = state.systemType === 'Metric' ? metricThreadSizes : imperialThreadSizes;
   if (!threadSizeSelect) {
+    state.threadSize = '';
+    updateDownloadState();
+    updatePreview();
     return;
   }
+
+  threadSizeSelect.disabled = false;
   threadSizeSelect.innerHTML = '';
   const placeholder = document.createElement('option');
   placeholder.value = '';
   placeholder.textContent = 'Select size…';
   threadSizeSelect.appendChild(placeholder);
+
+  const validSizes = new Set(list);
   list.forEach(size => {
     const opt = document.createElement('option');
     opt.value = size;
     opt.textContent = size;
     threadSizeSelect.appendChild(opt);
   });
-  state.threadSize = '';
-  threadSizeSelect.value = '';
+
+  const previous = typeof state.threadSize === 'string' ? state.threadSize.trim() : '';
+  const normalized = previous && validSizes.has(previous) ? previous : '';
+  state.threadSize = normalized;
+  threadSizeSelect.value = normalized;
+  if (!normalized) {
+    placeholder.selected = true;
+  }
   updateDownloadState();
   updatePreview();
 }

@@ -92,7 +92,17 @@ export function populateBearingOptions() {
     opt.dataset.description = option.description;
     bearingTypeSelect.appendChild(opt);
   });
-  bearingTypeSelect.value = state.bearingType || '';
+  const validCodes = new Set(bearingOptions.map(option => option.code));
+  const desired = typeof state.bearingType === 'string' ? state.bearingType : '';
+  if (desired && validCodes.has(desired)) {
+    bearingTypeSelect.value = desired;
+    const selectedOption = bearingOptions.find(option => option.code === desired);
+    state.bearingDetails = selectedOption ? selectedOption.description : state.bearingDetails;
+  } else {
+    bearingTypeSelect.value = '';
+    state.bearingType = '';
+    state.bearingDetails = '';
+  }
 }
 
 function ensureConnectorCategory() {
@@ -246,6 +256,7 @@ export function populateStandards() {
   if (!standardSelect) {
     return;
   }
+  const previousCode = typeof state.standardCode === 'string' ? state.standardCode : '';
   standardSelect.innerHTML = '';
   const placeholder = document.createElement('option');
   placeholder.value = '';
@@ -261,7 +272,6 @@ export function populateStandards() {
     state.standard = '';
     state.standardCode = '';
     standardSelect.value = '';
-    standardSelect.selectedIndex = 0;
     updatePreview();
     return;
   }
@@ -277,7 +287,6 @@ export function populateStandards() {
     state.standard = '';
     state.standardCode = '';
     standardSelect.value = '';
-    standardSelect.selectedIndex = 0;
     updatePreview();
     return;
   }
@@ -310,34 +319,50 @@ export function populateStandards() {
     standardSelect.appendChild(placeholder);
     standardSelect.disabled = true;
     standardSelect.title = '';
-  } else {
-    placeholder.textContent = placeholderText;
-    placeholder.dataset.defaultText = placeholder.textContent;
-    placeholder.disabled = false;
-    placeholder.selected = true;
-    standardSelect.appendChild(placeholder);
-    standards.forEach(entry => {
-      const opt = document.createElement('option');
-      opt.value = entry.code;
-      if (state.hardwareType === 'Connector') {
-        const display = entry.name ? `${entry.code} — ${entry.name}` : entry.code;
-        opt.textContent = display;
-        opt.dataset.name = entry.name || entry.code;
-      } else {
-        opt.textContent = `${entry.code} — ${entry.name}`;
-        opt.dataset.name = entry.name;
-      }
-      standardSelect.appendChild(opt);
-    });
-    standardSelect.disabled = false;
-    standardSelect.title = titleText;
-    filterStandardOptions('');
+    state.standard = '';
+    state.standardCode = '';
+    updatePreview();
+    return;
   }
 
-  state.standard = '';
-  state.standardCode = '';
-  standardSelect.value = '';
-  standardSelect.selectedIndex = 0;
+  placeholder.textContent = placeholderText;
+  placeholder.dataset.defaultText = placeholderText;
+  placeholder.disabled = false;
+  placeholder.selected = true;
+  standardSelect.appendChild(placeholder);
+  standards.forEach(entry => {
+    const opt = document.createElement('option');
+    opt.value = entry.code;
+    if (state.hardwareType === 'Connector') {
+      const display = entry.name ? `${entry.code} — ${entry.name}` : entry.code;
+      opt.textContent = display;
+      opt.dataset.name = entry.name || entry.code;
+    } else {
+      opt.textContent = `${entry.code} — ${entry.name}`;
+      opt.dataset.name = entry.name;
+    }
+    standardSelect.appendChild(opt);
+  });
+  standardSelect.disabled = false;
+  standardSelect.title = titleText;
+
+  const availableOption = previousCode
+    ? Array.from(standardSelect.options).find(option => option.value === previousCode)
+    : null;
+
+  if (availableOption && availableOption.value) {
+    standardSelect.value = availableOption.value;
+    const displayName = availableOption.dataset.name || availableOption.textContent || '';
+    state.standardCode = availableOption.value;
+    state.standard = displayName;
+  } else {
+    standardSelect.value = '';
+    placeholder.selected = true;
+    state.standard = '';
+    state.standardCode = '';
+  }
+
+  filterStandardOptions('');
   updatePreview();
 }
 

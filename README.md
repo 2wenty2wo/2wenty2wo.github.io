@@ -20,6 +20,7 @@ include:
 * Optional QR code content with automatic library loading only when needed.
 * Download-and-print flows that use html2canvas to export the on-screen label
   preview.
+* Shareable label URLs with Web Share API support and clipboard fallback.
 
 The repository is structured as a traditional GitHub Pages site, making it easy
 to host the tool directly from the `main` branch.
@@ -66,6 +67,20 @@ updates.
 
 Any other static server (for example, `npx serve` or a local web server
 extension) will also work.
+
+## Sharing Labels
+
+Use the **Share** button next to Download and Print to generate a link that
+captures the current label configuration. The helper serializes every relevant
+state value—including hardware selections, measurements, toggles, QR content,
+and custom imagery—into a compact base64 payload stored in the `label` query
+parameter.
+
+When supported, the app invokes the Web Share API so the link can be sent via
+native share sheets on mobile and desktop. Browsers without Web Share support
+fall back to copying the link to the clipboard and display a confirmation
+message. Opening a shared URL pre-populates the form and preview so the label is
+ready to review, print, or export without additional input.
 
 ## Development Workflow and Version Control Safeguards
 

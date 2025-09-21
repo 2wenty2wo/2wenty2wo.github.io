@@ -18,6 +18,7 @@ const {
   qrContentWrapper,
   qrContentInput,
   downloadButton,
+  shareButton,
   printButton,
   threadSizeSelect,
   threadSizeContainer,
@@ -590,6 +591,14 @@ export function updateDownloadState() {
     printButton.title = disabled
       ? 'Complete the label details to enable printing.'
       : printActionLabel;
+  }
+  if (shareButton) {
+    shareButton.disabled = disabled;
+    const shareActionLabel = 'Share a link to this label';
+    shareButton.setAttribute('aria-label', shareActionLabel);
+    shareButton.title = disabled
+      ? 'Complete the label details to enable sharing.'
+      : shareActionLabel;
   }
   applyValidationFeedback(disabled);
 }

@@ -12,7 +12,7 @@ import {
   clearStandardFilter
 } from './forms.js';
 import { updatePreview, updateDownloadState, updateQrContentVisibility } from './render.js';
-import { downloadLabel, printLabel } from './actions.js';
+import { downloadLabel, printLabel, shareLabel } from './actions.js';
 
 const {
   hardwareTypeRadios,
@@ -44,6 +44,7 @@ const {
   widthValueSpan,
   heightRadios,
   downloadButton,
+  shareButton,
   printButton
 } = elements;
 
@@ -302,6 +303,11 @@ export function initEventHandlers() {
 
   if (downloadButton) {
     downloadButton.addEventListener('click', downloadLabel);
+  }
+  if (shareButton) {
+    shareButton.addEventListener('click', () => {
+      void shareLabel();
+    });
   }
   if (printButton) {
     printButton.addEventListener('click', printLabel);
