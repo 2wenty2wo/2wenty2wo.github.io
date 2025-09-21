@@ -133,10 +133,10 @@
                     aria-labelledby="hardware-type-label"
                   >
                     <optgroup label="Hardware">
-                      <option value="Screw">Screw</option>
                       <option value="Bolt">Bolt</option>
-                      <option value="Nut">Nut</option>
                       <option value="Heat Insert">Heat Insert</option>
+                      <option value="Nut">Nut</option>
+                      <option value="Screw" selected>Screw</option>
                       <option value="Washer">Washer</option>
                     </optgroup>
                     <optgroup label="Electrical">
@@ -159,23 +159,22 @@
                       type="radio"
                       class="btn-check"
                       name="hardware-type"
-                      id="hardware-type-screw"
-                      value="Screw"
+                      id="hardware-type-bolt"
+                      value="Bolt"
                       autocomplete="off"
-                      checked
                     />
-                    <label class="btn btn-outline-primary w-100" for="hardware-type-screw">Screw</label>
+                    <label class="btn btn-outline-primary w-100" for="hardware-type-bolt">Bolt</label>
                   </div>
                   <div class="col-12 col-sm-6 col-lg-3">
                     <input
                       type="radio"
                       class="btn-check"
                       name="hardware-type"
-                      id="hardware-type-bolt"
-                      value="Bolt"
+                      id="hardware-type-heat-insert"
+                      value="Heat Insert"
                       autocomplete="off"
                     />
-                    <label class="btn btn-outline-primary w-100" for="hardware-type-bolt">Bolt</label>
+                    <label class="btn btn-outline-primary w-100" for="hardware-type-heat-insert">Heat Insert</label>
                   </div>
                   <div class="col-12 col-sm-6 col-lg-3">
                     <input
@@ -193,11 +192,12 @@
                       type="radio"
                       class="btn-check"
                       name="hardware-type"
-                      id="hardware-type-heat-insert"
-                      value="Heat Insert"
+                      id="hardware-type-screw"
+                      value="Screw"
                       autocomplete="off"
+                      checked
                     />
-                    <label class="btn btn-outline-primary w-100" for="hardware-type-heat-insert">Heat Insert</label>
+                    <label class="btn btn-outline-primary w-100" for="hardware-type-screw">Screw</label>
                   </div>
                   <div class="col-12 col-sm-6 col-lg-3">
                     <input
