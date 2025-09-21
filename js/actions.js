@@ -112,7 +112,7 @@ export function downloadLabel() {
         if (state.threadSize) {
           fileParts.push(state.threadSize);
         }
-        if (state.hardwareType === 'Screw' && state.length) {
+        if ((state.hardwareType === 'Screw' || state.hardwareType === 'Bolt') && state.length) {
           fileParts.push(`x${state.length}`);
         }
       }

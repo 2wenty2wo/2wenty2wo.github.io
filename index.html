@@ -133,10 +133,10 @@
                     aria-labelledby="hardware-type-label"
                   >
                     <optgroup label="Hardware">
-                      <option value="Bolt">Bolt</option>
+                      <option value="Bolt" selected>Bolt</option>
                       <option value="Heat Insert">Heat Insert</option>
                       <option value="Nut">Nut</option>
-                      <option value="Screw" selected>Screw</option>
+                      <option value="Screw">Screw</option>
                       <option value="Washer">Washer</option>
                     </optgroup>
                     <optgroup label="Electrical">
@@ -162,6 +162,7 @@
                       id="hardware-type-bolt"
                       value="Bolt"
                       autocomplete="off"
+                      checked
                     />
                     <label class="btn btn-outline-primary w-100" for="hardware-type-bolt">Bolt</label>
                   </div>
@@ -195,7 +196,6 @@
                       id="hardware-type-screw"
                       value="Screw"
                       autocomplete="off"
-                      checked
                     />
                     <label class="btn btn-outline-primary w-100" for="hardware-type-screw">Screw</label>
                   </div>

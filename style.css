@@ -280,7 +280,7 @@ main {
 
 .bolt-image-group {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: space-between;
   gap: 0.75rem;
   max-height: 100%;
@@ -290,6 +290,7 @@ main {
 .bolt-image-group img {
   display: block;
   max-height: 100%;
+  height: 100%;
   width: auto;
   flex: 1 1 0;
 }
