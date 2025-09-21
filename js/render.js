@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { elements } from './dom-elements.js';
-import { pxPerMm, hardwareImageFolders, findConnectorCategory } from './data.js';
+import { pxPerMm, hardwareCatalog, hardwareImageFolders, findConnectorCategory } from './data.js';
 import { loadHtml2Canvas, loadQrCodeLibrary } from './lazy-loaders.js';
 
 const {
@@ -323,11 +323,37 @@ function getHardwareImageInfo() {
   if (!catalogKey) {
     return null;
   }
+  const code = (state.standardCode || '').trim();
+  const standardName = (state.standard || '').trim();
+  if (catalogKey === 'Bolt') {
+    if (!code) {
+      return null;
+    }
+    const boltEntries = hardwareCatalog.Bolt;
+    const matchedEntry = Array.isArray(boltEntries)
+      ? boltEntries.find(entry => entry && entry.code === code)
+      : null;
+    if (!matchedEntry) {
+      return null;
+    }
+    const headImage = (matchedEntry.headImage || '').trim();
+    const driveImage = (matchedEntry.driveImage || '').trim();
+    if (!headImage || !driveImage) {
+      return null;
+    }
+    const altBase = (standardName || matchedEntry.name || matchedEntry.code || 'Bolt').trim() || 'Bolt';
+    return {
+      type: 'boltSvg',
+      headSrc: `images/bolts/head/${headImage}.svg`,
+      driveSrc: `images/bolts/drive/${driveImage}.svg`,
+      headAlt: `${altBase} — head view`,
+      driveAlt: `${altBase} — drive view`
+    };
+  }
   const folder = hardwareImageFolders[catalogKey];
   if (!folder) {
     return null;
   }
-  const code = (state.standardCode || '').trim();
   if (!code) {
     return null;
   }
@@ -335,31 +361,12 @@ function getHardwareImageInfo() {
   if (!filename) {
     return null;
   }
-  const standardName = (state.standard || '').trim();
   const altPieces = [];
   if (code) {
     altPieces.push(code);
   }
   if (standardName && standardName.toLowerCase() !== code.toLowerCase()) {
     altPieces.push(standardName);
-  }
-  if (state.hardwareType === 'Bolt') {
-    const baseSource = code || standardName || 'Bolt';
-    const normalizedBase = baseSource.toLowerCase().trim().replace(/\s+/g, ' ');
-    let boltLabel = normalizedBase
-      ? normalizedBase.charAt(0).toUpperCase() + normalizedBase.slice(1)
-      : 'Bolt';
-    if (!/bolt\b/i.test(boltLabel)) {
-      boltLabel = `${boltLabel} bolt`;
-    }
-    boltLabel = boltLabel.trim();
-    return {
-      type: 'boltSvg',
-      headSrc: `images/${folder}/${filename}/head.svg`,
-      sideSrc: `images/${folder}/${filename}/side.svg`,
-      headAlt: `${boltLabel} — head view`,
-      sideAlt: `${boltLabel} — side view`
-    };
   }
   const src = `images/${folder}/${filename}.png`;
   const altBase = altPieces.length > 0 ? altPieces.join(' — ') : '';
@@ -369,139 +376,6 @@ function getHardwareImageInfo() {
     alt: altBase ? `${altBase} reference illustration` : 'Hardware reference illustration'
   };
 }
-
-function getHardwareIcon(iconHeight) {
-  const normalizedHeight = Number.isFinite(iconHeight) && iconHeight > 0 ? iconHeight : 0;
-  const imgStyle = normalizedHeight > 0 ? ` style="height:${normalizedHeight}px; width:auto;"` : '';
-  function escapeHtmlAttribute(value) {
-    return String(value)
-      .replace(/&/g, '&amp;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-  }
-  function buildImgMarkup(src, alt) {
-    if (!src) {
-      return '';
-    }
-    const safeAlt = escapeHtmlAttribute(alt || 'Hardware illustration');
-    return `<img src="${src}" alt="${safeAlt}" class="hardware-fallback-image" loading="lazy" decoding="async"${imgStyle}>`;
-  }
-  function getConnectorSeriesIconMarkup(height) {
-    const categoryId = state.connectorCategory;
-    if (!categoryId) {
-      return null;
-    }
-    const standardCode = (state.standardCode || '').trim();
-    const normalizedCode = standardCode.toLowerCase();
-    const connectorCategory = findConnectorCategory(categoryId);
-    const categoryLabel = connectorCategory ? connectorCategory.label : '';
-    const iconCandidates = {
-      'pre-insulated-crimp': [
-        {
-          patterns: [/ring terminal/],
-          file: 'ring_terminal.svg',
-          altLabel: 'ring terminal'
-        },
-        {
-          patterns: [/fork terminal/, /spade/],
-          file: 'fork_terminal.svg',
-          altLabel: 'fork terminal'
-        },
-        {
-          patterns: [/butt splice/],
-          file: 'butt_connector.svg',
-          altLabel: 'butt splice'
-        }
-      ],
-      'bootlace-ferrule': [
-        {
-          patterns: [/bootlace ferrule/],
-          file: 'bootlace_ferrule.svg',
-          altLabel: 'bootlace ferrule'
-        }
-      ]
-    };
-    const candidates = iconCandidates[categoryId];
-    if (!Array.isArray(candidates) || candidates.length === 0) {
-      return null;
-    }
-    const matchedCandidate = candidates.find(candidate => {
-      if (!Array.isArray(candidate.patterns)) {
-        return false;
-      }
-      return candidate.patterns.some(pattern => pattern.test(normalizedCode));
-    }) || (categoryId === 'bootlace-ferrule' && candidates[0]);
-    if (!matchedCandidate) {
-      return null;
-    }
-    const altPieces = [];
-    if (standardCode) {
-      altPieces.push(standardCode);
-    } else if (matchedCandidate.altLabel) {
-      altPieces.push(matchedCandidate.altLabel);
-    }
-    if (categoryLabel && (!standardCode || categoryLabel.toLowerCase().indexOf(standardCode.toLowerCase()) === -1)) {
-      altPieces.push(categoryLabel);
-    }
-    const altTextBase = altPieces.length > 0 ? altPieces.join(' — ') : 'Connector';
-    const altText = `${altTextBase} illustration`;
-    const styleAttr = Number.isFinite(height) && height > 0 ? ` style="height:${height}px; width:auto;"` : '';
-    return `<img src="images/connectors/${matchedCandidate.file}" alt="${escapeHtmlAttribute(altText)}" class="hardware-fallback-image" loading="lazy" decoding="async"${styleAttr}>`;
-  }
-  const type = state.hardwareType;
-  if (type === 'Connector') {
-    const matchedMarkup = getConnectorSeriesIconMarkup(normalizedHeight);
-    if (matchedMarkup) {
-      return { markup: matchedMarkup, count: 1 };
-    }
-    return null;
-  }
-  const fallbackIcons = [];
-  if (type === 'Bolt') {
-    const folder = hardwareImageFolders[type];
-    if (folder) {
-      fallbackIcons.push(
-        {
-          src: `images/${folder}/socket_head/side.svg`,
-          alt: 'Bolt side profile illustration'
-        },
-        {
-          src: `images/${folder}/socket_head/head.svg`,
-          alt: 'Bolt head view illustration'
-        }
-      );
-    }
-  } else if (type === 'Screw') {
-    fallbackIcons.push(
-      {
-        src: 'images/bolts/button_head/side.svg',
-        alt: 'Screw side profile illustration'
-      },
-      {
-        src: 'images/bolts/button_head/head.svg',
-        alt: 'Screw head view illustration'
-      }
-    );
-  } else if (type === 'Nut') {
-    fallbackIcons.push(
-      { src: 'images/nuts/hex_nut.svg', alt: 'Hex nut illustration' },
-      { src: 'images/nuts/square_nut.svg', alt: 'Square nut illustration' }
-    );
-  } else if (type === 'Washer') {
-    fallbackIcons.push({ src: 'images/washers/M5.svg', alt: 'Flat washer illustration' });
-  }
-  if (fallbackIcons.length > 0) {
-    return {
-      markup: fallbackIcons.map(icon => buildImgMarkup(icon.src, icon.alt)).join(''),
-      count: fallbackIcons.length
-    };
-  }
-  return null;
-}
-
-
 
 function applyTextFitting(primaryFontSize, secondaryFontSize) {
   if (!textBlockDiv || !line1Div) {
@@ -777,39 +651,6 @@ export function updatePreview() {
       }
     } else {
       const renderFallbackIcon = () => {
-        const iconGapPx = 8;
-        const initialFallback = getHardwareIcon(innerHeightPx);
-        const iconCount = initialFallback && Number.isFinite(initialFallback.count)
-          ? Math.max(0, initialFallback.count)
-          : 0;
-        if (iconCount > 0) {
-          let iconHeightPx = innerHeightPx;
-          const maxStripWidth = innerWidthPx;
-          const naturalStripWidth = iconCount * iconHeightPx + (iconCount - 1) * iconGapPx;
-          if (naturalStripWidth > maxStripWidth) {
-            const availablePerIcon = Math.floor((maxStripWidth - (iconCount - 1) * iconGapPx) / iconCount);
-            iconHeightPx = Math.max(0, Math.min(iconHeightPx, availablePerIcon));
-          }
-          const finalFallback = iconHeightPx === innerHeightPx
-            ? initialFallback
-            : getHardwareIcon(iconHeightPx);
-          const finalCount = finalFallback && Number.isFinite(finalFallback.count)
-            ? Math.max(0, finalFallback.count)
-            : iconCount;
-          const markup = finalFallback ? finalFallback.markup : '';
-          if (finalCount > 0 && markup) {
-            const finalStripWidth = Math.max(0, finalCount * iconHeightPx + (finalCount - 1) * iconGapPx);
-            hardwareImageDiv.style.display = 'flex';
-            hardwareImageDiv.style.maxWidth = finalStripWidth + 'px';
-            hardwareImageDiv.style.flexBasis = finalStripWidth + 'px';
-            hardwareImageDiv.style.flexShrink = '0';
-            hardwareImageDiv.style.removeProperty('min-height');
-            hardwareImageDiv.innerHTML = markup;
-            hardwareWidthPx = finalStripWidth;
-            hardwareVisible = true;
-            return;
-          }
-        }
         hardwareImageDiv.style.display = 'none';
         hardwareImageDiv.innerHTML = '';
         hardwareImageDiv.style.removeProperty('max-width');
@@ -860,9 +701,9 @@ export function updatePreview() {
                 className: 'hardware-photo bolt-head-view'
               },
               {
-                src: photoInfo.sideSrc,
-                alt: photoInfo.sideAlt,
-                className: 'hardware-photo bolt-side-view'
+                src: photoInfo.driveSrc,
+                alt: photoInfo.driveAlt,
+                className: 'hardware-photo bolt-drive-view'
               }
             ];
             let maxWidthPerImage = Math.floor(maxWidthForPhoto / boltImages.length);

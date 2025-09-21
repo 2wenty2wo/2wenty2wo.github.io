@@ -25,8 +25,120 @@ export const bearingOptions = [
 
 export const hardwareCatalog = {
   Bolt: [
-    { code: 'Socket Head', name: 'Socket Head Cap Screw' },
-    { code: 'Button Head', name: 'Button Head Cap Screw' }
+    {
+      code: 'Button Head + Hex Socket',
+      name: 'Button head cap screw with internal hex drive',
+      headImage: 'button_head',
+      driveImage: 'hex'
+    },
+    {
+      code: 'Socket Cap + Hex Socket',
+      name: 'Socket cap screw with internal hex drive',
+      headImage: 'cap_head',
+      driveImage: 'hex'
+    },
+    {
+      code: 'Capstan Head + Slotted',
+      name: 'Capstan head screw with slotted drive',
+      headImage: 'capstan_head',
+      driveImage: 'flat'
+    },
+    {
+      code: 'Captive Shaft + Slotted',
+      name: 'Captive shaft screw with slotted drive',
+      headImage: 'captive_shaft',
+      driveImage: 'flat'
+    },
+    {
+      code: 'Carriage Bolt + Square Neck',
+      name: 'Carriage bolt with square neck profile',
+      headImage: 'carriage_head',
+      driveImage: 'square'
+    },
+    {
+      code: 'Cheese Head + Slotted',
+      name: 'Cheese head screw with slotted drive',
+      headImage: 'cheese_head',
+      driveImage: 'flat'
+    },
+    {
+      code: 'Countersunk + Phillips',
+      name: 'Countersunk screw with Phillips drive',
+      headImage: 'countersunk_head',
+      driveImage: 'philips'
+    },
+    {
+      code: 'Eye Bolt + Square Drive',
+      name: 'Eye bolt with square drive detail',
+      headImage: 'eye_hook_head',
+      driveImage: 'square'
+    },
+    {
+      code: 'Fillister Head + Slotted',
+      name: 'Fillister head screw with slotted drive',
+      headImage: 'fillister_head',
+      driveImage: 'flat'
+    },
+    {
+      code: 'Flanged Hex + External Hex',
+      name: 'Flanged hex bolt with external hex drive',
+      headImage: 'flanged_head',
+      driveImage: 'hex_bolt'
+    },
+    {
+      code: 'Set Screw + Hex Socket',
+      name: 'Set screw with internal hex drive',
+      headImage: 'grub_headless',
+      driveImage: 'hex'
+    },
+    {
+      code: 'Hand Grip + Hex Socket',
+      name: 'Hand grip screw with internal hex drive',
+      headImage: 'hand_grip_head',
+      driveImage: 'hex'
+    },
+    {
+      code: 'Hex Bolt + External Hex',
+      name: 'Hex bolt with external hex drive',
+      headImage: 'hexagon_head',
+      driveImage: 'hex_bolt'
+    },
+    {
+      code: 'Mushroom Truss + Torx',
+      name: 'Mushroom truss screw with Torx drive',
+      headImage: 'mushroom_truss_head',
+      driveImage: 'torx'
+    },
+    {
+      code: 'Pan Head + Phillips',
+      name: 'Pan head screw with Phillips drive',
+      headImage: 'pan_head',
+      driveImage: 'philips'
+    },
+    {
+      code: 'Raised Countersunk + Phillips',
+      name: 'Raised countersunk screw with Phillips drive',
+      headImage: 'raised_countersunk_head',
+      driveImage: 'philips'
+    },
+    {
+      code: 'Security Button + Security Torx',
+      name: 'Security button screw with tamper-resistant Torx drive',
+      headImage: 'security_head',
+      driveImage: 'security_torx'
+    },
+    {
+      code: 'Security Button + Security Hex',
+      name: 'Security button screw with tamper-resistant hex drive',
+      headImage: 'security_head',
+      driveImage: 'security_hex'
+    },
+    {
+      code: 'Shoulder Bolt + Hex Socket',
+      name: 'Shoulder bolt with internal hex drive',
+      headImage: 'shoulder_head',
+      driveImage: 'hex'
+    }
   ],
   Screw: [
     { code: 'DIN 571', name: 'Coach Screw (Wood Screw)' },
