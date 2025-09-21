@@ -173,7 +173,7 @@ function formatRequirementSummary(requirements) {
 function applyValidationFeedback(disabled) {
   const requirements = [];
   const hardwareType = state.hardwareType;
-  const screwLabel = (state.screwType || 'screw').toLowerCase();
+  const hardwareLabel = typeof hardwareType === 'string' ? hardwareType.toLowerCase() : '';
 
   const needsThreadSize = !['Fuse', 'Connector', 'Custom', 'Bearing', 'Component'].includes(hardwareType);
   const threadValid = !needsThreadSize || Boolean(state.threadSize);
@@ -187,7 +187,7 @@ function applyValidationFeedback(disabled) {
     requirements.push('select a thread size');
   }
 
-  const needsLength = hardwareType === 'Screw';
+  const needsLength = hardwareType === 'Bolt' || hardwareType === 'Screw';
   const lengthValue = Number.parseFloat(state.length);
   const lengthValid = !needsLength || (Number.isFinite(lengthValue) && lengthValue > 0);
   updateInputFieldState({
@@ -197,7 +197,8 @@ function applyValidationFeedback(disabled) {
     valid: lengthValid
   });
   if (!lengthValid) {
-    requirements.push(`enter the ${screwLabel} length`);
+    const lengthDescription = hardwareLabel ? `${hardwareLabel} length` : 'length';
+    requirements.push(`enter the ${lengthDescription}`);
   }
 
   const needsFuseValue = hardwareType === 'Fuse';
@@ -301,10 +302,7 @@ function normalizeStandardCode(code) {
 }
 
 function getHardwareImageInfo() {
-  let catalogKey = state.hardwareType;
-  if (state.hardwareType === 'Screw') {
-    catalogKey = state.screwType;
-  }
+  const catalogKey = state.hardwareType;
   if (!catalogKey) {
     return null;
   }
@@ -328,7 +326,7 @@ function getHardwareImageInfo() {
   if (standardName && standardName.toLowerCase() !== code.toLowerCase()) {
     altPieces.push(standardName);
   }
-  if (state.screwType === 'Bolt') {
+  if (state.hardwareType === 'Bolt') {
     const baseSource = code || standardName || 'Bolt';
     const normalizedBase = baseSource.toLowerCase().trim().replace(/\s+/g, ' ');
     let boltLabel = normalizedBase
@@ -444,18 +442,29 @@ function getHardwareIcon(iconHeight) {
     return null;
   }
   const fallbackIcons = [];
-  if (type === 'Screw') {
-    const isBolt = state.screwType === 'Bolt';
-    const variantFolder = isBolt ? 'socket_head' : 'button_head';
-    const label = isBolt ? 'Bolt' : 'Screw';
+  if (type === 'Bolt') {
+    const folder = hardwareImageFolders[type];
+    if (folder) {
+      fallbackIcons.push(
+        {
+          src: `images/${folder}/socket_head/side.svg`,
+          alt: 'Bolt side profile illustration'
+        },
+        {
+          src: `images/${folder}/socket_head/head.svg`,
+          alt: 'Bolt head view illustration'
+        }
+      );
+    }
+  } else if (type === 'Screw') {
     fallbackIcons.push(
       {
-        src: `images/bolts/${variantFolder}/side.svg`,
-        alt: `${label} side profile illustration`
+        src: 'images/bolts/button_head/side.svg',
+        alt: 'Screw side profile illustration'
       },
       {
-        src: `images/bolts/${variantFolder}/head.svg`,
-        alt: `${label} head view illustration`
+        src: 'images/bolts/button_head/head.svg',
+        alt: 'Screw head view illustration'
       }
     );
   } else if (type === 'Nut') {
@@ -567,7 +576,7 @@ export function isLabelReady() {
   if (state.hardwareType === 'Component') {
     return Boolean(state.componentCategory && state.componentMount);
   }
-  if (state.hardwareType === 'Screw') {
+  if (state.hardwareType === 'Bolt' || state.hardwareType === 'Screw') {
     return Boolean(state.threadSize && state.length);
   }
   return Boolean(state.threadSize);

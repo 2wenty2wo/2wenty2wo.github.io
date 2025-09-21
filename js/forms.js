@@ -13,7 +13,6 @@ import { updatePreview, updateDownloadState } from './render.js';
 import { populateThreadSizes } from './threadSizes.js';
 
 const {
-  screwTypeContainer,
   threadSizeContainer,
   threadLengthRow,
   lengthContainer,
@@ -295,10 +294,7 @@ export function populateStandards() {
   let placeholderText = STANDARD_PLACEHOLDER_TEXT;
   let noOptionsText = 'No standards available';
   let titleText = 'Type to filter standards (Esc clears filter)';
-  if (state.hardwareType === 'Screw') {
-    const subset = hardwareCatalog[state.screwType];
-    standards = Array.isArray(subset) ? subset : [];
-  } else if (state.hardwareType === 'Connector') {
+  if (state.hardwareType === 'Connector') {
     const category = findConnectorCategory(state.connectorCategory);
     standards = category && Array.isArray(category.series) ? category.series : [];
     placeholderText = CONNECTOR_PLACEHOLDER_TEXT;
@@ -490,18 +486,15 @@ function syncHardwareTypeControls(nextType) {
 export function onHardwareTypeChange() {
   const type = state.hardwareType;
   syncHardwareTypeControls(type);
-  const showScrewFields = type === 'Screw';
+  const requiresThreadDetails = type === 'Bolt' || type === 'Screw';
   const showFuseFields = type === 'Fuse';
   const showConnectorFields = type === 'Connector';
   const showComponentFields = type === 'Component';
   const showCustomFields = type === 'Custom';
   const showBearingFields = type === 'Bearing';
 
-  if (screwTypeContainer) {
-    screwTypeContainer.style.display = showScrewFields ? '' : 'none';
-  }
   if (lengthContainer) {
-    lengthContainer.style.display = showScrewFields ? '' : 'none';
+    lengthContainer.style.display = requiresThreadDetails ? '' : 'none';
   }
 
   if (bearingOptionsContainer) {
@@ -581,7 +574,7 @@ export function onHardwareTypeChange() {
       showFuseFields || showConnectorFields || showCustomFields || showBearingFields || showComponentFields;
     threadLengthRow.classList.toggle(
       'single-column',
-      !showScrewFields &&
+      !requiresThreadDetails &&
         !showFuseFields &&
         !showConnectorFields &&
         !showCustomFields &&

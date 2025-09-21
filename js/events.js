@@ -22,7 +22,6 @@ const {
   componentMountRadios,
   bearingTypeSelect,
   systemTypeRadios,
-  screwTypeRadios,
   fuseTypeRadios,
   threadSizeSelect,
   fuseValueSelect,
@@ -111,15 +110,6 @@ export function initEventHandlers() {
       if (radio.checked) {
         state.systemType = radio.value;
         populateThreadSizes();
-      }
-    });
-  });
-
-  screwTypeRadios.forEach(radio => {
-    radio.addEventListener('change', () => {
-      if (radio.checked) {
-        state.screwType = radio.value;
-        populateStandards();
       }
     });
   });

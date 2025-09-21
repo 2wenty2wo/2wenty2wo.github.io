@@ -15,7 +15,6 @@ import { hydrateStateFromUrl } from './url-state.js';
 function applyStateToControls() {
   const {
     systemTypeRadios,
-    screwTypeRadios,
     fuseTypeRadios,
     fuseValueSelect,
     glassSizeSelect,
@@ -41,11 +40,6 @@ function applyStateToControls() {
   if (Array.isArray(systemTypeRadios)) {
     systemTypeRadios.forEach(radio => {
       radio.checked = radio.value === state.systemType;
-    });
-  }
-  if (Array.isArray(screwTypeRadios)) {
-    screwTypeRadios.forEach(radio => {
-      radio.checked = radio.value === state.screwType;
     });
   }
   if (Array.isArray(fuseTypeRadios)) {

@@ -13,7 +13,6 @@ export const SHARE_QUERY_PARAM = 'label';
 const FIELD_MAP = {
   hardwareType: 'ht',
   systemType: 'ms',
-  screwType: 'st',
   fuseType: 'ft',
   threadSize: 'ts',
   length: 'ln',
@@ -46,9 +45,6 @@ const REVERSE_FIELD_MAP = Object.entries(FIELD_MAP).reduce((acc, [key, code]) =>
 }, {});
 
 const hardwareTypeOptions = elements.hardwareTypeOptions || new Set();
-const screwTypeOptions = new Set(
-  Array.isArray(elements.screwTypeRadios) ? elements.screwTypeRadios.map(radio => radio.value) : []
-);
 const fuseTypeOptions = new Set(
   Array.isArray(elements.fuseTypeRadios) ? elements.fuseTypeRadios.map(radio => radio.value) : []
 );
@@ -260,9 +256,6 @@ function applyExpandedPayload(expanded) {
   if (typeof expanded.systemType === 'string' && systemTypeOptions.has(expanded.systemType)) {
     state.systemType = expanded.systemType;
   }
-  if (typeof expanded.screwType === 'string' && screwTypeOptions.has(expanded.screwType)) {
-    state.screwType = expanded.screwType;
-  }
   if (typeof expanded.fuseType === 'string' && fuseTypeOptions.has(expanded.fuseType)) {
     state.fuseType = expanded.fuseType;
   }
@@ -299,7 +292,7 @@ function applyExpandedPayload(expanded) {
     state.threadSize = sanitizedThread;
   }
 
-  if (state.hardwareType === 'Screw') {
+  if (state.hardwareType === 'Bolt' || state.hardwareType === 'Screw') {
     const sanitizedLength = sanitizeLength(expanded.length);
     if (sanitizedLength !== null) {
       state.length = sanitizedLength;
