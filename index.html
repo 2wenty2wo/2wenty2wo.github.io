@@ -132,19 +132,28 @@
                     class="form-select"
                     aria-labelledby="hardware-type-label"
                   >
-                    <option value="Screw">Screw</option>
-                    <option value="Bolt">Bolt</option>
-                    <option value="Nut">Nut</option>
-                    <option value="Heat Insert">Heat Insert</option>
-                    <option value="Washer">Washer</option>
-                    <option value="Fuse">Fuse</option>
-                    <option value="Connector">Connector</option>
-                    <option value="Component">Component</option>
-                    <option value="Bearing">Bearing</option>
+                    <optgroup label="Hardware">
+                      <option value="Screw">Screw</option>
+                      <option value="Bolt">Bolt</option>
+                      <option value="Nut">Nut</option>
+                      <option value="Heat Insert">Heat Insert</option>
+                      <option value="Washer">Washer</option>
+                    </optgroup>
+                    <optgroup label="Electrical">
+                      <option value="Fuse">Fuse</option>
+                      <option value="Connector">Connector</option>
+                      <option value="Component">Component</option>
+                    </optgroup>
+                    <optgroup label="Mechanical">
+                      <option value="Bearing">Bearing</option>
+                    </optgroup>
                     <option value="Custom">Custom</option>
                   </select>
                 </div>
                 <div class="row g-2 d-none d-sm-flex" id="hardware-type-group">
+                  <div class="col-12">
+                    <div class="fw-semibold text-muted text-uppercase small mb-1">Hardware</div>
+                  </div>
                   <div class="col-12 col-sm-6 col-lg-3">
                     <input
                       type="radio"
@@ -201,6 +210,9 @@
                     />
                     <label class="btn btn-outline-primary w-100" for="hardware-type-washer">Washer</label>
                   </div>
+                  <div class="col-12 mt-3">
+                    <div class="fw-semibold text-muted text-uppercase small mb-1">Electrical</div>
+                  </div>
                   <div class="col-12 col-sm-6 col-lg-3">
                     <input
                       type="radio"
@@ -234,6 +246,9 @@
                     />
                     <label class="btn btn-outline-primary w-100" for="hardware-type-component">Component</label>
                   </div>
+                  <div class="col-12 mt-3">
+                    <div class="fw-semibold text-muted text-uppercase small mb-1">Mechanical</div>
+                  </div>
                   <div class="col-12 col-sm-6 col-lg-3">
                     <input
                       type="radio"
@@ -244,6 +259,9 @@
                       autocomplete="off"
                     />
                     <label class="btn btn-outline-primary w-100" for="hardware-type-bearing">Bearing</label>
+                  </div>
+                  <div class="col-12 mt-3">
+                    <div class="fw-semibold text-muted text-uppercase small mb-1">Custom</div>
                   </div>
                   <div class="col-12 col-sm-6 col-lg-3">
                     <input
