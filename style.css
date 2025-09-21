@@ -246,6 +246,12 @@ main {
   box-shadow: none;
 }
 
+.label-inner.has-hardware-image .hardware-icon:not(:empty) {
+  margin-inline-start: calc(-1 * var(--label-padding-inline-start));
+  margin-left: calc(-1 * var(--label-padding-inline-start));
+  justify-content: flex-start;
+}
+
 .hardware-icon svg {
   width: auto;
 }
@@ -267,23 +273,29 @@ main {
   filter: grayscale(100%);
 }
 
+.label-inner.has-hardware-image .text-block {
+  align-items: center;
+  text-align: center;
+}
+
 .bolt-image-group {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 0.75rem;
   max-height: 100%;
+  width: 100%;
 }
 
 .bolt-image-group img {
   display: block;
   max-height: 100%;
   width: auto;
+  flex: 1 1 0;
 }
 
 .bolt-side-view {
-  transform: rotate(90deg);
-  transform-origin: center;
+  transform: none;
 }
 
 .custom-image-preview {
