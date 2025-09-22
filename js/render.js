@@ -1,6 +1,12 @@
 import { state } from './state.js';
 import { elements } from './dom-elements.js';
-import { pxPerMm, hardwareCatalog, hardwareImageFolders, findConnectorCategory } from './data.js';
+import {
+  pxPerMm,
+  hardwareImageFolders,
+  findConnectorCategory,
+  boltHeadMap,
+  boltDriveMap,
+} from './data.js';
 import { loadHtml2Canvas, loadQrCodeLibrary } from './lazy-loaders.js';
 
 const {
@@ -12,6 +18,7 @@ const {
   textBlockDiv,
   line1Div,
   line2Div,
+  line3Div,
   previewPlaceholder,
   previewStatusText,
   qrCanvas,
@@ -32,6 +39,12 @@ const {
   notesField,
   standardSelect,
   standardField,
+  boltHeadSelect,
+  boltDriveSelect,
+  boltHeadField,
+  boltDriveField,
+  boltHeadMessage,
+  boltDriveMessage,
   bearingTypeSelect,
   bearingOptionsContainer,
   componentCategoryContainer,
@@ -49,7 +62,7 @@ const {
   componentCategoryMessage,
   componentMountMessage,
   customLine1Message,
-  formStatusMessage
+  formStatusMessage,
 } = elements;
 
 // Derived from the hardware label spec: a 37 × 12 mm label yields a 33 × 10 mm
@@ -237,7 +250,13 @@ function deriveTrimmedSvgMarkup(svgText) {
     return null;
   }
   container.removeChild(measuringSvg);
-  if (!bbox || !Number.isFinite(bbox.width) || !Number.isFinite(bbox.height) || bbox.width <= 0 || bbox.height <= 0) {
+  if (
+    !bbox ||
+    !Number.isFinite(bbox.width) ||
+    !Number.isFinite(bbox.height) ||
+    bbox.width <= 0 ||
+    bbox.height <= 0
+  ) {
     return null;
   }
   const marginRatio = 0.02;
@@ -248,7 +267,7 @@ function deriveTrimmedSvgMarkup(svgText) {
   trimmedSvg.removeAttribute('height');
   trimmedSvg.setAttribute(
     'viewBox',
-    `${bbox.x - marginX} ${bbox.y - marginY} ${bbox.width + marginX * 2} ${bbox.height + marginY * 2}`
+    `${bbox.x - marginX} ${bbox.y - marginY} ${bbox.width + marginX * 2} ${bbox.height + marginY * 2}`,
   );
   try {
     return new XMLSerializer().serializeToString(trimmedSvg);
@@ -313,7 +332,11 @@ function applyTrimmedSvgToImage(img, originalSrc) {
     if (img.dataset.trimmedSvgSource === originalSrc) {
       return;
     }
-    if (typeof Blob === 'undefined' || typeof URL === 'undefined' || typeof URL.createObjectURL !== 'function') {
+    if (
+      typeof Blob === 'undefined' ||
+      typeof URL === 'undefined' ||
+      typeof URL.createObjectURL !== 'function'
+    ) {
       return;
     }
     try {
@@ -337,13 +360,15 @@ function applyValidationFeedback(disabled) {
   const hardwareType = state.hardwareType;
   const hardwareLabel = typeof hardwareType === 'string' ? hardwareType.toLowerCase() : '';
 
-  const needsThreadSize = !['Fuse', 'Connector', 'Custom', 'Bearing', 'Component'].includes(hardwareType);
+  const needsThreadSize = !['Fuse', 'Connector', 'Custom', 'Bearing', 'Component'].includes(
+    hardwareType,
+  );
   const threadValid = !needsThreadSize || Boolean(state.threadSize);
   updateInputFieldState({
     input: threadSizeSelect,
     container: threadSizeContainer,
     messageElement: threadSizeMessage,
-    valid: threadValid
+    valid: threadValid,
   });
   if (!threadValid) {
     requirements.push('select a thread size');
@@ -356,26 +381,75 @@ function applyValidationFeedback(disabled) {
     input: lengthInput,
     container: lengthContainer,
     messageElement: lengthMessage,
-    valid: lengthValid
+    valid: lengthValid,
   });
   if (!lengthValid) {
     const lengthDescription = hardwareLabel ? `${hardwareLabel} length` : 'length';
     requirements.push(`enter the ${lengthDescription}`);
   }
 
-  const standardRequired =
-    (hardwareType === 'Bolt' || hardwareType === 'Screw') && Boolean(standardSelect) && Boolean(standardField);
-  const needsStandard =
-    standardRequired && Boolean(hardwareImageFolders[hardwareType]) && !standardSelect.disabled;
-  const standardValid = !needsStandard || Boolean(state.standardCode);
-  updateInputFieldState({
-    input: standardSelect,
-    container: standardField,
-    messageElement: null,
-    valid: standardValid
-  });
-  if (!standardValid) {
-    requirements.push('choose a hardware standard');
+  if (hardwareType === 'Bolt') {
+    const headValid = Boolean(state.boltHead);
+    const driveValid = Boolean(state.boltDrive);
+    updateInputFieldState({
+      input: boltHeadSelect,
+      container: boltHeadField,
+      messageElement: boltHeadMessage,
+      valid: headValid,
+      message: 'Select a head style',
+    });
+    updateInputFieldState({
+      input: boltDriveSelect,
+      container: boltDriveField,
+      messageElement: boltDriveMessage,
+      valid: driveValid,
+      message: 'Select a drive style',
+    });
+    updateInputFieldState({
+      input: null,
+      container: standardField,
+      messageElement: null,
+      valid: headValid && driveValid,
+    });
+    updateInputFieldState({
+      input: standardSelect,
+      container: null,
+      messageElement: null,
+      valid: true,
+    });
+    if (!headValid) {
+      requirements.push('choose a head style');
+    }
+    if (!driveValid) {
+      requirements.push('choose a drive style');
+    }
+  } else {
+    const standardRequired =
+      hardwareType === 'Screw' && Boolean(standardSelect) && Boolean(standardField);
+    const needsStandard =
+      standardRequired && Boolean(hardwareImageFolders[hardwareType]) && !standardSelect.disabled;
+    const standardValid = !needsStandard || Boolean(state.standardCode);
+    updateInputFieldState({
+      input: standardSelect,
+      container: standardField,
+      messageElement: null,
+      valid: standardValid,
+    });
+    updateInputFieldState({
+      input: boltHeadSelect,
+      container: boltHeadField,
+      messageElement: boltHeadMessage,
+      valid: true,
+    });
+    updateInputFieldState({
+      input: boltDriveSelect,
+      container: boltDriveField,
+      messageElement: boltDriveMessage,
+      valid: true,
+    });
+    if (!standardValid) {
+      requirements.push('choose a hardware standard');
+    }
   }
 
   const needsFuseValue = hardwareType === 'Fuse';
@@ -384,7 +458,7 @@ function applyValidationFeedback(disabled) {
     input: fuseValueSelect,
     container: fuseValueContainer,
     messageElement: fuseValueMessage,
-    valid: fuseValid
+    valid: fuseValid,
   });
   if (!fuseValid) {
     requirements.push('choose a fuse value');
@@ -396,7 +470,7 @@ function applyValidationFeedback(disabled) {
     input: connectorCategorySelect,
     container: connectorCategoryContainer,
     messageElement: connectorCategoryMessage,
-    valid: connectorCategoryValid
+    valid: connectorCategoryValid,
   });
   if (!connectorCategoryValid) {
     requirements.push('choose a connector category');
@@ -407,7 +481,7 @@ function applyValidationFeedback(disabled) {
     input: notesInput,
     container: notesField,
     messageElement: connectorNotesMessage,
-    valid: connectorNotesValid
+    valid: connectorNotesValid,
   });
 
   const needsBearingSelection = hardwareType === 'Bearing';
@@ -416,7 +490,7 @@ function applyValidationFeedback(disabled) {
     input: bearingTypeSelect,
     container: bearingOptionsContainer,
     messageElement: bearingTypeMessage,
-    valid: bearingValid
+    valid: bearingValid,
   });
   if (!bearingValid) {
     requirements.push('select a bearing');
@@ -428,7 +502,7 @@ function applyValidationFeedback(disabled) {
     radios: componentCategoryRadios,
     container: componentCategoryContainer,
     messageElement: componentCategoryMessage,
-    valid: componentCategoryValid
+    valid: componentCategoryValid,
   });
   if (!componentCategoryValid) {
     requirements.push('choose a component type');
@@ -439,7 +513,7 @@ function applyValidationFeedback(disabled) {
     radios: componentMountRadios,
     container: componentMountContainer,
     messageElement: componentMountMessage,
-    valid: componentMountValid
+    valid: componentMountValid,
   });
   if (!componentMountValid) {
     requirements.push('choose a mounting style');
@@ -452,7 +526,7 @@ function applyValidationFeedback(disabled) {
     input: customLine1Input,
     container: customLine1Field,
     messageElement: customLine1Message,
-    valid: customTitleValid
+    valid: customTitleValid,
   });
   if (!customTitleValid) {
     requirements.push('add a custom label title');
@@ -460,7 +534,10 @@ function applyValidationFeedback(disabled) {
 
   if (formStatusMessage) {
     if (disabled) {
-      const summary = requirements.length > 0 ? formatRequirementSummary(requirements) : 'complete the required fields';
+      const summary =
+        requirements.length > 0
+          ? formatRequirementSummary(requirements)
+          : 'complete the required fields';
       formStatusMessage.textContent = `To enable Download and Print, ${summary}.`;
       formStatusMessage.classList.remove('d-none');
     } else {
@@ -483,33 +560,40 @@ function getHardwareImageInfo() {
   if (!catalogKey) {
     return null;
   }
-  const code = (state.standardCode || '').trim();
-  const standardName = (state.standard || '').trim();
   if (catalogKey === 'Bolt') {
-    if (!code) {
+    const headId = (state.boltHead || '').trim();
+    const driveId = (state.boltDrive || '').trim();
+    if (!headId || !driveId) {
       return null;
     }
-    const boltEntries = hardwareCatalog.Bolt;
-    const matchedEntry = Array.isArray(boltEntries)
-      ? boltEntries.find(entry => entry && entry.code === code)
-      : null;
-    if (!matchedEntry) {
+    const headEntry = boltHeadMap.get(headId);
+    const driveEntry = boltDriveMap.get(driveId);
+    if (!headEntry || !driveEntry) {
       return null;
     }
-    const headImage = (matchedEntry.headImage || '').trim();
-    const driveImage = (matchedEntry.driveImage || '').trim();
+    const headImage = (headEntry.image || '').trim();
+    const driveImage = (driveEntry.image || '').trim();
     if (!headImage || !driveImage) {
       return null;
     }
-    const altBase = (standardName || matchedEntry.name || matchedEntry.code || 'Bolt').trim() || 'Bolt';
+    const altPieces = [];
+    if (headEntry.label) {
+      altPieces.push(headEntry.label);
+    }
+    if (driveEntry.label) {
+      altPieces.push(driveEntry.label);
+    }
+    const altBase = altPieces.length > 0 ? altPieces.join(' — ') : 'Bolt';
     return {
       type: 'boltSvg',
       headSrc: `images/bolts/head/${headImage}.svg`,
       driveSrc: `images/bolts/drive/${driveImage}.svg`,
       headAlt: `${altBase} — head view`,
-      driveAlt: `${altBase} — drive view`
+      driveAlt: `${altBase} — drive view`,
     };
   }
+  const code = (state.standardCode || '').trim();
+  const standardName = (state.standard || '').trim();
   const folder = hardwareImageFolders[catalogKey];
   if (!folder) {
     return null;
@@ -533,7 +617,7 @@ function getHardwareImageInfo() {
   return {
     type: 'photo',
     src,
-    alt: altBase ? `${altBase} reference illustration` : 'Hardware reference illustration'
+    alt: altBase ? `${altBase} reference illustration` : 'Hardware reference illustration',
   };
 }
 
@@ -546,6 +630,9 @@ function applyTextFitting(primaryFontSize, secondaryFontSize) {
   if (line2Div) {
     line2Div.style.fontSize = secondaryFontSize + 'px';
   }
+  if (line3Div) {
+    line3Div.style.fontSize = secondaryFontSize + 'px';
+  }
 
   const availableWidth = textBlockDiv.clientWidth;
   const availableHeight = labelInner ? labelInner.clientHeight : textBlockDiv.clientHeight;
@@ -553,25 +640,31 @@ function applyTextFitting(primaryFontSize, secondaryFontSize) {
     return;
   }
 
-  const hasLine2 = Boolean(
-    line2Div &&
-      line2Div.style.display !== 'none' &&
-      line2Div.textContent &&
-      line2Div.textContent.trim()
-  );
-
-  let line1Size = primaryFontSize;
-  let line2Size = secondaryFontSize;
-
   const absolutePrimaryMin = 4;
   const absoluteSecondaryMin = 3.5;
-  let minLine1 = Math.min(primaryFontSize, 6);
-  minLine1 = Math.max(absolutePrimaryMin, minLine1);
-  let minLine2 = 0;
-  if (hasLine2) {
-    minLine2 = Math.min(secondaryFontSize, 5);
-    minLine2 = Math.max(absoluteSecondaryMin, minLine2);
-  }
+  const lineStates = [];
+
+  lineStates.push({
+    element: line1Div,
+    size: primaryFontSize,
+    minSize: Math.max(absolutePrimaryMin, Math.min(primaryFontSize, 6)),
+  });
+
+  const secondaryLines = [line2Div, line3Div].filter(
+    element =>
+      element &&
+      element.style.display !== 'none' &&
+      element.textContent &&
+      element.textContent.trim(),
+  );
+
+  secondaryLines.forEach(element => {
+    lineStates.push({
+      element,
+      size: secondaryFontSize,
+      minSize: Math.max(absoluteSecondaryMin, Math.min(secondaryFontSize, 5)),
+    });
+  });
 
   const tolerance = 0.5;
   let iterations = 0;
@@ -579,26 +672,22 @@ function applyTextFitting(primaryFontSize, secondaryFontSize) {
   while (iterations < maxIterations) {
     let adjusted = false;
 
-    if (line1Div.scrollWidth - tolerance > availableWidth && line1Size > minLine1) {
-      line1Size = Math.max(minLine1, line1Size - 0.5);
-      line1Div.style.fontSize = line1Size + 'px';
-      adjusted = true;
-    }
-
-    if (hasLine2 && line2Div.scrollWidth - tolerance > availableWidth && line2Size > minLine2) {
-      line2Size = Math.max(minLine2, line2Size - 0.5);
-      line2Div.style.fontSize = line2Size + 'px';
-      adjusted = true;
-    }
+    lineStates.forEach(state => {
+      if (state.element.scrollWidth - tolerance > availableWidth && state.size > state.minSize) {
+        state.size = Math.max(state.minSize, state.size - 0.5);
+        state.element.style.fontSize = state.size + 'px';
+        adjusted = true;
+      }
+    });
 
     if (textBlockDiv.scrollHeight - tolerance > availableHeight) {
-      if (line1Size > minLine1 && (!hasLine2 || line1Size >= line2Size || line2Size <= minLine2)) {
-        line1Size = Math.max(minLine1, line1Size - 0.5);
-        line1Div.style.fontSize = line1Size + 'px';
-        adjusted = true;
-      } else if (hasLine2 && line2Size > minLine2) {
-        line2Size = Math.max(minLine2, line2Size - 0.5);
-        line2Div.style.fontSize = line2Size + 'px';
+      const reducible = lineStates.filter(state => state.size > state.minSize);
+      if (reducible.length > 0) {
+        const largest = reducible.reduce((prev, current) =>
+          current.size > prev.size ? current : prev,
+        );
+        largest.size = Math.max(largest.minSize, largest.size - 0.5);
+        largest.element.style.fontSize = largest.size + 'px';
         adjusted = true;
       }
     }
@@ -627,7 +716,10 @@ export function isLabelReady() {
   if (state.hardwareType === 'Component') {
     return Boolean(state.componentCategory && state.componentMount);
   }
-  if (state.hardwareType === 'Bolt' || state.hardwareType === 'Screw') {
+  if (state.hardwareType === 'Bolt') {
+    return Boolean(state.threadSize && state.length && state.boltHead && state.boltDrive);
+  }
+  if (state.hardwareType === 'Screw') {
     return Boolean(state.threadSize && state.length && state.standardCode);
   }
   return Boolean(state.threadSize);
@@ -723,6 +815,10 @@ export function updatePreview() {
     line1Div.textContent = '';
     line2Div.textContent = '';
     line2Div.style.display = 'none';
+    if (line3Div) {
+      line3Div.textContent = '';
+      line3Div.style.display = 'none';
+    }
     if (qrCanvas) {
       const ctx = qrCanvas.getContext('2d');
       if (ctx) {
@@ -771,7 +867,7 @@ export function updatePreview() {
   }
   const basePaddingX = Math.max(
     mmToPx(horizontalPaddingBaselineMm * paddingScale),
-    mmToPx(minHorizontalPaddingMm)
+    mmToPx(minHorizontalPaddingMm),
   );
   const basePaddingY = Math.max(mmToPx(1.0 * verticalScale), mmToPx(0.8));
   const baseGap = Math.max(mmToPx(0.8 * gapScale), mmToPx(0.6));
@@ -828,7 +924,10 @@ export function updatePreview() {
           const boltPreferredWidth = Math.max(0, Math.min(innerHeightPx * 1.4, innerWidthPx * 0.6));
           maxWidthForPhoto = Math.max(maxWidthForPhoto, boltPreferredWidth);
         } else {
-          const photoPreferredWidth = Math.max(0, Math.min(innerHeightPx * 1.2, innerWidthPx * 0.5));
+          const photoPreferredWidth = Math.max(
+            0,
+            Math.min(innerHeightPx * 1.2, innerWidthPx * 0.5),
+          );
           maxWidthForPhoto = Math.max(maxWidthForPhoto, photoPreferredWidth);
         }
         if (maxWidthForPhoto > 0) {
@@ -859,13 +958,13 @@ export function updatePreview() {
               {
                 src: photoInfo.driveSrc,
                 alt: photoInfo.driveAlt,
-                className: 'hardware-photo bolt-drive-view'
+                className: 'hardware-photo bolt-drive-view',
               },
               {
                 src: photoInfo.headSrc,
                 alt: photoInfo.headAlt,
-                className: 'hardware-photo bolt-head-view'
-              }
+                className: 'hardware-photo bolt-head-view',
+              },
             ];
             let maxWidthPerImage = Math.floor(maxWidthForPhoto / boltImages.length);
             if (!Number.isFinite(maxWidthPerImage) || maxWidthPerImage <= 0) {
@@ -938,9 +1037,15 @@ export function updatePreview() {
     line1Div.textContent = topLine || 'Custom Label';
     line2Div.textContent = bottomLine;
     line2Div.style.display = bottomLine ? 'block' : 'none';
+    if (line3Div) {
+      line3Div.textContent = '';
+      line3Div.style.display = 'none';
+    }
   } else {
     let line1 = '';
     let connectorLine2Parts = null;
+    let line2 = '';
+    let line3 = '';
     if (state.hardwareType === 'Fuse') {
       const fuseParts = [];
       const fuseLabel = state.fuseType ? `${state.fuseType} Fuse` : 'Fuse';
@@ -994,17 +1099,44 @@ export function updatePreview() {
         componentParts.push(state.componentMount);
       }
       line1 = componentParts.join(' — ');
+    } else if (state.hardwareType === 'Bolt') {
+      if (state.threadSize) {
+        line1 = state.threadSize;
+      }
+      if (state.length) {
+        line1 += line1 ? ` × ${state.length}` : state.length;
+      }
+      const headEntry = boltHeadMap.get((state.boltHead || '').trim());
+      const driveEntry = boltDriveMap.get((state.boltDrive || '').trim());
+      const headLabel = headEntry ? headEntry.label : '';
+      const driveLabel = driveEntry ? driveEntry.label : '';
+      const showHead = state.showStandard && headLabel;
+      const showDrive = state.showStandard && driveLabel;
+      if (showHead) {
+        line2 = headLabel;
+      }
+      if (showDrive) {
+        line3 = driveLabel;
+      }
+      if (state.notes) {
+        if (line3) {
+          line3 += ` • ${state.notes}`;
+        } else if (line2) {
+          line3 = state.notes;
+        } else {
+          line2 = state.notes;
+        }
+      }
     } else {
       if (state.threadSize) {
         line1 = state.threadSize;
       }
-      if ((state.hardwareType === 'Screw' || state.hardwareType === 'Bolt') && state.length) {
+      if (state.hardwareType === 'Screw' && state.length) {
         line1 += line1 ? ` × ${state.length}` : state.length;
       }
     }
     const fallbackLabel = state.hardwareType === 'Fuse' ? 'Fuse' : state.hardwareType;
     line1Div.textContent = line1 || fallbackLabel;
-    let line2 = '';
     if (state.hardwareType === 'Fuse') {
       const fuseDetails = [];
       if (state.showStandard && state.standard) {
@@ -1039,7 +1171,7 @@ export function updatePreview() {
       if (state.notes) {
         line2 = state.notes;
       }
-    } else {
+    } else if (state.hardwareType !== 'Bolt') {
       if (state.showStandard && state.standard) {
         line2 = state.standard;
       }
@@ -1049,6 +1181,10 @@ export function updatePreview() {
     }
     line2Div.textContent = line2;
     line2Div.style.display = line2 ? 'block' : 'none';
+    if (line3Div) {
+      line3Div.textContent = line3;
+      line3Div.style.display = line3 ? 'block' : 'none';
+    }
   }
 
   const primaryFontSize = Math.max(8, Math.floor(innerHeightPx * 0.45));
@@ -1088,14 +1224,16 @@ export function updatePreview() {
         if (!state.showQr || !latestContent || !qrCanvas) {
           return;
         }
-        const renderFn = qrCodeLib && typeof qrCodeLib.toCanvas === 'function' ? qrCodeLib.toCanvas : null;
+        const renderFn =
+          qrCodeLib && typeof qrCodeLib.toCanvas === 'function' ? qrCodeLib.toCanvas : null;
         if (!renderFn) {
           throw new Error('QR code library is missing the toCanvas function.');
         }
         try {
           const qrMarginModules = 1;
           let moduleCount = null;
-          const createFn = qrCodeLib && typeof qrCodeLib.create === 'function' ? qrCodeLib.create : null;
+          const createFn =
+            qrCodeLib && typeof qrCodeLib.create === 'function' ? qrCodeLib.create : null;
           if (createFn) {
             try {
               const qrMatrix = createFn.call(qrCodeLib, latestContent);
@@ -1107,7 +1245,8 @@ export function updatePreview() {
             }
           }
 
-          const totalModules = moduleCount && moduleCount > 0 ? moduleCount + qrMarginModules * 2 : null;
+          const totalModules =
+            moduleCount && moduleCount > 0 ? moduleCount + qrMarginModules * 2 : null;
           let modulePixelSize = 0;
           let qrPixelSize = qrEstimatedSizePx;
           if (totalModules && totalModules > 0) {
@@ -1126,8 +1265,8 @@ export function updatePreview() {
             margin: qrMarginModules,
             color: {
               dark: '#000',
-              light: '#00000000'
-            }
+              light: '#00000000',
+            },
           };
 
           if (modulePixelSize > 0 && totalModules && totalModules > 0) {
@@ -1182,12 +1321,13 @@ export function updatePreview() {
       ? Math.max(paddingRightPx, desiredQrEdgeClearancePx)
       : paddingRightPx;
     const qrWidthContribution = qrVisible ? qrEstimatedSizePx : 0;
-    return innerWidthPx - (
-      paddingLeftPx +
-      effectiveRightPadding +
-      gapPx * gapCount +
-      hardwareWidthPx +
-      qrWidthContribution
+    return (
+      innerWidthPx -
+      (paddingLeftPx +
+        effectiveRightPadding +
+        gapPx * gapCount +
+        hardwareWidthPx +
+        qrWidthContribution)
     );
   };
 
@@ -1261,7 +1401,7 @@ export async function renderLabelCanvas() {
     width: containerWidth,
     height: containerHeight,
     scrollX: 0,
-    scrollY: 0
+    scrollY: 0,
   });
 
   const containerRect = previewContainer.getBoundingClientRect();
@@ -1295,7 +1435,7 @@ export async function renderLabelCanvas() {
       0,
       0,
       outputCanvas.width,
-      outputCanvas.height
+      outputCanvas.height,
     );
   }
   return outputCanvas;
@@ -1314,7 +1454,7 @@ export async function renderLabelBlob(type = 'image/png', quality) {
           reject(new Error('Unable to convert canvas to blob.'));
         },
         type,
-        quality
+        quality,
       );
     });
   }

@@ -1,6 +1,10 @@
 const themeToggleButton = document.getElementById('theme-toggle');
-const themeToggleIcon = themeToggleButton ? themeToggleButton.querySelector('.theme-toggle-icon') : null;
-const themeToggleText = themeToggleButton ? themeToggleButton.querySelector('.theme-toggle-text') : null;
+const themeToggleIcon = themeToggleButton
+  ? themeToggleButton.querySelector('.theme-toggle-icon')
+  : null;
+const themeToggleText = themeToggleButton
+  ? themeToggleButton.querySelector('.theme-toggle-text')
+  : null;
 
 const threadSizeContainer = document.getElementById('thread-size-container');
 const threadSizeSelect = document.getElementById('thread-size-select');
@@ -40,11 +44,19 @@ const customLine1Field = document.getElementById('custom-line1-field');
 const customLine1Message = document.getElementById('custom-line1-message');
 const notesField = document.getElementById('notes-field');
 const standardField = document.getElementById('standard-field');
+const standardFieldLabel = document.getElementById('standard-field-label');
+const boltStandardGroup = document.getElementById('bolt-standard-group');
+const boltHeadField = document.getElementById('bolt-head-field');
+const boltDriveField = document.getElementById('bolt-drive-field');
+const boltHeadSelect = document.getElementById('bolt-head-select');
+const boltDriveSelect = document.getElementById('bolt-drive-select');
+const boltHeadMessage = document.getElementById('bolt-head-message');
+const boltDriveMessage = document.getElementById('bolt-drive-message');
 const notesLabel = document.querySelector('label[for="notes-input"]');
 const defaultNotesLabel = notesLabel ? notesLabel.textContent : '';
 const defaultNotesPlaceholder = notesInput ? notesInput.getAttribute('placeholder') || '' : '';
 const standardSelect = document.getElementById('standard-select');
-const standardLabel = document.querySelector('label[for="standard-select"]');
+const standardLabel = standardFieldLabel;
 const defaultStandardLabel = standardLabel ? standardLabel.textContent : '';
 const standardToggle = document.getElementById('standard-toggle');
 const imageToggle = document.getElementById('image-toggle');
@@ -61,6 +73,7 @@ const hardwareImageDiv = document.getElementById('hardware-image');
 const textBlockDiv = document.getElementById('preview-text');
 const line1Div = document.getElementById('line1');
 const line2Div = document.getElementById('line2');
+const line3Div = document.getElementById('line3');
 const qrCanvas = document.getElementById('qr-canvas');
 const qrContentWrapper = document.getElementById('qr-content-wrapper');
 const qrContentInput = document.getElementById('qr-content-input');
@@ -74,16 +87,16 @@ const hardwareTypeOptions = new Set(
   hardwareTypeRadios
     .map(radio => radio.value)
     .concat(
-      hardwareTypeSelect
-        ? Array.from(hardwareTypeSelect.options, option => option.value)
-        : []
+      hardwareTypeSelect ? Array.from(hardwareTypeSelect.options, option => option.value) : [],
     )
-    .filter(Boolean)
+    .filter(Boolean),
 );
 const systemTypeRadios = Array.from(document.querySelectorAll('input[name="system-type"]'));
 const fuseTypeRadios = Array.from(document.querySelectorAll('input[name="fuse-type"]'));
 const heightRadios = Array.from(document.querySelectorAll('input[name="label-height"]'));
-const componentCategoryRadios = Array.from(document.querySelectorAll('input[name="component-category"]'));
+const componentCategoryRadios = Array.from(
+  document.querySelectorAll('input[name="component-category"]'),
+);
 const componentMountRadios = Array.from(document.querySelectorAll('input[name="component-mount"]'));
 const componentCategoryMessage = document.getElementById('component-category-message');
 const componentMountMessage = document.getElementById('component-mount-message');
@@ -131,6 +144,14 @@ export const elements = {
   customLine1Message,
   notesField,
   standardField,
+  standardFieldLabel,
+  boltStandardGroup,
+  boltHeadField,
+  boltDriveField,
+  boltHeadSelect,
+  boltDriveSelect,
+  boltHeadMessage,
+  boltDriveMessage,
   notesLabel,
   defaultNotesLabel,
   defaultNotesPlaceholder,
@@ -152,6 +173,7 @@ export const elements = {
   textBlockDiv,
   line1Div,
   line2Div,
+  line3Div,
   qrCanvas,
   qrContentWrapper,
   qrContentInput,
@@ -168,5 +190,5 @@ export const elements = {
   componentMountRadios,
   componentCategoryMessage,
   componentMountMessage,
-  formStatusMessage
+  formStatusMessage,
 };

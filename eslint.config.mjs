@@ -3,7 +3,7 @@ import globals from 'globals';
 
 export default [
   {
-    ignores: ['node_modules/', 'images/']
+    ignores: ['node_modules/', 'images/'],
   },
   {
     ...js.configs.recommended,
@@ -14,8 +14,8 @@ export default [
       sourceType: 'module',
       globals: {
         ...globals.browser,
-        ...globals.es2021
-      }
-    }
-  }
+        ...globals.es2021,
+      },
+    },
+  },
 ];

@@ -6,7 +6,7 @@ import {
   populateConnectorCategories,
   populateBearingOptions,
   updateCustomImageUi,
-  onHardwareTypeChange
+  onHardwareTypeChange,
 } from './forms.js';
 import { updateDownloadState, updateQrContentVisibility, updatePreview } from './render.js';
 import { initEventHandlers } from './events.js';
@@ -25,6 +25,8 @@ function applyStateToControls() {
     customLine1Input,
     customLine2Input,
     standardSelect,
+    boltHeadSelect,
+    boltDriveSelect,
     standardToggle,
     imageToggle,
     qrcodeToggle,
@@ -34,7 +36,7 @@ function applyStateToControls() {
     heightRadios,
     connectorCategorySelect,
     threadSizeSelect,
-    bearingTypeSelect
+    bearingTypeSelect,
   } = elements;
 
   if (Array.isArray(systemTypeRadios)) {
@@ -85,6 +87,12 @@ function applyStateToControls() {
   }
   if (standardSelect) {
     standardSelect.value = state.standardCode || '';
+  }
+  if (boltHeadSelect) {
+    boltHeadSelect.value = state.boltHead || '';
+  }
+  if (boltDriveSelect) {
+    boltDriveSelect.value = state.boltDrive || '';
   }
   if (standardToggle) {
     standardToggle.checked = state.showStandard;

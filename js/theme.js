@@ -5,9 +5,10 @@ const themeColorMeta = document.getElementById('theme-color-meta');
 const statusBarStyleMeta = document.getElementById('apple-mobile-web-app-status-bar-style');
 const themeColorByMode = { light: '#f8fafc', dark: '#0f172a' };
 const statusBarStyleByMode = { light: 'default', dark: 'black-translucent' };
-const prefersDarkScheme = typeof window.matchMedia === 'function'
-  ? window.matchMedia('(prefers-color-scheme: dark)')
-  : { matches: false };
+const prefersDarkScheme =
+  typeof window.matchMedia === 'function'
+    ? window.matchMedia('(prefers-color-scheme: dark)')
+    : { matches: false };
 
 function isValidTheme(value) {
   return value === 'light' || value === 'dark';
@@ -91,7 +92,8 @@ export function initTheme() {
   applyTheme(getPreferredTheme());
   if (themeToggleButton) {
     themeToggleButton.addEventListener('click', () => {
-      const currentTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+      const currentTheme =
+        document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
       const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
       applyTheme(nextTheme);
       setStoredTheme(nextTheme);

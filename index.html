@@ -1,608 +1,763 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" data-bs-theme="light" data-theme="light">
-<head>
-  <meta charset="UTF-8">
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-  />
-  <title>Gridfinity Label Maker</title>
-  <meta name="color-scheme" content="light dark" />
-  <meta name="supported-color-schemes" content="light dark" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="Gridfinity Label Maker" />
-  <meta
-    name="apple-mobile-web-app-status-bar-style"
-    content="default"
-    id="apple-mobile-web-app-status-bar-style"
-  />
-  <meta name="theme-color" content="#f8fafc" id="theme-color-meta" />
-  <meta name="description" content="Gridfinity Label Maker – design and print perfectly sized labels for Gridfinity storage bins.">
-  <link rel="manifest" href="manifest.json" />
-  <!--
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Gridfinity Label Maker</title>
+    <meta name="color-scheme" content="light dark" />
+    <meta name="supported-color-schemes" content="light dark" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Gridfinity Label Maker" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="default"
+      id="apple-mobile-web-app-status-bar-style"
+    />
+    <meta name="theme-color" content="#f8fafc" id="theme-color-meta" />
+    <meta
+      name="description"
+      content="Gridfinity Label Maker – design and print perfectly sized labels for Gridfinity storage bins."
+    />
+    <link rel="manifest" href="manifest.json" />
+    <!--
     Standalone tool for generating and printing Gridfinity labels.  Styling
     now layers a lightweight Bootstrap 5 theme for modern form controls and
     layout utilities.  Two small third-party libraries are loaded on demand
     via CDN: html2canvas to capture the label preview as an image and qrcode
     to generate optional QR codes.
   -->
-  <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
-    crossorigin="anonymous"
-  />
-  <link rel="icon" type="image/x-icon" href="images/icons/favicon.ico" />
-  <link rel="apple-touch-icon" href="images/icons/apple-touch-icon.png" />
-  <link rel="apple-touch-icon" sizes="57x57" href="images/icons/apple-touch-icon-57x57.png" />
-  <link rel="apple-touch-icon" sizes="72x72" href="images/icons/apple-touch-icon-72x72.png" />
-  <link rel="apple-touch-icon" sizes="76x76" href="images/icons/apple-touch-icon-76x76.png" />
-  <link rel="apple-touch-icon" sizes="114x114" href="images/icons/apple-touch-icon-114x114.png" />
-  <link rel="apple-touch-icon" sizes="120x120" href="images/icons/apple-touch-icon-120x120.png" />
-  <link rel="apple-touch-icon" sizes="144x144" href="images/icons/apple-touch-icon-144x144.png" />
-  <link rel="apple-touch-icon" sizes="152x152" href="images/icons/apple-touch-icon-152x152.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="images/icons/apple-touch-icon-180x180.png" />
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
-    integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
-    crossorigin="anonymous"
-    referrerpolicy="no-referrer"
-  />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Tagesschrift&display=swap"
-    rel="stylesheet"
-  />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&display=swap"
-    rel="stylesheet"
-  />
-  <script>
-    (function() {
-      const storageKey = 'gridfinity-theme-preference';
-      const themeColors = { light: '#f8fafc', dark: '#0f172a' };
-      const statusBarStyles = { light: 'default', dark: 'black-translucent' };
-      let theme = 'light';
-      try {
-        const storedTheme = localStorage.getItem(storageKey);
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
-        if (storedTheme === 'light' || storedTheme === 'dark') {
-          theme = storedTheme;
-        } else if (prefersDark.matches) {
-          theme = 'dark';
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous"
+    />
+    <link rel="icon" type="image/x-icon" href="images/icons/favicon.ico" />
+    <link rel="apple-touch-icon" href="images/icons/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="57x57" href="images/icons/apple-touch-icon-57x57.png" />
+    <link rel="apple-touch-icon" sizes="72x72" href="images/icons/apple-touch-icon-72x72.png" />
+    <link rel="apple-touch-icon" sizes="76x76" href="images/icons/apple-touch-icon-76x76.png" />
+    <link rel="apple-touch-icon" sizes="114x114" href="images/icons/apple-touch-icon-114x114.png" />
+    <link rel="apple-touch-icon" sizes="120x120" href="images/icons/apple-touch-icon-120x120.png" />
+    <link rel="apple-touch-icon" sizes="144x144" href="images/icons/apple-touch-icon-144x144.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="images/icons/apple-touch-icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="images/icons/apple-touch-icon-180x180.png" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+      integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Tagesschrift&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      (function () {
+        const storageKey = 'gridfinity-theme-preference';
+        const themeColors = { light: '#f8fafc', dark: '#0f172a' };
+        const statusBarStyles = { light: 'default', dark: 'black-translucent' };
+        let theme = 'light';
+        try {
+          const storedTheme = localStorage.getItem(storageKey);
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+          if (storedTheme === 'light' || storedTheme === 'dark') {
+            theme = storedTheme;
+          } else if (prefersDark.matches) {
+            theme = 'dark';
+          }
+        } catch (error) {
+          theme = 'light';
         }
-      } catch (error) {
-        theme = 'light';
-      }
-      document.documentElement.setAttribute('data-theme', theme);
-      document.documentElement.setAttribute('data-bs-theme', theme);
-      const themeColorMeta = document.getElementById('theme-color-meta');
-      if (themeColorMeta) {
-        themeColorMeta.setAttribute('content', themeColors[theme] || themeColors.light);
-      }
-      const statusBarMeta = document.getElementById('apple-mobile-web-app-status-bar-style');
-      if (statusBarMeta) {
-        statusBarMeta.setAttribute('content', statusBarStyles[theme] || statusBarStyles.light);
-      }
-    })();
-  </script>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="style-print.css" media="print" />
-  <link rel="stylesheet" href="print.css" />
-  <script type="module" defer src="js/controls.js"></script>
-</head>
-<body>
-  <main class="container py-4">
-    <div class="theme-toggle-wrapper mb-3">
-      <button
-        type="button"
-        class="theme-toggle-button"
-        id="theme-toggle"
-        aria-pressed="false"
-        aria-label="Switch to dark mode"
-        title="Switch to dark mode"
-      >
-        <i class="fa-solid fa-moon theme-toggle-icon" aria-hidden="true"></i>
-        <span class="theme-toggle-text">Dark mode</span>
-      </button>
-    </div>
-    <header class="title-section text-center mb-4">
-      <h1 class="display-5 fw-semibold">Gridfinity Label Maker</h1>
-      <p class="text-muted mb-0">Design and print perfectly sized storage labels.</p>
-    </header>
-    <div class="row g-4">
-      <section class="form-section col-lg-7">
-        <div class="card shadow-sm h-100">
-          <div class="card-body">
-            <h2 class="h5 mb-3 section-heading">Hardware Details</h2>
-            <div class="vstack gap-3">
-              <div>
-                <label
-                  class="form-label fw-semibold"
-                  for="hardware-type-select"
-                  id="hardware-type-label"
-                >
-                  Hardware Type
-                </label>
+        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.setAttribute('data-bs-theme', theme);
+        const themeColorMeta = document.getElementById('theme-color-meta');
+        if (themeColorMeta) {
+          themeColorMeta.setAttribute('content', themeColors[theme] || themeColors.light);
+        }
+        const statusBarMeta = document.getElementById('apple-mobile-web-app-status-bar-style');
+        if (statusBarMeta) {
+          statusBarMeta.setAttribute('content', statusBarStyles[theme] || statusBarStyles.light);
+        }
+      })();
+    </script>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="style-print.css" media="print" />
+    <link rel="stylesheet" href="print.css" />
+    <script type="module" defer src="js/controls.js"></script>
+  </head>
+  <body>
+    <main class="container py-4">
+      <div class="theme-toggle-wrapper mb-3">
+        <button
+          type="button"
+          class="theme-toggle-button"
+          id="theme-toggle"
+          aria-pressed="false"
+          aria-label="Switch to dark mode"
+          title="Switch to dark mode"
+        >
+          <i class="fa-solid fa-moon theme-toggle-icon" aria-hidden="true"></i>
+          <span class="theme-toggle-text">Dark mode</span>
+        </button>
+      </div>
+      <header class="title-section text-center mb-4">
+        <h1 class="display-5 fw-semibold">Gridfinity Label Maker</h1>
+        <p class="text-muted mb-0">Design and print perfectly sized storage labels.</p>
+      </header>
+      <div class="row g-4">
+        <section class="form-section col-lg-7">
+          <div class="card shadow-sm h-100">
+            <div class="card-body">
+              <h2 class="h5 mb-3 section-heading">Hardware Details</h2>
+              <div class="vstack gap-3">
                 <div>
-                  <select
-                    id="hardware-type-select"
-                    class="form-select"
-                    aria-labelledby="hardware-type-label"
+                  <label
+                    class="form-label fw-semibold"
+                    for="hardware-type-select"
+                    id="hardware-type-label"
                   >
-                    <optgroup label="Hardware">
-                      <option value="Bolt" selected>Bolt</option>
-                      <option value="Heat Insert">Heat Insert</option>
-                      <option value="Nut">Nut</option>
-                      <option value="Screw">Screw</option>
-                      <option value="Washer">Washer</option>
-                    </optgroup>
-                    <optgroup label="Electrical">
-                      <option value="Fuse">Fuse</option>
-                      <option value="Connector">Connector</option>
-                      <option value="Component">Component</option>
-                    </optgroup>
-                    <optgroup label="Mechanical">
-                      <option value="Bearing">Bearing</option>
-                    </optgroup>
-                    <option value="Custom">Custom</option>
-                  </select>
+                    Hardware Type
+                  </label>
+                  <div>
+                    <select
+                      id="hardware-type-select"
+                      class="form-select"
+                      aria-labelledby="hardware-type-label"
+                    >
+                      <optgroup label="Hardware">
+                        <option value="Bolt" selected>Bolt</option>
+                        <option value="Heat Insert">Heat Insert</option>
+                        <option value="Nut">Nut</option>
+                        <option value="Screw">Screw</option>
+                        <option value="Washer">Washer</option>
+                      </optgroup>
+                      <optgroup label="Electrical">
+                        <option value="Fuse">Fuse</option>
+                        <option value="Connector">Connector</option>
+                        <option value="Component">Component</option>
+                      </optgroup>
+                      <optgroup label="Mechanical">
+                        <option value="Bearing">Bearing</option>
+                      </optgroup>
+                      <option value="Custom">Custom</option>
+                    </select>
+                  </div>
                 </div>
-              </div>
-              <div id="custom-fields" class="d-none">
-                <label for="custom-image-input" class="form-label d-block fw-semibold">Custom Image</label>
-                <input type="file" class="form-control" id="custom-image-input" accept="image/*" />
-                <div class="form-text">Square images work best. PNG, JPG and SVG files are supported.</div>
-                <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
-                  <button type="button" class="btn btn-outline-secondary btn-sm" id="custom-image-clear" disabled>
-                    Remove image
-                  </button>
-                  <span id="custom-image-name" class="text-muted small d-none"></span>
-                </div>
-                <div class="mt-3" id="custom-line1-field">
-                  <label for="custom-line1-input" class="form-label fw-semibold">Top Line</label>
+                <div id="custom-fields" class="d-none">
+                  <label for="custom-image-input" class="form-label d-block fw-semibold"
+                    >Custom Image</label
+                  >
                   <input
-                    type="text"
+                    type="file"
                     class="form-control"
-                    id="custom-line1-input"
-                    placeholder="e.g., 5 mm Drill Bits"
-                    maxlength="60"
-                    aria-describedby="custom-line1-hint custom-line1-message"
+                    id="custom-image-input"
+                    accept="image/*"
                   />
-                  <div class="form-text" id="custom-line1-hint">Shown as the large title on the label.</div>
+                  <div class="form-text">
+                    Square images work best. PNG, JPG and SVG files are supported.
+                  </div>
+                  <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+                    <button
+                      type="button"
+                      class="btn btn-outline-secondary btn-sm"
+                      id="custom-image-clear"
+                      disabled
+                    >
+                      Remove image
+                    </button>
+                    <span id="custom-image-name" class="text-muted small d-none"></span>
+                  </div>
+                  <div class="mt-3" id="custom-line1-field">
+                    <label for="custom-line1-input" class="form-label fw-semibold">Top Line</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="custom-line1-input"
+                      placeholder="e.g., 5 mm Drill Bits"
+                      maxlength="60"
+                      aria-describedby="custom-line1-hint custom-line1-message"
+                    />
+                    <div class="form-text" id="custom-line1-hint">
+                      Shown as the large title on the label.
+                    </div>
+                    <div
+                      id="custom-line1-message"
+                      class="validation-message text-danger small mt-2 d-none"
+                    ></div>
+                  </div>
+                  <div>
+                    <label for="custom-line2-input" class="form-label fw-semibold"
+                      >Bottom Line</label
+                    >
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="custom-line2-input"
+                      placeholder="Description or name (optional)"
+                      maxlength="80"
+                    />
+                  </div>
+                </div>
+                <div id="connector-category-container" class="d-none">
+                  <label for="connector-category-select" class="form-label fw-semibold"
+                    >Connector Category</label
+                  >
+                  <select
+                    id="connector-category-select"
+                    class="form-select"
+                    aria-describedby="connector-category-message"
+                  ></select>
+                  <div id="connector-category-help" class="form-text d-none"></div>
                   <div
-                    id="custom-line1-message"
+                    id="connector-category-message"
                     class="validation-message text-danger small mt-2 d-none"
                   ></div>
                 </div>
-                <div>
-                  <label for="custom-line2-input" class="form-label fw-semibold">Bottom Line</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="custom-line2-input"
-                    placeholder="Description or name (optional)"
-                    maxlength="80"
-                  />
-                </div>
-              </div>
-              <div id="connector-category-container" class="d-none">
-                <label for="connector-category-select" class="form-label fw-semibold">Connector Category</label>
-                <select
-                  id="connector-category-select"
-                  class="form-select"
-                  aria-describedby="connector-category-message"
-                ></select>
-                <div id="connector-category-help" class="form-text d-none"></div>
-                <div
-                  id="connector-category-message"
-                  class="validation-message text-danger small mt-2 d-none"
-                ></div>
-              </div>
-              <div id="component-category-container" class="d-none">
-                <span class="form-label d-block fw-semibold">Component Type</span>
-                <div class="row g-2" id="component-category-group">
-                  <div class="col-12 col-sm-6 col-lg-4">
-                    <input
-                      type="radio"
-                      class="btn-check"
-                      name="component-category"
-                      id="component-type-resistor"
-                      value="Resistor"
-                      autocomplete="off"
-                      checked
-                    />
-                    <label class="btn btn-outline-secondary w-100" for="component-type-resistor">Resistor</label>
-                  </div>
-                  <div class="col-12 col-sm-6 col-lg-4">
-                    <input
-                      type="radio"
-                      class="btn-check"
-                      name="component-category"
-                      id="component-type-capacitor"
-                      value="Capacitor"
-                      autocomplete="off"
-                    />
-                    <label class="btn btn-outline-secondary w-100" for="component-type-capacitor">Capacitor</label>
-                  </div>
-                  <div class="col-12 col-sm-6 col-lg-4">
-                    <input
-                      type="radio"
-                      class="btn-check"
-                      name="component-category"
-                      id="component-type-diode"
-                      value="Diode"
-                      autocomplete="off"
-                    />
-                    <label class="btn btn-outline-secondary w-100" for="component-type-diode">Diode</label>
-                  </div>
-                </div>
-                <div
-                  id="component-category-message"
-                  class="validation-message text-danger small mt-2 d-none"
-                ></div>
-              </div>
-              <div id="component-mount-container" class="d-none">
-                <span class="form-label d-block fw-semibold">Mounting Style</span>
-                <div class="row g-2" id="component-mount-group">
-                  <div class="col-12 col-sm-6">
-                    <input
-                      type="radio"
-                      class="btn-check"
-                      name="component-mount"
-                      id="component-mount-through-hole"
-                      value="Through-Hole"
-                      autocomplete="off"
-                      checked
-                    />
-                    <label class="btn btn-outline-secondary w-100" for="component-mount-through-hole">Through-Hole</label>
-                  </div>
-                  <div class="col-12 col-sm-6">
-                    <input
-                      type="radio"
-                      class="btn-check"
-                      name="component-mount"
-                      id="component-mount-smd"
-                      value="SMD"
-                      autocomplete="off"
-                    />
-                    <label class="btn btn-outline-secondary w-100" for="component-mount-smd">SMD</label>
-                  </div>
-                </div>
-                <div
-                  id="component-mount-message"
-                  class="validation-message text-danger small mt-2 d-none"
-                ></div>
-              </div>
-              <div id="bearing-options-container" class="d-none">
-                <label for="bearing-type-select" class="form-label fw-semibold">Bearing Selection</label>
-                <select
-                  id="bearing-type-select"
-                  class="form-select"
-                  aria-describedby="bearing-type-message"
-                ></select>
-                <div class="form-text">Common miniature and deep-groove bearings used in hobby projects.</div>
-                <div
-                  id="bearing-type-message"
-                  class="validation-message text-danger small mt-2 d-none"
-                ></div>
-              </div>
-              <div class="row g-3" id="measurement-system-row">
-                <div class="col-12 col-md-6" id="measurement-system-container">
-                  <label class="form-label fw-semibold">Measurement System</label>
-                  <div class="row g-2" id="system-type-group">
-                    <div class="col-6">
+                <div id="component-category-container" class="d-none">
+                  <span class="form-label d-block fw-semibold">Component Type</span>
+                  <div class="row g-2" id="component-category-group">
+                    <div class="col-12 col-sm-6 col-lg-4">
                       <input
                         type="radio"
                         class="btn-check"
-                        name="system-type"
-                        id="system-type-metric"
-                        value="Metric"
+                        name="component-category"
+                        id="component-type-resistor"
+                        value="Resistor"
                         autocomplete="off"
                         checked
                       />
-                      <label class="btn btn-outline-secondary w-100" for="system-type-metric">Metric</label>
+                      <label class="btn btn-outline-secondary w-100" for="component-type-resistor"
+                        >Resistor</label
+                      >
                     </div>
-                    <div class="col-6">
+                    <div class="col-12 col-sm-6 col-lg-4">
                       <input
                         type="radio"
                         class="btn-check"
-                        name="system-type"
-                        id="system-type-imperial"
-                        value="Imperial"
+                        name="component-category"
+                        id="component-type-capacitor"
+                        value="Capacitor"
                         autocomplete="off"
                       />
-                      <label class="btn btn-outline-secondary w-100" for="system-type-imperial">Imperial</label>
+                      <label class="btn btn-outline-secondary w-100" for="component-type-capacitor"
+                        >Capacitor</label
+                      >
+                    </div>
+                    <div class="col-12 col-sm-6 col-lg-4">
+                      <input
+                        type="radio"
+                        class="btn-check"
+                        name="component-category"
+                        id="component-type-diode"
+                        value="Diode"
+                        autocomplete="off"
+                      />
+                      <label class="btn btn-outline-secondary w-100" for="component-type-diode"
+                        >Diode</label
+                      >
+                    </div>
+                  </div>
+                  <div
+                    id="component-category-message"
+                    class="validation-message text-danger small mt-2 d-none"
+                  ></div>
+                </div>
+                <div id="component-mount-container" class="d-none">
+                  <span class="form-label d-block fw-semibold">Mounting Style</span>
+                  <div class="row g-2" id="component-mount-group">
+                    <div class="col-12 col-sm-6">
+                      <input
+                        type="radio"
+                        class="btn-check"
+                        name="component-mount"
+                        id="component-mount-through-hole"
+                        value="Through-Hole"
+                        autocomplete="off"
+                        checked
+                      />
+                      <label
+                        class="btn btn-outline-secondary w-100"
+                        for="component-mount-through-hole"
+                        >Through-Hole</label
+                      >
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <input
+                        type="radio"
+                        class="btn-check"
+                        name="component-mount"
+                        id="component-mount-smd"
+                        value="SMD"
+                        autocomplete="off"
+                      />
+                      <label class="btn btn-outline-secondary w-100" for="component-mount-smd"
+                        >SMD</label
+                      >
+                    </div>
+                  </div>
+                  <div
+                    id="component-mount-message"
+                    class="validation-message text-danger small mt-2 d-none"
+                  ></div>
+                </div>
+                <div id="bearing-options-container" class="d-none">
+                  <label for="bearing-type-select" class="form-label fw-semibold"
+                    >Bearing Selection</label
+                  >
+                  <select
+                    id="bearing-type-select"
+                    class="form-select"
+                    aria-describedby="bearing-type-message"
+                  ></select>
+                  <div class="form-text">
+                    Common miniature and deep-groove bearings used in hobby projects.
+                  </div>
+                  <div
+                    id="bearing-type-message"
+                    class="validation-message text-danger small mt-2 d-none"
+                  ></div>
+                </div>
+                <div class="row g-3" id="measurement-system-row">
+                  <div class="col-12 col-md-6" id="measurement-system-container">
+                    <label class="form-label fw-semibold">Measurement System</label>
+                    <div class="row g-2" id="system-type-group">
+                      <div class="col-6">
+                        <input
+                          type="radio"
+                          class="btn-check"
+                          name="system-type"
+                          id="system-type-metric"
+                          value="Metric"
+                          autocomplete="off"
+                          checked
+                        />
+                        <label class="btn btn-outline-secondary w-100" for="system-type-metric"
+                          >Metric</label
+                        >
+                      </div>
+                      <div class="col-6">
+                        <input
+                          type="radio"
+                          class="btn-check"
+                          name="system-type"
+                          id="system-type-imperial"
+                          value="Imperial"
+                          autocomplete="off"
+                        />
+                        <label class="btn btn-outline-secondary w-100" for="system-type-imperial"
+                          >Imperial</label
+                        >
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="row g-3" id="thread-length-row">
+                  <div class="col-12 col-sm-6 thread-length-field" id="thread-size-container">
+                    <label for="thread-size-select" class="form-label fw-semibold"
+                      >Thread Size</label
+                    >
+                    <select
+                      id="thread-size-select"
+                      class="form-select"
+                      aria-describedby="thread-size-message"
+                    ></select>
+                    <div
+                      id="thread-size-message"
+                      class="validation-message text-danger small mt-2 d-none"
+                    ></div>
+                  </div>
+                  <div class="col-12 col-sm-6 thread-length-field" id="length-container">
+                    <label for="length-input" class="form-label fw-semibold">Length</label>
+                    <input
+                      type="number"
+                      id="length-input"
+                      class="form-control"
+                      placeholder="e.g., 10"
+                      min="1"
+                      aria-describedby="length-message"
+                    />
+                    <div
+                      id="length-message"
+                      class="validation-message text-danger small mt-2 d-none"
+                    ></div>
+                  </div>
+                </div>
+                <div id="fuse-type-container" class="d-none">
+                  <label class="form-label fw-semibold">Fuse Type</label>
+                  <div class="row g-2" id="fuse-type-group">
+                    <div class="col-12 col-sm-6">
+                      <input
+                        type="radio"
+                        class="btn-check"
+                        name="fuse-type"
+                        id="fuse-type-glass"
+                        value="Glass"
+                        autocomplete="off"
+                        checked
+                      />
+                      <label class="btn btn-outline-secondary w-100" for="fuse-type-glass"
+                        >Glass Fuse</label
+                      >
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <input
+                        type="radio"
+                        class="btn-check"
+                        name="fuse-type"
+                        id="fuse-type-blade"
+                        value="Blade"
+                        autocomplete="off"
+                      />
+                      <label class="btn btn-outline-secondary w-100" for="fuse-type-blade"
+                        >Blade Fuse</label
+                      >
+                    </div>
+                  </div>
+                </div>
+                <div id="fuse-value-container" class="d-none">
+                  <label for="fuse-value-select" class="form-label fw-semibold"
+                    >Fuse Value (amps)</label
+                  >
+                  <select
+                    id="fuse-value-select"
+                    class="form-select"
+                    aria-describedby="fuse-value-message"
+                  ></select>
+                  <div
+                    id="fuse-value-message"
+                    class="validation-message text-danger small mt-2 d-none"
+                  ></div>
+                </div>
+                <div id="glass-options-container" class="d-none">
+                  <span class="form-label d-block fw-semibold">Glass Fuse Options</span>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="glass-slow-blow" />
+                    <label class="form-check-label" for="glass-slow-blow"
+                      >Slow-blow (time delay)</label
+                    >
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="glass-fast-blow" />
+                    <label class="form-check-label" for="glass-fast-blow">Fast-blow</label>
+                  </div>
+                  <div class="mt-2">
+                    <label for="glass-size-select" class="form-label fw-semibold"
+                      >Glass Fuse Size</label
+                    >
+                    <select id="glass-size-select" class="form-select">
+                      <option value="">Select size…</option>
+                      <option value="5 × 20 mm">5 × 20 mm</option>
+                      <option value="6.3 × 32 mm (1/4″ × 1-1/4″)">
+                        6.3 × 32 mm (1/4″ × 1-1/4″)
+                      </option>
+                    </select>
+                    <div class="form-text">
+                      Standard glass fuse sizes: 5 × 20 mm and 6.3 × 32 mm.
+                    </div>
+                  </div>
+                </div>
+                <div id="standard-field">
+                  <label
+                    for="standard-select"
+                    class="form-label fw-semibold"
+                    id="standard-field-label"
+                    >Hardware Standard</label
+                  >
+                  <select id="standard-select" class="form-select"></select>
+                  <div id="bolt-standard-group" class="row g-2 d-none" aria-hidden="true">
+                    <div id="bolt-drive-field" class="col-12 col-sm-6">
+                      <label for="bolt-drive-select" class="form-label">Drive</label>
+                      <select id="bolt-drive-select" class="form-select"></select>
+                      <div
+                        id="bolt-drive-message"
+                        class="validation-message text-danger small mt-2 d-none"
+                      ></div>
+                    </div>
+                    <div id="bolt-head-field" class="col-12 col-sm-6">
+                      <label for="bolt-head-select" class="form-label">Head</label>
+                      <select id="bolt-head-select" class="form-select"></select>
+                      <div
+                        id="bolt-head-message"
+                        class="validation-message text-danger small mt-2 d-none"
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+                <div id="notes-field">
+                  <label for="notes-input" class="form-label fw-semibold">Optional Notes</label>
+                  <input
+                    type="text"
+                    id="notes-input"
+                    class="form-control"
+                    placeholder="Notes (optional)"
+                    aria-describedby="connector-notes-hint connector-notes-message"
+                  />
+                  <div id="connector-notes-hint" class="form-text d-none">
+                    Provide the connector series, pin count, wire size, and terminal style when
+                    labelling connectors.
+                  </div>
+                  <div
+                    id="connector-notes-message"
+                    class="validation-message text-danger small mt-2 d-none"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="settings-section col-lg-5">
+          <div class="card shadow-sm h-100">
+            <div class="card-body">
+              <h2 class="h5 mb-3 section-heading">
+                <i class="fa-solid fa-gear me-2" aria-hidden="true"></i>
+                <span>Label Settings</span>
+              </h2>
+              <div class="vstack gap-3">
+                <div
+                  class="d-flex align-items-center justify-content-between p-3 rounded-4 border bg-body-secondary"
+                >
+                  <label
+                    class="d-flex align-items-center gap-2 fw-semibold text-body mb-0"
+                    for="standard-toggle"
+                  >
+                    <i class="fa-solid fa-book text-secondary fs-5" aria-hidden="true"></i>
+                    <span>Standard Reference</span>
+                  </label>
+                  <div class="form-check form-switch m-0 ps-0">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      role="switch"
+                      id="standard-toggle"
+                      checked
+                    />
+                  </div>
+                </div>
+                <div
+                  class="d-flex align-items-center justify-content-between p-3 rounded-4 border bg-body-secondary"
+                >
+                  <label
+                    class="d-flex align-items-center gap-2 fw-semibold text-body mb-0"
+                    for="image-toggle"
+                  >
+                    <i class="fa-solid fa-image text-secondary fs-5" aria-hidden="true"></i>
+                    <span>Image</span>
+                  </label>
+                  <div class="form-check form-switch m-0 ps-0">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      role="switch"
+                      id="image-toggle"
+                      checked
+                    />
+                  </div>
+                </div>
+                <div
+                  class="d-flex align-items-center justify-content-between p-3 rounded-4 border bg-body-secondary"
+                >
+                  <label
+                    class="d-flex align-items-center gap-2 fw-semibold text-body mb-0"
+                    for="qrcode-toggle"
+                  >
+                    <i class="fa-solid fa-qrcode text-secondary fs-5" aria-hidden="true"></i>
+                    <span>QR Code</span>
+                  </label>
+                  <div class="form-check form-switch m-0 ps-0">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      role="switch"
+                      id="qrcode-toggle"
+                    />
+                  </div>
+                </div>
+                <div id="qr-content-wrapper" class="p-3 rounded-4 border bg-body-secondary d-none">
+                  <label
+                    for="qr-content-input"
+                    class="form-label fw-semibold mb-2 d-flex align-items-center gap-2"
+                  >
+                    QR Code Content
+                    <span
+                      class="qr-info-icon"
+                      tabindex="0"
+                      role="img"
+                      aria-label="Long URLs will be automatically shortened for better QR code readability. This makes the QR code simpler and easier to scan on small labels."
+                      data-tooltip="Long URLs will be automatically shortened for better QR code readability. This makes the QR code simpler and easier to scan on small labels."
+                    >
+                      <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                    </span>
+                  </label>
+                  <input
+                    type="url"
+                    inputmode="url"
+                    id="qr-content-input"
+                    class="form-control"
+                    placeholder="URL or text for QR code"
+                    autocomplete="off"
+                    spellcheck="false"
+                    disabled
+                  />
+                </div>
+                <div>
+                  <label for="width-range" class="form-label fw-semibold"
+                    >Label Width <span id="width-value">55</span> mm</label
+                  >
+                  <input
+                    type="range"
+                    class="form-range"
+                    id="width-range"
+                    min="37"
+                    max="100"
+                    value="55"
+                  />
+                  <div class="d-flex justify-content-between text-muted small">
+                    <span>37&nbsp;mm</span><span>100&nbsp;mm</span>
+                  </div>
+                </div>
+                <div>
+                  <span class="form-label d-block fw-semibold">Label Height</span>
+                  <div class="row row-cols-2 g-2 height-options">
+                    <div class="col">
+                      <input
+                        type="radio"
+                        class="btn-check"
+                        name="label-height"
+                        id="height-9"
+                        value="9"
+                        autocomplete="off"
+                      />
+                      <label class="btn btn-outline-secondary w-100" for="height-9"
+                        >9&nbsp;mm</label
+                      >
+                    </div>
+                    <div class="col">
+                      <input
+                        type="radio"
+                        class="btn-check"
+                        name="label-height"
+                        id="height-12"
+                        value="12"
+                        autocomplete="off"
+                        checked
+                      />
+                      <label class="btn btn-outline-secondary w-100" for="height-12"
+                        >12&nbsp;mm</label
+                      >
+                    </div>
+                    <div class="col">
+                      <input
+                        type="radio"
+                        class="btn-check"
+                        name="label-height"
+                        id="height-18"
+                        value="18"
+                        autocomplete="off"
+                      />
+                      <label class="btn btn-outline-secondary w-100" for="height-18"
+                        >18&nbsp;mm</label
+                      >
+                    </div>
+                    <div class="col">
+                      <input
+                        type="radio"
+                        class="btn-check"
+                        name="label-height"
+                        id="height-24"
+                        value="24"
+                        autocomplete="off"
+                      />
+                      <label class="btn btn-outline-secondary w-100" for="height-24"
+                        >24&nbsp;mm</label
+                      >
                     </div>
                   </div>
                 </div>
               </div>
-              <div class="row g-3" id="thread-length-row">
-                <div class="col-12 col-sm-6 thread-length-field" id="thread-size-container">
-                  <label for="thread-size-select" class="form-label fw-semibold">Thread Size</label>
-                  <select
-                    id="thread-size-select"
-                    class="form-select"
-                    aria-describedby="thread-size-message"
-                  ></select>
-                  <div
-                    id="thread-size-message"
-                    class="validation-message text-danger small mt-2 d-none"
-                  ></div>
-                </div>
-                <div class="col-12 col-sm-6 thread-length-field" id="length-container">
-                  <label for="length-input" class="form-label fw-semibold">Length</label>
-                  <input
-                    type="number"
-                    id="length-input"
-                    class="form-control"
-                    placeholder="e.g., 10"
-                    min="1"
-                    aria-describedby="length-message"
-                  />
-                  <div
-                    id="length-message"
-                    class="validation-message text-danger small mt-2 d-none"
-                  ></div>
-                </div>
-              </div>
-              <div id="fuse-type-container" class="d-none">
-                <label class="form-label fw-semibold">Fuse Type</label>
-                <div class="row g-2" id="fuse-type-group">
-                  <div class="col-12 col-sm-6">
-                    <input
-                      type="radio"
-                      class="btn-check"
-                      name="fuse-type"
-                      id="fuse-type-glass"
-                      value="Glass"
-                      autocomplete="off"
-                      checked
-                    />
-                    <label class="btn btn-outline-secondary w-100" for="fuse-type-glass">Glass Fuse</label>
-                  </div>
-                  <div class="col-12 col-sm-6">
-                    <input
-                      type="radio"
-                      class="btn-check"
-                      name="fuse-type"
-                      id="fuse-type-blade"
-                      value="Blade"
-                      autocomplete="off"
-                    />
-                    <label class="btn btn-outline-secondary w-100" for="fuse-type-blade">Blade Fuse</label>
-                  </div>
-                </div>
-              </div>
-              <div id="fuse-value-container" class="d-none">
-                <label for="fuse-value-select" class="form-label fw-semibold">Fuse Value (amps)</label>
-                <select
-                  id="fuse-value-select"
-                  class="form-select"
-                  aria-describedby="fuse-value-message"
-                ></select>
-                <div
-                  id="fuse-value-message"
-                  class="validation-message text-danger small mt-2 d-none"
-                ></div>
-              </div>
-              <div id="glass-options-container" class="d-none">
-                <span class="form-label d-block fw-semibold">Glass Fuse Options</span>
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" id="glass-slow-blow" />
-                  <label class="form-check-label" for="glass-slow-blow">Slow-blow (time delay)</label>
-                </div>
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" id="glass-fast-blow" />
-                  <label class="form-check-label" for="glass-fast-blow">Fast-blow</label>
-                </div>
-                <div class="mt-2">
-                  <label for="glass-size-select" class="form-label fw-semibold">Glass Fuse Size</label>
-                  <select id="glass-size-select" class="form-select">
-                    <option value="">Select size…</option>
-                    <option value="5 × 20 mm">5 × 20 mm</option>
-                    <option value="6.3 × 32 mm (1/4″ × 1-1/4″)">6.3 × 32 mm (1/4″ × 1-1/4″)</option>
-                  </select>
-                  <div class="form-text">Standard glass fuse sizes: 5 × 20 mm and 6.3 × 32 mm.</div>
-                </div>
-              </div>
-              <div id="standard-field">
-                <label for="standard-select" class="form-label fw-semibold">Hardware Standard</label>
-                <select id="standard-select" class="form-select"></select>
-              </div>
-              <div id="notes-field">
-                <label for="notes-input" class="form-label fw-semibold">Optional Notes</label>
-                <input
-                  type="text"
-                  id="notes-input"
-                  class="form-control"
-                  placeholder="Notes (optional)"
-                  aria-describedby="connector-notes-hint connector-notes-message"
-                />
-                <div id="connector-notes-hint" class="form-text d-none">
-                  Provide the connector series, pin count, wire size, and terminal style when labelling connectors.
-                </div>
-                <div
-                  id="connector-notes-message"
-                  class="validation-message text-danger small mt-2 d-none"
-                ></div>
-              </div>
             </div>
           </div>
-        </div>
-      </section>
-      <section class="settings-section col-lg-5">
-        <div class="card shadow-sm h-100">
-          <div class="card-body">
-            <h2 class="h5 mb-3 section-heading">
-              <i class="fa-solid fa-gear me-2" aria-hidden="true"></i>
-              <span>Label Settings</span>
-            </h2>
-            <div class="vstack gap-3">
-              <div class="d-flex align-items-center justify-content-between p-3 rounded-4 border bg-body-secondary">
-                <label
-                  class="d-flex align-items-center gap-2 fw-semibold text-body mb-0"
-                  for="standard-toggle"
-                >
-                  <i class="fa-solid fa-book text-secondary fs-5" aria-hidden="true"></i>
-                  <span>Standard Reference</span>
-                </label>
-                <div class="form-check form-switch m-0 ps-0">
-                  <input class="form-check-input" type="checkbox" role="switch" id="standard-toggle" checked />
-                </div>
-              </div>
-              <div class="d-flex align-items-center justify-content-between p-3 rounded-4 border bg-body-secondary">
-                <label
-                  class="d-flex align-items-center gap-2 fw-semibold text-body mb-0"
-                  for="image-toggle"
-                >
-                  <i class="fa-solid fa-image text-secondary fs-5" aria-hidden="true"></i>
-                  <span>Image</span>
-                </label>
-                <div class="form-check form-switch m-0 ps-0">
-                  <input class="form-check-input" type="checkbox" role="switch" id="image-toggle" checked />
-                </div>
-              </div>
-              <div class="d-flex align-items-center justify-content-between p-3 rounded-4 border bg-body-secondary">
-                <label
-                  class="d-flex align-items-center gap-2 fw-semibold text-body mb-0"
-                  for="qrcode-toggle"
-                >
-                  <i class="fa-solid fa-qrcode text-secondary fs-5" aria-hidden="true"></i>
-                  <span>QR Code</span>
-                </label>
-                <div class="form-check form-switch m-0 ps-0">
-                  <input class="form-check-input" type="checkbox" role="switch" id="qrcode-toggle" />
-                </div>
-              </div>
-              <div id="qr-content-wrapper" class="p-3 rounded-4 border bg-body-secondary d-none">
-                <label for="qr-content-input" class="form-label fw-semibold mb-2 d-flex align-items-center gap-2">
-                  QR Code Content
-                  <span
-                    class="qr-info-icon"
-                    tabindex="0"
-                    role="img"
-                    aria-label="Long URLs will be automatically shortened for better QR code readability. This makes the QR code simpler and easier to scan on small labels."
-                    data-tooltip="Long URLs will be automatically shortened for better QR code readability. This makes the QR code simpler and easier to scan on small labels."
-                  >
-                    <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
-                  </span>
-                </label>
-                <input
-                  type="url"
-                  inputmode="url"
-                  id="qr-content-input"
-                  class="form-control"
-                  placeholder="URL or text for QR code"
-                  autocomplete="off"
-                  spellcheck="false"
-                  disabled
-                />
-              </div>
-              <div>
-                <label for="width-range" class="form-label fw-semibold">Label Width <span id="width-value">55</span> mm</label>
-                <input type="range" class="form-range" id="width-range" min="37" max="100" value="55" />
-                <div class="d-flex justify-content-between text-muted small"><span>37&nbsp;mm</span><span>100&nbsp;mm</span></div>
-              </div>
-              <div>
-                <span class="form-label d-block fw-semibold">Label Height</span>
-                <div class="row row-cols-2 g-2 height-options">
-                  <div class="col">
-                    <input type="radio" class="btn-check" name="label-height" id="height-9" value="9" autocomplete="off" />
-                    <label class="btn btn-outline-secondary w-100" for="height-9">9&nbsp;mm</label>
-                  </div>
-                  <div class="col">
-                    <input type="radio" class="btn-check" name="label-height" id="height-12" value="12" autocomplete="off" checked />
-                    <label class="btn btn-outline-secondary w-100" for="height-12">12&nbsp;mm</label>
-                  </div>
-                  <div class="col">
-                    <input type="radio" class="btn-check" name="label-height" id="height-18" value="18" autocomplete="off" />
-                    <label class="btn btn-outline-secondary w-100" for="height-18">18&nbsp;mm</label>
-                  </div>
-                  <div class="col">
-                    <input type="radio" class="btn-check" name="label-height" id="height-24" value="24" autocomplete="off" />
-                    <label class="btn btn-outline-secondary w-100" for="height-24">24&nbsp;mm</label>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
-    <section class="preview-section card shadow-sm mt-4">
-      <div class="card-body">
-        <h2 class="h5 mb-3 section-heading">Label Preview</h2>
-        <div class="size-info text-muted small mb-3">
-          <span
-            id="preview-status-text"
-            class="visually-hidden"
-            role="status"
-            aria-live="polite"
-            aria-atomic="true"
-          ></span>
-          <div id="label-size-display">55&nbsp;mm ×&nbsp;12&nbsp;mm (label size)</div>
-          <div id="print-area-display">51&nbsp;mm ×&nbsp;10&nbsp;mm (printable area)</div>
-        </div>
-        <div id="preview-container" class="label-preview">
-          <div id="preview-placeholder" class="preview-placeholder">
-            <i class="fa-solid fa-clipboard-list placeholder-icon" aria-hidden="true"></i>
-            <p class="placeholder-text mb-0">Fill out the form to generate a label</p>
-          </div>
-          <div id="label-inner" class="label-inner" style="display: none;">
-            <div id="hardware-image" class="hardware-icon"></div>
-            <div id="preview-text" class="text-block">
-              <div id="line1" class="text-line"></div>
-              <div id="line2" class="text-line small"></div>
-            </div>
-            <canvas id="qr-canvas" class="qr-code" width="80" height="80"></canvas>
-          </div>
-        </div>
+        </section>
       </div>
-    </section>
-    <div
-      id="form-status-message"
-      class="alert alert-warning d-none mt-4"
-      role="status"
-      aria-live="polite"
-    ></div>
-    <div class="actions d-flex flex-wrap justify-content-center gap-3 mt-4">
-      <button
-        id="download-button"
-        class="btn btn-primary btn-lg px-4 d-inline-flex align-items-center"
-        type="button"
-        disabled
-        aria-label="Download label as a PNG image"
-        title="Download label as a PNG image"
-      >
-        <i class="fa-solid fa-download me-2" aria-hidden="true"></i>
-        <span>Download</span>
-      </button>
-      <button
-        id="share-button"
-        class="btn btn-outline-primary btn-lg px-4 d-inline-flex align-items-center"
-        type="button"
-        disabled
-        aria-label="Share a link to this label"
-        title="Share a link to this label"
-      >
-        <i class="fa-solid fa-share-nodes me-2" aria-hidden="true"></i>
-        <span>Share</span>
-      </button>
-      <button
-        id="print-button"
-        class="btn btn-outline-primary btn-lg px-4 d-inline-flex align-items-center"
-        type="button"
-        disabled
-        aria-label="Open a print-ready preview of the label"
-        title="Open a print-ready preview of the label"
-      >
-        <i class="fa-solid fa-print me-2" aria-hidden="true"></i>
-        <span>Print</span>
-      </button>
-    </div>
-  </main>
-</body>
+      <section class="preview-section card shadow-sm mt-4">
+        <div class="card-body">
+          <h2 class="h5 mb-3 section-heading">Label Preview</h2>
+          <div class="size-info text-muted small mb-3">
+            <span
+              id="preview-status-text"
+              class="visually-hidden"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            ></span>
+            <div id="label-size-display">55&nbsp;mm ×&nbsp;12&nbsp;mm (label size)</div>
+            <div id="print-area-display">51&nbsp;mm ×&nbsp;10&nbsp;mm (printable area)</div>
+          </div>
+          <div id="preview-container" class="label-preview">
+            <div id="preview-placeholder" class="preview-placeholder">
+              <i class="fa-solid fa-clipboard-list placeholder-icon" aria-hidden="true"></i>
+              <p class="placeholder-text mb-0">Fill out the form to generate a label</p>
+            </div>
+            <div id="label-inner" class="label-inner" style="display: none">
+              <div id="hardware-image" class="hardware-icon"></div>
+              <div id="preview-text" class="text-block">
+                <div id="line1" class="text-line"></div>
+                <div id="line2" class="text-line small"></div>
+                <div id="line3" class="text-line small"></div>
+              </div>
+              <canvas id="qr-canvas" class="qr-code" width="80" height="80"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+      <div
+        id="form-status-message"
+        class="alert alert-warning d-none mt-4"
+        role="status"
+        aria-live="polite"
+      ></div>
+      <div class="actions d-flex flex-wrap justify-content-center gap-3 mt-4">
+        <button
+          id="download-button"
+          class="btn btn-primary btn-lg px-4 d-inline-flex align-items-center"
+          type="button"
+          disabled
+          aria-label="Download label as a PNG image"
+          title="Download label as a PNG image"
+        >
+          <i class="fa-solid fa-download me-2" aria-hidden="true"></i>
+          <span>Download</span>
+        </button>
+        <button
+          id="share-button"
+          class="btn btn-outline-primary btn-lg px-4 d-inline-flex align-items-center"
+          type="button"
+          disabled
+          aria-label="Share a link to this label"
+          title="Share a link to this label"
+        >
+          <i class="fa-solid fa-share-nodes me-2" aria-hidden="true"></i>
+          <span>Share</span>
+        </button>
+        <button
+          id="print-button"
+          class="btn btn-outline-primary btn-lg px-4 d-inline-flex align-items-center"
+          type="button"
+          disabled
+          aria-label="Open a print-ready preview of the label"
+          title="Open a print-ready preview of the label"
+        >
+          <i class="fa-solid fa-print me-2" aria-hidden="true"></i>
+          <span>Print</span>
+        </button>
+      </div>
+    </main>
+  </body>
 </html>

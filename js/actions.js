@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { findConnectorCategory } from './data.js';
+import { findConnectorCategory, boltHeadMap, boltDriveMap } from './data.js';
 import { renderLabelCanvas } from './render.js';
 import { buildShareUrl } from './url-state.js';
 
@@ -108,30 +108,43 @@ export function downloadLabel() {
         if (state.showStandard && state.bearingDetails) {
           fileParts.push(state.bearingDetails);
         }
+      } else if (state.hardwareType === 'Bolt') {
+        if (state.threadSize) {
+          fileParts.push(state.threadSize);
+        }
+        if (state.length) {
+          fileParts.push(`x${state.length}`);
+        }
+        const headEntry = boltHeadMap.get((state.boltHead || '').trim());
+        const driveEntry = boltDriveMap.get((state.boltDrive || '').trim());
+        if (headEntry && headEntry.label) {
+          fileParts.push(headEntry.label);
+        }
+        if (driveEntry && driveEntry.label) {
+          fileParts.push(driveEntry.label);
+        }
       } else {
         if (state.threadSize) {
           fileParts.push(state.threadSize);
         }
-        if ((state.hardwareType === 'Screw' || state.hardwareType === 'Bolt') && state.length) {
+        if (state.hardwareType === 'Screw' && state.length) {
           fileParts.push(`x${state.length}`);
         }
       }
-      if (state.standardCode) {
-        fileParts.push(state.standardCode);
-      }
-      if (state.standard && state.standard !== state.standardCode) {
-        fileParts.push(state.standard);
+      if (state.hardwareType !== 'Bolt') {
+        if (state.standardCode) {
+          fileParts.push(state.standardCode);
+        }
+        if (state.standard && state.standard !== state.standardCode) {
+          fileParts.push(state.standard);
+        }
       }
       const rawTitle = fileParts.filter(Boolean).join(' ');
       const sanitizedTitle = sanitizeTitle(rawTitle) || 'label';
       const widthMm =
-        Number.isFinite(state.widthMm) && state.widthMm > 0
-          ? Math.round(state.widthMm)
-          : 1;
+        Number.isFinite(state.widthMm) && state.widthMm > 0 ? Math.round(state.widthMm) : 1;
       const heightMm =
-        Number.isFinite(state.heightMm) && state.heightMm > 0
-          ? Math.round(state.heightMm)
-          : 1;
+        Number.isFinite(state.heightMm) && state.heightMm > 0 ? Math.round(state.heightMm) : 1;
       const timestamp = formatTimestamp(new Date());
       link.download = `gridfinity-label_${sanitizedTitle}_${widthMm}x${heightMm}mm_${timestamp}.png`;
       document.body.appendChild(link);
@@ -231,7 +244,7 @@ export async function shareLabel() {
   const shareData = {
     title: 'Gridfinity Label Maker',
     text: 'Gridfinity label preset',
-    url: shareUrl
+    url: shareUrl,
   };
 
   const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';

@@ -3,11 +3,13 @@ import { elements } from './dom-elements.js';
 import {
   fuseValues,
   bearingOptions,
+  boltHeadOptions,
+  boltDriveOptions,
   hardwareCatalog,
   connectorCatalog,
   STANDARD_PLACEHOLDER_TEXT,
   CONNECTOR_PLACEHOLDER_TEXT,
-  findConnectorCategory
+  findConnectorCategory,
 } from './data.js';
 import { updatePreview, updateDownloadState } from './render.js';
 import { populateThreadSizes } from './threadSizes.js';
@@ -39,6 +41,9 @@ const {
   customImageNameDisplay,
   notesField,
   standardField,
+  boltStandardGroup,
+  boltHeadSelect,
+  boltDriveSelect,
   notesLabel,
   defaultNotesLabel,
   defaultNotesPlaceholder,
@@ -50,7 +55,7 @@ const {
   hardwareTypeOptions,
   systemTypeRadios,
   componentCategoryRadios,
-  componentMountRadios
+  componentMountRadios,
 } = elements;
 
 export function populateConnectorCategories() {
@@ -141,7 +146,8 @@ export function updateConnectorCategoryUi() {
       connectorCategoryHelp.classList.add('d-none');
     }
   }
-  const example = category && category.example ? category.example : 'e.g., 3-pin JST-PH plug, 26 AWG leads';
+  const example =
+    category && category.example ? category.example : 'e.g., 3-pin JST-PH plug, 26 AWG leads';
   notesInput.placeholder = example;
 }
 
@@ -251,11 +257,93 @@ export function handleCustomImageFile(file) {
   reader.readAsDataURL(file);
 }
 
+function populateBoltOptions() {
+  if (!boltHeadSelect || !boltDriveSelect) {
+    return;
+  }
+
+  const previousHead = typeof state.boltHead === 'string' ? state.boltHead : '';
+  const previousDrive = typeof state.boltDrive === 'string' ? state.boltDrive : '';
+
+  boltHeadSelect.innerHTML = '';
+  boltDriveSelect.innerHTML = '';
+
+  const headPlaceholder = document.createElement('option');
+  headPlaceholder.value = '';
+  headPlaceholder.textContent = 'Select head…';
+  headPlaceholder.disabled = true;
+  headPlaceholder.selected = !previousHead;
+  boltHeadSelect.appendChild(headPlaceholder);
+
+  const drivePlaceholder = document.createElement('option');
+  drivePlaceholder.value = '';
+  drivePlaceholder.textContent = 'Select drive…';
+  drivePlaceholder.disabled = true;
+  drivePlaceholder.selected = !previousDrive;
+  boltDriveSelect.appendChild(drivePlaceholder);
+
+  boltHeadOptions.forEach(option => {
+    const opt = document.createElement('option');
+    opt.value = option.id;
+    opt.textContent = option.label;
+    boltHeadSelect.appendChild(opt);
+  });
+
+  boltDriveOptions.forEach(option => {
+    const opt = document.createElement('option');
+    opt.value = option.id;
+    opt.textContent = option.label;
+    boltDriveSelect.appendChild(opt);
+  });
+
+  const validHeadIds = new Set(boltHeadOptions.map(option => option.id));
+  const validDriveIds = new Set(boltDriveOptions.map(option => option.id));
+
+  if (previousHead && validHeadIds.has(previousHead)) {
+    boltHeadSelect.value = previousHead;
+  } else {
+    boltHeadSelect.value = '';
+    state.boltHead = '';
+  }
+
+  if (previousDrive && validDriveIds.has(previousDrive)) {
+    boltDriveSelect.value = previousDrive;
+  } else {
+    boltDriveSelect.value = '';
+    state.boltDrive = '';
+  }
+
+  boltHeadSelect.disabled = false;
+  boltHeadSelect.title = 'Select head style';
+  boltHeadSelect.setAttribute('aria-required', 'true');
+
+  boltDriveSelect.disabled = false;
+  boltDriveSelect.title = 'Select drive style';
+  boltDriveSelect.setAttribute('aria-required', 'true');
+}
+
 export function populateStandards() {
+  const previousCode = typeof state.standardCode === 'string' ? state.standardCode : '';
+
+  if (state.hardwareType === 'Bolt') {
+    standardFilterState.query = '';
+    if (standardSelect) {
+      standardSelect.innerHTML = '';
+      standardSelect.disabled = true;
+      standardSelect.title = '';
+      standardSelect.value = '';
+    }
+    state.standard = '';
+    state.standardCode = '';
+    populateBoltOptions();
+    updatePreview();
+    return;
+  }
+
   if (!standardSelect) {
     return;
   }
-  const previousCode = typeof state.standardCode === 'string' ? state.standardCode : '';
+
   standardSelect.innerHTML = '';
   const placeholder = document.createElement('option');
   placeholder.value = '';
@@ -493,6 +581,7 @@ export function onHardwareTypeChange() {
   const showComponentFields = type === 'Component';
   const showCustomFields = type === 'Custom';
   const showBearingFields = type === 'Bearing';
+  const showBoltFields = type === 'Bolt';
 
   if (lengthContainer) {
     lengthContainer.style.display = requiresThreadDetails ? '' : 'none';
@@ -561,18 +650,33 @@ export function onHardwareTypeChange() {
 
   if (measurementSystemContainer) {
     const hideMeasurementSystem =
-      showFuseFields || showConnectorFields || showCustomFields || showBearingFields || showComponentFields;
+      showFuseFields ||
+      showConnectorFields ||
+      showCustomFields ||
+      showBearingFields ||
+      showComponentFields;
     measurementSystemContainer.style.display = hideMeasurementSystem ? 'none' : '';
-    measurementSystemContainer.setAttribute('aria-hidden', hideMeasurementSystem ? 'true' : 'false');
+    measurementSystemContainer.setAttribute(
+      'aria-hidden',
+      hideMeasurementSystem ? 'true' : 'false',
+    );
   }
   systemTypeRadios.forEach(radio => {
     radio.disabled =
-      showFuseFields || showConnectorFields || showCustomFields || showBearingFields || showComponentFields;
+      showFuseFields ||
+      showConnectorFields ||
+      showCustomFields ||
+      showBearingFields ||
+      showComponentFields;
   });
 
   if (threadLengthRow) {
     const hideThreadLength =
-      showFuseFields || showConnectorFields || showCustomFields || showBearingFields || showComponentFields;
+      showFuseFields ||
+      showConnectorFields ||
+      showCustomFields ||
+      showBearingFields ||
+      showComponentFields;
     threadLengthRow.classList.toggle(
       'single-column',
       !requiresThreadDetails &&
@@ -580,13 +684,17 @@ export function onHardwareTypeChange() {
         !showConnectorFields &&
         !showCustomFields &&
         !showBearingFields &&
-        !showComponentFields
+        !showComponentFields,
     );
     threadLengthRow.style.display = hideThreadLength ? 'none' : '';
   }
   if (threadSizeContainer) {
     threadSizeContainer.style.display =
-      showFuseFields || showConnectorFields || showCustomFields || showBearingFields || showComponentFields
+      showFuseFields ||
+      showConnectorFields ||
+      showCustomFields ||
+      showBearingFields ||
+      showComponentFields
         ? 'none'
         : '';
   }
@@ -618,13 +726,46 @@ export function onHardwareTypeChange() {
     }
   }
   if (standardField) {
-    standardField.classList.toggle('d-none', showCustomFields || showBearingFields || showComponentFields);
+    standardField.classList.toggle(
+      'd-none',
+      showCustomFields || showBearingFields || showComponentFields,
+    );
   }
   if (standardLabel) {
     if (showConnectorFields) {
       standardLabel.textContent = 'Connector Series';
     } else {
       standardLabel.textContent = defaultStandardLabel;
+    }
+    standardLabel.setAttribute('for', showBoltFields ? 'bolt-head-select' : 'standard-select');
+  }
+  if (standardSelect) {
+    standardSelect.classList.toggle('d-none', showBoltFields);
+    if (showBoltFields) {
+      standardSelect.disabled = true;
+      standardSelect.setAttribute('aria-hidden', 'true');
+      standardSelect.setAttribute('aria-required', 'false');
+    } else {
+      standardSelect.setAttribute('aria-hidden', 'false');
+      standardSelect.removeAttribute('aria-required');
+    }
+  }
+  if (boltStandardGroup) {
+    boltStandardGroup.classList.toggle('d-none', !showBoltFields);
+    boltStandardGroup.setAttribute('aria-hidden', showBoltFields ? 'false' : 'true');
+  }
+  if (boltHeadSelect) {
+    boltHeadSelect.disabled = !showBoltFields;
+    if (!showBoltFields) {
+      boltHeadSelect.removeAttribute('aria-required');
+      boltHeadSelect.title = '';
+    }
+  }
+  if (boltDriveSelect) {
+    boltDriveSelect.disabled = !showBoltFields;
+    if (!showBoltFields) {
+      boltDriveSelect.removeAttribute('aria-required');
+      boltDriveSelect.title = '';
     }
   }
   if (notesInput) {
@@ -674,4 +815,3 @@ export function applyHardwareTypeSelection(nextType) {
   state.hardwareType = trimmed;
   onHardwareTypeChange();
 }
-

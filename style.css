@@ -70,8 +70,8 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   min-height: 100svh;
-  padding: env(safe-area-inset-top) env(safe-area-inset-right)
-    env(safe-area-inset-bottom) env(safe-area-inset-left);
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
   transition: background 0.3s ease;
   -webkit-font-smoothing: antialiased;
   text-size-adjust: 100%;
@@ -90,7 +90,7 @@ main {
 }
 
 .title-section h1 {
-  font-family: "Tagesschrift", sans-serif;
+  font-family: 'Tagesschrift', sans-serif;
   font-size: clamp(1.35rem, 6vw, 4.5rem);
   line-height: 1.05;
 }
@@ -105,7 +105,9 @@ main {
   border: 1px solid var(--field-help-border);
   background-color: var(--field-help-bg);
   padding: 0.75rem 1rem;
-  transition: border-color 0.2s ease, background-color 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .field-help[open] {
@@ -170,7 +172,6 @@ main {
   flex-wrap: wrap;
   gap: 0.75rem;
 }
-
 
 .label-preview {
   position: relative;
@@ -380,10 +381,7 @@ main {
   --label-padding-y: 10px;
   --label-padding-inline-start: var(--label-padding-x);
   --label-padding-inline-end: var(--label-padding-x);
-  padding:
-    var(--label-padding-y)
-    var(--label-padding-inline-end)
-    var(--label-padding-y)
+  padding: var(--label-padding-y) var(--label-padding-inline-end) var(--label-padding-y)
     var(--label-padding-inline-start);
 }
 
@@ -411,7 +409,10 @@ main {
   cursor: default;
   flex-shrink: 0;
   user-select: none;
-  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .qr-info-icon i {
@@ -503,7 +504,11 @@ main {
   line-height: 1.1;
   cursor: pointer;
   white-space: nowrap;
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .theme-toggle-button:hover {
