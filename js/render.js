@@ -396,14 +396,12 @@ function applyValidationFeedback(disabled) {
       container: boltHeadField,
       messageElement: boltHeadMessage,
       valid: headValid,
-      message: 'Select a head style',
     });
     updateInputFieldState({
       input: boltDriveSelect,
       container: boltDriveField,
       messageElement: boltDriveMessage,
       valid: driveValid,
-      message: 'Select a drive style',
     });
     updateInputFieldState({
       input: null,
