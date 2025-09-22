@@ -338,6 +338,44 @@ function clearHardwareImageContent() {
   hardwareImageDiv.innerHTML = '';
 }
 
+function setExplicitWidthFromAspectRatio(img, targetHeightPx, maxWidthPx) {
+  if (!img || !Number.isFinite(targetHeightPx) || targetHeightPx <= 0) {
+    return;
+  }
+
+  const applyWidth = () => {
+    if (!img || !img.isConnected) {
+      return;
+    }
+    const { naturalWidth, naturalHeight } = img;
+    if (!Number.isFinite(naturalWidth) || !Number.isFinite(naturalHeight)) {
+      return;
+    }
+    if (naturalWidth <= 0 || naturalHeight <= 0) {
+      return;
+    }
+    const aspectRatio = naturalWidth / naturalHeight;
+    if (!Number.isFinite(aspectRatio) || aspectRatio <= 0) {
+      return;
+    }
+    let desiredWidth = aspectRatio * targetHeightPx;
+    if (!Number.isFinite(desiredWidth) || desiredWidth <= 0) {
+      return;
+    }
+    if (Number.isFinite(maxWidthPx) && maxWidthPx > 0) {
+      desiredWidth = Math.min(desiredWidth, maxWidthPx);
+    }
+    if (Number.isFinite(desiredWidth) && desiredWidth > 0) {
+      img.style.width = desiredWidth + 'px';
+    }
+  };
+
+  img.addEventListener('load', applyWidth);
+  if (img.complete) {
+    applyWidth();
+  }
+}
+
 function applyTrimmedSvgToImage(img, originalSrc) {
   if (!img || typeof originalSrc !== 'string' || !originalSrc) {
     return;
@@ -1017,6 +1055,7 @@ export function updatePreview() {
               boltImg.style.maxWidth = maxWidthPerImage + 'px';
               boltImg.addEventListener('error', handleMissingAsset);
               boltGroup.appendChild(boltImg);
+              setExplicitWidthFromAspectRatio(boltImg, innerHeightPx, maxWidthPerImage);
               applyTrimmedSvgToImage(boltImg, imageInfo.src);
             });
           } else {
@@ -1027,7 +1066,9 @@ export function updatePreview() {
             img.decoding = 'async';
             img.loading = 'lazy';
             img.style.maxHeight = innerHeightPx + 'px';
+            img.style.height = innerHeightPx + 'px';
             img.style.maxWidth = maxWidthForPhoto + 'px';
+            setExplicitWidthFromAspectRatio(img, innerHeightPx, maxWidthForPhoto);
             hardwareImageDiv.appendChild(img);
           }
         } else {
