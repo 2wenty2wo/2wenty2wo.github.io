@@ -15,7 +15,7 @@ const createMockSelect = () => ({
       return;
     }
     throw new Error(`Unexpected innerHTML assignment: ${value}`);
-  }
+  },
 });
 
 const mockThreadSizeSelect = createMockSelect();
@@ -26,14 +26,14 @@ const mockUpdateDownloadState = jest.fn();
 jest.mock('../js/dom-elements.js', () => ({
   __esModule: true,
   elements: {
-    threadSizeSelect: mockThreadSizeSelect
-  }
+    threadSizeSelect: mockThreadSizeSelect,
+  },
 }));
 
 jest.mock('../js/render.js', () => ({
   __esModule: true,
   updatePreview: mockUpdatePreview,
-  updateDownloadState: mockUpdateDownloadState
+  updateDownloadState: mockUpdateDownloadState,
 }));
 
 const createElementMock = jest.fn(tagName => {
@@ -42,12 +42,12 @@ const createElementMock = jest.fn(tagName => {
   }
   return {
     value: '',
-    textContent: ''
+    textContent: '',
   };
 });
 
 global.document = {
-  createElement: createElementMock
+  createElement: createElementMock,
 };
 
 let populateThreadSizes;
@@ -85,7 +85,7 @@ describe('populateThreadSizes', () => {
     expect(mockThreadSizeSelect.options).toHaveLength(metricThreadSizes.length + 1);
     const [placeholder, ...options] = mockThreadSizeSelect.options;
     expect(placeholder).toEqual(
-      expect.objectContaining({ value: '', textContent: 'Select size…' })
+      expect.objectContaining({ value: '', textContent: 'Select size…' }),
     );
     expect(options.map(option => option.textContent)).toEqual(metricThreadSizes);
     expect(options.map(option => option.value)).toEqual(metricThreadSizes);
@@ -103,7 +103,7 @@ describe('populateThreadSizes', () => {
     expect(state.threadSize).toBe('');
     expect(mockThreadSizeSelect.options).toHaveLength(1);
     expect(mockThreadSizeSelect.options[0]).toEqual(
-      expect.objectContaining({ value: '', textContent: 'Not applicable' })
+      expect.objectContaining({ value: '', textContent: 'Not applicable' }),
     );
     expect(mockUpdateDownloadState).toHaveBeenCalledTimes(1);
     expect(mockUpdatePreview).toHaveBeenCalledTimes(1);

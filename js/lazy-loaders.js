@@ -48,7 +48,7 @@ function loadScript(src, globalName) {
 export function loadHtml2Canvas() {
   return loadScript(
     'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',
-    'html2canvas'
+    'html2canvas',
   );
 }
 

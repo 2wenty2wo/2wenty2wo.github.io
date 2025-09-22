@@ -3,7 +3,7 @@
 ## Overview
 
 Gridfinity Label Maker is a static web application for designing and printing
-labels sized for Gridfinity storage bins.  The app runs entirely in the browser
+labels sized for Gridfinity storage bins. The app runs entirely in the browser
 and relies on modular JavaScript, modern HTML, and layered CSS for styling.
 Bootstrap utilities provide responsive layout primitives, while lightweight
 third-party libraries are lazy-loaded to power optional QR code generation and
@@ -12,15 +12,15 @@ image export.
 Key capabilities exposed through `index.html` and the supporting scripts
 include:
 
-* Dark and light theme toggle with preference persistence.
-* Hardware presets that reconfigure the form for screws, nuts, inserts, fuses,
+- Dark and light theme toggle with preference persistence.
+- Hardware presets that reconfigure the form for screws, nuts, inserts, fuses,
   bearings, electronic components, and fully custom labels.
-* Contextual validation and helper messaging that keep the preview in sync with
+- Contextual validation and helper messaging that keep the preview in sync with
   selected options.
-* Optional QR code content with automatic library loading only when needed.
-* Download-and-print flows that use html2canvas to export the on-screen label
+- Optional QR code content with automatic library loading only when needed.
+- Download-and-print flows that use html2canvas to export the on-screen label
   preview.
-* Shareable label URLs with Web Share API support and clipboard fallback.
+- Shareable label URLs with Web Share API support and clipboard fallback.
 
 The repository is structured as a traditional GitHub Pages site, making it easy
 to host the tool directly from the `main` branch.
@@ -51,8 +51,8 @@ to host the tool directly from the `main` branch.
 
 ## Building the Project
 
-No build step is required.  All assets are committed in their final form and
-referenced directly from `index.html`.  When making changes, open the HTML file
+No build step is required. All assets are committed in their final form and
+referenced directly from `index.html`. When making changes, open the HTML file
 in a browser or serve the repository via a static file server to reflect your
 updates.
 
@@ -110,11 +110,11 @@ branch (or `/docs` folder if you choose to relocate the site assets).
 
 ## License
 
-This project is available under the terms of the MIT License.  See
+This project is available under the terms of the MIT License. See
 [`LICENSE`](LICENSE) for the full text.
 
 ## Change Log
 
 Release history is tracked in [`CHANGELOG.md`](CHANGELOG.md) using the
-[Keep a Changelog](https://keepachangelog.com/en/1.0.0/) convention.  Refer to
+[Keep a Changelog](https://keepachangelog.com/en/1.0.0/) convention. Refer to
 that file for a detailed summary of notable updates.

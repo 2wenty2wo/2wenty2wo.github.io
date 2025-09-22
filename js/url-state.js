@@ -5,7 +5,9 @@ import {
   imperialThreadSizes,
   fuseValues,
   bearingOptions,
-  connectorCatalog
+  connectorCatalog,
+  boltHeadOptions,
+  boltDriveOptions,
 } from './data.js';
 
 export const SHARE_QUERY_PARAM = 'label';
@@ -22,6 +24,8 @@ const FIELD_MAP = {
   notes: 'no',
   standard: 'sd',
   standardCode: 'sc',
+  boltHead: 'bh',
+  boltDrive: 'bv',
   showStandard: 'ss',
   showImage: 'si',
   showQr: 'sq',
@@ -36,7 +40,7 @@ const FIELD_MAP = {
   customLine1: 'c1',
   customLine2: 'c2',
   customImageData: 'cid',
-  customImageName: 'cin'
+  customImageName: 'cin',
 };
 
 const REVERSE_FIELD_MAP = Object.entries(FIELD_MAP).reduce((acc, [key, code]) => {
@@ -46,31 +50,31 @@ const REVERSE_FIELD_MAP = Object.entries(FIELD_MAP).reduce((acc, [key, code]) =>
 
 const hardwareTypeOptions = elements.hardwareTypeOptions || new Set();
 const fuseTypeOptions = new Set(
-  Array.isArray(elements.fuseTypeRadios) ? elements.fuseTypeRadios.map(radio => radio.value) : []
+  Array.isArray(elements.fuseTypeRadios) ? elements.fuseTypeRadios.map(radio => radio.value) : [],
 );
 const componentCategoryOptions = new Set(
   Array.isArray(elements.componentCategoryRadios)
     ? elements.componentCategoryRadios.map(radio => radio.value)
-    : []
+    : [],
 );
 const componentMountOptions = new Set(
   Array.isArray(elements.componentMountRadios)
     ? elements.componentMountRadios.map(radio => radio.value)
-    : []
+    : [],
 );
 const heightOptions = new Set(
   Array.isArray(elements.heightRadios)
     ? elements.heightRadios
         .map(radio => Number.parseInt(radio.value, 10))
         .filter(value => Number.isFinite(value))
-    : []
+    : [],
 );
 const glassSizeOptions = new Set(
   elements.glassSizeSelect
     ? Array.from(elements.glassSizeSelect.options)
         .map(option => option.value)
         .filter(value => value && value.trim().length > 0)
-    : []
+    : [],
 );
 const glassSpeedOptions = new Set(['Slow Blow (Time Delay)', 'Fast Blow']);
 const metricThreadSet = new Set(metricThreadSizes);
@@ -80,6 +84,8 @@ const fuseValueOptions = new Set(fuseValues.map(value => String(value)));
 const connectorCategoryOptions = new Set(connectorCatalog.map(category => category.id));
 const bearingCodeOptions = new Set(bearingOptions.map(option => option.code));
 const systemTypeOptions = new Set(['Metric', 'Imperial']);
+const boltHeadIds = new Set(boltHeadOptions.map(option => option.id));
+const boltDriveIds = new Set(boltDriveOptions.map(option => option.id));
 
 function encodeToBase64Url(input) {
   const encoder = new TextEncoder();
@@ -96,9 +102,7 @@ function decodeFromBase64Url(input) {
   const normalized = input.replace(/-/g, '+').replace(/_/g, '/');
   const paddingNeeded = normalized.length % 4;
   const padded =
-    paddingNeeded === 0
-      ? normalized
-      : normalized + '='.repeat((4 - paddingNeeded) % 4);
+    paddingNeeded === 0 ? normalized : normalized + '='.repeat((4 - paddingNeeded) % 4);
   const binary = atob(padded);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i += 1) {
@@ -334,6 +338,14 @@ function applyExpandedPayload(expanded) {
   }
   if (typeof expanded.standard === 'string') {
     state.standard = sanitizeShortText(expanded.standard);
+  }
+  if (typeof expanded.boltHead === 'string') {
+    const trimmedHead = expanded.boltHead.trim();
+    state.boltHead = boltHeadIds.has(trimmedHead) ? trimmedHead : '';
+  }
+  if (typeof expanded.boltDrive === 'string') {
+    const trimmedDrive = expanded.boltDrive.trim();
+    state.boltDrive = boltDriveIds.has(trimmedDrive) ? trimmedDrive : '';
   }
 
   if (typeof expanded.showStandard === 'boolean') {

@@ -9,7 +9,7 @@ import {
   handleCustomImageFile,
   clearCustomImage,
   handleStandardSelectKeydown,
-  clearStandardFilter
+  clearStandardFilter,
 } from './forms.js';
 import { updatePreview, updateDownloadState, updateQrContentVisibility } from './render.js';
 import { downloadLabel, printLabel, shareLabel } from './actions.js';
@@ -34,6 +34,8 @@ const {
   customLine2Input,
   customImageInput,
   customImageClearButton,
+  boltHeadSelect,
+  boltDriveSelect,
   standardSelect,
   standardToggle,
   imageToggle,
@@ -44,7 +46,7 @@ const {
   heightRadios,
   downloadButton,
   shareButton,
-  printButton
+  printButton,
 } = elements;
 
 export function initEventHandlers() {
@@ -99,7 +101,10 @@ export function initEventHandlers() {
       const value = bearingTypeSelect.value;
       const selectedOption = bearingTypeSelect.selectedOptions[0];
       state.bearingType = value;
-      state.bearingDetails = selectedOption && selectedOption.dataset.description ? selectedOption.dataset.description : '';
+      state.bearingDetails =
+        selectedOption && selectedOption.dataset.description
+          ? selectedOption.dataset.description
+          : '';
       updateDownloadState();
       updatePreview();
     });
@@ -215,7 +220,8 @@ export function initEventHandlers() {
 
   if (customImageInput) {
     customImageInput.addEventListener('change', () => {
-      const file = customImageInput.files && customImageInput.files[0] ? customImageInput.files[0] : null;
+      const file =
+        customImageInput.files && customImageInput.files[0] ? customImageInput.files[0] : null;
       handleCustomImageFile(file);
     });
   }
@@ -242,6 +248,22 @@ export function initEventHandlers() {
     });
     standardSelect.addEventListener('keydown', handleStandardSelectKeydown);
     standardSelect.addEventListener('blur', clearStandardFilter);
+  }
+
+  if (boltHeadSelect) {
+    boltHeadSelect.addEventListener('change', () => {
+      state.boltHead = boltHeadSelect.value;
+      updateDownloadState();
+      updatePreview();
+    });
+  }
+
+  if (boltDriveSelect) {
+    boltDriveSelect.addEventListener('change', () => {
+      state.boltDrive = boltDriveSelect.value;
+      updateDownloadState();
+      updatePreview();
+    });
   }
 
   if (standardToggle) {

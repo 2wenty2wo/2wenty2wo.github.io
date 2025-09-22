@@ -1,17 +1,97 @@
 export const metricThreadSizes = [
-  'M1', 'M1.2', 'M1.4', 'M1.6', 'M2', 'M2.5', 'M3', 'M3.5', 'M4',
-  'M5', 'M6', 'M7', 'M8', 'M10', 'M12', 'M14', 'M16', 'M18', 'M20',
-  'M22', 'M24', 'M30'
+  'M1',
+  'M1.2',
+  'M1.4',
+  'M1.6',
+  'M2',
+  'M2.5',
+  'M3',
+  'M3.5',
+  'M4',
+  'M5',
+  'M6',
+  'M7',
+  'M8',
+  'M10',
+  'M12',
+  'M14',
+  'M16',
+  'M18',
+  'M20',
+  'M22',
+  'M24',
+  'M30',
 ];
 
 export const imperialThreadSizes = [
-  '#4-40', '#6-32', '#8-32', '#10-24', '1/4-20', '5/16-18', '3/8-16', '7/16-14', '1/2-13'
+  '#4-40',
+  '#6-32',
+  '#8-32',
+  '#10-24',
+  '1/4-20',
+  '5/16-18',
+  '3/8-16',
+  '7/16-14',
+  '1/2-13',
 ];
 
 export const fuseValues = [
-  '0.25', '0.5', '0.75', '1', '1.5', '2', '2.5', '3', '4', '5', '6', '7.5', '8', '10', '12',
-  '15', '20', '25', '30', '40'
+  '0.25',
+  '0.5',
+  '0.75',
+  '1',
+  '1.5',
+  '2',
+  '2.5',
+  '3',
+  '4',
+  '5',
+  '6',
+  '7.5',
+  '8',
+  '10',
+  '12',
+  '15',
+  '20',
+  '25',
+  '30',
+  '40',
 ];
+
+export const boltHeadOptions = [
+  { id: 'button_head', label: 'Button Head', image: 'button_head' },
+  { id: 'cap_head', label: 'Socket Cap', image: 'cap_head' },
+  { id: 'capstan_head', label: 'Capstan Head', image: 'capstan_head' },
+  { id: 'captive_shaft', label: 'Captive Shaft', image: 'captive_shaft' },
+  { id: 'carriage_head', label: 'Carriage Bolt', image: 'carriage_head' },
+  { id: 'cheese_head', label: 'Cheese Head', image: 'cheese_head' },
+  { id: 'countersunk_head', label: 'Countersunk', image: 'countersunk_head' },
+  { id: 'eye_hook_head', label: 'Eye Bolt', image: 'eye_hook_head' },
+  { id: 'fillister_head', label: 'Fillister Head', image: 'fillister_head' },
+  { id: 'flanged_head', label: 'Flanged Hex', image: 'flanged_head' },
+  { id: 'grub_headless', label: 'Set Screw', image: 'grub_headless' },
+  { id: 'hand_grip_head', label: 'Hand Grip', image: 'hand_grip_head' },
+  { id: 'hexagon_head', label: 'Hex Bolt', image: 'hexagon_head' },
+  { id: 'mushroom_truss_head', label: 'Mushroom Truss', image: 'mushroom_truss_head' },
+  { id: 'pan_head', label: 'Pan Head', image: 'pan_head' },
+  { id: 'raised_countersunk_head', label: 'Raised Countersunk', image: 'raised_countersunk_head' },
+  { id: 'security_head', label: 'Security Button', image: 'security_head' },
+  { id: 'shoulder_head', label: 'Shoulder Bolt', image: 'shoulder_head' },
+];
+
+export const boltDriveOptions = [
+  { id: 'flat', label: 'Slotted', image: 'flat' },
+  { id: 'hex', label: 'Hex', image: 'hex' },
+  { id: 'hex_bolt', label: 'Hex Bolt', image: 'hex_bolt' },
+  { id: 'philips', label: 'Phillips', image: 'philips' },
+  { id: 'security_hex', label: 'Security Hex', image: 'security_hex' },
+  { id: 'security_torx', label: 'Security Torx', image: 'security_torx' },
+  { id: 'square', label: 'Square', image: 'square' },
+  { id: 'torx', label: 'Torx', image: 'torx' },
+];
+
+export const boltHeadMap = new Map(boltHeadOptions.map(option => [option.id, option]));
+export const boltDriveMap = new Map(boltDriveOptions.map(option => [option.id, option]));
 
 export const bearingOptions = [
   { code: '608ZZ', description: '8 × 22 × 7 mm, metal shields' },
@@ -20,126 +100,11 @@ export const bearingOptions = [
   { code: '6200ZZ', description: '10 × 30 × 9 mm, deep groove' },
   { code: '6900ZZ', description: '10 × 22 × 6 mm, thin section' },
   { code: '6701ZZ', description: '12 × 18 × 4 mm, thin section' },
-  { code: 'MR85-2RS', description: '5 × 8 × 2.5 mm, rubber seals' }
+  { code: 'MR85-2RS', description: '5 × 8 × 2.5 mm, rubber seals' },
 ];
 
 export const hardwareCatalog = {
-  Bolt: [
-    {
-      code: 'Button Head + Hex Socket',
-      name: 'Button head cap screw with internal hex drive',
-      headImage: 'button_head',
-      driveImage: 'hex'
-    },
-    {
-      code: 'Socket Cap + Hex Socket',
-      name: 'Socket cap screw with internal hex drive',
-      headImage: 'cap_head',
-      driveImage: 'hex'
-    },
-    {
-      code: 'Capstan Head + Slotted',
-      name: 'Capstan head screw with slotted drive',
-      headImage: 'capstan_head',
-      driveImage: 'flat'
-    },
-    {
-      code: 'Captive Shaft + Slotted',
-      name: 'Captive shaft screw with slotted drive',
-      headImage: 'captive_shaft',
-      driveImage: 'flat'
-    },
-    {
-      code: 'Carriage Bolt + Square Neck',
-      name: 'Carriage bolt with square neck profile',
-      headImage: 'carriage_head',
-      driveImage: 'square'
-    },
-    {
-      code: 'Cheese Head + Slotted',
-      name: 'Cheese head screw with slotted drive',
-      headImage: 'cheese_head',
-      driveImage: 'flat'
-    },
-    {
-      code: 'Countersunk + Phillips',
-      name: 'Countersunk screw with Phillips drive',
-      headImage: 'countersunk_head',
-      driveImage: 'philips'
-    },
-    {
-      code: 'Eye Bolt + Square Drive',
-      name: 'Eye bolt with square drive detail',
-      headImage: 'eye_hook_head',
-      driveImage: 'square'
-    },
-    {
-      code: 'Fillister Head + Slotted',
-      name: 'Fillister head screw with slotted drive',
-      headImage: 'fillister_head',
-      driveImage: 'flat'
-    },
-    {
-      code: 'Flanged Hex + External Hex',
-      name: 'Flanged hex bolt with external hex drive',
-      headImage: 'flanged_head',
-      driveImage: 'hex_bolt'
-    },
-    {
-      code: 'Set Screw + Hex Socket',
-      name: 'Set screw with internal hex drive',
-      headImage: 'grub_headless',
-      driveImage: 'hex'
-    },
-    {
-      code: 'Hand Grip + Hex Socket',
-      name: 'Hand grip screw with internal hex drive',
-      headImage: 'hand_grip_head',
-      driveImage: 'hex'
-    },
-    {
-      code: 'Hex Bolt + External Hex',
-      name: 'Hex bolt with external hex drive',
-      headImage: 'hexagon_head',
-      driveImage: 'hex_bolt'
-    },
-    {
-      code: 'Mushroom Truss + Torx',
-      name: 'Mushroom truss screw with Torx drive',
-      headImage: 'mushroom_truss_head',
-      driveImage: 'torx'
-    },
-    {
-      code: 'Pan Head + Phillips',
-      name: 'Pan head screw with Phillips drive',
-      headImage: 'pan_head',
-      driveImage: 'philips'
-    },
-    {
-      code: 'Raised Countersunk + Phillips',
-      name: 'Raised countersunk screw with Phillips drive',
-      headImage: 'raised_countersunk_head',
-      driveImage: 'philips'
-    },
-    {
-      code: 'Security Button + Security Torx',
-      name: 'Security button screw with tamper-resistant Torx drive',
-      headImage: 'security_head',
-      driveImage: 'security_torx'
-    },
-    {
-      code: 'Security Button + Security Hex',
-      name: 'Security button screw with tamper-resistant hex drive',
-      headImage: 'security_head',
-      driveImage: 'security_hex'
-    },
-    {
-      code: 'Shoulder Bolt + Hex Socket',
-      name: 'Shoulder bolt with internal hex drive',
-      headImage: 'shoulder_head',
-      driveImage: 'hex'
-    }
-  ],
+  Bolt: [],
   Screw: [
     { code: 'DIN 571', name: 'Coach Screw (Wood Screw)' },
     { code: 'DIN 7995', name: 'Cross Recessed Pan Head Wood Screw' },
@@ -147,7 +112,7 @@ export const hardwareCatalog = {
     { code: 'DIN 7997', name: 'Cross Recessed Raised Countersunk Head Wood Screw' },
     { code: 'DIN 95', name: 'Round Head Wood Screw' },
     { code: 'DIN 96', name: 'Raised Countersunk Head Wood Screw' },
-    { code: 'DIN 97', name: 'Countersunk Head Wood Screw' }
+    { code: 'DIN 97', name: 'Countersunk Head Wood Screw' },
   ],
   Nut: [
     { code: 'DIN 1478', name: 'Wing Nut' },
@@ -193,7 +158,7 @@ export const hardwareCatalog = {
     { code: 'DIN 982', name: 'Prevailing Torque Type Hexagon Nut' },
     { code: 'DIN 985', name: 'Prevailing Torque Type Hexagon Nut' },
     { code: 'DIN 986', name: 'Prevailing Torque Type Hexagon Thin Nut' },
-    { code: 'ISO 7040', name: 'Prevailing Torque Type Hexagon Nut' }
+    { code: 'ISO 7040', name: 'Prevailing Torque Type Hexagon Nut' },
   ],
   Washer: [
     { code: 'DIN 1052', name: 'Washer for Wood Construction' },
@@ -230,7 +195,7 @@ export const hardwareCatalog = {
     { code: 'DIN 7989', name: 'Plain Washer' },
     { code: 'DIN 9021', name: 'Plain Washer' },
     { code: 'DIN 93', name: 'Tab Washer' },
-    { code: 'DIN 988', name: 'Shim Ring' }
+    { code: 'DIN 988', name: 'Shim Ring' },
   ],
   'Heat Insert': [],
   Bearing: [],
@@ -238,15 +203,15 @@ export const hardwareCatalog = {
   Fuse: [
     { code: 'IEC 60127-2', name: 'Time-Lag Cartridge Fuse' },
     { code: 'IEC 60127-3', name: 'Fast-Acting Cartridge Fuse' },
-    { code: 'UL 248-14', name: 'Supplementary Fuse' }
-  ]
+    { code: 'UL 248-14', name: 'Supplementary Fuse' },
+  ],
 };
 
 export const hardwareImageFolders = {
   Bolt: 'bolts',
   Screw: 'screws',
   Nut: 'nuts',
-  Washer: 'washers'
+  Washer: 'washers',
 };
 
 export const connectorCatalog = [
@@ -264,7 +229,10 @@ export const connectorCatalog = [
       { code: 'Yellow Fork Terminal', name: '12–10 AWG (4.0–6.0 mm²) Spade' },
       { code: 'Red Locking Fork Terminal', name: '22–16 AWG (0.5–1.5 mm²) Locking Tongue Spade' },
       { code: 'Blue Locking Fork Terminal', name: '16–14 AWG (1.5–2.5 mm²) Locking Tongue Spade' },
-      { code: 'Yellow Locking Fork Terminal', name: '12–10 AWG (4.0–6.0 mm²) Locking Tongue Spade' },
+      {
+        code: 'Yellow Locking Fork Terminal',
+        name: '12–10 AWG (4.0–6.0 mm²) Locking Tongue Spade',
+      },
       { code: 'Red Butt Splice', name: '22–16 AWG (0.5–1.5 mm²) Straight Splice' },
       { code: 'Blue Butt Splice', name: '16–14 AWG (1.5–2.5 mm²) Straight Splice' },
       { code: 'Yellow Butt Splice', name: '12–10 AWG (4.0–6.0 mm²) Straight Splice' },
@@ -293,8 +261,8 @@ export const connectorCatalog = [
       { code: 'Yellow Pin Terminal', name: '12–10 AWG (4.0–6.0 mm²) Pin' },
       { code: 'Red Closed-End Connector', name: '22–16 AWG (0.5–1.5 mm²) Pigtail Cap' },
       { code: 'Blue Closed-End Connector', name: '16–14 AWG (1.5–2.5 mm²) Pigtail Cap' },
-      { code: 'Yellow Closed-End Connector', name: '12–10 AWG (4.0–6.0 mm²) Pigtail Cap' }
-    ]
+      { code: 'Yellow Closed-End Connector', name: '12–10 AWG (4.0–6.0 mm²) Pigtail Cap' },
+    ],
   },
   {
     id: 'molex',
@@ -309,8 +277,8 @@ export const connectorCatalog = [
       { code: 'Molex Mega-Fit', name: '5.7 mm pitch high-current connector' },
       { code: 'Molex SL Series', name: '2.54 mm pitch crimp housing (SL)' },
       { code: 'Molex Nano-Fit', name: '2.50 mm pitch fully isolated terminals' },
-      { code: 'Molex Sabre', name: '7.50 mm pitch high-power connector' }
-    ]
+      { code: 'Molex Sabre', name: '7.50 mm pitch high-power connector' },
+    ],
   },
   {
     id: 'jst',
@@ -327,8 +295,8 @@ export const connectorCatalog = [
       { code: 'JST-VH', name: '3.96 mm wire-to-board plug (VH series)' },
       { code: 'JST-SM', name: '2.54 mm wire-to-wire plug (SM series)' },
       { code: 'JST-JWPF', name: '2.0 mm sealed connector (JWPF series)' },
-      { code: 'JST-RCY', name: '2.54 mm battery connector (RCY series)' }
-    ]
+      { code: 'JST-RCY', name: '2.54 mm battery connector (RCY series)' },
+    ],
   },
   {
     id: 'bootlace-ferrule',
@@ -342,11 +310,20 @@ export const connectorCatalog = [
       { code: 'Bootlace Ferrule 1.5 mm²', name: 'Insulated ferrule per DIN 46228-4' },
       { code: 'Bootlace Ferrule 2.5 mm²', name: 'Insulated ferrule per DIN 46228-4' },
       { code: 'Bootlace Ferrule 4.0 mm²', name: 'Insulated ferrule per DIN 46228-4' },
-      { code: 'Twin Bootlace Ferrule 2 × 1.5 mm²', name: 'Twin entry insulated ferrule per DIN 46228-4' },
-      { code: 'Twin Bootlace Ferrule 2 × 2.5 mm²', name: 'Twin entry insulated ferrule per DIN 46228-4' },
-      { code: 'Uninsulated Bootlace Ferrule 1.0 mm²', name: 'Plain copper ferrule per DIN 46228-1' }
-    ]
-  }
+      {
+        code: 'Twin Bootlace Ferrule 2 × 1.5 mm²',
+        name: 'Twin entry insulated ferrule per DIN 46228-4',
+      },
+      {
+        code: 'Twin Bootlace Ferrule 2 × 2.5 mm²',
+        name: 'Twin entry insulated ferrule per DIN 46228-4',
+      },
+      {
+        code: 'Uninsulated Bootlace Ferrule 1.0 mm²',
+        name: 'Plain copper ferrule per DIN 46228-1',
+      },
+    ],
+  },
 ];
 
 export const pxPerMm = 6;

@@ -10,6 +10,8 @@ export const state = {
   notes: '',
   standard: '',
   standardCode: '',
+  boltHead: '',
+  boltDrive: '',
   showStandard: true,
   showImage: true,
   showQr: false,
@@ -24,9 +26,9 @@ export const state = {
   customLine1: '',
   customLine2: '',
   customImageData: '',
-  customImageName: ''
+  customImageName: '',
 };
 
 export const standardFilterState = {
-  query: ''
+  query: '',
 };
