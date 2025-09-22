@@ -307,11 +307,42 @@ function fetchTrimmedSvgMarkup(src) {
   return promise;
 }
 
+function revokeTrimmedSvgObjectUrl(img) {
+  if (!img || !img.dataset) {
+    return;
+  }
+  const { trimmedSvgObjectUrl } = img.dataset;
+  if (
+    trimmedSvgObjectUrl &&
+    typeof URL !== 'undefined' &&
+    typeof URL.revokeObjectURL === 'function'
+  ) {
+    try {
+      URL.revokeObjectURL(trimmedSvgObjectUrl);
+    } catch {
+      // Ignore failures to revoke object URLs; they will be cleaned up by the browser.
+    }
+  }
+  delete img.dataset.trimmedSvgObjectUrl;
+  delete img.dataset.trimmedSvgSource;
+}
+
+function clearHardwareImageContent() {
+  if (!hardwareImageDiv) {
+    return;
+  }
+  const existingImages = hardwareImageDiv.querySelectorAll('img');
+  existingImages.forEach(image => {
+    revokeTrimmedSvgObjectUrl(image);
+  });
+  hardwareImageDiv.innerHTML = '';
+}
+
 function applyTrimmedSvgToImage(img, originalSrc) {
   if (!img || typeof originalSrc !== 'string' || !originalSrc) {
     return;
   }
-  if (img.dataset.trimmedSvgSource === originalSrc) {
+  if (img.dataset.trimmedSvgSource === originalSrc && img.dataset.trimmedSvgObjectUrl) {
     return;
   }
   const normalizedSrc = originalSrc.toLowerCase();
@@ -329,7 +360,7 @@ function applyTrimmedSvgToImage(img, originalSrc) {
     if (!img.isConnected) {
       return;
     }
-    if (img.dataset.trimmedSvgSource === originalSrc) {
+    if (img.dataset.trimmedSvgSource === originalSrc && img.dataset.trimmedSvgObjectUrl) {
       return;
     }
     if (
@@ -342,12 +373,11 @@ function applyTrimmedSvgToImage(img, originalSrc) {
     try {
       const blob = new Blob([trimmedMarkup], { type: 'image/svg+xml' });
       const objectUrl = URL.createObjectURL(blob);
-      const revoke = () => {
-        URL.revokeObjectURL(objectUrl);
-      };
-      img.addEventListener('load', revoke, { once: true });
-      img.addEventListener('error', revoke, { once: true });
+      if (img.dataset.trimmedSvgObjectUrl) {
+        revokeTrimmedSvgObjectUrl(img);
+      }
       img.dataset.trimmedSvgSource = originalSrc;
+      img.dataset.trimmedSvgObjectUrl = objectUrl;
       img.src = objectUrl;
     } catch {
       // Silently ignore failures to construct the trimmed image.
@@ -805,7 +835,7 @@ export function updatePreview() {
     labelInner.style.display = 'none';
     labelInner.classList.remove('has-hardware-image');
     hardwareImageDiv.style.display = 'none';
-    hardwareImageDiv.innerHTML = '';
+    clearHardwareImageContent();
     hardwareImageDiv.style.removeProperty('max-width');
     hardwareImageDiv.style.removeProperty('flex-basis');
     hardwareImageDiv.style.removeProperty('flex-shrink');
@@ -885,7 +915,7 @@ export function updatePreview() {
       hardwareImageDiv.style.flexBasis = displaySize + 'px';
       hardwareImageDiv.style.flexShrink = '0';
       hardwareImageDiv.style.minHeight = displaySize + 'px';
-      hardwareImageDiv.innerHTML = '';
+      clearHardwareImageContent();
       hardwareWidthPx = displaySize;
       hardwareVisible = true;
       if (state.customImageData) {
@@ -906,7 +936,7 @@ export function updatePreview() {
     } else {
       const renderFallbackIcon = () => {
         hardwareImageDiv.style.display = 'none';
-        hardwareImageDiv.innerHTML = '';
+        clearHardwareImageContent();
         hardwareImageDiv.style.removeProperty('max-width');
         hardwareImageDiv.style.removeProperty('flex-basis');
         hardwareImageDiv.style.removeProperty('flex-shrink');
@@ -934,7 +964,7 @@ export function updatePreview() {
           hardwareImageDiv.style.flexBasis = maxWidthForPhoto + 'px';
           hardwareImageDiv.style.flexShrink = '0';
           hardwareImageDiv.style.removeProperty('min-height');
-          hardwareImageDiv.innerHTML = '';
+          clearHardwareImageContent();
           hardwareWidthPx = maxWidthForPhoto;
           hardwareVisible = true;
 
@@ -1002,7 +1032,7 @@ export function updatePreview() {
           }
         } else {
           hardwareImageDiv.style.display = 'none';
-          hardwareImageDiv.innerHTML = '';
+          clearHardwareImageContent();
           hardwareImageDiv.style.removeProperty('max-width');
           hardwareImageDiv.style.removeProperty('flex-basis');
           hardwareImageDiv.style.removeProperty('flex-shrink');
@@ -1016,7 +1046,7 @@ export function updatePreview() {
     }
   } else {
     hardwareImageDiv.style.display = 'none';
-    hardwareImageDiv.innerHTML = '';
+    clearHardwareImageContent();
     hardwareImageDiv.style.removeProperty('max-width');
     hardwareImageDiv.style.removeProperty('flex-basis');
     hardwareImageDiv.style.removeProperty('flex-shrink');
