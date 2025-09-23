@@ -529,10 +529,11 @@ function setExplicitWidthFromAspectRatio(img, targetHeightPx, maxWidthPx) {
     return;
   }
 
-  const applyWidth = () => {
+  const applyDimensions = () => {
     if (!img || !img.isConnected) {
       return;
     }
+
     const { naturalWidth, naturalHeight } = img;
     if (!Number.isFinite(naturalWidth) || !Number.isFinite(naturalHeight)) {
       return;
@@ -540,25 +541,38 @@ function setExplicitWidthFromAspectRatio(img, targetHeightPx, maxWidthPx) {
     if (naturalWidth <= 0 || naturalHeight <= 0) {
       return;
     }
-    const aspectRatio = naturalWidth / naturalHeight;
-    if (!Number.isFinite(aspectRatio) || aspectRatio <= 0) {
+
+    const heightScale = targetHeightPx / naturalHeight;
+    if (!Number.isFinite(heightScale) || heightScale <= 0) {
       return;
     }
-    let desiredWidth = aspectRatio * targetHeightPx;
-    if (!Number.isFinite(desiredWidth) || desiredWidth <= 0) {
-      return;
-    }
+
+    let scale = heightScale;
     if (Number.isFinite(maxWidthPx) && maxWidthPx > 0) {
-      desiredWidth = Math.min(desiredWidth, maxWidthPx);
+      const widthScale = maxWidthPx / naturalWidth;
+      if (Number.isFinite(widthScale) && widthScale > 0) {
+        scale = Math.min(scale, widthScale);
+      }
     }
-    if (Number.isFinite(desiredWidth) && desiredWidth > 0) {
-      img.style.width = desiredWidth + 'px';
+
+    const scaledWidth = naturalWidth * scale;
+    const scaledHeight = naturalHeight * scale;
+    if (
+      !Number.isFinite(scaledWidth) ||
+      !Number.isFinite(scaledHeight) ||
+      scaledWidth <= 0 ||
+      scaledHeight <= 0
+    ) {
+      return;
     }
+
+    img.style.width = scaledWidth + 'px';
+    img.style.height = scaledHeight + 'px';
   };
 
-  img.addEventListener('load', applyWidth);
+  img.addEventListener('load', applyDimensions);
   if (img.complete) {
-    applyWidth();
+    applyDimensions();
   }
 }
 
@@ -633,8 +647,12 @@ function applyValidationFeedback(disabled) {
   }
 
   if (hardwareType === 'Bolt') {
-    const headValid = Boolean(state.boltHead);
-    const driveValid = Boolean(state.boltDrive);
+    const boltDetailsRequired = Boolean(state.showImage || state.showStandard);
+    const hasHead = Boolean(state.boltHead);
+    const hasDrive = Boolean(state.boltDrive);
+    const headValid = !boltDetailsRequired || hasHead;
+    const driveValid = !boltDetailsRequired || hasDrive;
+    const standardValid = !boltDetailsRequired || (hasHead && hasDrive);
     updateInputFieldState({
       input: boltHeadSelect,
       container: boltHeadField,
@@ -651,7 +669,7 @@ function applyValidationFeedback(disabled) {
       input: null,
       container: standardField,
       messageElement: null,
-      valid: headValid && driveValid,
+      valid: standardValid,
     });
     updateInputFieldState({
       input: standardSelect,
@@ -659,10 +677,10 @@ function applyValidationFeedback(disabled) {
       messageElement: null,
       valid: true,
     });
-    if (!headValid) {
+    if (boltDetailsRequired && !hasHead) {
       requirements.push('choose a head style');
     }
-    if (!driveValid) {
+    if (boltDetailsRequired && !hasDrive) {
       requirements.push('choose a drive style');
     }
   } else {
@@ -959,7 +977,13 @@ export function isLabelReady() {
     return Boolean(state.componentCategory && state.componentMount);
   }
   if (state.hardwareType === 'Bolt') {
-    return Boolean(state.threadSize && state.length && state.boltHead && state.boltDrive);
+    const hasThread = Boolean(state.threadSize);
+    const hasLength = Boolean(state.length);
+    const detailsRequired = Boolean(state.showImage || state.showStandard);
+    const hasHead = Boolean(state.boltHead);
+    const hasDrive = Boolean(state.boltDrive);
+    const detailsSatisfied = !detailsRequired || (hasHead && hasDrive);
+    return Boolean(hasThread && hasLength && detailsSatisfied);
   }
   if (state.hardwareType === 'Screw') {
     return Boolean(state.threadSize && state.length && state.standardCode);
@@ -1217,7 +1241,6 @@ export function updatePreview() {
             boltGroup.className = 'bolt-image-group';
             const innerHeightValue = innerHeightPx + 'px';
             boltGroup.style.maxHeight = innerHeightValue;
-            boltGroup.style.height = innerHeightValue;
             hardwareImageDiv.appendChild(boltGroup);
             const boltImages = [
               {
@@ -1296,7 +1319,6 @@ export function updatePreview() {
               boltImg.loading = 'lazy';
               const maxHeightValue = innerHeightPx + 'px';
               boltImg.style.maxHeight = maxHeightValue;
-              boltImg.style.height = maxHeightValue;
               boltImg.style.maxWidth = maxWidthPerImage + 'px';
               boltImg.addEventListener('error', handleMissingAsset);
               boltGroup.appendChild(boltImg);
@@ -1312,7 +1334,6 @@ export function updatePreview() {
             img.loading = 'lazy';
             const maxHeightValue = innerHeightPx + 'px';
             img.style.maxHeight = maxHeightValue;
-            img.style.height = maxHeightValue;
             img.style.maxWidth = maxWidthForPhoto + 'px';
             setExplicitWidthFromAspectRatio(img, innerHeightPx, maxWidthForPhoto);
             hardwareImageDiv.appendChild(img);
