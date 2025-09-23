@@ -260,9 +260,18 @@ main {
   box-shadow: none;
 }
 
+.label-inner.has-hardware-image .hardware-icon {
+  align-self: stretch;
+  height: calc(100% + var(--label-padding-y) * 2);
+}
+
 .label-inner.has-hardware-image .hardware-icon:not(:empty) {
   margin-inline-start: calc(-1 * var(--label-padding-inline-start));
   margin-left: calc(-1 * var(--label-padding-inline-start));
+  margin-block-start: calc(-1 * var(--label-padding-y));
+  margin-block-end: calc(-1 * var(--label-padding-y));
+  margin-top: calc(-1 * var(--label-padding-y));
+  margin-bottom: calc(-1 * var(--label-padding-y));
   justify-content: flex-start;
 }
 
@@ -297,6 +306,7 @@ main {
   justify-content: center;
   gap: 0.75rem;
   max-height: 100%;
+  height: 100%;
   width: 100%;
 }
 
@@ -345,7 +355,8 @@ main {
   align-items: flex-start;
   min-width: 0;
   white-space: normal;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  word-break: normal;
   flex: 1;
   gap: 0.2em;
 }

@@ -160,7 +160,10 @@ function applySvgGeometryElements({ frame, group, foreignObject }, geometry) {
   }
 
   if (group) {
-    group.setAttribute('transform', `translate(${formatNumber(marginXPx)} ${formatNumber(marginYPx)})`);
+    group.setAttribute(
+      'transform',
+      `translate(${formatNumber(marginXPx)} ${formatNumber(marginYPx)})`,
+    );
   }
 
   if (foreignObject) {
@@ -403,8 +406,8 @@ function deriveTrimmedSvgMarkup(svgText) {
   ) {
     return null;
   }
-  const marginRatio = 0.08;
-  const preserveWhitespaceFraction = 0.8;
+  const marginRatio = 0.02;
+  const preserveWhitespaceFraction = 0.6;
   let marginX = bbox.width * marginRatio;
   let marginY = bbox.height * marginRatio;
   if (originalBounds) {
@@ -1240,7 +1243,7 @@ export function updatePreview() {
       if (photoInfo && innerHeightPx > 0 && innerWidthPx > 0) {
         let maxWidthForPhoto = Math.max(0, Math.min(innerHeightPx, innerWidthPx * 0.45));
         if (photoInfo.type === 'boltSvg') {
-          const boltPreferredWidth = Math.max(0, Math.min(innerHeightPx * 1.4, innerWidthPx * 0.6));
+          const boltPreferredWidth = Math.max(0, Math.min(innerHeightPx * 2.4, innerWidthPx * 0.7));
           maxWidthForPhoto = Math.max(maxWidthForPhoto, boltPreferredWidth);
         } else {
           const photoPreferredWidth = Math.max(
@@ -1249,6 +1252,7 @@ export function updatePreview() {
           );
           maxWidthForPhoto = Math.max(maxWidthForPhoto, photoPreferredWidth);
         }
+        maxWidthForPhoto = Math.min(maxWidthForPhoto, innerWidthPx);
         if (maxWidthForPhoto > 0) {
           hardwareImageDiv.style.display = 'flex';
           hardwareImageDiv.style.flexShrink = '0';
@@ -1269,6 +1273,7 @@ export function updatePreview() {
             boltGroup.className = 'bolt-image-group';
             const innerHeightValue = innerHeightPx + 'px';
             boltGroup.style.maxHeight = innerHeightValue;
+            boltGroup.style.height = innerHeightValue;
             hardwareImageDiv.appendChild(boltGroup);
             const boltImages = [
               {
@@ -1684,7 +1689,7 @@ export function updatePreview() {
     ? Math.max(minPaddingBasePx, desiredQrEdgeClearancePx)
     : minPaddingBasePx;
   const minPaddingRightPx = Math.max(2, Math.min(paddingRightPx, minPaddingRightTargetPx));
-  const minTextWidthPx = Math.max(mmToPx(10), Math.floor(innerHeightPx * 1.45));
+  const minTextWidthPx = Math.max(mmToPx(9), Math.floor(innerHeightPx * 1.2));
 
   const computeAvailableTextWidth = () => {
     const effectiveRightPadding = qrVisible
@@ -1878,8 +1883,11 @@ function captureLayoutFromDom() {
     };
   };
 
-  const textLines = [collectTextLine(line1Div), collectTextLine(line2Div), collectTextLine(line3Div)]
-    .filter(Boolean);
+  const textLines = [
+    collectTextLine(line1Div),
+    collectTextLine(line2Div),
+    collectTextLine(line3Div),
+  ].filter(Boolean);
 
   let qr = null;
   if (qrCanvas && qrCanvas.style.display !== 'none') {
@@ -1953,7 +1961,13 @@ async function renderLayoutToCanvas(layout) {
   for (const image of layout.hardwareImages) {
     try {
       const img = await loadImage(image.src);
-      ctx.drawImage(img, image.xPx + offsetXPx, image.yPx + offsetYPx, image.widthPx, image.heightPx);
+      ctx.drawImage(
+        img,
+        image.xPx + offsetXPx,
+        image.yPx + offsetYPx,
+        image.widthPx,
+        image.heightPx,
+      );
     } catch (error) {
       console.warn('Hardware image could not be rendered for export.', error);
     }
