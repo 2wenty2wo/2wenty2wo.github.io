@@ -76,9 +76,6 @@ const HORIZONTAL_SAFE_MARGIN_PER_SIDE_MM = 2;
 const VERTICAL_SAFE_MARGIN_PER_SIDE_MM = 1;
 
 const SVG_XMLNS = 'http://www.w3.org/2000/svg';
-const XHTML_NAMESPACE = 'http://www.w3.org/1999/xhtml';
-const EXPORT_DPI = 300;
-
 function computePrintableDimension(dimensionMm, marginPerSideMm) {
   if (!Number.isFinite(dimensionMm)) {
     return 0;
@@ -144,17 +141,6 @@ function applySvgGeometryElements({ frame, group, foreignObject }, geometry) {
     foreignObject.setAttribute('width', String(printableWidthMm));
     foreignObject.setAttribute('height', String(printableHeightMm));
   }
-}
-
-function mmToPixelsAtDpi(mm, dpi = EXPORT_DPI) {
-  if (!Number.isFinite(mm) || !Number.isFinite(dpi)) {
-    return 0;
-  }
-  const raw = (mm * dpi) / 25.4;
-  if (!Number.isFinite(raw)) {
-    return 0;
-  }
-  return Math.max(1, Math.round(raw));
 }
 
 let qrRenderRequestId = 0;
@@ -601,22 +587,12 @@ function applyTrimmedSvgToImage(img, originalSrc) {
     if (img.dataset.trimmedSvgSource === originalSrc && img.dataset.trimmedSvgObjectUrl) {
       return;
     }
-    if (
-      typeof Blob === 'undefined' ||
-      typeof URL === 'undefined' ||
-      typeof URL.createObjectURL !== 'function'
-    ) {
-      return;
-    }
     try {
-      const blob = new Blob([trimmedMarkup], { type: 'image/svg+xml' });
-      const objectUrl = URL.createObjectURL(blob);
-      if (img.dataset.trimmedSvgObjectUrl) {
-        revokeTrimmedSvgObjectUrl(img);
-      }
+      const encodedSvg = encodeURIComponent(trimmedMarkup);
+      const dataUrl = `data:image/svg+xml;charset=utf-8,${encodedSvg}`;
       img.dataset.trimmedSvgSource = originalSrc;
-      img.dataset.trimmedSvgObjectUrl = objectUrl;
-      img.src = objectUrl;
+      img.dataset.trimmedSvgObjectUrl = '';
+      img.src = dataUrl;
     } catch {
       // Silently ignore failures to construct the trimmed image.
     }
@@ -1239,8 +1215,9 @@ export function updatePreview() {
             };
             const boltGroup = document.createElement('div');
             boltGroup.className = 'bolt-image-group';
-            boltGroup.style.maxHeight = innerHeightPx + 'px';
-            boltGroup.style.height = innerHeightPx + 'px';
+            const innerHeightValue = innerHeightPx + 'px';
+            boltGroup.style.maxHeight = innerHeightValue;
+            boltGroup.style.height = innerHeightValue;
             hardwareImageDiv.appendChild(boltGroup);
             const boltImages = [
               {
@@ -1283,9 +1260,10 @@ export function updatePreview() {
               effectiveGapPx = 0;
             }
             const totalGapPx = effectiveGapPx * gapCount;
-            boltGroup.style.columnGap = effectiveGapPx + 'px';
-            boltGroup.style.rowGap = effectiveGapPx + 'px';
-            boltGroup.style.gap = effectiveGapPx + 'px';
+            const gapValue = effectiveGapPx + 'px';
+            boltGroup.style.columnGap = gapValue;
+            boltGroup.style.rowGap = gapValue;
+            boltGroup.style.gap = gapValue;
             let maxWidthPerImage = Math.floor((maxWidthForPhoto - totalGapPx) / boltImageCount);
             if (!Number.isFinite(maxWidthPerImage) || maxWidthPerImage <= 0) {
               maxWidthPerImage = Math.floor(maxWidthForPhoto / boltImageCount);
@@ -1298,8 +1276,9 @@ export function updatePreview() {
             }
             maxWidthPerImage = Math.max(1, Math.min(maxWidthPerImage, innerHeightPx));
             const boltContainerWidth = Math.max(0, maxWidthPerImage * boltImageCount + totalGapPx);
-            hardwareImageDiv.style.maxWidth = boltContainerWidth + 'px';
-            hardwareImageDiv.style.flexBasis = boltContainerWidth + 'px';
+            const boltContainerWidthValue = boltContainerWidth + 'px';
+            hardwareImageDiv.style.maxWidth = boltContainerWidthValue;
+            hardwareImageDiv.style.flexBasis = boltContainerWidthValue;
             hardwareWidthPx = boltContainerWidth;
             boltImages.forEach(imageInfo => {
               if (fallbackTriggered) {
@@ -1315,8 +1294,9 @@ export function updatePreview() {
               boltImg.className = imageInfo.className;
               boltImg.decoding = 'async';
               boltImg.loading = 'lazy';
-              boltImg.style.maxHeight = innerHeightPx + 'px';
-              boltImg.style.height = innerHeightPx + 'px';
+              const maxHeightValue = innerHeightPx + 'px';
+              boltImg.style.maxHeight = maxHeightValue;
+              boltImg.style.height = maxHeightValue;
               boltImg.style.maxWidth = maxWidthPerImage + 'px';
               boltImg.addEventListener('error', handleMissingAsset);
               boltGroup.appendChild(boltImg);
@@ -1330,13 +1310,15 @@ export function updatePreview() {
             img.className = 'hardware-photo';
             img.decoding = 'async';
             img.loading = 'lazy';
-            img.style.maxHeight = innerHeightPx + 'px';
-            img.style.height = innerHeightPx + 'px';
+            const maxHeightValue = innerHeightPx + 'px';
+            img.style.maxHeight = maxHeightValue;
+            img.style.height = maxHeightValue;
             img.style.maxWidth = maxWidthForPhoto + 'px';
             setExplicitWidthFromAspectRatio(img, innerHeightPx, maxWidthForPhoto);
             hardwareImageDiv.appendChild(img);
-            hardwareImageDiv.style.maxWidth = maxWidthForPhoto + 'px';
-            hardwareImageDiv.style.flexBasis = maxWidthForPhoto + 'px';
+            const maxWidthValue = maxWidthForPhoto + 'px';
+            hardwareImageDiv.style.maxWidth = maxWidthValue;
+            hardwareImageDiv.style.flexBasis = maxWidthValue;
             hardwareWidthPx = maxWidthForPhoto;
           }
         } else {
@@ -1539,8 +1521,9 @@ export function updatePreview() {
     desiredQrEdgeClearancePx = Math.max(mmToPx(1.2), minimumEdgeClearancePx);
     qrCanvas.width = qrEstimatedSizePx;
     qrCanvas.height = qrEstimatedSizePx;
-    qrCanvas.style.width = qrEstimatedSizePx + 'px';
-    qrCanvas.style.height = qrEstimatedSizePx + 'px';
+    const qrSizeValue = qrEstimatedSizePx + 'px';
+    qrCanvas.style.width = qrSizeValue;
+    qrCanvas.style.height = qrSizeValue;
     qrCanvas.style.display = 'block';
     qrCanvas.style.removeProperty('right');
     qrCanvas.style.removeProperty('top');
@@ -1594,8 +1577,9 @@ export function updatePreview() {
           if (qrPixelSize > 0) {
             qrCanvas.width = qrPixelSize;
             qrCanvas.height = qrPixelSize;
-            qrCanvas.style.width = qrPixelSize + 'px';
-            qrCanvas.style.height = qrPixelSize + 'px';
+            const qrPixelSizeValue = qrPixelSize + 'px';
+            qrCanvas.style.width = qrPixelSizeValue;
+            qrCanvas.style.height = qrPixelSizeValue;
           }
 
           const renderOptions = {
@@ -1703,11 +1687,11 @@ export function updatePreview() {
   }
 
   const averagePaddingX = Math.round((paddingLeftPx + paddingRightPx) / 2);
-  labelInner.style.setProperty('--label-padding-x', `${averagePaddingX}px`);
-  labelInner.style.setProperty('--label-padding-y', `${paddingY}px`);
-  labelInner.style.setProperty('--label-padding-inline-start', `${paddingLeftPx}px`);
-  labelInner.style.setProperty('--label-padding-inline-end', `${paddingRightPx}px`);
-  labelInner.style.setProperty('--label-gap', `${gapPx}px`);
+  labelInner.style.setProperty('--label-padding-x', averagePaddingX + 'px');
+  labelInner.style.setProperty('--label-padding-y', paddingY + 'px');
+  labelInner.style.setProperty('--label-padding-inline-start', paddingLeftPx + 'px');
+  labelInner.style.setProperty('--label-padding-inline-end', paddingRightPx + 'px');
+  labelInner.style.setProperty('--label-gap', gapPx + 'px');
 
   applyTextFitting(primaryFontSize, secondaryFontSize);
   previewReadyState = true;
@@ -1722,234 +1706,6 @@ async function ensureFontsReady() {
     await document.fonts.ready;
   } catch (error) {
     console.warn('Unable to verify font readiness before export.', error);
-  }
-}
-
-async function ensureImageLoaded(image) {
-  if (!(image instanceof HTMLImageElement)) {
-    return;
-  }
-  if (image.complete && image.naturalWidth > 0 && image.naturalHeight > 0) {
-    return;
-  }
-  await new Promise((resolve, reject) => {
-    const handleLoad = () => {
-      resolve();
-    };
-    const handleError = () => {
-      reject(new Error('Image failed to load.'));
-    };
-    image.addEventListener('load', handleLoad, { once: true });
-    image.addEventListener('error', handleError, { once: true });
-  });
-}
-
-async function imageElementToDataUrl(image) {
-  if (!(image instanceof HTMLImageElement)) {
-    return '';
-  }
-  const src = image.currentSrc || image.src;
-  if (!src) {
-    return '';
-  }
-  if (src.startsWith('data:')) {
-    return src;
-  }
-  try {
-    await ensureImageLoaded(image);
-  } catch (error) {
-    console.warn('Image asset could not be fully loaded for export.', error);
-  }
-  const width = image.naturalWidth || image.width || 0;
-  const height = image.naturalHeight || image.height || 0;
-  if (!width || !height) {
-    return '';
-  }
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    return '';
-  }
-  try {
-    ctx.drawImage(image, 0, 0, width, height);
-    return canvas.toDataURL('image/png');
-  } catch (error) {
-    console.error('Failed to inline image asset for export.', error);
-    return '';
-  }
-}
-
-function getComputedStyleText(element) {
-  if (typeof window === 'undefined' || typeof window.getComputedStyle !== 'function') {
-    return '';
-  }
-  const computed = window.getComputedStyle(element);
-  if (!computed) {
-    return '';
-  }
-  const declarations = [];
-  for (let i = 0; i < computed.length; i += 1) {
-    const property = computed[i];
-    const value = computed.getPropertyValue(property);
-    if (value) {
-      declarations.push(`${property}:${value};`);
-    }
-  }
-  return declarations.join('');
-}
-
-async function inlineStylesAndAssets(sourceNode, targetNode) {
-  if (!(sourceNode instanceof Element) || !(targetNode instanceof Element)) {
-    return;
-  }
-
-  const styleText = getComputedStyleText(sourceNode);
-  if (styleText) {
-    targetNode.setAttribute('style', styleText);
-  } else {
-    targetNode.removeAttribute('style');
-  }
-
-  if (sourceNode instanceof HTMLCanvasElement) {
-    const doc = targetNode.ownerDocument;
-    if (!doc) {
-      return;
-    }
-    const replacement = doc.createElementNS(XHTML_NAMESPACE, 'img');
-    replacement.setAttribute('src', sourceNode.toDataURL('image/png'));
-    replacement.setAttribute('width', String(sourceNode.width));
-    replacement.setAttribute('height', String(sourceNode.height));
-    if (styleText) {
-      replacement.setAttribute('style', styleText);
-    }
-    if (targetNode.getAttribute('class')) {
-      replacement.setAttribute('class', targetNode.getAttribute('class'));
-    }
-    const altText =
-      sourceNode.getAttribute('aria-label') ||
-      targetNode.getAttribute('alt') ||
-      targetNode.id ||
-      '';
-    if (altText) {
-      replacement.setAttribute('alt', altText);
-    }
-    targetNode.replaceWith(replacement);
-    return;
-  }
-
-  if (sourceNode instanceof HTMLImageElement) {
-    const dataUrl = await imageElementToDataUrl(sourceNode);
-    if (dataUrl) {
-      targetNode.setAttribute('src', dataUrl);
-    }
-    if (sourceNode.getAttribute('alt')) {
-      targetNode.setAttribute('alt', sourceNode.getAttribute('alt'));
-    }
-  }
-
-  const sourceChildren = Array.from(sourceNode.children || []);
-  const targetChildren = Array.from(targetNode.children || []);
-  const limit = Math.min(sourceChildren.length, targetChildren.length);
-  for (let i = 0; i < limit; i += 1) {
-    await inlineStylesAndAssets(sourceChildren[i], targetChildren[i]);
-  }
-}
-
-async function createPrintableSvgClone() {
-  if (!labelSvg) {
-    throw new Error('Label preview is not available.');
-  }
-  const geometry = getLabelGeometry();
-  const { printableWidthMm, printableHeightMm } = geometry;
-  if (!(printableWidthMm > 0 && printableHeightMm > 0)) {
-    throw new Error('Printable area is not defined.');
-  }
-
-  const clone = labelSvg.cloneNode(true);
-  clone.removeAttribute('style');
-  applySvgGeometryElements(
-    {
-      frame: clone.querySelector('#label-frame'),
-      group: clone.querySelector('#printable'),
-      foreignObject: clone.querySelector('#printable-foreignObject'),
-    },
-    geometry,
-  );
-
-  const sourceInner = printableForeignObject
-    ? printableForeignObject.querySelector('#label-inner')
-    : null;
-  const cloneInner = clone.querySelector('#printable-foreignObject #label-inner');
-  if (!sourceInner || !cloneInner) {
-    throw new Error('Printable content is missing.');
-  }
-  await inlineStylesAndAssets(sourceInner, cloneInner);
-
-  clone.setAttribute('xmlns', SVG_XMLNS);
-  clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
-  return { clone, geometry };
-}
-
-function serializeSvgElement(svgElement) {
-  if (typeof XMLSerializer === 'undefined') {
-    throw new Error('SVG serialization is not supported in this environment.');
-  }
-  return new XMLSerializer().serializeToString(svgElement);
-}
-
-async function createPrintableSvgMarkup() {
-  await ensureFontsReady();
-  const { clone, geometry } = await createPrintableSvgClone();
-  const { printableWidthMm, printableHeightMm, marginX, marginY } = geometry;
-
-  const frame = clone.querySelector('#label-frame');
-  if (frame && frame.parentNode) {
-    frame.parentNode.removeChild(frame);
-  }
-
-  clone.setAttribute('viewBox', `${marginX} ${marginY} ${printableWidthMm} ${printableHeightMm}`);
-  const widthPx = mmToPixelsAtDpi(printableWidthMm, EXPORT_DPI);
-  const heightPx = mmToPixelsAtDpi(printableHeightMm, EXPORT_DPI);
-  clone.setAttribute('width', String(widthPx));
-  clone.setAttribute('height', String(heightPx));
-  clone.removeAttribute('aria-hidden');
-
-  const markup = serializeSvgElement(clone);
-  return { markup, geometry, widthPx, heightPx };
-}
-
-async function rasterizeSvgMarkup(markup, widthPx, heightPx) {
-  const blob = new Blob([markup], { type: 'image/svg+xml' });
-  const url = URL.createObjectURL(blob);
-  try {
-    const image = new Image();
-    image.decoding = 'async';
-    image.crossOrigin = 'anonymous';
-    const imagePromise = new Promise((resolve, reject) => {
-      image.addEventListener('load', resolve, { once: true });
-      image.addEventListener('error', () => reject(new Error('Failed to load SVG image.')), {
-        once: true,
-      });
-    });
-    image.width = widthPx;
-    image.height = heightPx;
-    image.src = url;
-    await imagePromise;
-
-    const canvas = document.createElement('canvas');
-    canvas.width = widthPx;
-    canvas.height = heightPx;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      throw new Error('Unable to obtain a 2D canvas context for export.');
-    }
-    ctx.clearRect(0, 0, widthPx, heightPx);
-    ctx.drawImage(image, 0, 0, widthPx, heightPx);
-    return canvas;
-  } finally {
-    URL.revokeObjectURL(url);
   }
 }
 
@@ -1981,21 +1737,234 @@ function canvasToBlob(canvas, type = 'image/png', quality) {
   return Promise.resolve(new Blob([buffer], { type: mimeType }));
 }
 
+function captureLayoutFromDom() {
+  if (!labelInner || labelInner.style.display === 'none') {
+    throw new Error('Label preview is not available.');
+  }
+  const geometry = getLabelGeometry();
+  const { printableWidthMm, printableHeightMm } = geometry;
+  const innerWidthPx = Math.max(1, Math.round(printableWidthMm * pxPerMm));
+  const innerHeightPx = Math.max(1, Math.round(printableHeightMm * pxPerMm));
+  const computedInnerStyle = window.getComputedStyle(labelInner);
+  const parsePx = value => {
+    if (!value) {
+      return 0;
+    }
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+  const convert = value => Math.max(0, parsePx(value));
+  const paddingLeftPx = convert(computedInnerStyle.paddingLeft);
+  const paddingRightPx = convert(computedInnerStyle.paddingRight);
+  const paddingTopPx = convert(computedInnerStyle.paddingTop);
+  const paddingBottomPx = convert(computedInnerStyle.paddingBottom);
+  const gapPx = convert(computedInnerStyle.gap);
+  const backgroundColor = computedInnerStyle.backgroundColor || '#ffffff';
+  const defaultTextColor = computedInnerStyle.color || '#000000';
+  const defaultFontFamily = computedInnerStyle.fontFamily || 'sans-serif';
+
+  const hardwareImages = [];
+  if (hardwareImageDiv && hardwareImageDiv.offsetParent !== null) {
+    const baseX = hardwareImageDiv.offsetLeft;
+    const baseY = hardwareImageDiv.offsetTop;
+    const hardwareChildren = hardwareImageDiv.querySelectorAll('img');
+    hardwareChildren.forEach(img => {
+      if (!img.src) {
+        return;
+      }
+      const width = img.offsetWidth;
+      const height = img.offsetHeight;
+      if (!(width > 0 && height > 0)) {
+        return;
+      }
+      hardwareImages.push({
+        src: img.currentSrc || img.src,
+        xPx: convert(baseX + img.offsetLeft),
+        yPx: convert(baseY + img.offsetTop),
+        widthPx: convert(width),
+        heightPx: convert(height),
+      });
+    });
+  }
+
+  const textBlockOffsetLeft = textBlockDiv ? textBlockDiv.offsetLeft : 0;
+  const textBlockOffsetTop = textBlockDiv ? textBlockDiv.offsetTop : 0;
+
+  const collectTextLine = lineElement => {
+    if (!lineElement) {
+      return null;
+    }
+    const textContent = lineElement.textContent || '';
+    if (!textContent.trim()) {
+      return null;
+    }
+    if (lineElement.offsetParent === null) {
+      return null;
+    }
+    const styles = window.getComputedStyle(lineElement);
+    const fontSizeValue = parsePx(styles.fontSize);
+    if (!(fontSizeValue > 0)) {
+      return null;
+    }
+    const fontStyle = styles.fontStyle || 'normal';
+    const fontWeight = styles.fontWeight || '400';
+    const fontFamily = styles.fontFamily || defaultFontFamily;
+    const color = styles.color || defaultTextColor;
+    const fontSizePx = Math.max(0, fontSizeValue);
+    const baseY = convert(textBlockOffsetTop + lineElement.offsetTop) + fontSizePx;
+    const x = convert(textBlockOffsetLeft + lineElement.offsetLeft);
+    return {
+      text: textContent.trim(),
+      fontSizePx,
+      fontStyle,
+      fontWeight,
+      fontFamily,
+      color,
+      xPx: x,
+      baselinePx: baseY,
+    };
+  };
+
+  const textLines = [collectTextLine(line1Div), collectTextLine(line2Div), collectTextLine(line3Div)]
+    .filter(Boolean);
+
+  let qr = null;
+  if (qrCanvas && qrCanvas.style.display !== 'none') {
+    try {
+      qr = {
+        widthPx: convert(qrCanvas.offsetWidth),
+        heightPx: convert(qrCanvas.offsetHeight),
+        xPx: convert(qrCanvas.offsetLeft),
+        yPx: convert(qrCanvas.offsetTop),
+        dataUrl: qrCanvas.toDataURL('image/png'),
+      };
+    } catch (error) {
+      console.warn('Unable to capture QR code for export.', error);
+      qr = null;
+    }
+  }
+
+  return {
+    geometry,
+    innerWidthPx,
+    innerHeightPx,
+    paddingLeftPx,
+    paddingRightPx,
+    paddingTopPx,
+    paddingBottomPx,
+    gapPx,
+    backgroundColor,
+    defaultTextColor,
+    hardwareImages,
+    textLines,
+    qr,
+  };
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.decoding = 'async';
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('Image failed to load.'));
+    img.src = src;
+  });
+}
+
+async function renderLayoutToCanvas(layout) {
+  const canvas = document.createElement('canvas');
+  canvas.width = layout.innerWidthPx;
+  canvas.height = layout.innerHeightPx;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    throw new Error('Unable to obtain a 2D canvas context for export.');
+  }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = layout.backgroundColor || '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  for (const image of layout.hardwareImages) {
+    try {
+      const img = await loadImage(image.src);
+      ctx.drawImage(img, image.xPx, image.yPx, image.widthPx, image.heightPx);
+    } catch (error) {
+      console.warn('Hardware image could not be rendered for export.', error);
+    }
+  }
+
+  ctx.textBaseline = 'alphabetic';
+  for (const line of layout.textLines) {
+    const fontParts = [line.fontStyle, line.fontWeight, `${line.fontSizePx}px`, line.fontFamily];
+    ctx.font = fontParts.filter(Boolean).join(' ');
+    ctx.fillStyle = line.color || layout.defaultTextColor;
+    ctx.fillText(line.text, line.xPx, line.baselinePx);
+  }
+
+  if (layout.qr && layout.qr.dataUrl) {
+    try {
+      const qrImg = await loadImage(layout.qr.dataUrl);
+      ctx.drawImage(qrImg, layout.qr.xPx, layout.qr.yPx, layout.qr.widthPx, layout.qr.heightPx);
+    } catch (error) {
+      console.warn('QR code could not be rendered for export.', error);
+    }
+  }
+
+  return canvas;
+}
+
 export async function renderLabelPng() {
-  const { markup, geometry, widthPx, heightPx } = await createPrintableSvgMarkup();
-  const canvas = await rasterizeSvgMarkup(markup, widthPx, heightPx);
+  updatePreview();
+  await ensureFontsReady();
+  const layout = captureLayoutFromDom();
+  const canvas = await renderLayoutToCanvas(layout);
   const blob = await canvasToBlob(canvas, 'image/png');
   return {
     blob,
-    widthPx,
-    heightPx,
-    printableWidthMm: geometry.printableWidthMm,
-    printableHeightMm: geometry.printableHeightMm,
-    svgMarkup: markup,
+    widthPx: layout.innerWidthPx,
+    heightPx: layout.innerHeightPx,
+    printableWidthMm: layout.geometry.printableWidthMm,
+    printableHeightMm: layout.geometry.printableHeightMm,
+    svgMarkup: null,
   };
 }
 
 export async function renderLabelSvgMarkup() {
-  const { markup } = await createPrintableSvgMarkup();
-  return markup;
+  updatePreview();
+  await ensureFontsReady();
+  const layout = captureLayoutFromDom();
+  // Generate a minimal SVG representation without foreignObject using the captured layout.
+  const widthPx = layout.innerWidthPx;
+  const heightPx = layout.innerHeightPx;
+  const svgParts = [
+    `<svg xmlns="${SVG_XMLNS}" viewBox="0 0 ${widthPx} ${heightPx}" width="${widthPx}" height="${heightPx}">`,
+    `<rect x="0" y="0" width="${widthPx}" height="${heightPx}" fill="${layout.backgroundColor}" />`,
+  ];
+  layout.hardwareImages.forEach(image => {
+    if (!image.src) {
+      return;
+    }
+    svgParts.push(
+      `<image x="${image.xPx}" y="${image.yPx}" width="${image.widthPx}" height="${image.heightPx}" href="${image.src}" />`,
+    );
+  });
+  layout.textLines.forEach(line => {
+    const fontAttributes = [`font-family="${line.fontFamily.replace(/"/g, '&quot;')}"`];
+    if (line.fontStyle) {
+      fontAttributes.push(`font-style="${line.fontStyle}"`);
+    }
+    if (line.fontWeight) {
+      fontAttributes.push(`font-weight="${line.fontWeight}"`);
+    }
+    fontAttributes.push(`font-size="${line.fontSizePx}"`);
+    svgParts.push(
+      `<text x="${line.xPx}" y="${line.baselinePx}" fill="${line.color}" ${fontAttributes.join(' ')}>${line.text.replace(/&/g, '&amp;')}</text>`,
+    );
+  });
+  if (layout.qr && layout.qr.dataUrl) {
+    svgParts.push(
+      `<image x="${layout.qr.xPx}" y="${layout.qr.yPx}" width="${layout.qr.widthPx}" height="${layout.qr.heightPx}" href="${layout.qr.dataUrl}" />`,
+    );
+  }
+  svgParts.push('</svg>');
+  return svgParts.join('');
 }
