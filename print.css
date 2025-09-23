@@ -108,6 +108,7 @@ body.print-window[data-ready='true'] .print-status {
   .preview-section,
   .label-preview,
   #preview-container,
+  #label-svg,
   #label-inner {
     width: var(--label-width-mm) !important;
     height: var(--label-height-mm) !important;

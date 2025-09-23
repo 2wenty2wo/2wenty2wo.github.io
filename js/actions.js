@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { findConnectorCategory, boltHeadMap, boltDriveMap } from './data.js';
-import { renderLabelCanvas } from './render.js';
+import { renderLabelPng } from './render.js';
 import { buildShareUrl } from './url-state.js';
 
 async function copyLinkToClipboard(link) {
@@ -61,10 +61,11 @@ function formatTimestamp(date) {
 }
 
 export function downloadLabel() {
-  renderLabelCanvas()
-    .then(canvas => {
+  renderLabelPng()
+    .then(({ blob }) => {
       const link = document.createElement('a');
-      link.href = canvas.toDataURL('image/png');
+      const objectUrl = URL.createObjectURL(blob);
+      link.href = objectUrl;
       const fileParts = [];
       if (state.hardwareType === 'Fuse') {
         fileParts.push('Fuse');
@@ -150,6 +151,7 @@ export function downloadLabel() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(objectUrl);
     })
     .catch(err => {
       console.error('Label download failed', err);
@@ -201,14 +203,14 @@ export function printLabel() {
     img.style.maxHeight = 'none';
     img.style.imageRendering = 'pixelated';
   }
-  renderLabelCanvas()
-    .then(canvas => {
-      const dataUrl = canvas.toDataURL('image/png');
+  renderLabelPng()
+    .then(({ blob, widthPx, heightPx }) => {
       if (!(img instanceof HTMLImageElement)) {
         throw new Error('Print image element was not created.');
       }
-      img.setAttribute('width', String(canvas.width));
-      img.setAttribute('height', String(canvas.height));
+      const objectUrl = URL.createObjectURL(blob);
+      img.setAttribute('width', String(widthPx));
+      img.setAttribute('height', String(heightPx));
       const handleLoad = () => {
         if (printBody) {
           printBody.setAttribute('data-ready', 'true');
@@ -216,12 +218,20 @@ export function printLabel() {
         if (statusDiv) {
           statusDiv.textContent = 'Label ready – opening printer dialog…';
         }
+        URL.revokeObjectURL(objectUrl);
         printWindow.focus();
         printWindow.print();
         printWindow.close();
       };
       img.addEventListener('load', handleLoad, { once: true });
-      img.src = dataUrl;
+      img.addEventListener(
+        'error',
+        () => {
+          URL.revokeObjectURL(objectUrl);
+        },
+        { once: true },
+      );
+      img.src = objectUrl;
     })
     .catch(err => {
       console.error('Print preview generation failed', err);

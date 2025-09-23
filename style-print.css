@@ -59,10 +59,10 @@
     content: none !important;
   }
 
+  #label-svg,
   #label-inner {
     width: var(--label-width-mm) !important;
     height: var(--label-height-mm) !important;
-    inset: 0 !important;
     border: 0 !important;
     border-radius: 0 !important;
     box-shadow: none !important;
