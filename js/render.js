@@ -124,22 +124,50 @@ function applySvgGeometryElements({ frame, group, foreignObject }, geometry) {
   if (!geometry) {
     return;
   }
+
+  const formatNumber = value => {
+    if (!Number.isFinite(value)) {
+      return '0';
+    }
+    const rounded = Math.round(value * 1000) / 1000;
+    return String(rounded);
+  };
+
+  const convertToPx = value => {
+    if (!Number.isFinite(value)) {
+      return 0;
+    }
+    return value * pxPerMm;
+  };
+
   const { labelWidthMm, labelHeightMm, printableWidthMm, printableHeightMm, marginX, marginY } =
     geometry;
+
+  const labelWidthPx = convertToPx(labelWidthMm);
+  const labelHeightPx = convertToPx(labelHeightMm);
+  const printableWidthPx = convertToPx(printableWidthMm);
+  const printableHeightPx = convertToPx(printableHeightMm);
+  const marginXPx = convertToPx(marginX);
+  const marginYPx = convertToPx(marginY);
+  const frameStrokeWidthPx = convertToPx(0.25);
+
   if (frame) {
     frame.setAttribute('x', '0');
     frame.setAttribute('y', '0');
-    frame.setAttribute('width', String(labelWidthMm));
-    frame.setAttribute('height', String(labelHeightMm));
+    frame.setAttribute('width', formatNumber(labelWidthPx));
+    frame.setAttribute('height', formatNumber(labelHeightPx));
+    frame.setAttribute('stroke-width', formatNumber(frameStrokeWidthPx));
   }
+
   if (group) {
-    group.setAttribute('transform', `translate(${marginX} ${marginY})`);
+    group.setAttribute('transform', `translate(${formatNumber(marginXPx)} ${formatNumber(marginYPx)})`);
   }
+
   if (foreignObject) {
     foreignObject.setAttribute('x', '0');
     foreignObject.setAttribute('y', '0');
-    foreignObject.setAttribute('width', String(printableWidthMm));
-    foreignObject.setAttribute('height', String(printableHeightMm));
+    foreignObject.setAttribute('width', formatNumber(printableWidthPx));
+    foreignObject.setAttribute('height', formatNumber(printableHeightPx));
   }
 }
 
@@ -1073,7 +1101,7 @@ export function updatePreview() {
   previewContainer.style.width = labelWidthPx + 'px';
   previewContainer.style.height = labelHeightPx + 'px';
 
-  labelSvg.setAttribute('viewBox', `0 0 ${labelWidthMm} ${labelHeightMm}`);
+  labelSvg.setAttribute('viewBox', `0 0 ${labelWidthPx} ${labelHeightPx}`);
   labelSvg.style.width = labelWidthPx + 'px';
   labelSvg.style.height = labelHeightPx + 'px';
   applySvgGeometryElements(
