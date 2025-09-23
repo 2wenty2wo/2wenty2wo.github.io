@@ -1794,6 +1794,10 @@ function captureLayoutFromDom() {
   const { printableWidthMm, printableHeightMm } = geometry;
   const innerWidthPx = Math.max(1, Math.round(printableWidthMm * pxPerMm));
   const innerHeightPx = Math.max(1, Math.round(printableHeightMm * pxPerMm));
+  const labelWidthPx = Math.max(1, Math.round(geometry.labelWidthMm * pxPerMm));
+  const labelHeightPx = Math.max(1, Math.round(geometry.labelHeightMm * pxPerMm));
+  const marginXPx = Math.max(0, Math.round(geometry.marginX * pxPerMm));
+  const marginYPx = Math.max(0, Math.round(geometry.marginY * pxPerMm));
   const computedInnerStyle = window.getComputedStyle(labelInner);
   const parsePx = value => {
     if (!value) {
@@ -1897,6 +1901,10 @@ function captureLayoutFromDom() {
     geometry,
     innerWidthPx,
     innerHeightPx,
+    labelWidthPx,
+    labelHeightPx,
+    marginXPx,
+    marginYPx,
     paddingLeftPx,
     paddingRightPx,
     paddingTopPx,
@@ -1921,21 +1929,31 @@ function loadImage(src) {
 }
 
 async function renderLayoutToCanvas(layout) {
+  const totalWidthPx = Math.max(
+    1,
+    Math.round(Number.isFinite(layout.labelWidthPx) ? layout.labelWidthPx : layout.innerWidthPx),
+  );
+  const totalHeightPx = Math.max(
+    1,
+    Math.round(Number.isFinite(layout.labelHeightPx) ? layout.labelHeightPx : layout.innerHeightPx),
+  );
+  const offsetXPx = Number.isFinite(layout.marginXPx) ? Math.round(layout.marginXPx) : 0;
+  const offsetYPx = Number.isFinite(layout.marginYPx) ? Math.round(layout.marginYPx) : 0;
   const canvas = document.createElement('canvas');
-  canvas.width = layout.innerWidthPx;
-  canvas.height = layout.innerHeightPx;
+  canvas.width = totalWidthPx;
+  canvas.height = totalHeightPx;
   const ctx = canvas.getContext('2d');
   if (!ctx) {
     throw new Error('Unable to obtain a 2D canvas context for export.');
   }
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, totalWidthPx, totalHeightPx);
   ctx.fillStyle = layout.backgroundColor || '#ffffff';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, totalWidthPx, totalHeightPx);
 
   for (const image of layout.hardwareImages) {
     try {
       const img = await loadImage(image.src);
-      ctx.drawImage(img, image.xPx, image.yPx, image.widthPx, image.heightPx);
+      ctx.drawImage(img, image.xPx + offsetXPx, image.yPx + offsetYPx, image.widthPx, image.heightPx);
     } catch (error) {
       console.warn('Hardware image could not be rendered for export.', error);
     }
@@ -1946,13 +1964,19 @@ async function renderLayoutToCanvas(layout) {
     const fontParts = [line.fontStyle, line.fontWeight, `${line.fontSizePx}px`, line.fontFamily];
     ctx.font = fontParts.filter(Boolean).join(' ');
     ctx.fillStyle = line.color || layout.defaultTextColor;
-    ctx.fillText(line.text, line.xPx, line.baselinePx);
+    ctx.fillText(line.text, line.xPx + offsetXPx, line.baselinePx + offsetYPx);
   }
 
   if (layout.qr && layout.qr.dataUrl) {
     try {
       const qrImg = await loadImage(layout.qr.dataUrl);
-      ctx.drawImage(qrImg, layout.qr.xPx, layout.qr.yPx, layout.qr.widthPx, layout.qr.heightPx);
+      ctx.drawImage(
+        qrImg,
+        layout.qr.xPx + offsetXPx,
+        layout.qr.yPx + offsetYPx,
+        layout.qr.widthPx,
+        layout.qr.heightPx,
+      );
     } catch (error) {
       console.warn('QR code could not be rendered for export.', error);
     }
@@ -1967,10 +1991,18 @@ export async function renderLabelPng() {
   const layout = captureLayoutFromDom();
   const canvas = await renderLayoutToCanvas(layout);
   const blob = await canvasToBlob(canvas, 'image/png');
+  const exportWidthPx = Math.max(
+    1,
+    Math.round(Number.isFinite(layout.labelWidthPx) ? layout.labelWidthPx : layout.innerWidthPx),
+  );
+  const exportHeightPx = Math.max(
+    1,
+    Math.round(Number.isFinite(layout.labelHeightPx) ? layout.labelHeightPx : layout.innerHeightPx),
+  );
   return {
     blob,
-    widthPx: layout.innerWidthPx,
-    heightPx: layout.innerHeightPx,
+    widthPx: exportWidthPx,
+    heightPx: exportHeightPx,
     printableWidthMm: layout.geometry.printableWidthMm,
     printableHeightMm: layout.geometry.printableHeightMm,
     svgMarkup: null,
@@ -1982,8 +2014,16 @@ export async function renderLabelSvgMarkup() {
   await ensureFontsReady();
   const layout = captureLayoutFromDom();
   // Generate a minimal SVG representation without foreignObject using the captured layout.
-  const widthPx = layout.innerWidthPx;
-  const heightPx = layout.innerHeightPx;
+  const widthPx = Math.max(
+    1,
+    Math.round(Number.isFinite(layout.labelWidthPx) ? layout.labelWidthPx : layout.innerWidthPx),
+  );
+  const heightPx = Math.max(
+    1,
+    Math.round(Number.isFinite(layout.labelHeightPx) ? layout.labelHeightPx : layout.innerHeightPx),
+  );
+  const offsetXPx = Number.isFinite(layout.marginXPx) ? Math.round(layout.marginXPx) : 0;
+  const offsetYPx = Number.isFinite(layout.marginYPx) ? Math.round(layout.marginYPx) : 0;
   const svgParts = [
     `<svg xmlns="${SVG_XMLNS}" viewBox="0 0 ${widthPx} ${heightPx}" width="${widthPx}" height="${heightPx}">`,
     `<rect x="0" y="0" width="${widthPx}" height="${heightPx}" fill="${layout.backgroundColor}" />`,
@@ -1993,7 +2033,7 @@ export async function renderLabelSvgMarkup() {
       return;
     }
     svgParts.push(
-      `<image x="${image.xPx}" y="${image.yPx}" width="${image.widthPx}" height="${image.heightPx}" href="${image.src}" />`,
+      `<image x="${image.xPx + offsetXPx}" y="${image.yPx + offsetYPx}" width="${image.widthPx}" height="${image.heightPx}" href="${image.src}" />`,
     );
   });
   layout.textLines.forEach(line => {
@@ -2006,12 +2046,12 @@ export async function renderLabelSvgMarkup() {
     }
     fontAttributes.push(`font-size="${line.fontSizePx}"`);
     svgParts.push(
-      `<text x="${line.xPx}" y="${line.baselinePx}" fill="${line.color}" ${fontAttributes.join(' ')}>${line.text.replace(/&/g, '&amp;')}</text>`,
+      `<text x="${line.xPx + offsetXPx}" y="${line.baselinePx + offsetYPx}" fill="${line.color}" ${fontAttributes.join(' ')}>${line.text.replace(/&/g, '&amp;')}</text>`,
     );
   });
   if (layout.qr && layout.qr.dataUrl) {
     svgParts.push(
-      `<image x="${layout.qr.xPx}" y="${layout.qr.yPx}" width="${layout.qr.widthPx}" height="${layout.qr.heightPx}" href="${layout.qr.dataUrl}" />`,
+      `<image x="${layout.qr.xPx + offsetXPx}" y="${layout.qr.yPx + offsetYPx}" width="${layout.qr.widthPx}" height="${layout.qr.heightPx}" href="${layout.qr.dataUrl}" />`,
     );
   }
   svgParts.push('</svg>');
