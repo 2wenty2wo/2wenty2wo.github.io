@@ -211,6 +211,25 @@ function ensureSvgMeasurementContainer() {
   return container;
 }
 
+function parseSvgDimension(value) {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null;
+  }
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  const match = trimmed.match(/[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?/);
+  if (!match) {
+    return null;
+  }
+  const parsed = Number.parseFloat(match[0]);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 function deriveTrimmedSvgMarkup(svgText) {
   if (!svgText || typeof svgText !== 'string') {
     return null;
@@ -240,6 +259,39 @@ function deriveTrimmedSvgMarkup(svgText) {
   if (!container) {
     return null;
   }
+  const viewBoxAttribute = svgElement.getAttribute('viewBox');
+  let originalBounds = null;
+  if (typeof viewBoxAttribute === 'string' && viewBoxAttribute.trim()) {
+    const parts = viewBoxAttribute
+      .replace(/,/g, ' ')
+      .trim()
+      .split(/\s+/)
+      .map(Number.parseFloat)
+      .filter(Number.isFinite);
+    if (parts.length >= 4) {
+      const [vx, vy, vWidth, vHeight] = parts;
+      if (Number.isFinite(vWidth) && Number.isFinite(vHeight) && vWidth > 0 && vHeight > 0) {
+        originalBounds = {
+          x: Number.isFinite(vx) ? vx : 0,
+          y: Number.isFinite(vy) ? vy : 0,
+          width: vWidth,
+          height: vHeight,
+        };
+      }
+    }
+  }
+  if (!originalBounds) {
+    const widthAttr = parseSvgDimension(svgElement.getAttribute('width'));
+    const heightAttr = parseSvgDimension(svgElement.getAttribute('height'));
+    if (
+      Number.isFinite(widthAttr) &&
+      Number.isFinite(heightAttr) &&
+      widthAttr > 0 &&
+      heightAttr > 0
+    ) {
+      originalBounds = { x: 0, y: 0, width: widthAttr, height: heightAttr };
+    }
+  }
   const measuringSvg = svgElement.cloneNode(true);
   container.appendChild(measuringSvg);
   let bbox;
@@ -259,16 +311,86 @@ function deriveTrimmedSvgMarkup(svgText) {
   ) {
     return null;
   }
-  const marginRatio = 0.02;
-  const marginX = bbox.width * marginRatio;
-  const marginY = bbox.height * marginRatio;
+  const marginRatio = 0.08;
+  const preserveWhitespaceFraction = 0.8;
+  let marginX = bbox.width * marginRatio;
+  let marginY = bbox.height * marginRatio;
+  if (originalBounds) {
+    const extraWidth = originalBounds.width - bbox.width;
+    const extraHeight = originalBounds.height - bbox.height;
+    if (Number.isFinite(extraWidth) && extraWidth > 0) {
+      const desiredExtraWidth = (extraWidth * preserveWhitespaceFraction) / 2;
+      marginX = Math.max(marginX, desiredExtraWidth);
+      const maxMarginX = extraWidth / 2;
+      if (Number.isFinite(maxMarginX) && maxMarginX >= 0) {
+        marginX = Math.min(marginX, maxMarginX);
+      }
+    }
+    if (Number.isFinite(extraHeight) && extraHeight > 0) {
+      const desiredExtraHeight = (extraHeight * preserveWhitespaceFraction) / 2;
+      marginY = Math.max(marginY, desiredExtraHeight);
+      const maxMarginY = extraHeight / 2;
+      if (Number.isFinite(maxMarginY) && maxMarginY >= 0) {
+        marginY = Math.min(marginY, maxMarginY);
+      }
+    }
+  }
+  marginX = Number.isFinite(marginX) && marginX > 0 ? marginX : 0;
+  marginY = Number.isFinite(marginY) && marginY > 0 ? marginY : 0;
+  let minX = bbox.x - marginX;
+  let minY = bbox.y - marginY;
+  let maxX = bbox.x + bbox.width + marginX;
+  let maxY = bbox.y + bbox.height + marginY;
+  if (originalBounds) {
+    const originalMaxX = originalBounds.x + originalBounds.width;
+    const originalMaxY = originalBounds.y + originalBounds.height;
+    if (Number.isFinite(originalBounds.x) && minX < originalBounds.x) {
+      const overshoot = originalBounds.x - minX;
+      minX += overshoot;
+      maxX += overshoot;
+    }
+    if (Number.isFinite(originalBounds.y) && minY < originalBounds.y) {
+      const overshoot = originalBounds.y - minY;
+      minY += overshoot;
+      maxY += overshoot;
+    }
+    if (Number.isFinite(originalMaxX) && maxX > originalMaxX) {
+      const overshoot = maxX - originalMaxX;
+      minX -= overshoot;
+      maxX -= overshoot;
+    }
+    if (Number.isFinite(originalMaxY) && maxY > originalMaxY) {
+      const overshoot = maxY - originalMaxY;
+      minY -= overshoot;
+      maxY -= overshoot;
+    }
+    if (Number.isFinite(originalBounds.x)) {
+      minX = Math.max(minX, originalBounds.x);
+    }
+    if (Number.isFinite(originalBounds.y)) {
+      minY = Math.max(minY, originalBounds.y);
+    }
+    if (Number.isFinite(originalMaxX)) {
+      maxX = Math.min(maxX, originalMaxX);
+    }
+    if (Number.isFinite(originalMaxY)) {
+      maxY = Math.min(maxY, originalMaxY);
+    }
+  }
+  const trimmedWidth = maxX - minX;
+  const trimmedHeight = maxY - minY;
+  if (
+    !Number.isFinite(trimmedWidth) ||
+    !Number.isFinite(trimmedHeight) ||
+    trimmedWidth <= 0 ||
+    trimmedHeight <= 0
+  ) {
+    return null;
+  }
   const trimmedSvg = svgElement.cloneNode(true);
   trimmedSvg.removeAttribute('width');
   trimmedSvg.removeAttribute('height');
-  trimmedSvg.setAttribute(
-    'viewBox',
-    `${bbox.x - marginX} ${bbox.y - marginY} ${bbox.width + marginX * 2} ${bbox.height + marginY * 2}`,
-  );
+  trimmedSvg.setAttribute('viewBox', `${minX} ${minY} ${trimmedWidth} ${trimmedHeight}`);
   try {
     return new XMLSerializer().serializeToString(trimmedSvg);
   } catch {
