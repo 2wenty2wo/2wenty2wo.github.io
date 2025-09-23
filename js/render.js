@@ -7,13 +7,17 @@ import {
   boltHeadMap,
   boltDriveMap,
 } from './data.js';
-import { loadHtml2Canvas, loadQrCodeLibrary } from './lazy-loaders.js';
+import { loadQrCodeLibrary } from './lazy-loaders.js';
 
 const {
   labelSizeDisplay,
   printAreaDisplay,
   previewContainer,
   labelInner,
+  labelSvg,
+  labelFrame,
+  printableGroup,
+  printableForeignObject,
   hardwareImageDiv,
   textBlockDiv,
   line1Div,
@@ -71,12 +75,86 @@ const {
 const HORIZONTAL_SAFE_MARGIN_PER_SIDE_MM = 2;
 const VERTICAL_SAFE_MARGIN_PER_SIDE_MM = 1;
 
+const SVG_XMLNS = 'http://www.w3.org/2000/svg';
+const XHTML_NAMESPACE = 'http://www.w3.org/1999/xhtml';
+const EXPORT_DPI = 300;
+
 function computePrintableDimension(dimensionMm, marginPerSideMm) {
   if (!Number.isFinite(dimensionMm)) {
     return 0;
   }
   const marginTotalMm = marginPerSideMm * 2;
   return Math.max(0, dimensionMm - marginTotalMm);
+}
+
+function formatMillimeters(value) {
+  if (!Number.isFinite(value)) {
+    return '0';
+  }
+  const rounded = Math.round(value * 10) / 10;
+  if (Math.abs(rounded - Math.round(rounded)) < 0.001) {
+    return String(Math.round(rounded));
+  }
+  return rounded.toFixed(1);
+}
+
+function getLabelGeometry() {
+  const rawWidth = Number.isFinite(state.widthMm) ? state.widthMm : 0;
+  const rawHeight = Number.isFinite(state.heightMm) ? state.heightMm : 0;
+  const labelWidthMm = Math.max(0, rawWidth);
+  const labelHeightMm = Math.max(0, rawHeight);
+  const printableWidthMm = computePrintableDimension(
+    labelWidthMm,
+    HORIZONTAL_SAFE_MARGIN_PER_SIDE_MM,
+  );
+  const printableHeightMm = computePrintableDimension(
+    labelHeightMm,
+    VERTICAL_SAFE_MARGIN_PER_SIDE_MM,
+  );
+  const marginX = Math.max(0, (labelWidthMm - printableWidthMm) / 2);
+  const marginY = Math.max(0, (labelHeightMm - printableHeightMm) / 2);
+  return {
+    labelWidthMm,
+    labelHeightMm,
+    printableWidthMm,
+    printableHeightMm,
+    marginX,
+    marginY,
+  };
+}
+
+function applySvgGeometryElements({ frame, group, foreignObject }, geometry) {
+  if (!geometry) {
+    return;
+  }
+  const { labelWidthMm, labelHeightMm, printableWidthMm, printableHeightMm, marginX, marginY } =
+    geometry;
+  if (frame) {
+    frame.setAttribute('x', '0');
+    frame.setAttribute('y', '0');
+    frame.setAttribute('width', String(labelWidthMm));
+    frame.setAttribute('height', String(labelHeightMm));
+  }
+  if (group) {
+    group.setAttribute('transform', `translate(${marginX} ${marginY})`);
+  }
+  if (foreignObject) {
+    foreignObject.setAttribute('x', '0');
+    foreignObject.setAttribute('y', '0');
+    foreignObject.setAttribute('width', String(printableWidthMm));
+    foreignObject.setAttribute('height', String(printableHeightMm));
+  }
+}
+
+function mmToPixelsAtDpi(mm, dpi = EXPORT_DPI) {
+  if (!Number.isFinite(mm) || !Number.isFinite(dpi)) {
+    return 0;
+  }
+  const raw = (mm * dpi) / 25.4;
+  if (!Number.isFinite(raw)) {
+    return 0;
+  }
+  return Math.max(1, Math.round(raw));
 }
 
 let qrRenderRequestId = 0;
@@ -962,30 +1040,55 @@ export function updateQrContentVisibility(options = {}) {
 }
 
 export function updatePreview() {
-  if (!previewContainer || !labelInner || !labelSizeDisplay || !printAreaDisplay) {
+  if (
+    !previewContainer ||
+    !labelInner ||
+    !labelSizeDisplay ||
+    !printAreaDisplay ||
+    !labelSvg ||
+    !labelFrame ||
+    !printableGroup ||
+    !printableForeignObject
+  ) {
     return;
   }
-  const width = state.widthMm;
-  const height = state.heightMm;
-  const printableWidth = computePrintableDimension(width, HORIZONTAL_SAFE_MARGIN_PER_SIDE_MM);
-  const printableHeight = computePrintableDimension(height, VERTICAL_SAFE_MARGIN_PER_SIDE_MM);
-  labelSizeDisplay.innerHTML = `${width}&nbsp;mm ×&nbsp;${height}&nbsp;mm (label size)`;
-  printAreaDisplay.innerHTML = `${printableWidth}&nbsp;mm ×&nbsp;${printableHeight}&nbsp;mm (printable area)`;
-  const safeWidthMm = Number.isFinite(width) && width > 0 ? width : 1;
-  const safeHeightMm = Number.isFinite(height) && height > 0 ? height : 1;
+
+  const geometry = getLabelGeometry();
+  const { labelWidthMm, labelHeightMm, printableWidthMm, printableHeightMm } = geometry;
+
+  labelSizeDisplay.textContent = `${formatMillimeters(labelWidthMm)} × ${formatMillimeters(
+    labelHeightMm,
+  )} mm (label size)`;
+  printAreaDisplay.textContent = `${formatMillimeters(printableWidthMm)} × ${formatMillimeters(
+    printableHeightMm,
+  )} mm (printable area)`;
+
+  const safeWidthMm = labelWidthMm > 0 ? labelWidthMm : 1;
+  const safeHeightMm = labelHeightMm > 0 ? labelHeightMm : 1;
   document.documentElement.style.setProperty('--label-width-mm', `${safeWidthMm}mm`);
   document.documentElement.style.setProperty('--label-height-mm', `${safeHeightMm}mm`);
-  const pxWidth = width * pxPerMm;
-  const pxHeight = height * pxPerMm;
-  previewContainer.style.width = pxWidth + 'px';
-  previewContainer.style.height = pxHeight + 'px';
-  const innerWidthPx = pxWidth;
-  const innerHeightPx = pxHeight;
+
+  const labelWidthPx = Math.max(1, Math.round(labelWidthMm * pxPerMm));
+  const labelHeightPx = Math.max(1, Math.round(labelHeightMm * pxPerMm));
+  previewContainer.style.width = labelWidthPx + 'px';
+  previewContainer.style.height = labelHeightPx + 'px';
+
+  labelSvg.setAttribute('viewBox', `0 0 ${labelWidthMm} ${labelHeightMm}`);
+  labelSvg.style.width = labelWidthPx + 'px';
+  labelSvg.style.height = labelHeightPx + 'px';
+  applySvgGeometryElements(
+    { frame: labelFrame, group: printableGroup, foreignObject: printableForeignObject },
+    geometry,
+  );
+
+  const innerWidthPx = Math.max(1, Math.round(printableWidthMm * pxPerMm));
+  const innerHeightPx = Math.max(1, Math.round(printableHeightMm * pxPerMm));
   labelInner.style.width = innerWidthPx + 'px';
   labelInner.style.height = innerHeightPx + 'px';
-  labelInner.style.left = '0px';
-  labelInner.style.top = '0px';
-  const readyForPreview = isLabelReady();
+
+  const printableValid = printableWidthMm > 0 && printableHeightMm > 0;
+  const readyForPreview = printableValid && isLabelReady();
+  labelSvg.setAttribute('aria-hidden', readyForPreview ? 'false' : 'true');
 
   if (!readyForPreview) {
     if (previewPlaceholder) {
@@ -1036,8 +1139,8 @@ export function updatePreview() {
   }
   labelInner.style.display = 'flex';
   const mmToPx = mm => Math.max(0, Math.round(mm * pxPerMm));
-  const widthMm = Number.isFinite(width) ? width : 0;
-  const heightMm = Number.isFinite(height) ? height : 0;
+  const widthMm = labelWidthMm;
+  const heightMm = labelHeightMm;
   const longestEdgeMm = Math.max(widthMm, heightMm, 0);
   const baseScale = Math.sqrt(Math.max(longestEdgeMm, 1) / 40);
   const paddingScale = Math.max(1, Math.min(baseScale, 1.35));
@@ -1611,72 +1714,246 @@ export function updatePreview() {
   announcePreviewStatus('Preview updated.');
 }
 
-export async function renderLabelCanvas() {
-  if (!previewContainer || !labelInner) {
-    throw new Error('Label preview is not available.');
+async function ensureFontsReady() {
+  if (typeof document === 'undefined' || !document.fonts || !document.fonts.ready) {
+    return;
   }
-
-  const labelWidthMm = state.widthMm;
-  const labelHeightMm = state.heightMm;
-  const exportDpi = 300;
-  const pixelsPerMmAtExportDpi = exportDpi / 25.4;
-  const scale = pixelsPerMmAtExportDpi / pxPerMm;
-
-  const containerWidth = previewContainer.offsetWidth || previewContainer.clientWidth;
-  const containerHeight = previewContainer.offsetHeight || previewContainer.clientHeight;
-  if (!containerWidth || !containerHeight) {
-    throw new Error('Label preview has no measurable size.');
+  try {
+    await document.fonts.ready;
+  } catch (error) {
+    console.warn('Unable to verify font readiness before export.', error);
   }
-
-  const html2canvas = await loadHtml2Canvas();
-  const canvas = await html2canvas(previewContainer, {
-    backgroundColor: null,
-    scale,
-    width: containerWidth,
-    height: containerHeight,
-    scrollX: 0,
-    scrollY: 0,
-  });
-
-  const containerRect = previewContainer.getBoundingClientRect();
-  const innerRect = labelInner.getBoundingClientRect();
-  const ratioX = canvas.width / containerWidth;
-  const ratioY = canvas.height / containerHeight;
-  const cropX = Math.max(0, Math.floor((innerRect.left - containerRect.left) * ratioX));
-  const cropY = Math.max(0, Math.floor((innerRect.top - containerRect.top) * ratioY));
-  const cropWidth = Math.max(1, Math.ceil(innerRect.width * ratioX));
-  const cropHeight = Math.max(1, Math.ceil(innerRect.height * ratioY));
-  const sourceWidth = Math.min(cropWidth, canvas.width - cropX);
-  const sourceHeight = Math.min(cropHeight, canvas.height - cropY);
-
-  if (sourceWidth <= 0 || sourceHeight <= 0) {
-    throw new Error('Computed label dimensions are invalid.');
-  }
-
-  const outputCanvas = document.createElement('canvas');
-  const targetWidthPx = Math.max(1, Math.round(labelWidthMm * pixelsPerMmAtExportDpi));
-  const targetHeightPx = Math.max(1, Math.round(labelHeightMm * pixelsPerMmAtExportDpi));
-  outputCanvas.width = targetWidthPx;
-  outputCanvas.height = targetHeightPx;
-  const ctx = outputCanvas.getContext('2d');
-  if (ctx) {
-    ctx.drawImage(
-      canvas,
-      cropX,
-      cropY,
-      sourceWidth,
-      sourceHeight,
-      0,
-      0,
-      outputCanvas.width,
-      outputCanvas.height,
-    );
-  }
-  return outputCanvas;
 }
 
-export async function renderLabelBlob(type = 'image/png', quality) {
-  const canvas = await renderLabelCanvas();
+async function ensureImageLoaded(image) {
+  if (!(image instanceof HTMLImageElement)) {
+    return;
+  }
+  if (image.complete && image.naturalWidth > 0 && image.naturalHeight > 0) {
+    return;
+  }
+  await new Promise((resolve, reject) => {
+    const handleLoad = () => {
+      resolve();
+    };
+    const handleError = () => {
+      reject(new Error('Image failed to load.'));
+    };
+    image.addEventListener('load', handleLoad, { once: true });
+    image.addEventListener('error', handleError, { once: true });
+  });
+}
+
+async function imageElementToDataUrl(image) {
+  if (!(image instanceof HTMLImageElement)) {
+    return '';
+  }
+  const src = image.currentSrc || image.src;
+  if (!src) {
+    return '';
+  }
+  if (src.startsWith('data:')) {
+    return src;
+  }
+  try {
+    await ensureImageLoaded(image);
+  } catch (error) {
+    console.warn('Image asset could not be fully loaded for export.', error);
+  }
+  const width = image.naturalWidth || image.width || 0;
+  const height = image.naturalHeight || image.height || 0;
+  if (!width || !height) {
+    return '';
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    return '';
+  }
+  try {
+    ctx.drawImage(image, 0, 0, width, height);
+    return canvas.toDataURL('image/png');
+  } catch (error) {
+    console.error('Failed to inline image asset for export.', error);
+    return '';
+  }
+}
+
+function getComputedStyleText(element) {
+  if (typeof window === 'undefined' || typeof window.getComputedStyle !== 'function') {
+    return '';
+  }
+  const computed = window.getComputedStyle(element);
+  if (!computed) {
+    return '';
+  }
+  const declarations = [];
+  for (let i = 0; i < computed.length; i += 1) {
+    const property = computed[i];
+    const value = computed.getPropertyValue(property);
+    if (value) {
+      declarations.push(`${property}:${value};`);
+    }
+  }
+  return declarations.join('');
+}
+
+async function inlineStylesAndAssets(sourceNode, targetNode) {
+  if (!(sourceNode instanceof Element) || !(targetNode instanceof Element)) {
+    return;
+  }
+
+  const styleText = getComputedStyleText(sourceNode);
+  if (styleText) {
+    targetNode.setAttribute('style', styleText);
+  } else {
+    targetNode.removeAttribute('style');
+  }
+
+  if (sourceNode instanceof HTMLCanvasElement) {
+    const doc = targetNode.ownerDocument;
+    if (!doc) {
+      return;
+    }
+    const replacement = doc.createElementNS(XHTML_NAMESPACE, 'img');
+    replacement.setAttribute('src', sourceNode.toDataURL('image/png'));
+    replacement.setAttribute('width', String(sourceNode.width));
+    replacement.setAttribute('height', String(sourceNode.height));
+    if (styleText) {
+      replacement.setAttribute('style', styleText);
+    }
+    if (targetNode.getAttribute('class')) {
+      replacement.setAttribute('class', targetNode.getAttribute('class'));
+    }
+    const altText =
+      sourceNode.getAttribute('aria-label') ||
+      targetNode.getAttribute('alt') ||
+      targetNode.id ||
+      '';
+    if (altText) {
+      replacement.setAttribute('alt', altText);
+    }
+    targetNode.replaceWith(replacement);
+    return;
+  }
+
+  if (sourceNode instanceof HTMLImageElement) {
+    const dataUrl = await imageElementToDataUrl(sourceNode);
+    if (dataUrl) {
+      targetNode.setAttribute('src', dataUrl);
+    }
+    if (sourceNode.getAttribute('alt')) {
+      targetNode.setAttribute('alt', sourceNode.getAttribute('alt'));
+    }
+  }
+
+  const sourceChildren = Array.from(sourceNode.children || []);
+  const targetChildren = Array.from(targetNode.children || []);
+  const limit = Math.min(sourceChildren.length, targetChildren.length);
+  for (let i = 0; i < limit; i += 1) {
+    await inlineStylesAndAssets(sourceChildren[i], targetChildren[i]);
+  }
+}
+
+async function createPrintableSvgClone() {
+  if (!labelSvg) {
+    throw new Error('Label preview is not available.');
+  }
+  const geometry = getLabelGeometry();
+  const { printableWidthMm, printableHeightMm } = geometry;
+  if (!(printableWidthMm > 0 && printableHeightMm > 0)) {
+    throw new Error('Printable area is not defined.');
+  }
+
+  const clone = labelSvg.cloneNode(true);
+  clone.removeAttribute('style');
+  applySvgGeometryElements(
+    {
+      frame: clone.querySelector('#label-frame'),
+      group: clone.querySelector('#printable'),
+      foreignObject: clone.querySelector('#printable-foreignObject'),
+    },
+    geometry,
+  );
+
+  const sourceInner = printableForeignObject
+    ? printableForeignObject.querySelector('#label-inner')
+    : null;
+  const cloneInner = clone.querySelector('#printable-foreignObject #label-inner');
+  if (!sourceInner || !cloneInner) {
+    throw new Error('Printable content is missing.');
+  }
+  await inlineStylesAndAssets(sourceInner, cloneInner);
+
+  clone.setAttribute('xmlns', SVG_XMLNS);
+  clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+  return { clone, geometry };
+}
+
+function serializeSvgElement(svgElement) {
+  if (typeof XMLSerializer === 'undefined') {
+    throw new Error('SVG serialization is not supported in this environment.');
+  }
+  return new XMLSerializer().serializeToString(svgElement);
+}
+
+async function createPrintableSvgMarkup() {
+  await ensureFontsReady();
+  const { clone, geometry } = await createPrintableSvgClone();
+  const { printableWidthMm, printableHeightMm, marginX, marginY } = geometry;
+
+  const frame = clone.querySelector('#label-frame');
+  if (frame && frame.parentNode) {
+    frame.parentNode.removeChild(frame);
+  }
+
+  clone.setAttribute('viewBox', `${marginX} ${marginY} ${printableWidthMm} ${printableHeightMm}`);
+  const widthPx = mmToPixelsAtDpi(printableWidthMm, EXPORT_DPI);
+  const heightPx = mmToPixelsAtDpi(printableHeightMm, EXPORT_DPI);
+  clone.setAttribute('width', String(widthPx));
+  clone.setAttribute('height', String(heightPx));
+  clone.removeAttribute('aria-hidden');
+
+  const markup = serializeSvgElement(clone);
+  return { markup, geometry, widthPx, heightPx };
+}
+
+async function rasterizeSvgMarkup(markup, widthPx, heightPx) {
+  const blob = new Blob([markup], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  try {
+    const image = new Image();
+    image.decoding = 'async';
+    image.crossOrigin = 'anonymous';
+    const imagePromise = new Promise((resolve, reject) => {
+      image.addEventListener('load', resolve, { once: true });
+      image.addEventListener('error', () => reject(new Error('Failed to load SVG image.')), {
+        once: true,
+      });
+    });
+    image.width = widthPx;
+    image.height = heightPx;
+    image.src = url;
+    await imagePromise;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = widthPx;
+    canvas.height = heightPx;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('Unable to obtain a 2D canvas context for export.');
+    }
+    ctx.clearRect(0, 0, widthPx, heightPx);
+    ctx.drawImage(image, 0, 0, widthPx, heightPx);
+    return canvas;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+function canvasToBlob(canvas, type = 'image/png', quality) {
   if (typeof canvas.toBlob === 'function') {
     return new Promise((resolve, reject) => {
       canvas.toBlob(
@@ -1694,11 +1971,31 @@ export async function renderLabelBlob(type = 'image/png', quality) {
   }
 
   const dataUrl = canvas.toDataURL(type, quality);
-  const byteString = atob(dataUrl.split(',')[1] || '');
-  const mimeType = dataUrl.split(';')[0].split(':')[1] || type;
-  const buffer = new Uint8Array(byteString.length);
-  for (let i = 0; i < byteString.length; i += 1) {
-    buffer[i] = byteString.charCodeAt(i);
+  const base64 = dataUrl.split(',')[1] || '';
+  const binary = atob(base64);
+  const buffer = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    buffer[i] = binary.charCodeAt(i);
   }
-  return new Blob([buffer], { type: mimeType });
+  const mimeType = dataUrl.split(';')[0].split(':')[1] || type;
+  return Promise.resolve(new Blob([buffer], { type: mimeType }));
+}
+
+export async function renderLabelPng() {
+  const { markup, geometry, widthPx, heightPx } = await createPrintableSvgMarkup();
+  const canvas = await rasterizeSvgMarkup(markup, widthPx, heightPx);
+  const blob = await canvasToBlob(canvas, 'image/png');
+  return {
+    blob,
+    widthPx,
+    heightPx,
+    printableWidthMm: geometry.printableWidthMm,
+    printableHeightMm: geometry.printableHeightMm,
+    svgMarkup: markup,
+  };
+}
+
+export async function renderLabelSvgMarkup() {
+  const { markup } = await createPrintableSvgMarkup();
+  return markup;
 }

@@ -18,8 +18,8 @@ include:
 - Contextual validation and helper messaging that keep the preview in sync with
   selected options.
 - Optional QR code content with automatic library loading only when needed.
-- Download-and-print flows that use html2canvas to export the on-screen label
-  preview.
+- Download-and-print flows that use a shared SVG renderer to keep the preview
+  and exported artwork in sync.
 - Shareable label URLs with Web Share API support and clipboard fallback.
 
 The repository is structured as a traditional GitHub Pages site, making it easy
@@ -36,7 +36,7 @@ to host the tool directly from the `main` branch.
 │   ├── dom-elements.js    # Cached DOM references for easier querying
 │   ├── events.js          # Wiring for form, download, and print events
 │   ├── forms.js           # Field population, validation, and UI helpers
-│   ├── lazy-loaders.js    # On-demand loading of html2canvas and QR libraries
+│   ├── lazy-loaders.js    # On-demand loading of the QR code library
 │   ├── render.js          # Label preview updates and export orchestration
 │   ├── state.js           # Centralized application state store
 │   ├── theme.js           # Theme toggle behavior and persistence helpers

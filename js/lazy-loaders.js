@@ -45,13 +45,6 @@ function loadScript(src, globalName) {
   return promise;
 }
 
-export function loadHtml2Canvas() {
-  return loadScript(
-    'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',
-    'html2canvas',
-  );
-}
-
 export function loadQrCodeLibrary() {
   return loadScript('https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js', 'QRCode');
 }
