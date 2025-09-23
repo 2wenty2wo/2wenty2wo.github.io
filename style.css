@@ -173,6 +173,21 @@ main {
   gap: 0.75rem;
 }
 
+.label-preview-viewport {
+  position: relative;
+  width: 100%;
+}
+
+.label-preview-viewport--scaled {
+  overflow: hidden;
+}
+
+.label-preview-viewport--scaled .label-preview {
+  position: absolute;
+  left: 50%;
+  top: 0;
+}
+
 .label-preview {
   position: relative;
   margin: 0 auto;
