@@ -1120,12 +1120,9 @@ export function updatePreview() {
         }
         if (maxWidthForPhoto > 0) {
           hardwareImageDiv.style.display = 'flex';
-          hardwareImageDiv.style.maxWidth = maxWidthForPhoto + 'px';
-          hardwareImageDiv.style.flexBasis = maxWidthForPhoto + 'px';
           hardwareImageDiv.style.flexShrink = '0';
           hardwareImageDiv.style.removeProperty('min-height');
           clearHardwareImageContent();
-          hardwareWidthPx = maxWidthForPhoto;
           hardwareVisible = true;
 
           if (photoInfo.type === 'boltSvg') {
@@ -1154,10 +1151,53 @@ export function updatePreview() {
                 className: 'hardware-photo bolt-head-view',
               },
             ];
-            let maxWidthPerImage = Math.floor(maxWidthForPhoto / boltImages.length);
-            if (!Number.isFinite(maxWidthPerImage) || maxWidthPerImage <= 0) {
-              maxWidthPerImage = maxWidthForPhoto;
+            const boltImageCount = Math.max(1, boltImages.length);
+            let gapBetweenImagesPx = 0;
+            if (typeof window !== 'undefined' && typeof window.getComputedStyle === 'function') {
+              try {
+                const computedStyle = window.getComputedStyle(boltGroup);
+                const gapCandidates = [
+                  Number.parseFloat(computedStyle.columnGap),
+                  Number.parseFloat(computedStyle.gap),
+                  Number.parseFloat(computedStyle.rowGap),
+                ];
+                for (const candidate of gapCandidates) {
+                  if (Number.isFinite(candidate) && candidate >= 0) {
+                    gapBetweenImagesPx = candidate;
+                    break;
+                  }
+                }
+              } catch {
+                gapBetweenImagesPx = 0;
+              }
             }
+            if (!Number.isFinite(gapBetweenImagesPx) || gapBetweenImagesPx < 0) {
+              gapBetweenImagesPx = 0;
+            }
+            let effectiveGapPx = gapBetweenImagesPx;
+            const gapCount = Math.max(0, boltImageCount - 1);
+            if (effectiveGapPx > 0 && effectiveGapPx * gapCount >= maxWidthForPhoto) {
+              effectiveGapPx = 0;
+            }
+            const totalGapPx = effectiveGapPx * gapCount;
+            boltGroup.style.columnGap = effectiveGapPx + 'px';
+            boltGroup.style.rowGap = effectiveGapPx + 'px';
+            boltGroup.style.gap = effectiveGapPx + 'px';
+            let maxWidthPerImage = Math.floor((maxWidthForPhoto - totalGapPx) / boltImageCount);
+            if (!Number.isFinite(maxWidthPerImage) || maxWidthPerImage <= 0) {
+              maxWidthPerImage = Math.floor(maxWidthForPhoto / boltImageCount);
+            }
+            if (!Number.isFinite(maxWidthPerImage) || maxWidthPerImage <= 0) {
+              maxWidthPerImage = Math.floor(innerHeightPx);
+            }
+            if (!Number.isFinite(maxWidthPerImage) || maxWidthPerImage <= 0) {
+              maxWidthPerImage = Math.floor(maxWidthForPhoto);
+            }
+            maxWidthPerImage = Math.max(1, Math.min(maxWidthPerImage, innerHeightPx));
+            const boltContainerWidth = Math.max(0, maxWidthPerImage * boltImageCount + totalGapPx);
+            hardwareImageDiv.style.maxWidth = boltContainerWidth + 'px';
+            hardwareImageDiv.style.flexBasis = boltContainerWidth + 'px';
+            hardwareWidthPx = boltContainerWidth;
             boltImages.forEach(imageInfo => {
               if (fallbackTriggered) {
                 return;
@@ -1192,6 +1232,9 @@ export function updatePreview() {
             img.style.maxWidth = maxWidthForPhoto + 'px';
             setExplicitWidthFromAspectRatio(img, innerHeightPx, maxWidthForPhoto);
             hardwareImageDiv.appendChild(img);
+            hardwareImageDiv.style.maxWidth = maxWidthForPhoto + 'px';
+            hardwareImageDiv.style.flexBasis = maxWidthForPhoto + 'px';
+            hardwareWidthPx = maxWidthForPhoto;
           }
         } else {
           hardwareImageDiv.style.display = 'none';
