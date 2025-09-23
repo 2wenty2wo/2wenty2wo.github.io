@@ -12,6 +12,7 @@ import { loadQrCodeLibrary } from './lazy-loaders.js';
 const {
   labelSizeDisplay,
   printAreaDisplay,
+  previewViewport,
   previewContainer,
   labelInner,
   labelSvg,
@@ -68,6 +69,91 @@ const {
   customLine1Message,
   formStatusMessage,
 } = elements;
+
+const previewDimensions = {
+  width: 0,
+  height: 0,
+};
+
+let previewResizeObserver = null;
+
+function applyPreviewScale() {
+  if (!previewContainer) {
+    return;
+  }
+
+  const viewport = previewViewport || (previewContainer ? previewContainer.parentElement : null);
+  if (!viewport) {
+    return;
+  }
+
+  const { width, height } = previewDimensions;
+  if (!(width > 0) || !(height > 0)) {
+    viewport.classList.remove('label-preview-viewport--scaled');
+    viewport.style.removeProperty('height');
+    previewContainer.style.removeProperty('transform');
+    previewContainer.style.removeProperty('transform-origin');
+    previewContainer.style.removeProperty('position');
+    previewContainer.style.removeProperty('left');
+    previewContainer.style.removeProperty('top');
+    previewContainer.style.removeProperty('margin');
+    return;
+  }
+
+  const availableWidth = viewport.clientWidth || viewport.getBoundingClientRect().width;
+  if (!(availableWidth > 0)) {
+    return;
+  }
+
+  const scale = Math.min(1, availableWidth / width);
+  const isScaled = scale < 0.999;
+
+  if (isScaled) {
+    const scaledHeight = Math.max(1, Math.round(height * scale));
+    viewport.classList.add('label-preview-viewport--scaled');
+    viewport.style.height = `${scaledHeight}px`;
+    previewContainer.style.transformOrigin = 'top center';
+    previewContainer.style.transform = `translateX(-50%) scale(${scale})`;
+    previewContainer.style.position = 'absolute';
+    previewContainer.style.left = '50%';
+    previewContainer.style.top = '0';
+    previewContainer.style.margin = '0';
+  } else {
+    viewport.classList.remove('label-preview-viewport--scaled');
+    viewport.style.removeProperty('height');
+    previewContainer.style.removeProperty('transform');
+    previewContainer.style.removeProperty('transform-origin');
+    previewContainer.style.removeProperty('position');
+    previewContainer.style.removeProperty('left');
+    previewContainer.style.removeProperty('top');
+    previewContainer.style.removeProperty('margin');
+  }
+}
+
+function setupPreviewResizeHandling() {
+  if (!previewContainer) {
+    return;
+  }
+
+  const viewport = previewViewport || previewContainer.parentElement;
+  if (!viewport) {
+    return;
+  }
+
+  if (typeof ResizeObserver !== 'undefined') {
+    if (previewResizeObserver) {
+      previewResizeObserver.disconnect();
+    }
+    previewResizeObserver = new ResizeObserver(() => {
+      applyPreviewScale();
+    });
+    previewResizeObserver.observe(viewport);
+  } else if (typeof window !== 'undefined') {
+    window.addEventListener('resize', applyPreviewScale);
+  }
+}
+
+setupPreviewResizeHandling();
 
 // Derived from the hardware label spec: a 37 × 12 mm label yields a 33 × 10 mm
 // printable area, implying 2 mm horizontal and 1 mm vertical safe margins per
@@ -1103,6 +1189,9 @@ export function updatePreview() {
   const labelHeightPx = Math.max(1, Math.round(labelHeightMm * pxPerMm));
   previewContainer.style.width = labelWidthPx + 'px';
   previewContainer.style.height = labelHeightPx + 'px';
+  previewDimensions.width = labelWidthPx;
+  previewDimensions.height = labelHeightPx;
+  applyPreviewScale();
 
   labelSvg.setAttribute('viewBox', `0 0 ${labelWidthPx} ${labelHeightPx}`);
   labelSvg.style.width = labelWidthPx + 'px';

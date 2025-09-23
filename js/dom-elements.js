@@ -66,6 +66,7 @@ const widthValueSpan = document.getElementById('width-value');
 const labelSizeDisplay = document.getElementById('label-size-display');
 const printAreaDisplay = document.getElementById('print-area-display');
 const previewContainer = document.getElementById('preview-container');
+const previewViewport = previewContainer ? previewContainer.parentElement : null;
 const previewPlaceholder = document.getElementById('preview-placeholder');
 const previewStatusText = document.getElementById('preview-status-text');
 const labelSvg = document.getElementById('label-svg');
@@ -169,6 +170,7 @@ export const elements = {
   widthValueSpan,
   labelSizeDisplay,
   printAreaDisplay,
+  previewViewport,
   previewContainer,
   previewPlaceholder,
   previewStatusText,

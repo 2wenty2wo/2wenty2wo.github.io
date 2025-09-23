@@ -700,47 +700,49 @@
             <div id="label-size-display">55&nbsp;mm ×&nbsp;12&nbsp;mm (label size)</div>
             <div id="print-area-display">51&nbsp;mm ×&nbsp;10&nbsp;mm (printable area)</div>
           </div>
-          <div id="preview-container" class="label-preview">
-            <div id="preview-placeholder" class="preview-placeholder">
-              <i class="fa-solid fa-clipboard-list placeholder-icon" aria-hidden="true"></i>
-              <p class="placeholder-text mb-0">Fill out the form to generate a label</p>
-            </div>
-            <svg
-              id="label-svg"
-              class="label-svg"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 55 12"
-              aria-hidden="true"
-            >
-              <rect
-                id="label-frame"
-                class="label-frame"
-                x="0"
-                y="0"
-                width="55"
-                height="12"
-                rx="0"
-                ry="0"
-              ></rect>
-              <g id="printable" transform="translate(2,1)">
-                <foreignObject id="printable-foreignObject" x="0" y="0" width="51" height="10">
-                  <div
-                    xmlns="http://www.w3.org/1999/xhtml"
-                    id="label-inner"
-                    class="label-inner"
-                    style="display: none"
-                  >
-                    <div id="hardware-image" class="hardware-icon"></div>
-                    <div id="preview-text" class="text-block">
-                      <div id="line1" class="text-line"></div>
-                      <div id="line2" class="text-line small"></div>
-                      <div id="line3" class="text-line small"></div>
+          <div class="label-preview-viewport">
+            <div id="preview-container" class="label-preview">
+              <div id="preview-placeholder" class="preview-placeholder">
+                <i class="fa-solid fa-clipboard-list placeholder-icon" aria-hidden="true"></i>
+                <p class="placeholder-text mb-0">Fill out the form to generate a label</p>
+              </div>
+              <svg
+                id="label-svg"
+                class="label-svg"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 55 12"
+                aria-hidden="true"
+              >
+                <rect
+                  id="label-frame"
+                  class="label-frame"
+                  x="0"
+                  y="0"
+                  width="55"
+                  height="12"
+                  rx="0"
+                  ry="0"
+                ></rect>
+                <g id="printable" transform="translate(2,1)">
+                  <foreignObject id="printable-foreignObject" x="0" y="0" width="51" height="10">
+                    <div
+                      xmlns="http://www.w3.org/1999/xhtml"
+                      id="label-inner"
+                      class="label-inner"
+                      style="display: none"
+                    >
+                      <div id="hardware-image" class="hardware-icon"></div>
+                      <div id="preview-text" class="text-block">
+                        <div id="line1" class="text-line"></div>
+                        <div id="line2" class="text-line small"></div>
+                        <div id="line3" class="text-line small"></div>
+                      </div>
+                      <canvas id="qr-canvas" class="qr-code" width="80" height="80"></canvas>
                     </div>
-                    <canvas id="qr-canvas" class="qr-code" width="80" height="80"></canvas>
-                  </div>
-                </foreignObject>
-              </g>
-            </svg>
+                  </foreignObject>
+                </g>
+              </svg>
+            </div>
           </div>
         </div>
       </section>
