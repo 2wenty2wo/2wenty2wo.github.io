@@ -326,7 +326,8 @@ export const connectorCatalog = [
   },
 ];
 
-export const pxPerMm = 6;
+// Match the 300 DPI artwork emitted by gridfinitylabels.com.
+export const pxPerMm = 300 / 25.4;
 
 export const STANDARD_PLACEHOLDER_TEXT = 'Select standard… (type to filter, Esc clears)';
 export const CONNECTOR_PLACEHOLDER_TEXT = 'Select connector series… (type to filter, Esc clears)';
