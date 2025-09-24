@@ -492,27 +492,47 @@ function deriveTrimmedSvgMarkup(svgText) {
   ) {
     return null;
   }
-  const marginRatio = 0.03;
-  const preserveWhitespaceFraction = 0.85;
-  let marginX = bbox.width * marginRatio;
-  let marginY = bbox.height * marginRatio;
+  const marginRatio = 0.05;
+  const preserveWhitespaceFraction = 0.4;
+  const minimumWhitespaceRetention = 0.35;
+  const minimumMargin = (() => {
+    const dominantDimension = Math.max(bbox.width, bbox.height);
+    if (!Number.isFinite(dominantDimension) || dominantDimension <= 0) {
+      return 0;
+    }
+    const scaledMargin = dominantDimension * 0.02;
+    const cappedMargin = Math.min(scaledMargin, 12);
+    return Math.max(cappedMargin, 2);
+  })();
+  let marginX = Math.max(bbox.width * marginRatio, minimumMargin);
+  let marginY = Math.max(bbox.height * marginRatio, minimumMargin);
+  let hasWhitespaceX = false;
+  let hasWhitespaceY = false;
   if (originalBounds) {
     const extraWidth = originalBounds.width - bbox.width;
     const extraHeight = originalBounds.height - bbox.height;
     if (Number.isFinite(extraWidth) && extraWidth > 0) {
+      hasWhitespaceX = true;
       const desiredExtraWidth = (extraWidth * preserveWhitespaceFraction) / 2;
-      marginX = Math.max(marginX, desiredExtraWidth);
+      const targetMarginX = Math.max(minimumMargin, desiredExtraWidth);
       const maxMarginX = extraWidth / 2;
       if (Number.isFinite(maxMarginX) && maxMarginX >= 0) {
-        marginX = Math.min(marginX, maxMarginX);
+        const limitedTarget = Math.min(targetMarginX, maxMarginX);
+        marginX = Math.min(Math.max(marginX, limitedTarget), maxMarginX);
+      } else {
+        marginX = Math.max(marginX, targetMarginX);
       }
     }
     if (Number.isFinite(extraHeight) && extraHeight > 0) {
+      hasWhitespaceY = true;
       const desiredExtraHeight = (extraHeight * preserveWhitespaceFraction) / 2;
-      marginY = Math.max(marginY, desiredExtraHeight);
+      const targetMarginY = Math.max(minimumMargin, desiredExtraHeight);
       const maxMarginY = extraHeight / 2;
       if (Number.isFinite(maxMarginY) && maxMarginY >= 0) {
-        marginY = Math.min(marginY, maxMarginY);
+        const limitedTarget = Math.min(targetMarginY, maxMarginY);
+        marginY = Math.min(Math.max(marginY, limitedTarget), maxMarginY);
+      } else {
+        marginY = Math.max(marginY, targetMarginY);
       }
     }
   }
@@ -525,36 +545,36 @@ function deriveTrimmedSvgMarkup(svgText) {
   if (originalBounds) {
     const originalMaxX = originalBounds.x + originalBounds.width;
     const originalMaxY = originalBounds.y + originalBounds.height;
-    if (Number.isFinite(originalBounds.x) && minX < originalBounds.x) {
+    if (hasWhitespaceX && Number.isFinite(originalBounds.x) && minX < originalBounds.x) {
       const overshoot = originalBounds.x - minX;
       minX += overshoot;
       maxX += overshoot;
     }
-    if (Number.isFinite(originalBounds.y) && minY < originalBounds.y) {
+    if (hasWhitespaceY && Number.isFinite(originalBounds.y) && minY < originalBounds.y) {
       const overshoot = originalBounds.y - minY;
       minY += overshoot;
       maxY += overshoot;
     }
-    if (Number.isFinite(originalMaxX) && maxX > originalMaxX) {
+    if (hasWhitespaceX && Number.isFinite(originalMaxX) && maxX > originalMaxX) {
       const overshoot = maxX - originalMaxX;
       minX -= overshoot;
       maxX -= overshoot;
     }
-    if (Number.isFinite(originalMaxY) && maxY > originalMaxY) {
+    if (hasWhitespaceY && Number.isFinite(originalMaxY) && maxY > originalMaxY) {
       const overshoot = maxY - originalMaxY;
       minY -= overshoot;
       maxY -= overshoot;
     }
-    if (Number.isFinite(originalBounds.x)) {
+    if (hasWhitespaceX && Number.isFinite(originalBounds.x)) {
       minX = Math.max(minX, originalBounds.x);
     }
-    if (Number.isFinite(originalBounds.y)) {
+    if (hasWhitespaceY && Number.isFinite(originalBounds.y)) {
       minY = Math.max(minY, originalBounds.y);
     }
-    if (Number.isFinite(originalMaxX)) {
+    if (hasWhitespaceX && Number.isFinite(originalMaxX)) {
       maxX = Math.min(maxX, originalMaxX);
     }
-    if (Number.isFinite(originalMaxY)) {
+    if (hasWhitespaceY && Number.isFinite(originalMaxY)) {
       maxY = Math.min(maxY, originalMaxY);
     }
     const distributeWhitespaceEvenly = (min, max, originalMin, originalMax) => {
@@ -610,14 +630,96 @@ function deriveTrimmedSvgMarkup(svgText) {
       }
       return { min: alignedMin, max: alignedMax };
     };
+    if (hasWhitespaceX) {
+      const alignedX = distributeWhitespaceEvenly(minX, maxX, originalBounds.x, originalMaxX);
+      minX = alignedX.min;
+      maxX = alignedX.max;
+    }
 
-    const alignedX = distributeWhitespaceEvenly(minX, maxX, originalBounds.x, originalMaxX);
-    minX = alignedX.min;
-    maxX = alignedX.max;
+    if (hasWhitespaceY) {
+      const alignedY = distributeWhitespaceEvenly(minY, maxY, originalBounds.y, originalMaxY);
+      minY = alignedY.min;
+      maxY = alignedY.max;
+    }
 
-    const alignedY = distributeWhitespaceEvenly(minY, maxY, originalBounds.y, originalMaxY);
-    minY = alignedY.min;
-    maxY = alignedY.max;
+    const enforceWhitespaceRetention = (
+      hasWhitespace,
+      margin,
+      originalStart,
+      originalEnd,
+      bboxStart,
+      bboxEnd,
+      adjustStart,
+    ) => {
+      if (!hasWhitespace) {
+        return;
+      }
+      if (
+        !Number.isFinite(originalStart) ||
+        !Number.isFinite(originalEnd) ||
+        originalEnd <= originalStart
+      ) {
+        return;
+      }
+      const startWhitespace = Math.max(0, bboxStart - originalStart);
+      const endWhitespace = Math.max(0, originalEnd - bboxEnd);
+      const computeDesiredWhitespace = originalWhitespace => {
+        if (!Number.isFinite(originalWhitespace) || originalWhitespace <= 0) {
+          return 0;
+        }
+        const retainedPortion = originalWhitespace * minimumWhitespaceRetention;
+        const marginPortion = Math.min(originalWhitespace, margin);
+        const desired = Math.max(retainedPortion, marginPortion);
+        return Number.isFinite(desired) && desired > 0 ? desired : 0;
+      };
+      const desiredStartWhitespace = computeDesiredWhitespace(startWhitespace);
+      if (desiredStartWhitespace > 0) {
+        const targetStart = bboxStart - desiredStartWhitespace;
+        if (Number.isFinite(targetStart)) {
+          adjustStart(targetStart);
+        }
+      }
+      const desiredEndWhitespace = computeDesiredWhitespace(endWhitespace);
+      if (desiredEndWhitespace > 0) {
+        const targetEnd = bboxEnd + desiredEndWhitespace;
+        if (Number.isFinite(targetEnd)) {
+          adjustStart(targetEnd, true);
+        }
+      }
+    };
+
+    const bboxMaxX = bbox.x + bbox.width;
+    const bboxMaxY = bbox.y + bbox.height;
+    enforceWhitespaceRetention(
+      hasWhitespaceX,
+      marginX,
+      originalBounds.x,
+      originalMaxX,
+      bbox.x,
+      bboxMaxX,
+      (target, isEnd) => {
+        if (isEnd) {
+          maxX = Math.max(Math.min(target, originalMaxX), maxX);
+        } else {
+          minX = Math.min(Math.max(target, originalBounds.x), minX);
+        }
+      },
+    );
+    enforceWhitespaceRetention(
+      hasWhitespaceY,
+      marginY,
+      originalBounds.y,
+      originalMaxY,
+      bbox.y,
+      bboxMaxY,
+      (target, isEnd) => {
+        if (isEnd) {
+          maxY = Math.max(Math.min(target, originalMaxY), maxY);
+        } else {
+          minY = Math.min(Math.max(target, originalBounds.y), minY);
+        }
+      },
+    );
   }
   const trimmedWidth = maxX - minX;
   const trimmedHeight = maxY - minY;
