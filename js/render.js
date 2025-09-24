@@ -1351,8 +1351,6 @@ function loadImage(src) {
 async function renderLayoutToCanvas(layout) {
   const totalWidthPx = Math.max(1, Math.round(layout.labelWidthPx));
   const totalHeightPx = Math.max(1, Math.round(layout.labelHeightPx));
-  const offsetXPx = Number.isFinite(layout.marginXPx) ? Math.round(layout.marginXPx) : 0;
-  const offsetYPx = Number.isFinite(layout.marginYPx) ? Math.round(layout.marginYPx) : 0;
   const canvas = document.createElement('canvas');
   canvas.width = totalWidthPx;
   canvas.height = totalHeightPx;
@@ -1372,8 +1370,8 @@ async function renderLayoutToCanvas(layout) {
       const img = await loadImage(image.src);
       ctx.drawImage(
         img,
-        image.xPx + offsetXPx,
-        image.yPx + offsetYPx,
+        image.xPx,
+        image.yPx,
         Math.max(1, Math.round(image.widthPx)),
         Math.max(1, Math.round(image.heightPx)),
       );
@@ -1387,7 +1385,7 @@ async function renderLayoutToCanvas(layout) {
     const fontParts = [line.fontStyle, line.fontWeight, `${line.fontSizePx}px`, line.fontFamily];
     ctx.font = fontParts.filter(Boolean).join(' ');
     ctx.fillStyle = line.color || layout.defaultTextColor;
-    ctx.fillText(line.text, line.xPx + offsetXPx, line.baselinePx + offsetYPx);
+    ctx.fillText(line.text, line.xPx, line.baselinePx);
   }
 
   if (layout.qr && layout.qr.dataUrl) {
@@ -1395,8 +1393,8 @@ async function renderLayoutToCanvas(layout) {
       const qrImg = await loadImage(layout.qr.dataUrl);
       ctx.drawImage(
         qrImg,
-        layout.qr.xPx + offsetXPx,
-        layout.qr.yPx + offsetYPx,
+        layout.qr.xPx,
+        layout.qr.yPx,
         Math.max(1, Math.round(layout.qr.widthPx)),
         Math.max(1, Math.round(layout.qr.heightPx)),
       );
@@ -1453,8 +1451,6 @@ export async function renderLabelSvgMarkup() {
   const layout = captureLayoutFromDom();
   const widthPx = Math.max(1, Math.round(layout.labelWidthPx));
   const heightPx = Math.max(1, Math.round(layout.labelHeightPx));
-  const offsetXPx = Number.isFinite(layout.marginXPx) ? Math.round(layout.marginXPx) : 0;
-  const offsetYPx = Number.isFinite(layout.marginYPx) ? Math.round(layout.marginYPx) : 0;
   const svgParts = [
     `<svg xmlns="${SVG_XMLNS}" viewBox="0 0 ${widthPx} ${heightPx}" width="${widthPx}" height="${heightPx}">`,
     `<rect x="0" y="0" width="${widthPx}" height="${heightPx}" fill="${layout.backgroundColor}" />`,
@@ -1464,7 +1460,7 @@ export async function renderLabelSvgMarkup() {
       return;
     }
     svgParts.push(
-      `<image x="${image.xPx + offsetXPx}" y="${image.yPx + offsetYPx}" width="${Math.max(
+      `<image x="${image.xPx}" y="${image.yPx}" width="${Math.max(
         1,
         Math.round(image.widthPx),
       )}" height="${Math.max(1, Math.round(image.heightPx))}" href="${image.src}" />`,
@@ -1481,14 +1477,14 @@ export async function renderLabelSvgMarkup() {
     fontAttributes.push(`font-size="${line.fontSizePx}"`);
     const safeText = line.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     svgParts.push(
-      `<text x="${line.xPx + offsetXPx}" y="${line.baselinePx + offsetYPx}" fill="${line.color}" ${fontAttributes.join(
+      `<text x="${line.xPx}" y="${line.baselinePx}" fill="${line.color}" ${fontAttributes.join(
         ' ',
       )}>${safeText}</text>`,
     );
   });
   if (layout.qr && layout.qr.dataUrl) {
     svgParts.push(
-      `<image x="${layout.qr.xPx + offsetXPx}" y="${layout.qr.yPx + offsetYPx}" width="${Math.max(
+      `<image x="${layout.qr.xPx}" y="${layout.qr.yPx}" width="${Math.max(
         1,
         Math.round(layout.qr.widthPx),
       )}" height="${Math.max(1, Math.round(layout.qr.heightPx))}" href="${layout.qr.dataUrl}" />`,
