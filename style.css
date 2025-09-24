@@ -382,6 +382,10 @@ main {
   letter-spacing: 0.01em;
 }
 
+#line1 {
+  white-space: nowrap;
+}
+
 .text-line.small {
   font-size: 0.7em;
   font-weight: 600;
