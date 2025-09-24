@@ -492,8 +492,8 @@ function deriveTrimmedSvgMarkup(svgText) {
   ) {
     return null;
   }
-  const marginRatio = 0.02;
-  const preserveWhitespaceFraction = 0.6;
+  const marginRatio = 0.03;
+  const preserveWhitespaceFraction = 0.85;
   let marginX = bbox.width * marginRatio;
   let marginY = bbox.height * marginRatio;
   if (originalBounds) {
@@ -557,6 +557,67 @@ function deriveTrimmedSvgMarkup(svgText) {
     if (Number.isFinite(originalMaxY)) {
       maxY = Math.min(maxY, originalMaxY);
     }
+    const distributeWhitespaceEvenly = (min, max, originalMin, originalMax) => {
+      if (
+        !Number.isFinite(min) ||
+        !Number.isFinite(max) ||
+        !Number.isFinite(originalMin) ||
+        !Number.isFinite(originalMax)
+      ) {
+        return { min, max };
+      }
+      const trimmedSize = max - min;
+      const availableSize = originalMax - originalMin;
+      if (
+        !Number.isFinite(trimmedSize) ||
+        !Number.isFinite(availableSize) ||
+        trimmedSize <= 0 ||
+        availableSize <= 0 ||
+        trimmedSize > availableSize
+      ) {
+        return { min, max };
+      }
+      const totalWhitespace = min - originalMin + (originalMax - max);
+      if (!Number.isFinite(totalWhitespace) || totalWhitespace < 0) {
+        return { min, max };
+      }
+      const halfWhitespace = totalWhitespace / 2;
+      let alignedMin = originalMin + halfWhitespace;
+      let alignedMax = alignedMin + trimmedSize;
+      const maxStart = originalMax - trimmedSize;
+      if (!Number.isFinite(alignedMin) || !Number.isFinite(alignedMax)) {
+        return { min, max };
+      }
+      if (alignedMin < originalMin) {
+        alignedMin = originalMin;
+        alignedMax = alignedMin + trimmedSize;
+      } else if (alignedMin > maxStart) {
+        alignedMin = maxStart;
+        alignedMax = alignedMin + trimmedSize;
+      }
+      if (alignedMax > originalMax) {
+        alignedMax = originalMax;
+        alignedMin = alignedMax - trimmedSize;
+      }
+      if (alignedMin < originalMin) {
+        alignedMin = originalMin;
+      }
+      if (alignedMax > originalMax) {
+        alignedMax = originalMax;
+      }
+      if (alignedMax - alignedMin !== trimmedSize) {
+        alignedMax = alignedMin + trimmedSize;
+      }
+      return { min: alignedMin, max: alignedMax };
+    };
+
+    const alignedX = distributeWhitespaceEvenly(minX, maxX, originalBounds.x, originalMaxX);
+    minX = alignedX.min;
+    maxX = alignedX.max;
+
+    const alignedY = distributeWhitespaceEvenly(minY, maxY, originalBounds.y, originalMaxY);
+    minY = alignedY.min;
+    maxY = alignedY.max;
   }
   const trimmedWidth = maxX - minX;
   const trimmedHeight = maxY - minY;
@@ -1409,7 +1470,15 @@ export function updatePreview() {
             boltGroup.style.columnGap = gapValue;
             boltGroup.style.rowGap = gapValue;
             boltGroup.style.gap = gapValue;
-            let maxWidthPerImage = Math.floor((maxWidthForPhoto - totalGapPx) / boltImageCount);
+            const idealBoltWidth = Math.max(0, innerHeightPx * boltImageCount + totalGapPx);
+            let boltAvailableWidth = Math.max(maxWidthForPhoto, idealBoltWidth);
+            boltAvailableWidth = Math.min(boltAvailableWidth, innerWidthPx);
+            const minimumBoltWidth = Math.max(totalGapPx + boltImageCount, 1);
+            boltAvailableWidth = Math.max(boltAvailableWidth, minimumBoltWidth);
+            let maxWidthPerImage = Math.floor((boltAvailableWidth - totalGapPx) / boltImageCount);
+            if (!Number.isFinite(maxWidthPerImage) || maxWidthPerImage <= 0) {
+              maxWidthPerImage = Math.floor(boltAvailableWidth / boltImageCount);
+            }
             if (!Number.isFinite(maxWidthPerImage) || maxWidthPerImage <= 0) {
               maxWidthPerImage = Math.floor(maxWidthForPhoto / boltImageCount);
             }
@@ -1419,7 +1488,10 @@ export function updatePreview() {
             if (!Number.isFinite(maxWidthPerImage) || maxWidthPerImage <= 0) {
               maxWidthPerImage = Math.floor(maxWidthForPhoto);
             }
-            maxWidthPerImage = Math.max(1, Math.min(maxWidthPerImage, innerHeightPx));
+            if (!Number.isFinite(maxWidthPerImage) || maxWidthPerImage <= 0) {
+              maxWidthPerImage = Math.max(1, Math.floor(innerHeightPx / 2));
+            }
+            maxWidthPerImage = Math.max(1, maxWidthPerImage);
             const boltContainerWidth = Math.max(0, maxWidthPerImage * boltImageCount + totalGapPx);
             const boltContainerWidthValue = boltContainerWidth + 'px';
             hardwareImageDiv.style.maxWidth = boltContainerWidthValue;
