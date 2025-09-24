@@ -367,7 +367,9 @@ function formatRequirementSummary(requirements) {
 }
 
 const boltSvgTrimCache = new Map();
+const boltSvgDimensionCache = new Map();
 let svgMeasurementContainer = null;
+let pendingBoltSvgRefresh = false;
 
 function ensureSvgMeasurementContainer() {
   if (typeof document === 'undefined') {
@@ -409,6 +411,57 @@ function parseSvgDimension(value) {
   }
   const parsed = Number.parseFloat(match[0]);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function storeTrimmedSvgDimensions(src, metadata) {
+  if (!metadata || typeof metadata !== 'object') {
+    return;
+  }
+  if (typeof src !== 'string' || !src) {
+    return;
+  }
+  const { width, height } = metadata;
+  if (!Number.isFinite(width) || !Number.isFinite(height)) {
+    return;
+  }
+  if (width <= 0 || height <= 0) {
+    return;
+  }
+  boltSvgDimensionCache.set(src, { width, height });
+}
+
+function getTrimmedSvgDimensions(src) {
+  if (typeof src !== 'string' || !src) {
+    return null;
+  }
+  const dimensions = boltSvgDimensionCache.get(src);
+  if (!dimensions) {
+    return null;
+  }
+  const { width, height } = dimensions;
+  if (!Number.isFinite(width) || !Number.isFinite(height)) {
+    return null;
+  }
+  if (width <= 0 || height <= 0) {
+    return null;
+  }
+  return { width, height };
+}
+
+function schedulePreviewRefresh() {
+  if (pendingBoltSvgRefresh) {
+    return;
+  }
+  pendingBoltSvgRefresh = true;
+  const triggerRefresh = () => {
+    pendingBoltSvgRefresh = false;
+    updatePreview();
+  };
+  if (typeof requestAnimationFrame === 'function') {
+    requestAnimationFrame(triggerRefresh);
+  } else {
+    setTimeout(triggerRefresh, 0);
+  }
 }
 
 function deriveTrimmedSvgMarkup(svgText) {
@@ -736,7 +789,12 @@ function deriveTrimmedSvgMarkup(svgText) {
   trimmedSvg.removeAttribute('height');
   trimmedSvg.setAttribute('viewBox', `${minX} ${minY} ${trimmedWidth} ${trimmedHeight}`);
   try {
-    return new XMLSerializer().serializeToString(trimmedSvg);
+    const markup = new XMLSerializer().serializeToString(trimmedSvg);
+    return {
+      markup,
+      width: trimmedWidth,
+      height: trimmedHeight,
+    };
   } catch {
     return null;
   }
@@ -767,6 +825,12 @@ function fetchTrimmedSvgMarkup(src) {
         return null;
       }
       return deriveTrimmedSvgMarkup(svgText);
+    })
+    .then(metadata => {
+      if (metadata) {
+        storeTrimmedSvgDimensions(src, metadata);
+      }
+      return metadata;
     })
     .catch(() => null);
   boltSvgTrimCache.set(src, promise);
@@ -871,8 +935,8 @@ function applyTrimmedSvgToImage(img, originalSrc) {
   if (!promise || typeof promise.then !== 'function') {
     return;
   }
-  promise.then(trimmedMarkup => {
-    if (!trimmedMarkup) {
+  promise.then(trimmedMetadata => {
+    if (!trimmedMetadata || !trimmedMetadata.markup) {
       return;
     }
     if (!img.isConnected) {
@@ -882,11 +946,20 @@ function applyTrimmedSvgToImage(img, originalSrc) {
       return;
     }
     try {
-      const encodedSvg = encodeURIComponent(trimmedMarkup);
+      const encodedSvg = encodeURIComponent(trimmedMetadata.markup);
       const dataUrl = `data:image/svg+xml;charset=utf-8,${encodedSvg}`;
       img.dataset.trimmedSvgSource = originalSrc;
       img.dataset.trimmedSvgObjectUrl = '';
+      const { width, height } = trimmedMetadata;
+      if (Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0) {
+        img.dataset.trimmedSvgWidth = String(width);
+        img.dataset.trimmedSvgHeight = String(height);
+      } else {
+        delete img.dataset.trimmedSvgWidth;
+        delete img.dataset.trimmedSvgHeight;
+      }
       img.src = dataUrl;
+      schedulePreviewRefresh();
     } catch {
       // Silently ignore failures to construct the trimmed image.
     }
@@ -1610,34 +1683,82 @@ export function updatePreview() {
               boltGroup.style.columnGap = gapValue;
               boltGroup.style.rowGap = gapValue;
               boltGroup.style.gap = gapValue;
-              const idealBoltWidth = Math.max(0, innerHeightPx * boltImageCount + totalGapPx);
-              const boundedWidth = Math.min(
-                Math.max(maxWidthForPhoto, idealBoltWidth),
-                widthLimitPx,
-                innerWidthPx,
-              );
+
+              const aspectRatios = boltImages.map(imageInfo => {
+                const dimensions = getTrimmedSvgDimensions(imageInfo.src);
+                if (dimensions) {
+                  const ratio = dimensions.width / dimensions.height;
+                  if (Number.isFinite(ratio) && ratio > 0) {
+                    return ratio;
+                  }
+                }
+                return 1;
+              });
+
+              let sumAspectRatios = 0;
+              aspectRatios.forEach(ratio => {
+                if (Number.isFinite(ratio) && ratio > 0) {
+                  sumAspectRatios += ratio;
+                } else {
+                  sumAspectRatios += 1;
+                }
+              });
+
+              const safeSumAspectRatios = sumAspectRatios > 0 ? sumAspectRatios : boltImageCount;
+              const widthConstraintPx = Math.max(1, Math.min(widthLimitPx, innerWidthPx));
+              const desiredWidthByHeight = safeSumAspectRatios * innerHeightPx + totalGapPx;
               const minimumBoltWidth = Math.max(totalGapPx + boltImageCount, 1);
-              const containerWidth = Math.max(boundedWidth, minimumBoltWidth);
-              const imagesWidthBudget = Math.max(containerWidth - totalGapPx, boltImageCount);
-              let widthPerImage = Math.floor(imagesWidthBudget / boltImageCount);
-              if (!Number.isFinite(widthPerImage) || widthPerImage <= 0) {
-                widthPerImage = Math.floor(containerWidth / boltImageCount);
-              }
-              if (!Number.isFinite(widthPerImage) || widthPerImage <= 0) {
-                widthPerImage = Math.floor(maxWidthForPhoto / boltImageCount);
-              }
-              widthPerImage = Math.max(1, widthPerImage);
-              const targetBoltHeightPx = Math.max(1, Math.min(innerHeightPx, widthPerImage));
-              const boltContainerWidth = Math.max(
-                totalGapPx + widthPerImage * boltImageCount,
+              const desiredContainerWidth = Math.max(
+                maxWidthForPhoto,
+                desiredWidthByHeight,
                 minimumBoltWidth,
               );
-              const boundedContainerWidth = Math.min(boltContainerWidth, widthLimitPx);
-              const boltContainerWidthValue = boundedContainerWidth + 'px';
+              const boundedContainerWidth = Math.min(desiredContainerWidth, widthConstraintPx);
+              const containerWidth = Math.max(1, boundedContainerWidth);
+              const imagesWidthBudget = Math.max(containerWidth - totalGapPx, boltImageCount);
+
+              let maxHeightFromBudget = Math.floor(imagesWidthBudget / safeSumAspectRatios);
+              if (!Number.isFinite(maxHeightFromBudget) || maxHeightFromBudget <= 0) {
+                maxHeightFromBudget = Math.floor(imagesWidthBudget / boltImageCount);
+              }
+              let targetBoltHeightPx = Math.max(1, Math.min(innerHeightPx, maxHeightFromBudget));
+              if (!Number.isFinite(targetBoltHeightPx) || targetBoltHeightPx <= 0) {
+                targetBoltHeightPx = Math.max(
+                  1,
+                  Math.min(innerHeightPx, Math.floor(imagesWidthBudget / boltImageCount)),
+                );
+              }
+
+              const boltContainerWidthValue = containerWidth + 'px';
               hardwareImageDiv.style.maxWidth = boltContainerWidthValue;
               hardwareImageDiv.style.flexBasis = boltContainerWidthValue;
-              hardwareWidthPx = boundedContainerWidth;
-              boltImages.forEach(imageInfo => {
+              hardwareWidthPx = containerWidth;
+
+              const widthAssignments = [];
+              let remainingWidthBudget = imagesWidthBudget;
+              for (let index = 0; index < boltImageCount; index += 1) {
+                const ratio = aspectRatios[index];
+                let widthForImage = Math.round(
+                  targetBoltHeightPx * (Number.isFinite(ratio) && ratio > 0 ? ratio : 1),
+                );
+                if (!Number.isFinite(widthForImage) || widthForImage <= 0) {
+                  widthForImage = targetBoltHeightPx;
+                }
+                const remainingSlots = boltImageCount - index - 1;
+                const minRemainingWidth = Math.max(remainingSlots, 0);
+                const maxWidthForCurrent = Math.max(1, remainingWidthBudget - minRemainingWidth);
+                if (widthForImage > maxWidthForCurrent) {
+                  widthForImage = maxWidthForCurrent;
+                }
+                widthAssignments.push(widthForImage);
+                remainingWidthBudget -= widthForImage;
+              }
+              if (remainingWidthBudget > 0 && widthAssignments.length > 0) {
+                widthAssignments[widthAssignments.length - 1] += remainingWidthBudget;
+              }
+
+              const maxHeightValue = targetBoltHeightPx + 'px';
+              boltImages.forEach((imageInfo, index) => {
                 if (fallbackTriggered) {
                   return;
                 }
@@ -1651,12 +1772,13 @@ export function updatePreview() {
                 boltImg.className = imageInfo.className;
                 boltImg.decoding = 'async';
                 boltImg.loading = 'lazy';
-                const maxHeightValue = targetBoltHeightPx + 'px';
+                const widthForImage = widthAssignments[index] || targetBoltHeightPx;
+                const maxWidthValue = widthForImage + 'px';
                 boltImg.style.maxHeight = maxHeightValue;
-                boltImg.style.maxWidth = widthPerImage + 'px';
+                boltImg.style.maxWidth = maxWidthValue;
                 boltImg.addEventListener('error', handleMissingAsset);
                 boltGroup.appendChild(boltImg);
-                setExplicitWidthFromAspectRatio(boltImg, targetBoltHeightPx, widthPerImage);
+                setExplicitWidthFromAspectRatio(boltImg, targetBoltHeightPx, widthForImage);
                 applyTrimmedSvgToImage(boltImg, imageInfo.src);
               });
             } else {
