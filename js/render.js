@@ -1166,13 +1166,13 @@ function applyTextFitting(primaryFontSize, secondaryFontSize) {
     return;
   }
 
-  line1Div.style.fontSize = primaryFontSize + 'px';
-  if (line2Div) {
-    line2Div.style.fontSize = secondaryFontSize + 'px';
-  }
-  if (line3Div) {
-    line3Div.style.fontSize = secondaryFontSize + 'px';
-  }
+  const setGroupFontSize = (elements, size) => {
+    elements.forEach(element => {
+      if (element) {
+        element.style.fontSize = size + 'px';
+      }
+    });
+  };
 
   const availableWidth = textBlockDiv.clientWidth;
   const availableHeight = labelInner ? labelInner.clientHeight : textBlockDiv.clientHeight;
@@ -1182,10 +1182,11 @@ function applyTextFitting(primaryFontSize, secondaryFontSize) {
 
   const absolutePrimaryMin = 4;
   const absoluteSecondaryMin = 3.5;
+
   const lineStates = [];
 
   lineStates.push({
-    element: line1Div,
+    elements: [line1Div],
     size: primaryFontSize,
     minSize: Math.max(absolutePrimaryMin, Math.min(primaryFontSize, 6)),
   });
@@ -1198,12 +1199,16 @@ function applyTextFitting(primaryFontSize, secondaryFontSize) {
       element.textContent.trim(),
   );
 
-  secondaryLines.forEach(element => {
+  if (secondaryLines.length > 0) {
     lineStates.push({
-      element,
+      elements: secondaryLines,
       size: secondaryFontSize,
       minSize: Math.max(absoluteSecondaryMin, Math.min(secondaryFontSize, 5)),
     });
+  }
+
+  lineStates.forEach(state => {
+    setGroupFontSize(state.elements, state.size);
   });
 
   const tolerance = 0.5;
@@ -1213,9 +1218,15 @@ function applyTextFitting(primaryFontSize, secondaryFontSize) {
     let adjusted = false;
 
     lineStates.forEach(state => {
-      if (state.element.scrollWidth - tolerance > availableWidth && state.size > state.minSize) {
+      const exceedsWidth = state.elements.some(element => {
+        if (!element) {
+          return false;
+        }
+        return element.scrollWidth - tolerance > availableWidth;
+      });
+      if (exceedsWidth && state.size > state.minSize) {
         state.size = Math.max(state.minSize, state.size - 0.5);
-        state.element.style.fontSize = state.size + 'px';
+        setGroupFontSize(state.elements, state.size);
         adjusted = true;
       }
     });
@@ -1227,7 +1238,7 @@ function applyTextFitting(primaryFontSize, secondaryFontSize) {
           current.size > prev.size ? current : prev,
         );
         largest.size = Math.max(largest.minSize, largest.size - 0.5);
-        largest.element.style.fontSize = largest.size + 'px';
+        setGroupFontSize(largest.elements, largest.size);
         adjusted = true;
       }
     }
@@ -1429,55 +1440,77 @@ export function updatePreview() {
   const paddingScale = Math.max(1, Math.min(baseScale, 1.35));
   const verticalScale = Math.max(1, Math.min(baseScale, 1.2));
   const gapScale = Math.max(1, Math.min(baseScale, 1.15));
-  let horizontalPaddingBaselineMm = 1.5;
-  let minHorizontalPaddingMm = 1.2;
+  let horizontalPaddingBaselineMm = 1.3;
+  let minHorizontalPaddingMm = 1.0;
   if (heightMm <= 12) {
     const normalizedHeight = Math.max(0, Math.min(heightMm, 12));
     const heightRatio = normalizedHeight / 12;
-    const minBaselineMm = 1.0;
-    const maxBaselineMm = 1.35;
+    const minBaselineMm = 0.8;
+    const maxBaselineMm = 1.2;
     horizontalPaddingBaselineMm = minBaselineMm + (maxBaselineMm - minBaselineMm) * heightRatio;
-    minHorizontalPaddingMm = 0.9;
+    minHorizontalPaddingMm = 0.75;
   }
   const basePaddingX = Math.max(
     mmToPx(horizontalPaddingBaselineMm * paddingScale),
     mmToPx(minHorizontalPaddingMm),
   );
   const basePaddingY = Math.max(mmToPx(1.0 * verticalScale), mmToPx(0.8));
-  const baseGap = Math.max(mmToPx(0.8 * gapScale), mmToPx(0.6));
+  const baseGap = Math.max(mmToPx(0.7 * gapScale), mmToPx(0.5));
   let paddingLeftPx = basePaddingX;
   let paddingRightPx = basePaddingX;
   let paddingY = basePaddingY;
   let gapPx = baseGap;
   let hardwareWidthPx = 0;
   let hardwareVisible = false;
+  const minTextWidthPx = Math.max(
+    mmToPx(9),
+    Math.floor(innerHeightPx * 1.2),
+    Math.floor(innerWidthPx * 0.48),
+  );
+
+  const computeHardwareWidthLimit = () => {
+    const spacingAllowancePx = paddingLeftPx + paddingRightPx + gapPx;
+    const maxBySpacing = innerWidthPx - minTextWidthPx - spacingAllowancePx;
+    const maxByFraction = innerWidthPx * 0.48;
+    const limit = Math.min(maxBySpacing, maxByFraction);
+    return Math.max(0, limit);
+  };
 
   if (state.showImage) {
     if (state.hardwareType === 'Custom') {
-      const targetSize = Math.max(0, innerHeightPx);
-      const displaySize = Math.max(32, targetSize);
-      hardwareImageDiv.style.display = 'flex';
-      hardwareImageDiv.style.maxWidth = displaySize + 'px';
-      hardwareImageDiv.style.flexBasis = displaySize + 'px';
-      hardwareImageDiv.style.flexShrink = '0';
-      hardwareImageDiv.style.minHeight = displaySize + 'px';
-      clearHardwareImageContent();
-      hardwareWidthPx = displaySize;
-      hardwareVisible = true;
-      if (state.customImageData) {
-        const img = document.createElement('img');
-        img.src = state.customImageData;
-        img.alt = state.customImageName || 'Custom image';
-        img.className = 'custom-image-preview';
-        img.style.maxHeight = displaySize + 'px';
-        img.style.maxWidth = displaySize + 'px';
-        hardwareImageDiv.appendChild(img);
+      const widthLimitPx = computeHardwareWidthLimit();
+      if (widthLimitPx > 0) {
+        const targetSize = Math.max(0, innerHeightPx);
+        const baseDisplaySize = Math.max(32, targetSize);
+        const displaySize = Math.min(baseDisplaySize, widthLimitPx);
+        hardwareImageDiv.style.display = 'flex';
+        hardwareImageDiv.style.maxWidth = displaySize + 'px';
+        hardwareImageDiv.style.flexBasis = displaySize + 'px';
+        hardwareImageDiv.style.flexShrink = '0';
+        hardwareImageDiv.style.minHeight = displaySize + 'px';
+        clearHardwareImageContent();
+        hardwareWidthPx = displaySize;
+        hardwareVisible = true;
+        if (state.customImageData) {
+          const img = document.createElement('img');
+          img.src = state.customImageData;
+          img.alt = state.customImageName || 'Custom image';
+          img.className = 'custom-image-preview';
+          img.style.maxHeight = displaySize + 'px';
+          img.style.maxWidth = displaySize + 'px';
+          hardwareImageDiv.appendChild(img);
+        } else {
+          const placeholder = document.createElement('div');
+          placeholder.className = 'custom-image-placeholder';
+          placeholder.textContent = 'Add image';
+          placeholder.style.height = displaySize + 'px';
+          hardwareImageDiv.appendChild(placeholder);
+        }
       } else {
-        const placeholder = document.createElement('div');
-        placeholder.className = 'custom-image-placeholder';
-        placeholder.textContent = 'Add image';
-        placeholder.style.height = displaySize + 'px';
-        hardwareImageDiv.appendChild(placeholder);
+        hardwareImageDiv.style.display = 'none';
+        clearHardwareImageContent();
+        hardwareWidthPx = 0;
+        hardwareVisible = false;
       }
     } else {
       const renderFallbackIcon = () => {
@@ -1493,158 +1526,168 @@ export function updatePreview() {
 
       const photoInfo = getHardwareImageInfo();
       if (photoInfo && innerHeightPx > 0 && innerWidthPx > 0) {
-        let maxWidthForPhoto = Math.max(0, Math.min(innerHeightPx, innerWidthPx * 0.45));
-        if (photoInfo.type === 'boltSvg') {
-          const boltPreferredWidth = Math.max(0, Math.min(innerHeightPx * 2.4, innerWidthPx * 0.7));
-          maxWidthForPhoto = Math.max(maxWidthForPhoto, boltPreferredWidth);
-        } else {
-          const photoPreferredWidth = Math.max(
-            0,
-            Math.min(innerHeightPx * 1.2, innerWidthPx * 0.5),
-          );
-          maxWidthForPhoto = Math.max(maxWidthForPhoto, photoPreferredWidth);
-        }
-        maxWidthForPhoto = Math.min(maxWidthForPhoto, innerWidthPx);
-        if (maxWidthForPhoto > 0) {
-          hardwareImageDiv.style.display = 'flex';
-          hardwareImageDiv.style.flexShrink = '0';
-          hardwareImageDiv.style.removeProperty('min-height');
-          clearHardwareImageContent();
-          hardwareVisible = true;
-
+        const widthLimitPx = computeHardwareWidthLimit();
+        if (widthLimitPx > 0) {
+          let maxWidthForPhoto = Math.max(0, Math.min(innerHeightPx, innerWidthPx * 0.45));
           if (photoInfo.type === 'boltSvg') {
-            let fallbackTriggered = false;
-            const handleMissingAsset = () => {
-              if (fallbackTriggered) {
-                return;
-              }
-              fallbackTriggered = true;
-              renderFallbackIcon();
-            };
-            const boltGroup = document.createElement('div');
-            boltGroup.className = 'bolt-image-group';
-            const innerHeightValue = innerHeightPx + 'px';
-            boltGroup.style.maxHeight = innerHeightValue;
-            boltGroup.style.height = innerHeightValue;
-            hardwareImageDiv.appendChild(boltGroup);
-            const boltImages = [
-              {
-                src: photoInfo.driveSrc,
-                alt: photoInfo.driveAlt,
-                className: 'hardware-photo bolt-drive-view',
-              },
-              {
-                src: photoInfo.headSrc,
-                alt: photoInfo.headAlt,
-                className: 'hardware-photo bolt-head-view',
-              },
-            ];
-            const boltImageCount = Math.max(1, boltImages.length);
-            let gapBetweenImagesPx = 0;
-            if (typeof window !== 'undefined' && typeof window.getComputedStyle === 'function') {
-              try {
-                const computedStyle = window.getComputedStyle(boltGroup);
-                const gapCandidates = [
-                  Number.parseFloat(computedStyle.columnGap),
-                  Number.parseFloat(computedStyle.gap),
-                  Number.parseFloat(computedStyle.rowGap),
-                ];
-                for (const candidate of gapCandidates) {
-                  if (Number.isFinite(candidate) && candidate >= 0) {
-                    gapBetweenImagesPx = candidate;
-                    break;
-                  }
+            const boltPreferredWidth = Math.max(
+              0,
+              Math.min(innerHeightPx * 2.4, innerWidthPx * 0.7),
+            );
+            maxWidthForPhoto = Math.max(maxWidthForPhoto, boltPreferredWidth);
+          } else {
+            const photoPreferredWidth = Math.max(
+              0,
+              Math.min(innerHeightPx * 1.2, innerWidthPx * 0.5),
+            );
+            maxWidthForPhoto = Math.max(maxWidthForPhoto, photoPreferredWidth);
+          }
+          maxWidthForPhoto = Math.min(maxWidthForPhoto, innerWidthPx, widthLimitPx);
+          if (maxWidthForPhoto > 0) {
+            hardwareImageDiv.style.display = 'flex';
+            hardwareImageDiv.style.flexShrink = '0';
+            hardwareImageDiv.style.removeProperty('min-height');
+            clearHardwareImageContent();
+            hardwareVisible = true;
+
+            if (photoInfo.type === 'boltSvg') {
+              let fallbackTriggered = false;
+              const handleMissingAsset = () => {
+                if (fallbackTriggered) {
+                  return;
                 }
-              } catch {
+                fallbackTriggered = true;
+                renderFallbackIcon();
+              };
+              const boltGroup = document.createElement('div');
+              boltGroup.className = 'bolt-image-group';
+              const innerHeightValue = innerHeightPx + 'px';
+              boltGroup.style.maxHeight = innerHeightValue;
+              boltGroup.style.height = innerHeightValue;
+              hardwareImageDiv.appendChild(boltGroup);
+              const boltImages = [
+                {
+                  src: photoInfo.driveSrc,
+                  alt: photoInfo.driveAlt,
+                  className: 'hardware-photo bolt-drive-view',
+                },
+                {
+                  src: photoInfo.headSrc,
+                  alt: photoInfo.headAlt,
+                  className: 'hardware-photo bolt-head-view',
+                },
+              ];
+              const boltImageCount = Math.max(1, boltImages.length);
+              let gapBetweenImagesPx = 0;
+              if (typeof window !== 'undefined' && typeof window.getComputedStyle === 'function') {
+                try {
+                  const computedStyle = window.getComputedStyle(boltGroup);
+                  const gapCandidates = [
+                    Number.parseFloat(computedStyle.columnGap),
+                    Number.parseFloat(computedStyle.gap),
+                    Number.parseFloat(computedStyle.rowGap),
+                  ];
+                  for (const candidate of gapCandidates) {
+                    if (Number.isFinite(candidate) && candidate >= 0) {
+                      gapBetweenImagesPx = candidate;
+                      break;
+                    }
+                  }
+                } catch {
+                  gapBetweenImagesPx = 0;
+                }
+              }
+              if (!Number.isFinite(gapBetweenImagesPx) || gapBetweenImagesPx < 0) {
                 gapBetweenImagesPx = 0;
               }
-            }
-            if (!Number.isFinite(gapBetweenImagesPx) || gapBetweenImagesPx < 0) {
-              gapBetweenImagesPx = 0;
-            }
-            let effectiveGapPx = gapBetweenImagesPx;
-            const gapCount = Math.max(0, boltImageCount - 1);
-            if (effectiveGapPx > 0 && effectiveGapPx * gapCount >= maxWidthForPhoto) {
-              effectiveGapPx = 0;
-            }
-            const totalGapPx = effectiveGapPx * gapCount;
-            const gapValue = effectiveGapPx + 'px';
-            boltGroup.style.columnGap = gapValue;
-            boltGroup.style.rowGap = gapValue;
-            boltGroup.style.gap = gapValue;
-            const idealBoltWidth = Math.max(0, innerHeightPx * boltImageCount + totalGapPx);
-            let boltAvailableWidth = Math.max(maxWidthForPhoto, idealBoltWidth);
-            boltAvailableWidth = Math.min(boltAvailableWidth, innerWidthPx);
-            const minimumBoltWidth = Math.max(totalGapPx + boltImageCount, 1);
-            boltAvailableWidth = Math.max(boltAvailableWidth, minimumBoltWidth);
-            let maxWidthPerImage = Math.floor((boltAvailableWidth - totalGapPx) / boltImageCount);
-            if (!Number.isFinite(maxWidthPerImage) || maxWidthPerImage <= 0) {
-              maxWidthPerImage = Math.floor(boltAvailableWidth / boltImageCount);
-            }
-            if (!Number.isFinite(maxWidthPerImage) || maxWidthPerImage <= 0) {
-              maxWidthPerImage = Math.floor(maxWidthForPhoto / boltImageCount);
-            }
-            if (!Number.isFinite(maxWidthPerImage) || maxWidthPerImage <= 0) {
-              maxWidthPerImage = Math.floor(innerHeightPx);
-            }
-            if (!Number.isFinite(maxWidthPerImage) || maxWidthPerImage <= 0) {
-              maxWidthPerImage = Math.floor(maxWidthForPhoto);
-            }
-            if (!Number.isFinite(maxWidthPerImage) || maxWidthPerImage <= 0) {
-              maxWidthPerImage = Math.max(1, Math.floor(innerHeightPx / 2));
-            }
-            maxWidthPerImage = Math.max(1, maxWidthPerImage);
-            const boltContainerWidth = Math.max(0, maxWidthPerImage * boltImageCount + totalGapPx);
-            const boltContainerWidthValue = boltContainerWidth + 'px';
-            hardwareImageDiv.style.maxWidth = boltContainerWidthValue;
-            hardwareImageDiv.style.flexBasis = boltContainerWidthValue;
-            hardwareWidthPx = boltContainerWidth;
-            boltImages.forEach(imageInfo => {
-              if (fallbackTriggered) {
-                return;
+              let effectiveGapPx = gapBetweenImagesPx;
+              const gapCount = Math.max(0, boltImageCount - 1);
+              if (effectiveGapPx > 0 && effectiveGapPx * gapCount >= maxWidthForPhoto) {
+                effectiveGapPx = 0;
               }
-              if (!imageInfo.src) {
-                handleMissingAsset();
-                return;
+              const totalGapPx = effectiveGapPx * gapCount;
+              const gapValue = effectiveGapPx + 'px';
+              boltGroup.style.columnGap = gapValue;
+              boltGroup.style.rowGap = gapValue;
+              boltGroup.style.gap = gapValue;
+              const idealBoltWidth = Math.max(0, innerHeightPx * boltImageCount + totalGapPx);
+              const boundedWidth = Math.min(
+                Math.max(maxWidthForPhoto, idealBoltWidth),
+                widthLimitPx,
+                innerWidthPx,
+              );
+              const minimumBoltWidth = Math.max(totalGapPx + boltImageCount, 1);
+              const containerWidth = Math.max(boundedWidth, minimumBoltWidth);
+              const imagesWidthBudget = Math.max(containerWidth - totalGapPx, boltImageCount);
+              let widthPerImage = Math.floor(imagesWidthBudget / boltImageCount);
+              if (!Number.isFinite(widthPerImage) || widthPerImage <= 0) {
+                widthPerImage = Math.floor(containerWidth / boltImageCount);
               }
-              const boltImg = document.createElement('img');
-              boltImg.src = imageInfo.src;
-              boltImg.alt = imageInfo.alt;
-              boltImg.className = imageInfo.className;
-              boltImg.decoding = 'async';
-              boltImg.loading = 'lazy';
+              if (!Number.isFinite(widthPerImage) || widthPerImage <= 0) {
+                widthPerImage = Math.floor(maxWidthForPhoto / boltImageCount);
+              }
+              widthPerImage = Math.max(1, widthPerImage);
+              const targetBoltHeightPx = Math.max(1, Math.min(innerHeightPx, widthPerImage));
+              const boltContainerWidth = Math.max(
+                totalGapPx + widthPerImage * boltImageCount,
+                minimumBoltWidth,
+              );
+              const boundedContainerWidth = Math.min(boltContainerWidth, widthLimitPx);
+              const boltContainerWidthValue = boundedContainerWidth + 'px';
+              hardwareImageDiv.style.maxWidth = boltContainerWidthValue;
+              hardwareImageDiv.style.flexBasis = boltContainerWidthValue;
+              hardwareWidthPx = boundedContainerWidth;
+              boltImages.forEach(imageInfo => {
+                if (fallbackTriggered) {
+                  return;
+                }
+                if (!imageInfo.src) {
+                  handleMissingAsset();
+                  return;
+                }
+                const boltImg = document.createElement('img');
+                boltImg.src = imageInfo.src;
+                boltImg.alt = imageInfo.alt;
+                boltImg.className = imageInfo.className;
+                boltImg.decoding = 'async';
+                boltImg.loading = 'lazy';
+                const maxHeightValue = targetBoltHeightPx + 'px';
+                boltImg.style.maxHeight = maxHeightValue;
+                boltImg.style.maxWidth = widthPerImage + 'px';
+                boltImg.addEventListener('error', handleMissingAsset);
+                boltGroup.appendChild(boltImg);
+                setExplicitWidthFromAspectRatio(boltImg, targetBoltHeightPx, widthPerImage);
+                applyTrimmedSvgToImage(boltImg, imageInfo.src);
+              });
+            } else {
+              const img = document.createElement('img');
+              img.src = photoInfo.src;
+              img.alt = photoInfo.alt;
+              img.className = 'hardware-photo';
+              img.decoding = 'async';
+              img.loading = 'lazy';
               const maxHeightValue = innerHeightPx + 'px';
-              boltImg.style.maxHeight = maxHeightValue;
-              boltImg.style.maxWidth = maxWidthPerImage + 'px';
-              boltImg.addEventListener('error', handleMissingAsset);
-              boltGroup.appendChild(boltImg);
-              setExplicitWidthFromAspectRatio(boltImg, innerHeightPx, maxWidthPerImage);
-              applyTrimmedSvgToImage(boltImg, imageInfo.src);
-            });
+              img.style.maxHeight = maxHeightValue;
+              img.style.maxWidth = maxWidthForPhoto + 'px';
+              setExplicitWidthFromAspectRatio(img, innerHeightPx, maxWidthForPhoto);
+              hardwareImageDiv.appendChild(img);
+              const maxWidthValue = maxWidthForPhoto + 'px';
+              hardwareImageDiv.style.maxWidth = maxWidthValue;
+              hardwareImageDiv.style.flexBasis = maxWidthValue;
+              hardwareWidthPx = maxWidthForPhoto;
+            }
           } else {
-            const img = document.createElement('img');
-            img.src = photoInfo.src;
-            img.alt = photoInfo.alt;
-            img.className = 'hardware-photo';
-            img.decoding = 'async';
-            img.loading = 'lazy';
-            const maxHeightValue = innerHeightPx + 'px';
-            img.style.maxHeight = maxHeightValue;
-            img.style.maxWidth = maxWidthForPhoto + 'px';
-            setExplicitWidthFromAspectRatio(img, innerHeightPx, maxWidthForPhoto);
-            hardwareImageDiv.appendChild(img);
-            const maxWidthValue = maxWidthForPhoto + 'px';
-            hardwareImageDiv.style.maxWidth = maxWidthValue;
-            hardwareImageDiv.style.flexBasis = maxWidthValue;
-            hardwareWidthPx = maxWidthForPhoto;
+            hardwareImageDiv.style.display = 'none';
+            clearHardwareImageContent();
+            hardwareImageDiv.style.removeProperty('max-width');
+            hardwareImageDiv.style.removeProperty('flex-basis');
+            hardwareImageDiv.style.removeProperty('flex-shrink');
+            hardwareImageDiv.style.removeProperty('min-height');
+            hardwareWidthPx = 0;
+            hardwareVisible = false;
           }
         } else {
-          hardwareImageDiv.style.display = 'none';
-          clearHardwareImageContent();
-          hardwareImageDiv.style.removeProperty('max-width');
-          hardwareImageDiv.style.removeProperty('flex-basis');
-          hardwareImageDiv.style.removeProperty('flex-shrink');
-          hardwareImageDiv.style.removeProperty('min-height');
+          renderFallbackIcon();
           hardwareWidthPx = 0;
           hardwareVisible = false;
         }
@@ -1952,8 +1995,6 @@ export function updatePreview() {
     ? Math.max(minPaddingBasePx, desiredQrEdgeClearancePx)
     : minPaddingBasePx;
   const minPaddingRightPx = Math.max(2, Math.min(paddingRightPx, minPaddingRightTargetPx));
-  const minTextWidthPx = Math.max(mmToPx(9), Math.floor(innerHeightPx * 1.2));
-
   const computeAvailableTextWidth = () => {
     const effectiveRightPadding = qrVisible
       ? Math.max(paddingRightPx, desiredQrEdgeClearancePx)
