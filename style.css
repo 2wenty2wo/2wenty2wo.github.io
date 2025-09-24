@@ -391,6 +391,9 @@ main {
   font-weight: 600;
   letter-spacing: 0.08em;
   color: #000000;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .qr-code {
