@@ -8,6 +8,7 @@ import {
   updateCustomImageUi,
   onHardwareTypeChange,
   setBoltDriveSelection,
+  setBoltHeadSelection,
 } from './forms.js';
 import { updateDownloadState, updateQrContentVisibility, updatePreview } from './render.js';
 import { initEventHandlers } from './events.js';
@@ -26,7 +27,6 @@ function applyStateToControls() {
     customLine1Input,
     customLine2Input,
     standardSelect,
-    boltHeadSelect,
     standardToggle,
     imageToggle,
     qrcodeToggle,
@@ -88,9 +88,7 @@ function applyStateToControls() {
   if (standardSelect) {
     standardSelect.value = state.standardCode || '';
   }
-  if (boltHeadSelect) {
-    boltHeadSelect.value = state.boltHead || '';
-  }
+  setBoltHeadSelection(state.boltHead || '', { triggerUpdate: false });
   setBoltDriveSelection(state.boltDrive || '', { triggerUpdate: false });
   if (standardToggle) {
     standardToggle.checked = state.showStandard;

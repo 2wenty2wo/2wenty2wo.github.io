@@ -11,7 +11,9 @@ import {
   handleStandardSelectKeydown,
   clearStandardFilter,
   setBoltDriveSelection,
+  setBoltHeadSelection,
   syncBoltDrivePicker,
+  syncBoltHeadPicker,
 } from './forms.js';
 import { updatePreview, updateDownloadState, updateQrContentVisibility } from './render.js';
 import { downloadLabel, printLabel, shareLabel } from './actions.js';
@@ -37,6 +39,9 @@ const {
   customImageInput,
   customImageClearButton,
   boltHeadSelect,
+  boltHeadPicker,
+  boltHeadPickerButton,
+  boltHeadPickerList,
   boltDriveSelect,
   boltDrivePicker,
   boltDrivePickerButton,
@@ -55,6 +60,7 @@ const {
 } = elements;
 
 let boltDrivePickerOpen = false;
+let boltHeadPickerOpen = false;
 
 function getBoltDriveOptionElements() {
   if (!boltDrivePickerList) {
@@ -269,26 +275,245 @@ function handleBoltDriveListFocusOut() {
   }, 0);
 }
 
-function handleDocumentPointer(event) {
-  if (!boltDrivePickerOpen || !boltDrivePicker) {
+function getBoltHeadOptionElements() {
+  if (!boltHeadPickerList) {
+    return [];
+  }
+  return Array.from(boltHeadPickerList.querySelectorAll('[role="option"]'));
+}
+
+function focusBoltHeadOption(option) {
+  if (!option) {
+    return;
+  }
+  const options = getBoltHeadOptionElements();
+  options.forEach(opt => {
+    opt.tabIndex = opt === option ? 0 : -1;
+  });
+  option.focus();
+  if (typeof option.scrollIntoView === 'function') {
+    option.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function openBoltHeadPicker() {
+  if (!boltHeadPicker || !boltHeadPickerButton || !boltHeadPickerList) {
+    return;
+  }
+  if (boltHeadPickerButton.disabled) {
+    return;
+  }
+  if (boltHeadPickerOpen) {
+    return;
+  }
+  boltHeadPickerOpen = true;
+  boltHeadPicker.classList.add('is-open');
+  boltHeadPickerList.hidden = false;
+  boltHeadPickerButton.setAttribute('aria-expanded', 'true');
+  syncBoltHeadPicker({ isValid: true });
+
+  const options = getBoltHeadOptionElements();
+  if (options.length === 0) {
+    return;
+  }
+  const currentValue = typeof state.boltHead === 'string' ? state.boltHead : '';
+  const selectedOption = options.find(option => option.dataset.value === currentValue);
+  focusBoltHeadOption(selectedOption || options[0]);
+}
+
+function closeBoltHeadPicker({ focusButton = false } = {}) {
+  if (!boltHeadPicker || !boltHeadPickerButton || !boltHeadPickerList) {
+    return;
+  }
+  if (!boltHeadPickerOpen) {
+    if (focusButton && !boltHeadPickerButton.disabled) {
+      boltHeadPickerButton.focus();
+    }
+    return;
+  }
+  boltHeadPickerOpen = false;
+  boltHeadPicker.classList.remove('is-open');
+  boltHeadPickerList.hidden = true;
+  boltHeadPickerButton.setAttribute('aria-expanded', 'false');
+  if (focusButton && !boltHeadPickerButton.disabled) {
+    boltHeadPickerButton.focus();
+  }
+}
+
+function toggleBoltHeadPicker() {
+  if (boltHeadPickerOpen) {
+    closeBoltHeadPicker({ focusButton: false });
+  } else {
+    openBoltHeadPicker();
+  }
+}
+
+function moveBoltHeadOption(delta) {
+  if (!boltHeadPickerList) {
+    return;
+  }
+  const options = getBoltHeadOptionElements();
+  if (options.length === 0) {
+    return;
+  }
+  const active = document.activeElement;
+  const activeOption = active && boltHeadPickerList.contains(active)
+    ? active.closest('[role="option"]')
+    : null;
+  let index = activeOption ? options.indexOf(activeOption) : -1;
+  if (index === -1) {
+    const currentValue = typeof state.boltHead === 'string' ? state.boltHead : '';
+    index = options.findIndex(option => option.dataset.value === currentValue);
+  }
+  let nextIndex = index + delta;
+  if (nextIndex < 0) {
+    nextIndex = options.length - 1;
+  } else if (nextIndex >= options.length) {
+    nextIndex = 0;
+  }
+  const nextOption = options[nextIndex];
+  if (nextOption) {
+    focusBoltHeadOption(nextOption);
+  }
+}
+
+function handleBoltHeadButtonKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    openBoltHeadPicker();
+    moveBoltHeadOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    openBoltHeadPicker();
+    moveBoltHeadOption(-1);
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    toggleBoltHeadPicker();
+    return;
+  }
+  if (key === 'Escape' && boltHeadPickerOpen) {
+    event.preventDefault();
+    closeBoltHeadPicker({ focusButton: true });
+  }
+}
+
+function handleBoltHeadListKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    moveBoltHeadOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    moveBoltHeadOption(-1);
+    return;
+  }
+  if (key === 'Home') {
+    event.preventDefault();
+    const options = getBoltHeadOptionElements();
+    if (options.length > 0) {
+      focusBoltHeadOption(options[0]);
+    }
+    return;
+  }
+  if (key === 'End') {
+    event.preventDefault();
+    const options = getBoltHeadOptionElements();
+    if (options.length > 0) {
+      focusBoltHeadOption(options[options.length - 1]);
+    }
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    const target = event.target;
+    if (target && target instanceof HTMLElement) {
+      const option = target.closest('[role="option"]');
+      if (option) {
+        setBoltHeadSelection(option.dataset.value || '');
+        closeBoltHeadPicker({ focusButton: true });
+      }
+    }
+    return;
+  }
+  if (key === 'Escape') {
+    event.preventDefault();
+    closeBoltHeadPicker({ focusButton: true });
+    return;
+  }
+  if (key === 'Tab') {
+    closeBoltHeadPicker();
+  }
+}
+
+function handleBoltHeadListClick(event) {
+  if (!boltHeadPickerList) {
     return;
   }
   const target = event.target;
-  if (target instanceof Node && boltDrivePicker.contains(target)) {
+  if (!(target instanceof HTMLElement)) {
     return;
   }
-  closeBoltDrivePicker();
+  const option = target.closest('[role="option"]');
+  if (!option || !boltHeadPickerList.contains(option)) {
+    return;
+  }
+  event.preventDefault();
+  setBoltHeadSelection(option.dataset.value || '');
+  closeBoltHeadPicker({ focusButton: true });
+}
+
+function handleBoltHeadListFocusOut() {
+  if (!boltHeadPickerOpen) {
+    return;
+  }
+  setTimeout(() => {
+    if (!boltHeadPickerOpen) {
+      return;
+    }
+    if (!boltHeadPicker) {
+      closeBoltHeadPicker();
+      return;
+    }
+    const active = document.activeElement;
+    if (!active || !boltHeadPicker.contains(active)) {
+      closeBoltHeadPicker();
+    }
+  }, 0);
+}
+
+function handleDocumentPointer(event) {
+  const target = event.target;
+  if (boltDrivePickerOpen && boltDrivePicker) {
+    if (!(target instanceof Node) || !boltDrivePicker.contains(target)) {
+      closeBoltDrivePicker();
+    }
+  }
+  if (boltHeadPickerOpen && boltHeadPicker) {
+    if (!(target instanceof Node) || !boltHeadPicker.contains(target)) {
+      closeBoltHeadPicker();
+    }
+  }
 }
 
 function handleDocumentFocusIn(event) {
-  if (!boltDrivePickerOpen || !boltDrivePicker) {
-    return;
-  }
   const target = event.target;
-  if (target instanceof Node && boltDrivePicker.contains(target)) {
-    return;
+  if (boltDrivePickerOpen && boltDrivePicker) {
+    if (!(target instanceof Node) || !boltDrivePicker.contains(target)) {
+      closeBoltDrivePicker();
+    }
   }
-  closeBoltDrivePicker();
+  if (boltHeadPickerOpen && boltHeadPicker) {
+    if (!(target instanceof Node) || !boltHeadPicker.contains(target)) {
+      closeBoltHeadPicker();
+    }
+  }
 }
 
 export function initEventHandlers() {
@@ -494,9 +719,7 @@ export function initEventHandlers() {
 
   if (boltHeadSelect) {
     boltHeadSelect.addEventListener('change', () => {
-      state.boltHead = boltHeadSelect.value;
-      updateDownloadState();
-      updatePreview();
+      setBoltHeadSelection(boltHeadSelect.value);
     });
   }
 
@@ -506,6 +729,16 @@ export function initEventHandlers() {
     });
   }
 
+  if (boltHeadPickerButton && boltHeadPickerList) {
+    boltHeadPickerButton.addEventListener('click', event => {
+      event.preventDefault();
+      toggleBoltHeadPicker();
+    });
+    boltHeadPickerButton.addEventListener('keydown', handleBoltHeadButtonKeydown);
+    boltHeadPickerList.addEventListener('click', handleBoltHeadListClick);
+    boltHeadPickerList.addEventListener('keydown', handleBoltHeadListKeydown);
+    boltHeadPickerList.addEventListener('focusout', handleBoltHeadListFocusOut);
+  }
   if (boltDrivePickerButton && boltDrivePickerList) {
     boltDrivePickerButton.addEventListener('click', event => {
       event.preventDefault();
@@ -516,7 +749,7 @@ export function initEventHandlers() {
     boltDrivePickerList.addEventListener('keydown', handleBoltDriveListKeydown);
     boltDrivePickerList.addEventListener('focusout', handleBoltDriveListFocusOut);
   }
-  if (boltDrivePicker) {
+  if (boltDrivePicker || boltHeadPicker) {
     document.addEventListener('pointerdown', handleDocumentPointer);
     document.addEventListener('focusin', handleDocumentFocusIn);
   }

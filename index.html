@@ -516,7 +516,37 @@
                     </div>
                     <div id="bolt-head-field" class="col-12 col-sm-6 thread-length-field">
                       <label for="bolt-head-select" class="form-label fw-semibold">Head</label>
-                      <select id="bolt-head-select" class="form-select"></select>
+                      <div class="bolt-drive-picker bolt-head-picker" id="bolt-head-picker">
+                        <select id="bolt-head-select" class="visually-hidden"></select>
+                        <button
+                          type="button"
+                          class="bolt-drive-picker__button"
+                          id="bolt-head-picker-button"
+                          aria-haspopup="listbox"
+                          aria-expanded="false"
+                          aria-controls="bolt-head-picker-list"
+                        >
+                          <span class="bolt-drive-picker__current">
+                            <span class="bolt-drive-picker__current-icon is-empty" aria-hidden="true">
+                              <img
+                                class="bolt-drive-picker__current-icon-image"
+                                src=""
+                                alt=""
+                                hidden
+                              />
+                            </span>
+                            <span class="bolt-drive-picker__current-label">Select head…</span>
+                          </span>
+                          <span class="bolt-drive-picker__chevron" aria-hidden="true"></span>
+                        </button>
+                        <ul
+                          class="bolt-drive-picker__list"
+                          id="bolt-head-picker-list"
+                          role="listbox"
+                          aria-labelledby="bolt-head-picker-button"
+                          hidden
+                        ></ul>
+                      </div>
                       <div
                         id="bolt-head-message"
                         class="validation-message text-danger small mt-2 d-none"
