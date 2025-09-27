@@ -245,7 +245,7 @@ main {
   width: 2.25rem;
   height: 2.25rem;
   border-radius: 0.75rem;
-  background-color: rgba(148, 163, 184, 0.12);
+  background-color: transparent;
   flex-shrink: 0;
   overflow: hidden;
   transition: background-color 0.2s ease;
@@ -275,8 +275,8 @@ main {
 .bolt-drive-picker__chevron::before {
   content: '';
   display: block;
-  width: 0.5rem;
-  height: 0.5rem;
+  width: 0.75rem;
+  height: 0.75rem;
   border-right: 2px solid currentColor;
   border-bottom: 2px solid currentColor;
   transform: rotate(45deg);
@@ -339,7 +339,7 @@ main {
   width: 2.25rem;
   height: 2.25rem;
   border-radius: 0.75rem;
-  background-color: rgba(148, 163, 184, 0.16);
+  background-color: transparent;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -361,6 +361,12 @@ main {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.bolt-head-picker .bolt-drive-picker__current-icon-image,
+.bolt-head-picker .bolt-drive-picker__option-icon-image {
+  transform: rotate(90deg);
+  transform-origin: 50% 50%;
 }
 
 :root[data-theme='dark'] .bolt-drive-picker__button {

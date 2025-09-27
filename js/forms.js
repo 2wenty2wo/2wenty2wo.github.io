@@ -42,6 +42,9 @@ const {
   notesField,
   standardField,
   boltStandardGroup,
+  boltHeadPicker,
+  boltHeadPickerButton,
+  boltHeadPickerList,
   boltDrivePicker,
   boltDrivePickerButton,
   boltDrivePickerList,
@@ -62,7 +65,9 @@ const {
 } = elements;
 
 const BOLT_DRIVE_PLACEHOLDER_TEXT = 'Select drive…';
+const BOLT_HEAD_PLACEHOLDER_TEXT = 'Select head…';
 const validBoltDriveIds = new Set(boltDriveOptions.map(option => option.id));
+const validBoltHeadIds = new Set(boltHeadOptions.map(option => option.id));
 
 export function syncBoltDrivePicker({ isValid = true } = {}) {
   if (!boltDriveSelect) {
@@ -140,6 +145,89 @@ export function setBoltDriveSelection(nextId, { triggerUpdate = true } = {}) {
 
   state.boltDrive = sanitizedValue;
   syncBoltDrivePicker({ isValid: true });
+
+  if (triggerUpdate && previousValue !== sanitizedValue) {
+    updatePreview();
+    updateDownloadState();
+  }
+}
+
+export function syncBoltHeadPicker({ isValid = true } = {}) {
+  if (!boltHeadSelect) {
+    return;
+  }
+
+  const currentValue = typeof state.boltHead === 'string' ? state.boltHead : '';
+  const sanitizedValue = validBoltHeadIds.has(currentValue) ? currentValue : '';
+  if (sanitizedValue !== currentValue) {
+    state.boltHead = sanitizedValue;
+  }
+
+  boltHeadSelect.value = sanitizedValue;
+  if (!sanitizedValue && boltHeadSelect.options.length > 0) {
+    boltHeadSelect.selectedIndex = 0;
+  }
+
+  const selectedOption = sanitizedValue
+    ? boltHeadOptions.find(option => option.id === sanitizedValue) || null
+    : null;
+
+  if (boltHeadPickerButton) {
+    const label = boltHeadPickerButton.querySelector('.bolt-drive-picker__current-label');
+    const iconWrapper = boltHeadPickerButton.querySelector('.bolt-drive-picker__current-icon');
+    const iconImage = boltHeadPickerButton.querySelector(
+      '.bolt-drive-picker__current-icon-image',
+    );
+
+    if (label) {
+      label.textContent = selectedOption ? selectedOption.label : BOLT_HEAD_PLACEHOLDER_TEXT;
+    }
+
+    if (iconWrapper && iconImage) {
+      if (selectedOption) {
+        iconImage.src = `images/bolts/head/${selectedOption.image}.svg`;
+        iconImage.hidden = false;
+        iconWrapper.classList.remove('is-empty');
+      } else {
+        iconImage.hidden = true;
+        iconImage.removeAttribute('src');
+        iconWrapper.classList.add('is-empty');
+      }
+    }
+
+    if (isValid) {
+      boltHeadPickerButton.classList.remove('is-invalid');
+      boltHeadPickerButton.removeAttribute('aria-invalid');
+    } else {
+      boltHeadPickerButton.classList.add('is-invalid');
+      boltHeadPickerButton.setAttribute('aria-invalid', 'true');
+    }
+  }
+
+  if (boltHeadPicker) {
+    boltHeadPicker.classList.toggle('is-invalid', !isValid);
+  }
+
+  if (boltHeadPickerList) {
+    const optionElements = Array.from(
+      boltHeadPickerList.querySelectorAll('[role="option"]'),
+    );
+    optionElements.forEach(optionElement => {
+      const isSelected = optionElement.dataset.value === sanitizedValue;
+      optionElement.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      optionElement.classList.toggle('is-selected', isSelected);
+      optionElement.tabIndex = -1;
+    });
+  }
+}
+
+export function setBoltHeadSelection(nextId, { triggerUpdate = true } = {}) {
+  const desiredValue = typeof nextId === 'string' ? nextId.trim() : '';
+  const sanitizedValue = validBoltHeadIds.has(desiredValue) ? desiredValue : '';
+  const previousValue = typeof state.boltHead === 'string' ? state.boltHead : '';
+
+  state.boltHead = sanitizedValue;
+  syncBoltHeadPicker({ isValid: true });
 
   if (triggerUpdate && previousValue !== sanitizedValue) {
     updatePreview();
@@ -356,13 +444,16 @@ function populateBoltOptions() {
 
   boltHeadSelect.innerHTML = '';
   boltDriveSelect.innerHTML = '';
+  if (boltHeadPickerList) {
+    boltHeadPickerList.innerHTML = '';
+  }
   if (boltDrivePickerList) {
     boltDrivePickerList.innerHTML = '';
   }
 
   const headPlaceholder = document.createElement('option');
   headPlaceholder.value = '';
-  headPlaceholder.textContent = 'Select head…';
+  headPlaceholder.textContent = BOLT_HEAD_PLACEHOLDER_TEXT;
   headPlaceholder.disabled = true;
   headPlaceholder.selected = !previousHead;
   boltHeadSelect.appendChild(headPlaceholder);
@@ -379,6 +470,34 @@ function populateBoltOptions() {
     opt.value = option.id;
     opt.textContent = option.label;
     boltHeadSelect.appendChild(opt);
+
+    if (boltHeadPickerList) {
+      const item = document.createElement('li');
+      item.className = 'bolt-drive-picker__option';
+      item.dataset.value = option.id;
+      item.setAttribute('role', 'option');
+      item.tabIndex = -1;
+
+      const icon = document.createElement('span');
+      icon.className = 'bolt-drive-picker__option-icon';
+
+      const image = document.createElement('img');
+      image.className = 'bolt-drive-picker__option-icon-image';
+      image.src = `images/bolts/head/${option.image}.svg`;
+      image.alt = '';
+      image.loading = 'lazy';
+      image.decoding = 'async';
+      icon.appendChild(image);
+
+      const label = document.createElement('span');
+      label.className = 'bolt-drive-picker__option-label';
+      label.textContent = option.label;
+
+      item.appendChild(icon);
+      item.appendChild(label);
+
+      boltHeadPickerList.appendChild(item);
+    }
   });
 
   boltDriveOptions.forEach(option => {
@@ -416,15 +535,7 @@ function populateBoltOptions() {
     }
   });
 
-  const validHeadIds = new Set(boltHeadOptions.map(option => option.id));
-
-  if (previousHead && validHeadIds.has(previousHead)) {
-    boltHeadSelect.value = previousHead;
-  } else {
-    boltHeadSelect.value = '';
-    state.boltHead = '';
-  }
-
+  setBoltHeadSelection(previousHead, { triggerUpdate: false });
   setBoltDriveSelection(previousDrive, { triggerUpdate: false });
 
   boltHeadSelect.disabled = false;
@@ -435,6 +546,13 @@ function populateBoltOptions() {
   boltDriveSelect.title = 'Select drive style';
   boltDriveSelect.setAttribute('aria-required', 'true');
 
+  if (boltHeadPickerButton) {
+    boltHeadPickerButton.disabled = false;
+    boltHeadPickerButton.setAttribute('aria-expanded', 'false');
+  }
+  if (boltHeadPickerList) {
+    boltHeadPickerList.hidden = true;
+  }
   if (boltDrivePickerButton) {
     boltDrivePickerButton.disabled = false;
     boltDrivePickerButton.setAttribute('aria-expanded', 'false');
@@ -883,6 +1001,18 @@ export function onHardwareTypeChange() {
       boltHeadSelect.title = '';
     }
   }
+  if (boltHeadPickerButton) {
+    boltHeadPickerButton.disabled = !showBoltFields;
+    if (!showBoltFields) {
+      boltHeadPickerButton.setAttribute('aria-expanded', 'false');
+    }
+  }
+  if (boltHeadPickerList) {
+    boltHeadPickerList.hidden = true;
+  }
+  if (boltHeadPicker) {
+    boltHeadPicker.classList.toggle('is-disabled', !showBoltFields);
+  }
   if (boltDriveSelect) {
     boltDriveSelect.disabled = !showBoltFields;
     if (!showBoltFields) {
@@ -903,6 +1033,7 @@ export function onHardwareTypeChange() {
     boltDrivePicker.classList.toggle('is-disabled', !showBoltFields);
   }
   if (!showBoltFields) {
+    syncBoltHeadPicker({ isValid: true });
     syncBoltDrivePicker({ isValid: true });
   }
   if (notesInput) {
