@@ -48,6 +48,9 @@ const standardFieldLabel = document.getElementById('standard-field-label');
 const boltStandardGroup = document.getElementById('bolt-standard-group');
 const boltHeadField = document.getElementById('bolt-head-field');
 const boltDriveField = document.getElementById('bolt-drive-field');
+const boltDrivePicker = document.getElementById('bolt-drive-picker');
+const boltDrivePickerButton = document.getElementById('bolt-drive-picker-button');
+const boltDrivePickerList = document.getElementById('bolt-drive-picker-list');
 const boltHeadSelect = document.getElementById('bolt-head-select');
 const boltDriveSelect = document.getElementById('bolt-drive-select');
 const boltHeadMessage = document.getElementById('bolt-head-message');
@@ -153,6 +156,9 @@ export const elements = {
   boltStandardGroup,
   boltHeadField,
   boltDriveField,
+  boltDrivePicker,
+  boltDrivePickerButton,
+  boltDrivePickerList,
   boltHeadSelect,
   boltDriveSelect,
   boltHeadMessage,
