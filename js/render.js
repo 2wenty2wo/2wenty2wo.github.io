@@ -1,5 +1,6 @@
 import { state } from './state.js';
 import { elements } from './dom-elements.js';
+import { syncBoltDrivePicker } from './forms.js';
 import {
   pxPerMm,
   hardwareImageFolders,
@@ -441,6 +442,7 @@ function applyValidationFeedback(disabled) {
       messageElement: boltDriveMessage,
       valid: driveValid,
     });
+    syncBoltDrivePicker({ isValid: driveValid });
     if (!headValid) {
       requirements.push('select a head style');
     }
@@ -460,6 +462,7 @@ function applyValidationFeedback(disabled) {
       messageElement: boltDriveMessage,
       valid: true,
     });
+    syncBoltDrivePicker({ isValid: true });
   }
 
   if (hardwareType === 'Connector') {

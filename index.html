@@ -475,7 +475,40 @@
                   <div id="bolt-standard-group" class="row g-3 d-none" aria-hidden="true">
                     <div id="bolt-drive-field" class="col-12 col-sm-6 thread-length-field">
                       <label for="bolt-drive-select" class="form-label fw-semibold">Drive</label>
-                      <select id="bolt-drive-select" class="form-select"></select>
+                      <div class="bolt-drive-picker" id="bolt-drive-picker">
+                        <select id="bolt-drive-select" class="visually-hidden"></select>
+                        <button
+                          type="button"
+                          class="bolt-drive-picker__button"
+                          id="bolt-drive-picker-button"
+                          aria-haspopup="listbox"
+                          aria-expanded="false"
+                          aria-controls="bolt-drive-picker-list"
+                        >
+                          <span class="bolt-drive-picker__current">
+                            <span
+                              class="bolt-drive-picker__current-icon"
+                              aria-hidden="true"
+                            >
+                              <img
+                                src=""
+                                alt=""
+                                class="bolt-drive-picker__current-icon-image"
+                                hidden
+                              />
+                            </span>
+                            <span class="bolt-drive-picker__current-label">Select drive…</span>
+                          </span>
+                          <span class="bolt-drive-picker__chevron" aria-hidden="true"></span>
+                        </button>
+                        <ul
+                          class="bolt-drive-picker__list"
+                          id="bolt-drive-picker-list"
+                          role="listbox"
+                          aria-labelledby="bolt-drive-picker-button"
+                          hidden
+                        ></ul>
+                      </div>
                       <div
                         id="bolt-drive-message"
                         class="validation-message text-danger small mt-2 d-none"
