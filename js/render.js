@@ -361,6 +361,9 @@ export function isLabelReady() {
   if (state.hardwareType === 'Screw') {
     return Boolean(state.threadSize && state.length && state.standardCode);
   }
+  if (state.hardwareType === 'Threaded Heat Insert') {
+    return Boolean(state.threadSize && state.length);
+  }
   return Boolean(state.threadSize);
 }
 
@@ -372,7 +375,7 @@ function applyValidationFeedback(disabled) {
     hardwareType === 'Screw' ||
     hardwareType === 'Nut' ||
     hardwareType === 'Washer' ||
-    hardwareType === 'Heat Insert';
+    hardwareType === 'Threaded Heat Insert';
 
   if (requiresThread) {
     const valid = Boolean(state.threadSize);
@@ -397,7 +400,7 @@ function applyValidationFeedback(disabled) {
   const requiresLength =
     hardwareType === 'Bolt' ||
     hardwareType === 'Screw' ||
-    hardwareType === 'Heat Insert';
+    hardwareType === 'Threaded Heat Insert';
   if (requiresLength) {
     const valid = Boolean(state.length);
     updateInputFieldState({
@@ -708,6 +711,13 @@ function resolveHardwareImageInfo() {
       type: 'fuse-illustration',
       src: illustration.src,
       alt: illustration.alt,
+    };
+  }
+  if (state.hardwareType === 'Threaded Heat Insert') {
+    return {
+      type: 'photo',
+      src: 'images/threaded_heat_insert/heat_insert.svg',
+      alt: 'Threaded heat insert reference illustration',
     };
   }
   const folder = hardwareImageFolders[state.hardwareType];
