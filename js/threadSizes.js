@@ -189,7 +189,7 @@ export function populateThreadSizes() {
     list.forEach(size => {
       buildThreadSizeOptionItem(size);
     });
-    threadSizePickerList.hidden = false;
+    threadSizePickerList.hidden = true;
   }
   if (threadSizePickerButton) {
     threadSizePickerButton.disabled = false;
