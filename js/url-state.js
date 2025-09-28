@@ -21,6 +21,8 @@ const FIELD_MAP = {
   fuseValue: 'fv',
   glassSpeed: 'gs',
   glassSize: 'gz',
+  ceramicSpeed: 'cs',
+  ceramicSize: 'cz',
   notes: 'no',
   standard: 'sd',
   standardCode: 'sc',
@@ -78,6 +80,17 @@ const glassSizeOptions = new Set(
         .filter(value => value && value.trim().length > 0)
     : [],
 );
+const ceramicSizeOptions = new Set(
+  elements.ceramicSizeSelect
+    ? Array.from(elements.ceramicSizeSelect.options)
+        .map(option => option.value)
+        .filter(value => value && value.trim().length > 0)
+    : [],
+);
+const cylindricalFuseSizeOptions = new Set([
+  ...glassSizeOptions,
+  ...ceramicSizeOptions,
+]);
 const glassSpeedOptions = new Set(['Slow Blow (Time Delay)', 'Fast Blow']);
 const metricThreadSet = new Set(metricThreadSizes);
 const imperialThreadSet = new Set(imperialThreadSizes);
@@ -196,7 +209,22 @@ function sanitizeGlassSize(value) {
   if (!trimmed) {
     return '';
   }
-  return glassSizeOptions.has(trimmed) ? trimmed : '';
+  return cylindricalFuseSizeOptions.has(trimmed) ? trimmed : '';
+}
+
+function sanitizeCeramicSpeed(value) {
+  return sanitizeGlassSpeed(value);
+}
+
+function sanitizeCeramicSize(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return '';
+  }
+  return cylindricalFuseSizeOptions.has(trimmed) ? trimmed : '';
 }
 
 function sanitizeNotes(value) {
@@ -325,10 +353,25 @@ function applyExpandedPayload(expanded) {
       state.glassSpeed = '';
       state.glassSize = '';
     }
+    if (state.fuseType === 'Ceramic') {
+      const sanitizedSpeed = sanitizeCeramicSpeed(expanded.ceramicSpeed);
+      if (sanitizedSpeed !== null) {
+        state.ceramicSpeed = sanitizedSpeed;
+      }
+      const sanitizedSize = sanitizeCeramicSize(expanded.ceramicSize);
+      if (sanitizedSize !== null) {
+        state.ceramicSize = sanitizedSize;
+      }
+    } else {
+      state.ceramicSpeed = '';
+      state.ceramicSize = '';
+    }
   } else {
     state.fuseValue = '';
     state.glassSpeed = '';
     state.glassSize = '';
+    state.ceramicSpeed = '';
+    state.ceramicSize = '';
   }
 
   if (typeof expanded.notes === 'string') {

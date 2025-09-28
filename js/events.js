@@ -52,6 +52,9 @@ const {
   glassSlowBlowCheckbox,
   glassFastBlowCheckbox,
   glassSizeSelect,
+  ceramicSlowBlowCheckbox,
+  ceramicFastBlowCheckbox,
+  ceramicSizeSelect,
   lengthInput,
   notesInput,
   customLine1Input,
@@ -1821,6 +1824,45 @@ export function initEventHandlers() {
   if (glassSizeSelect) {
     glassSizeSelect.addEventListener('change', () => {
       state.glassSize = glassSizeSelect.value;
+      updatePreview();
+    });
+  }
+
+  if (ceramicSlowBlowCheckbox) {
+    ceramicSlowBlowCheckbox.addEventListener('change', () => {
+      if (!ceramicSlowBlowCheckbox.checked) {
+        if (!ceramicFastBlowCheckbox || !ceramicFastBlowCheckbox.checked) {
+          state.ceramicSpeed = '';
+        }
+      } else {
+        state.ceramicSpeed = 'Slow Blow (Time Delay)';
+        if (ceramicFastBlowCheckbox) {
+          ceramicFastBlowCheckbox.checked = false;
+        }
+      }
+      updatePreview();
+    });
+  }
+
+  if (ceramicFastBlowCheckbox) {
+    ceramicFastBlowCheckbox.addEventListener('change', () => {
+      if (!ceramicFastBlowCheckbox.checked) {
+        if (!ceramicSlowBlowCheckbox || !ceramicSlowBlowCheckbox.checked) {
+          state.ceramicSpeed = '';
+        }
+      } else {
+        state.ceramicSpeed = 'Fast Blow';
+        if (ceramicSlowBlowCheckbox) {
+          ceramicSlowBlowCheckbox.checked = false;
+        }
+      }
+      updatePreview();
+    });
+  }
+
+  if (ceramicSizeSelect) {
+    ceramicSizeSelect.addEventListener('change', () => {
+      state.ceramicSize = ceramicSizeSelect.value;
       updatePreview();
     });
   }

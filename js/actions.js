@@ -75,12 +75,16 @@ export function downloadLabel() {
         if (state.fuseValue) {
           fileParts.push(`${state.fuseValue}A`);
         }
-        if (state.fuseType === 'Glass') {
-          if (state.glassSize) {
-            fileParts.push(state.glassSize);
+        if (state.fuseType === 'Glass' || state.fuseType === 'Ceramic') {
+          const fuseSize =
+            state.fuseType === 'Glass' ? state.glassSize : state.ceramicSize;
+          const fuseSpeed =
+            state.fuseType === 'Glass' ? state.glassSpeed : state.ceramicSpeed;
+          if (fuseSize) {
+            fileParts.push(fuseSize);
           }
-          if (state.glassSpeed) {
-            fileParts.push(state.glassSpeed);
+          if (fuseSpeed) {
+            fileParts.push(fuseSpeed);
           }
         }
       } else if (state.hardwareType === 'Connector') {

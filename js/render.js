@@ -93,6 +93,10 @@ const fuseIllustrations = {
     src: 'images/fuses/glass_fuse.svg',
     alt: 'Glass fuse illustration',
   },
+  Ceramic: {
+    src: 'images/fuses/ceramic_fuse.svg',
+    alt: 'Ceramic fuse illustration',
+  },
   Blade: {
     src: 'images/fuses/blade_fuse.svg',
     alt: 'Blade fuse illustration',
@@ -977,13 +981,25 @@ function buildTextLines() {
     const valueLabel = state.fuseValue ? `${state.fuseValue} A` : 'Fuse';
     const typeLabel = state.fuseType ? `${state.fuseType} Fuse` : 'Fuse';
     const typeParts = [typeLabel];
-    if (state.glassSize) {
-      typeParts.push(state.glassSize);
+    const fuseSize =
+      state.fuseType === 'Glass'
+        ? state.glassSize
+        : state.fuseType === 'Ceramic'
+          ? state.ceramicSize
+          : '';
+    if (fuseSize) {
+      typeParts.push(fuseSize);
     }
     const line2 = typeParts.filter(Boolean).join(' — ');
     const line3Parts = [];
-    if (state.glassSpeed) {
-      line3Parts.push(state.glassSpeed);
+    const fuseSpeed =
+      state.fuseType === 'Glass'
+        ? state.glassSpeed
+        : state.fuseType === 'Ceramic'
+          ? state.ceramicSpeed
+          : '';
+    if (fuseSpeed) {
+      line3Parts.push(fuseSpeed);
     }
     if (state.notes) {
       line3Parts.push(state.notes);

@@ -33,6 +33,7 @@ const {
   fuseTypePickerList,
   fuseValueContainer,
   glassOptionsContainer,
+  ceramicOptionsContainer,
   fuseValueSelect,
   fuseValuePicker,
   fuseValuePickerButton,
@@ -40,6 +41,9 @@ const {
   glassSizeSelect,
   glassSlowBlowCheckbox,
   glassFastBlowCheckbox,
+  ceramicSizeSelect,
+  ceramicSlowBlowCheckbox,
+  ceramicFastBlowCheckbox,
   notesInput,
   nutTypeContainer,
   nutTypePicker,
@@ -324,7 +328,9 @@ export function setFuseTypeSelection(nextId, { triggerUpdate = true } = {}) {
   syncFuseTypePicker({ isValid: true });
 
   const shouldResetGlassOptions = previousValue === 'Glass' && sanitizedValue !== 'Glass';
+  const shouldResetCeramicOptions = previousValue === 'Ceramic' && sanitizedValue !== 'Ceramic';
   updateGlassOptionVisibility({ resetIfHidden: shouldResetGlassOptions });
+  updateCeramicOptionVisibility({ resetIfHidden: shouldResetCeramicOptions });
 
   if (triggerUpdate && previousValue !== sanitizedValue) {
     updateDownloadState();
@@ -964,6 +970,34 @@ export function updateGlassOptionVisibility({ resetIfHidden = false } = {}) {
     }
     if (glassSizeSelect) {
       glassSizeSelect.value = '';
+    }
+  }
+}
+
+export function updateCeramicOptionVisibility({ resetIfHidden = false } = {}) {
+  const shouldShow = state.hardwareType === 'Fuse' && state.fuseType === 'Ceramic';
+  if (ceramicOptionsContainer) {
+    ceramicOptionsContainer.classList.toggle('d-none', !shouldShow);
+  }
+  if (shouldShow) {
+    if (ceramicSizeSelect) {
+      ceramicSizeSelect.value = state.ceramicSize || '';
+    }
+    if (ceramicSlowBlowCheckbox && ceramicFastBlowCheckbox) {
+      ceramicSlowBlowCheckbox.checked = state.ceramicSpeed.startsWith('Slow');
+      ceramicFastBlowCheckbox.checked = state.ceramicSpeed.startsWith('Fast');
+    }
+  } else if (resetIfHidden) {
+    state.ceramicSpeed = '';
+    state.ceramicSize = '';
+    if (ceramicSlowBlowCheckbox) {
+      ceramicSlowBlowCheckbox.checked = false;
+    }
+    if (ceramicFastBlowCheckbox) {
+      ceramicFastBlowCheckbox.checked = false;
+    }
+    if (ceramicSizeSelect) {
+      ceramicSizeSelect.value = '';
     }
   }
 }
@@ -1771,6 +1805,7 @@ export function onHardwareTypeChange() {
     updateCustomImageUi();
   }
   updateGlassOptionVisibility({ resetIfHidden: !showFuseFields });
+  updateCeramicOptionVisibility({ resetIfHidden: !showFuseFields });
   populateThreadSizes();
   populateStandards();
   updateDownloadState();

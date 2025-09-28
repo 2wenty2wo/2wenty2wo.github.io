@@ -23,10 +23,12 @@ import { hydrateStateFromUrl } from './url-state.js';
 function applyStateToControls() {
   const {
     systemTypeRadios,
-    fuseValueSelect,
     glassSizeSelect,
     glassSlowBlowCheckbox,
     glassFastBlowCheckbox,
+    ceramicSizeSelect,
+    ceramicSlowBlowCheckbox,
+    ceramicFastBlowCheckbox,
     lengthInput,
     notesInput,
     customLine1Input,
@@ -40,7 +42,6 @@ function applyStateToControls() {
     widthValueSpan,
     heightRadios,
     connectorCategorySelect,
-    threadSizeSelect,
     nutTypeSelect,
     bearingTypeSelect,
   } = elements;
@@ -60,6 +61,15 @@ function applyStateToControls() {
   }
   if (glassFastBlowCheckbox) {
     glassFastBlowCheckbox.checked = state.glassSpeed.startsWith('Fast');
+  }
+  if (ceramicSizeSelect) {
+    ceramicSizeSelect.value = state.ceramicSize || '';
+  }
+  if (ceramicSlowBlowCheckbox) {
+    ceramicSlowBlowCheckbox.checked = state.ceramicSpeed.startsWith('Slow');
+  }
+  if (ceramicFastBlowCheckbox) {
+    ceramicFastBlowCheckbox.checked = state.ceramicSpeed.startsWith('Fast');
   }
 
   if (connectorCategorySelect) {

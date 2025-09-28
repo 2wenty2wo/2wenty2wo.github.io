@@ -7,6 +7,8 @@ export const state = {
   fuseValue: '',
   glassSpeed: '',
   glassSize: '',
+  ceramicSpeed: '',
+  ceramicSize: '',
   notes: '',
   standard: '',
   standardCode: '',
