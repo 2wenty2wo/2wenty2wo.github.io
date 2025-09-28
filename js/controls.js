@@ -5,6 +5,7 @@ import {
   populateFuseValues,
   populateConnectorCategories,
   populateBearingOptions,
+  populateHardwareTypePicker,
   updateCustomImageUi,
   onHardwareTypeChange,
   setBoltDriveSelection,
@@ -127,6 +128,7 @@ function init() {
   populateFuseValues();
   populateConnectorCategories();
   populateBearingOptions();
+  populateHardwareTypePicker();
   updateCustomImageUi();
   onHardwareTypeChange();
   applyStateToControls();
