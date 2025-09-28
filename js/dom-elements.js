@@ -8,6 +8,9 @@ const themeToggleText = themeToggleButton
 
 const threadSizeContainer = document.getElementById('thread-size-container');
 const threadSizeSelect = document.getElementById('thread-size-select');
+const threadSizePicker = document.getElementById('thread-size-picker');
+const threadSizePickerButton = document.getElementById('thread-size-picker-button');
+const threadSizePickerList = document.getElementById('thread-size-picker-list');
 const threadLengthRow = document.getElementById('thread-length-row');
 const lengthContainer = document.getElementById('length-container');
 const lengthInput = document.getElementById('length-input');
@@ -28,6 +31,9 @@ const fuseTypePickerList = document.getElementById('fuse-type-picker-list');
 const fuseValueContainer = document.getElementById('fuse-value-container');
 const glassOptionsContainer = document.getElementById('glass-options-container');
 const fuseValueSelect = document.getElementById('fuse-value-select');
+const fuseValuePicker = document.getElementById('fuse-value-picker');
+const fuseValuePickerButton = document.getElementById('fuse-value-picker-button');
+const fuseValuePickerList = document.getElementById('fuse-value-picker-list');
 const glassSizeSelect = document.getElementById('glass-size-select');
 const glassSlowBlowCheckbox = document.getElementById('glass-slow-blow');
 const glassFastBlowCheckbox = document.getElementById('glass-fast-blow');
@@ -132,6 +138,9 @@ export const elements = {
   themeToggleText,
   threadSizeContainer,
   threadSizeSelect,
+  threadSizePicker,
+  threadSizePickerButton,
+  threadSizePickerList,
   threadLengthRow,
   lengthContainer,
   lengthInput,
@@ -152,6 +161,9 @@ export const elements = {
   fuseValueContainer,
   glassOptionsContainer,
   fuseValueSelect,
+  fuseValuePicker,
+  fuseValuePickerButton,
+  fuseValuePickerList,
   glassSizeSelect,
   glassSlowBlowCheckbox,
   glassFastBlowCheckbox,

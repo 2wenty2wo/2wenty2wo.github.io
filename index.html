@@ -395,11 +395,37 @@
                     <label for="thread-size-select" class="form-label fw-semibold"
                       >Thread Size</label
                     >
-                    <select
-                      id="thread-size-select"
-                      class="form-select picker-input"
-                      aria-describedby="thread-size-message"
-                    ></select>
+                    <div class="bolt-drive-picker" id="thread-size-picker">
+                      <select
+                        id="thread-size-select"
+                        class="visually-hidden"
+                        aria-describedby="thread-size-message"
+                      ></select>
+                      <button
+                        type="button"
+                        class="bolt-drive-picker__button"
+                        id="thread-size-picker-button"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                        aria-controls="thread-size-picker-list"
+                      >
+                        <span class="bolt-drive-picker__current">
+                          <span
+                            class="bolt-drive-picker__current-icon is-empty"
+                            aria-hidden="true"
+                          ></span>
+                          <span class="bolt-drive-picker__current-label">Select size…</span>
+                        </span>
+                        <span class="bolt-drive-picker__chevron" aria-hidden="true"></span>
+                      </button>
+                      <ul
+                        class="bolt-drive-picker__list"
+                        id="thread-size-picker-list"
+                        role="listbox"
+                        aria-labelledby="thread-size-picker-button"
+                        hidden
+                      ></ul>
+                    </div>
                     <div
                       id="thread-size-message"
                       class="validation-message text-danger small mt-2 d-none"
@@ -522,11 +548,37 @@
                     <label for="fuse-value-select" class="form-label fw-semibold"
                       >Fuse Value (amps)</label
                     >
-                    <select
-                      id="fuse-value-select"
-                      class="form-select"
-                      aria-describedby="fuse-value-message"
-                    ></select>
+                    <div class="bolt-drive-picker" id="fuse-value-picker">
+                      <select
+                        id="fuse-value-select"
+                        class="visually-hidden"
+                        aria-describedby="fuse-value-message"
+                      ></select>
+                      <button
+                        type="button"
+                        class="bolt-drive-picker__button"
+                        id="fuse-value-picker-button"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                        aria-controls="fuse-value-picker-list"
+                      >
+                        <span class="bolt-drive-picker__current">
+                          <span
+                            class="bolt-drive-picker__current-icon is-empty"
+                            aria-hidden="true"
+                          ></span>
+                          <span class="bolt-drive-picker__current-label">Select value…</span>
+                        </span>
+                        <span class="bolt-drive-picker__chevron" aria-hidden="true"></span>
+                      </button>
+                      <ul
+                        class="bolt-drive-picker__list"
+                        id="fuse-value-picker-list"
+                        role="listbox"
+                        aria-labelledby="fuse-value-picker-button"
+                        hidden
+                      ></ul>
+                    </div>
                     <div
                       id="fuse-value-message"
                       class="validation-message text-danger small mt-2 d-none"

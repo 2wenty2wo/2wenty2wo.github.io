@@ -13,6 +13,8 @@ import {
   setBoltHeadSelection,
   setNutTypeSelection,
   setFuseTypeSelection,
+  setThreadSizeSelection,
+  setFuseValueSelection,
 } from './forms.js';
 import { updateDownloadState, updateQrContentVisibility, updatePreview } from './render.js';
 import { initEventHandlers } from './events.js';
@@ -49,9 +51,7 @@ function applyStateToControls() {
     });
   }
   setFuseTypeSelection(state.fuseType || 'Glass', { triggerUpdate: false });
-  if (fuseValueSelect) {
-    fuseValueSelect.value = state.fuseValue || '';
-  }
+  setFuseValueSelection(state.fuseValue || '', { triggerUpdate: false });
   if (glassSizeSelect) {
     glassSizeSelect.value = state.glassSize || '';
   }
@@ -65,9 +65,7 @@ function applyStateToControls() {
   if (connectorCategorySelect) {
     connectorCategorySelect.value = state.connectorCategory || '';
   }
-  if (threadSizeSelect) {
-    threadSizeSelect.value = state.threadSize || '';
-  }
+  setThreadSizeSelection(state.threadSize || '', { triggerUpdate: false });
   if (nutTypeSelect) {
     nutTypeSelect.value = state.nutType || '';
   }
