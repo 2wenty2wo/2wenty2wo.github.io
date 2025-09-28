@@ -6,6 +6,7 @@ import {
   bearingOptions,
   boltHeadOptions,
   boltDriveOptions,
+  screwTypeOptions,
   nutTypeOptions,
   hardwareCatalog,
   hardwareTypeImageMap,
@@ -62,6 +63,7 @@ const {
   notesField,
   standardField,
   boltStandardGroup,
+  boltHeadLabel,
   boltHeadPicker,
   boltHeadPickerButton,
   boltHeadPickerList,
@@ -89,8 +91,11 @@ const {
 const HARDWARE_TYPE_PLACEHOLDER_TEXT = 'Select hardware…';
 const BOLT_DRIVE_PLACEHOLDER_TEXT = 'Select drive…';
 const BOLT_HEAD_PLACEHOLDER_TEXT = 'Select head…';
+const SCREW_TYPE_PLACEHOLDER_TEXT = 'Select type…';
 const validBoltDriveIds = new Set(boltDriveOptions.map(option => option.id));
-const validBoltHeadIds = new Set(boltHeadOptions.map(option => option.id));
+const validBoltHeadIds = new Set(
+  boltHeadOptions.concat(screwTypeOptions).map(option => option.id),
+);
 const NUT_TYPE_PLACEHOLDER_TEXT = 'Select type…';
 const validNutTypeIds = new Set(nutTypeOptions.map(option => option.id));
 const FUSE_TYPE_PLACEHOLDER_TEXT = 'Select fuse type…';
@@ -98,6 +103,24 @@ const DEFAULT_FUSE_TYPE = 'Glass';
 const validFuseTypeIds = new Set(fuseTypeOptions.map(option => option.id));
 const FUSE_VALUE_PLACEHOLDER_TEXT = 'Select value…';
 const validFuseValuesSet = new Set(fuseValues.map(value => String(value)));
+
+function getFastenerHeadOptions() {
+  return state.hardwareType === 'Screw' ? screwTypeOptions : boltHeadOptions;
+}
+
+function getFastenerHeadPlaceholder() {
+  return state.hardwareType === 'Screw'
+    ? SCREW_TYPE_PLACEHOLDER_TEXT
+    : BOLT_HEAD_PLACEHOLDER_TEXT;
+}
+
+function getFastenerHeadImagePath(option) {
+  if (!option || !option.image) {
+    return '';
+  }
+  const basePath = state.hardwareType === 'Screw' ? 'images/screws' : 'images/bolts/head';
+  return `${basePath}/${option.image}.svg`;
+}
 
 function createHardwareTypeOption(optionElement) {
   if (!hardwareTypePickerList) {
@@ -499,9 +522,11 @@ export function syncBoltHeadPicker({ isValid = true } = {}) {
     boltHeadSelect.selectedIndex = 0;
   }
 
+  const headOptions = getFastenerHeadOptions();
   const selectedOption = sanitizedValue
-    ? boltHeadOptions.find(option => option.id === sanitizedValue) || null
+    ? headOptions.find(option => option.id === sanitizedValue) || null
     : null;
+  const placeholderText = getFastenerHeadPlaceholder();
 
   if (boltHeadPickerButton) {
     const label = boltHeadPickerButton.querySelector('.bolt-drive-picker__current-label');
@@ -511,12 +536,12 @@ export function syncBoltHeadPicker({ isValid = true } = {}) {
     );
 
     if (label) {
-      label.textContent = selectedOption ? selectedOption.label : BOLT_HEAD_PLACEHOLDER_TEXT;
+      label.textContent = selectedOption ? selectedOption.label : placeholderText;
     }
 
     if (iconWrapper && iconImage) {
       if (selectedOption) {
-        iconImage.src = `images/bolts/head/${selectedOption.image}.svg`;
+        iconImage.src = getFastenerHeadImagePath(selectedOption);
         iconImage.hidden = false;
         iconWrapper.classList.remove('is-empty');
       } else {
@@ -1033,6 +1058,11 @@ function populateBoltOptions() {
 
   const previousHead = typeof state.boltHead === 'string' ? state.boltHead : '';
   const previousDrive = typeof state.boltDrive === 'string' ? state.boltDrive : '';
+  const isScrew = state.hardwareType === 'Screw';
+  const headOptions = getFastenerHeadOptions();
+  const headPlaceholderText = isScrew
+    ? SCREW_TYPE_PLACEHOLDER_TEXT
+    : BOLT_HEAD_PLACEHOLDER_TEXT;
 
   boltHeadSelect.innerHTML = '';
   boltDriveSelect.innerHTML = '';
@@ -1045,7 +1075,7 @@ function populateBoltOptions() {
 
   const headPlaceholder = document.createElement('option');
   headPlaceholder.value = '';
-  headPlaceholder.textContent = BOLT_HEAD_PLACEHOLDER_TEXT;
+  headPlaceholder.textContent = headPlaceholderText;
   headPlaceholder.disabled = true;
   headPlaceholder.selected = !previousHead;
   boltHeadSelect.appendChild(headPlaceholder);
@@ -1057,7 +1087,7 @@ function populateBoltOptions() {
   drivePlaceholder.selected = !previousDrive;
   boltDriveSelect.appendChild(drivePlaceholder);
 
-  boltHeadOptions.forEach(option => {
+  headOptions.forEach(option => {
     const opt = document.createElement('option');
     opt.value = option.id;
     opt.textContent = option.label;
@@ -1075,7 +1105,7 @@ function populateBoltOptions() {
 
       const image = document.createElement('img');
       image.className = 'bolt-drive-picker__option-icon-image';
-      image.src = `images/bolts/head/${option.image}.svg`;
+      image.src = getFastenerHeadImagePath(option);
       image.alt = '';
       image.loading = 'lazy';
       image.decoding = 'async';
@@ -1131,7 +1161,7 @@ function populateBoltOptions() {
   setBoltDriveSelection(previousDrive, { triggerUpdate: false });
 
   boltHeadSelect.disabled = false;
-  boltHeadSelect.title = 'Select head style';
+  boltHeadSelect.title = isScrew ? 'Select screw type' : 'Select head style';
   boltHeadSelect.setAttribute('aria-required', 'true');
 
   boltDriveSelect.disabled = false;
@@ -1157,7 +1187,7 @@ function populateBoltOptions() {
 export function populateStandards() {
   const previousCode = typeof state.standardCode === 'string' ? state.standardCode : '';
 
-  if (state.hardwareType === 'Bolt') {
+  if (state.hardwareType === 'Bolt' || state.hardwareType === 'Screw') {
     standardFilterState.query = '';
     if (standardSelect) {
       standardSelect.innerHTML = '';
@@ -1448,6 +1478,8 @@ export function onHardwareTypeChange() {
   const showCustomFields = type === 'Custom';
   const showBearingFields = type === 'Bearing';
   const showBoltFields = type === 'Bolt';
+  const showScrewFields = type === 'Screw';
+  const showFastenerFields = showBoltFields || showScrewFields;
   const showNutFields = type === 'Nut';
 
   if (lengthContainer) {
@@ -1658,10 +1690,10 @@ export function onHardwareTypeChange() {
     } else {
       standardLabel.textContent = defaultStandardLabel;
     }
-    standardLabel.setAttribute('for', showBoltFields ? 'bolt-head-select' : 'standard-select');
+    standardLabel.setAttribute('for', showFastenerFields ? 'bolt-head-select' : 'standard-select');
   }
   if (standardSelect) {
-    const hideStandardSelect = showBoltFields || showFuseFields || showNutFields;
+    const hideStandardSelect = showFastenerFields || showFuseFields || showNutFields;
     standardSelect.classList.toggle('d-none', hideStandardSelect);
     if (hideStandardSelect) {
       standardSelect.disabled = true;
@@ -1673,19 +1705,22 @@ export function onHardwareTypeChange() {
     }
   }
   if (boltStandardGroup) {
-    boltStandardGroup.classList.toggle('d-none', !showBoltFields);
-    boltStandardGroup.setAttribute('aria-hidden', showBoltFields ? 'false' : 'true');
+    boltStandardGroup.classList.toggle('d-none', !showFastenerFields);
+    boltStandardGroup.setAttribute('aria-hidden', showFastenerFields ? 'false' : 'true');
+  }
+  if (boltHeadLabel) {
+    boltHeadLabel.textContent = showScrewFields ? 'Type' : 'Head';
   }
   if (boltHeadSelect) {
-    boltHeadSelect.disabled = !showBoltFields;
-    if (!showBoltFields) {
+    boltHeadSelect.disabled = !showFastenerFields;
+    if (!showFastenerFields) {
       boltHeadSelect.removeAttribute('aria-required');
       boltHeadSelect.title = '';
     }
   }
   if (boltHeadPickerButton) {
-    boltHeadPickerButton.disabled = !showBoltFields;
-    if (!showBoltFields) {
+    boltHeadPickerButton.disabled = !showFastenerFields;
+    if (!showFastenerFields) {
       boltHeadPickerButton.setAttribute('aria-expanded', 'false');
     }
   }
@@ -1693,18 +1728,18 @@ export function onHardwareTypeChange() {
     boltHeadPickerList.hidden = true;
   }
   if (boltHeadPicker) {
-    boltHeadPicker.classList.toggle('is-disabled', !showBoltFields);
+    boltHeadPicker.classList.toggle('is-disabled', !showFastenerFields);
   }
   if (boltDriveSelect) {
-    boltDriveSelect.disabled = !showBoltFields;
-    if (!showBoltFields) {
+    boltDriveSelect.disabled = !showFastenerFields;
+    if (!showFastenerFields) {
       boltDriveSelect.removeAttribute('aria-required');
       boltDriveSelect.title = '';
     }
   }
   if (boltDrivePickerButton) {
-    boltDrivePickerButton.disabled = !showBoltFields;
-    if (!showBoltFields) {
+    boltDrivePickerButton.disabled = !showFastenerFields;
+    if (!showFastenerFields) {
       boltDrivePickerButton.setAttribute('aria-expanded', 'false');
     }
   }
@@ -1712,9 +1747,9 @@ export function onHardwareTypeChange() {
     boltDrivePickerList.hidden = true;
   }
   if (boltDrivePicker) {
-    boltDrivePicker.classList.toggle('is-disabled', !showBoltFields);
+    boltDrivePicker.classList.toggle('is-disabled', !showFastenerFields);
   }
-  if (!showBoltFields) {
+  if (!showFastenerFields) {
     syncBoltHeadPicker({ isValid: true });
     syncBoltDrivePicker({ isValid: true });
   }

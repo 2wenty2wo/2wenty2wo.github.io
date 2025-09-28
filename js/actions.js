@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { findConnectorCategory, boltHeadMap, boltDriveMap } from './data.js';
+import { findConnectorCategory, boltHeadMap, boltDriveMap, screwTypeMap } from './data.js';
 import { renderLabelPng } from './render.js';
 import { buildShareUrl } from './url-state.js';
 
@@ -124,15 +124,27 @@ export function downloadLabel() {
         if (driveEntry && driveEntry.label) {
           fileParts.push(driveEntry.label);
         }
+      } else if (state.hardwareType === 'Screw') {
+        if (state.threadSize) {
+          fileParts.push(state.threadSize);
+        }
+        if (state.length) {
+          fileParts.push(`x${state.length}`);
+        }
+        const typeEntry = screwTypeMap.get((state.boltHead || '').trim());
+        const driveEntry = boltDriveMap.get((state.boltDrive || '').trim());
+        if (typeEntry && typeEntry.label) {
+          fileParts.push(typeEntry.label);
+        }
+        if (driveEntry && driveEntry.label) {
+          fileParts.push(driveEntry.label);
+        }
       } else {
         if (state.threadSize) {
           fileParts.push(state.threadSize);
         }
-        if (state.hardwareType === 'Screw' && state.length) {
-          fileParts.push(`x${state.length}`);
-        }
       }
-      if (state.hardwareType !== 'Bolt') {
+      if (state.hardwareType !== 'Bolt' && state.hardwareType !== 'Screw') {
         if (state.standardCode) {
           fileParts.push(state.standardCode);
         }

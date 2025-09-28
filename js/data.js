@@ -95,8 +95,15 @@ export const boltDriveOptions = [
   { id: 'torx', label: 'Torx', image: 'torx' },
 ];
 
+export const screwTypeOptions = [
+  { id: 'countersunk_wood_screw', label: 'Countersunk Wood Screw', image: 'countersunk_wood_screw' },
+  { id: 'pan_head_wood_screw', label: 'Pan Head Wood Screw', image: 'pan_head_wood_screw' },
+  { id: 'self_drilling_hex_screw', label: 'Self-drilling Hex Screw', image: 'self_drilling_hex_screw' },
+];
+
 export const boltHeadMap = new Map(boltHeadOptions.map(option => [option.id, option]));
 export const boltDriveMap = new Map(boltDriveOptions.map(option => [option.id, option]));
+export const screwTypeMap = new Map(screwTypeOptions.map(option => [option.id, option]));
 
 export const nutTypeOptions = [
   { id: 'hex', label: 'Hex Nut', image: 'hex_nut' },
@@ -229,6 +236,7 @@ export const hardwareImageFolders = {
 
 export const hardwareTypeImageMap = {
   Bolt: 'images/bolts/head/countersunk_head.svg',
+  Screw: 'images/screws/countersunk_wood_screw.svg',
   'Threaded Heat Insert': 'images/threaded_heat_insert/heat_insert.svg',
   Nut: 'images/nuts/hex_nut.svg',
   Fuse: 'images/fuses/glass_fuse.svg',

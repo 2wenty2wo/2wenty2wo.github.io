@@ -8,6 +8,7 @@ import {
   connectorCatalog,
   boltHeadOptions,
   boltDriveOptions,
+  screwTypeOptions,
 } from './data.js';
 
 export const SHARE_QUERY_PARAM = 'label';
@@ -86,7 +87,9 @@ const fuseValueOptions = new Set(fuseValues.map(value => String(value)));
 const connectorCategoryOptions = new Set(connectorCatalog.map(category => category.id));
 const bearingCodeOptions = new Set(bearingOptions.map(option => option.code));
 const systemTypeOptions = new Set(['Metric', 'Imperial']);
-const boltHeadIds = new Set(boltHeadOptions.map(option => option.id));
+const boltHeadIds = new Set(
+  boltHeadOptions.concat(screwTypeOptions).map(option => option.id),
+);
 const boltDriveIds = new Set(boltDriveOptions.map(option => option.id));
 
 function encodeToBase64Url(input) {

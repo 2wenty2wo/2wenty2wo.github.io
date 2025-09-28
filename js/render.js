@@ -8,6 +8,7 @@ import {
   boltHeadMap,
   boltDriveMap,
   nutTypeMap,
+  screwTypeMap,
 } from './data.js';
 import { loadQrCodeLibrary } from './lazy-loaders.js';
 
@@ -353,7 +354,7 @@ export function isLabelReady() {
   if (state.hardwareType === 'Component') {
     return Boolean(state.componentCategory && state.componentMount);
   }
-  if (state.hardwareType === 'Bolt') {
+  if (state.hardwareType === 'Bolt' || state.hardwareType === 'Screw') {
     const hasThread = Boolean(state.threadSize);
     const hasLength = Boolean(state.length);
     const detailsRequired = Boolean(state.showImage || state.showStandard);
@@ -368,9 +369,6 @@ export function isLabelReady() {
     const hasType = Boolean(state.nutType);
     const detailsSatisfied = !detailsRequired || hasType;
     return Boolean(hasThread && detailsSatisfied);
-  }
-  if (state.hardwareType === 'Screw') {
-    return Boolean(state.threadSize && state.length && state.standardCode);
   }
   if (state.hardwareType === 'Threaded Heat Insert') {
     return Boolean(state.threadSize && state.length);
@@ -456,7 +454,10 @@ function applyValidationFeedback(disabled) {
     syncFuseValuePicker({ isValid: true });
   }
 
-  if (hardwareType === 'Bolt' && (state.showImage || state.showStandard)) {
+  if (
+    (hardwareType === 'Bolt' || hardwareType === 'Screw') &&
+    (state.showImage || state.showStandard)
+  ) {
     const headValid = Boolean(state.boltHead);
     const driveValid = Boolean(state.boltDrive);
     updateInputFieldState({
@@ -473,7 +474,7 @@ function applyValidationFeedback(disabled) {
     });
     syncBoltDrivePicker({ isValid: driveValid });
     if (!headValid) {
-      requirements.push('select a head style');
+      requirements.push(hardwareType === 'Screw' ? 'choose a screw type' : 'select a head style');
     }
     if (!driveValid) {
       requirements.push('select a drive style');
@@ -736,6 +737,36 @@ function resolveHardwareImageInfo() {
       ],
     };
   }
+  if (state.hardwareType === 'Screw') {
+    const typeId = (state.boltHead || '').trim();
+    const driveId = (state.boltDrive || '').trim();
+    if (!typeId || !driveId) {
+      return null;
+    }
+    const typeEntry = screwTypeMap.get(typeId);
+    const driveEntry = boltDriveMap.get(driveId);
+    if (!typeEntry || !driveEntry) {
+      return null;
+    }
+    const typeImage = (typeEntry.image || '').trim();
+    const driveImage = (driveEntry.image || '').trim();
+    if (!typeImage || !driveImage) {
+      return null;
+    }
+    return {
+      type: 'screw',
+      images: [
+        {
+          src: `images/bolts/drive/${driveImage}.svg`,
+          alt: driveEntry.label ? `${driveEntry.label} — drive view` : 'Screw drive view',
+        },
+        {
+          src: `images/screws/${typeImage}.svg`,
+          alt: typeEntry.label ? `${typeEntry.label} — type view` : 'Screw type view',
+        },
+      ],
+    };
+  }
   if (state.hardwareType === 'Fuse') {
     const fuseType = (state.fuseType || '').trim();
     const illustration = fuseIllustrations[fuseType] || fuseIllustrations.Glass;
@@ -854,8 +885,11 @@ function renderHardwareImage(imageInfo, innerHeightPx, contentWidthPx, gapPx) {
     }
     hardwareImageDiv.appendChild(wrapper);
     usedWidthPx = targetWidth;
-  } else if (imageInfo.type === 'bolt') {
-    const images = Array.isArray(imageInfo.images) ? imageInfo.images.filter(item => item && item.src) : [];
+  } else if (imageInfo.type === 'bolt' || imageInfo.type === 'screw') {
+    const isScrew = imageInfo.type === 'screw';
+    const images = Array.isArray(imageInfo.images)
+      ? imageInfo.images.filter(item => item && item.src)
+      : [];
     if (images.length === 0) {
       hardwareImageDiv.style.display = 'none';
       hardwareImageDiv.style.removeProperty('flex-basis');
@@ -865,7 +899,7 @@ function renderHardwareImage(imageInfo, innerHeightPx, contentWidthPx, gapPx) {
     }
     const maxWidth = Math.max(Math.min(contentWidthPx, innerHeightPx * 2), innerHeightPx);
     const group = document.createElement('div');
-    group.className = 'bolt-image-group';
+    group.className = isScrew ? 'bolt-image-group screw-image-group' : 'bolt-image-group';
     group.style.height = `${innerHeightPx}px`;
     group.style.maxHeight = `${innerHeightPx}px`;
     const groupGap = Math.max(4, Math.round(gapPx * 1.1));
@@ -875,8 +909,16 @@ function renderHardwareImage(imageInfo, innerHeightPx, contentWidthPx, gapPx) {
     images.forEach((info, index) => {
       const img = document.createElement('img');
       img.src = info.src;
-      img.alt = info.alt || 'Bolt reference';
-      img.className = index === 0 ? 'hardware-photo bolt-drive-view' : 'hardware-photo bolt-head-view';
+      img.alt = info.alt || (isScrew ? 'Screw reference' : 'Bolt reference');
+      const viewClass =
+        index === 0
+          ? isScrew
+            ? 'screw-drive-view'
+            : 'bolt-drive-view'
+          : isScrew
+          ? 'screw-type-view'
+          : 'bolt-head-view';
+      img.className = `hardware-photo ${viewClass}`;
       img.style.maxHeight = `${innerHeightPx}px`;
       img.style.maxWidth = `${slotWidth}px`;
       img.decoding = 'async';
@@ -1052,15 +1094,32 @@ function buildTextLines() {
     if (state.length) {
       pieces.push(`× ${state.length}`);
     }
-    const line1 = pieces.join(' ') || 'Screw';
-    const line2Parts = [];
-    if (state.standard) {
-      line2Parts.push(state.standard);
+    const typeEntry = screwTypeMap.get((state.boltHead || '').trim());
+    const driveEntry = boltDriveMap.get((state.boltDrive || '').trim());
+    const typeLabel = typeEntry ? typeEntry.label : '';
+    const driveLabel = driveEntry ? driveEntry.label : '';
+    const notes = state.notes || '';
+    const showDetails = Boolean(state.showStandard);
+    let line2 = '';
+    let line3 = '';
+    if (showDetails) {
+      if (typeLabel) {
+        line2 = typeLabel;
+      }
+      if (driveLabel) {
+        line3 = driveLabel;
+      }
+      if (notes) {
+        if (!line2) {
+          line2 = notes;
+        } else if (!line3) {
+          line3 = notes;
+        }
+      }
+    } else {
+      line2 = notes;
     }
-    if (state.notes) {
-      line2Parts.push(state.notes);
-    }
-    return { line1, line2: line2Parts.join(' • '), line3: '' };
+    return { line1: pieces.join(' ') || 'Screw', line2, line3 };
   }
 
   const line1 = state.threadSize || state.hardwareType || 'Label';
