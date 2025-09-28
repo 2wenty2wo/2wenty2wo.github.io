@@ -926,7 +926,8 @@ export function populateFuseValues() {
 
       fuseValuePickerList.appendChild(item);
     });
-    fuseValuePickerList.hidden = false;
+    const shouldHideList = !fuseValuePicker || !fuseValuePicker.classList.contains('is-open');
+    fuseValuePickerList.hidden = shouldHideList;
   }
   if (fuseValuePickerButton) {
     fuseValuePickerButton.disabled = false;
@@ -1581,10 +1582,15 @@ export function onHardwareTypeChange() {
     fuseTypePickerButton.disabled = !showFuseFields;
     if (!showFuseFields) {
       fuseTypePickerButton.setAttribute('aria-expanded', 'false');
+    } else {
+      const isOpen = Boolean(fuseTypePicker && fuseTypePicker.classList.contains('is-open'));
+      fuseTypePickerButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
     }
   }
   if (fuseTypePickerList) {
-    fuseTypePickerList.hidden = !showFuseFields;
+    const shouldHideList =
+      !showFuseFields || !fuseTypePicker || !fuseTypePicker.classList.contains('is-open');
+    fuseTypePickerList.hidden = shouldHideList;
   }
   if (!showFuseFields && fuseTypePicker) {
     fuseTypePicker.classList.remove('is-open');
@@ -1608,10 +1614,15 @@ export function onHardwareTypeChange() {
     fuseValuePickerButton.disabled = !showFuseFields;
     if (!showFuseFields) {
       fuseValuePickerButton.setAttribute('aria-expanded', 'false');
+    } else {
+      const isOpen = Boolean(fuseValuePicker && fuseValuePicker.classList.contains('is-open'));
+      fuseValuePickerButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
     }
   }
   if (fuseValuePickerList) {
-    fuseValuePickerList.hidden = !showFuseFields;
+    const shouldHideList =
+      !showFuseFields || !fuseValuePicker || !fuseValuePicker.classList.contains('is-open');
+    fuseValuePickerList.hidden = shouldHideList;
   }
   if (!showFuseFields && fuseValuePicker) {
     fuseValuePicker.classList.remove('is-open');
