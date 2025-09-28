@@ -9,6 +9,7 @@ import {
   onHardwareTypeChange,
   setBoltDriveSelection,
   setBoltHeadSelection,
+  setNutTypeSelection,
 } from './forms.js';
 import { updateDownloadState, updateQrContentVisibility, updatePreview } from './render.js';
 import { initEventHandlers } from './events.js';
@@ -36,6 +37,7 @@ function applyStateToControls() {
     heightRadios,
     connectorCategorySelect,
     threadSizeSelect,
+    nutTypeSelect,
     bearingTypeSelect,
   } = elements;
 
@@ -69,6 +71,9 @@ function applyStateToControls() {
   if (threadSizeSelect) {
     threadSizeSelect.value = state.threadSize || '';
   }
+  if (nutTypeSelect) {
+    nutTypeSelect.value = state.nutType || '';
+  }
   if (bearingTypeSelect) {
     bearingTypeSelect.value = state.bearingType || '';
   }
@@ -90,6 +95,7 @@ function applyStateToControls() {
   }
   setBoltHeadSelection(state.boltHead || '', { triggerUpdate: false });
   setBoltDriveSelection(state.boltDrive || '', { triggerUpdate: false });
+  setNutTypeSelection(state.nutType || '', { triggerUpdate: false });
   if (standardToggle) {
     standardToggle.checked = state.showStandard;
   }

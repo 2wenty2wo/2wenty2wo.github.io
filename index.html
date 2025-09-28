@@ -373,6 +373,50 @@
                       class="validation-message text-danger small mt-2 d-none"
                     ></div>
                   </div>
+                  <div
+                    class="col-12 col-sm-6 thread-length-field d-none"
+                    id="nut-type-container"
+                  >
+                    <label for="nut-type-select" class="form-label fw-semibold">Type</label>
+                    <div class="bolt-drive-picker" id="nut-type-picker">
+                      <select id="nut-type-select" class="visually-hidden"></select>
+                      <button
+                        type="button"
+                        class="bolt-drive-picker__button"
+                        id="nut-type-picker-button"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                        aria-controls="nut-type-picker-list"
+                      >
+                        <span class="bolt-drive-picker__current">
+                          <span
+                            class="bolt-drive-picker__current-icon is-empty"
+                            aria-hidden="true"
+                          >
+                            <img
+                              class="bolt-drive-picker__current-icon-image"
+                              src=""
+                              alt=""
+                              hidden
+                            />
+                          </span>
+                          <span class="bolt-drive-picker__current-label">Select type…</span>
+                        </span>
+                        <span class="bolt-drive-picker__chevron" aria-hidden="true"></span>
+                      </button>
+                      <ul
+                        class="bolt-drive-picker__list"
+                        id="nut-type-picker-list"
+                        role="listbox"
+                        aria-labelledby="nut-type-picker-button"
+                        hidden
+                      ></ul>
+                    </div>
+                    <div
+                      id="nut-type-message"
+                      class="validation-message text-danger small mt-2 d-none"
+                    ></div>
+                  </div>
                   <div class="col-12 col-sm-6 thread-length-field" id="length-container">
                     <label for="length-input" class="form-label fw-semibold">Length</label>
                     <input
@@ -706,7 +750,7 @@
                 </div>
                 <div>
                   <label for="width-range" class="form-label fw-semibold"
-                    >Label Width <span id="width-value">55</span> mm</label
+                    >Label Width <span id="width-value">37</span> mm</label
                   >
                   <input
                     type="range"
@@ -714,7 +758,7 @@
                     id="width-range"
                     min="37"
                     max="100"
-                    value="55"
+                    value="37"
                   />
                   <div class="d-flex justify-content-between text-muted small">
                     <span>37&nbsp;mm</span><span>100&nbsp;mm</span>

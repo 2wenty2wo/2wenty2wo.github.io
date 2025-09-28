@@ -7,6 +7,7 @@ import {
   findConnectorCategory,
   boltHeadMap,
   boltDriveMap,
+  nutTypeMap,
 } from './data.js';
 import { loadQrCodeLibrary } from './lazy-loaders.js';
 
@@ -37,6 +38,9 @@ const {
   threadSizeContainer,
   lengthInput,
   lengthContainer,
+  nutTypeSelect,
+  nutTypeContainer,
+  nutTypeMessage,
   fuseValueSelect,
   fuseValueContainer,
   connectorCategorySelect,
@@ -358,6 +362,13 @@ export function isLabelReady() {
     const detailsSatisfied = !detailsRequired || (hasHead && hasDrive);
     return Boolean(hasThread && hasLength && detailsSatisfied);
   }
+  if (state.hardwareType === 'Nut') {
+    const hasThread = Boolean(state.threadSize);
+    const detailsRequired = Boolean(state.showImage || state.showStandard);
+    const hasType = Boolean(state.nutType);
+    const detailsSatisfied = !detailsRequired || hasType;
+    return Boolean(hasThread && detailsSatisfied);
+  }
   if (state.hardwareType === 'Screw') {
     return Boolean(state.threadSize && state.length && state.standardCode);
   }
@@ -477,6 +488,26 @@ function applyValidationFeedback(disabled) {
       valid: true,
     });
     syncBoltDrivePicker({ isValid: true });
+  }
+
+  if (hardwareType === 'Nut' && (state.showImage || state.showStandard)) {
+    const typeValid = Boolean(state.nutType);
+    updateInputFieldState({
+      input: nutTypeSelect,
+      container: nutTypeContainer,
+      messageElement: nutTypeMessage,
+      valid: typeValid,
+    });
+    if (!typeValid) {
+      requirements.push('choose a nut type');
+    }
+  } else {
+    updateInputFieldState({
+      input: nutTypeSelect,
+      container: nutTypeContainer,
+      messageElement: nutTypeMessage,
+      valid: true,
+    });
   }
 
   if (hardwareType === 'Connector') {
@@ -718,6 +749,23 @@ function resolveHardwareImageInfo() {
       type: 'photo',
       src: 'images/threaded_heat_insert/heat_insert.svg',
       alt: 'Threaded heat insert reference illustration',
+    };
+  }
+  if (state.hardwareType === 'Nut') {
+    const typeId = (state.nutType || '').trim();
+    const typeEntry = nutTypeMap.get(typeId);
+    if (!typeEntry) {
+      return null;
+    }
+    const image = (typeEntry.image || '').trim();
+    if (!image) {
+      return null;
+    }
+    const label = typeEntry.label || '';
+    return {
+      type: 'photo',
+      src: `images/nuts/${image}.svg`,
+      alt: label ? `${label} reference illustration` : 'Nut reference illustration',
     };
   }
   const folder = hardwareImageFolders[state.hardwareType];
@@ -979,6 +1027,17 @@ function buildTextLines() {
     const line2 = state.showStandard && headLabel ? headLabel : '';
     const line3 = state.showStandard && driveLabel ? driveLabel : '';
     return { line1: pieces.join(' ') || 'Bolt', line2, line3 };
+  }
+
+  if (state.hardwareType === 'Nut') {
+    const line1 = state.threadSize || 'Nut';
+    const typeEntry = nutTypeMap.get((state.nutType || '').trim());
+    const typeLabel = typeEntry ? typeEntry.label : '';
+    const notes = state.notes || '';
+    const showType = Boolean(state.showStandard && typeLabel);
+    const line2 = showType ? typeLabel : notes;
+    const line3 = showType ? notes : '';
+    return { line1, line2, line3 };
   }
 
   if (state.hardwareType === 'Screw') {
