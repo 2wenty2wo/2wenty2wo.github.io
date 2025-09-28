@@ -222,6 +222,43 @@ main {
   box-shadow: 0 0 0 0.25rem var(--field-invalid-ring);
 }
 
+.picker-input {
+  border-radius: 0.75rem;
+  border: 1px solid var(--bs-border-color, rgba(148, 163, 184, 0.38));
+  background-color: var(--bs-body-bg, #ffffff);
+  padding: 0.625rem 0.875rem;
+  min-height: 2.875rem;
+  font-size: 1rem;
+  line-height: 1.35;
+  font-weight: 600;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.picker-input:focus {
+  border-color: var(--focus-ring-border);
+  box-shadow: 0 0 0 var(--focus-outline-width) var(--focus-ring-color);
+}
+
+.picker-input:not(:disabled):hover {
+  background-color: rgba(148, 163, 184, 0.08);
+}
+
+.picker-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.picker-input.is-invalid,
+.is-invalid .picker-input,
+.picker-input.is-invalid:focus,
+.is-invalid .picker-input:focus {
+  border-color: var(--bs-danger-border-subtle, #f1aeb5);
+  box-shadow: 0 0 0 0.25rem var(--field-invalid-ring);
+}
+
 .bolt-drive-picker__current {
   display: flex;
   align-items: center;
@@ -372,6 +409,16 @@ main {
 :root[data-theme='dark'] .bolt-drive-picker__button {
   background-color: rgba(30, 41, 59, 0.9);
   border-color: rgba(148, 163, 184, 0.42);
+}
+
+:root[data-theme='dark'] .picker-input {
+  background-color: rgba(30, 41, 59, 0.9);
+  border-color: rgba(148, 163, 184, 0.42);
+  color: #e2e8f0;
+}
+
+:root[data-theme='dark'] .picker-input:not(:disabled):hover {
+  background-color: rgba(148, 163, 184, 0.18);
 }
 
 :root[data-theme='dark'] .bolt-drive-picker__button:hover {
