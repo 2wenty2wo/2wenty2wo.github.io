@@ -100,6 +100,9 @@ const printButton = document.getElementById('print-button');
 
 const hardwareTypeRadios = Array.from(document.querySelectorAll('input[name="hardware-type"]'));
 const hardwareTypeSelect = document.getElementById('hardware-type-select');
+const hardwareTypePicker = document.getElementById('hardware-type-picker');
+const hardwareTypePickerButton = document.getElementById('hardware-type-picker-button');
+const hardwareTypePickerList = document.getElementById('hardware-type-picker-list');
 const hardwareTypeOptions = new Set(
   hardwareTypeRadios
     .map(radio => radio.value)
@@ -216,6 +219,9 @@ export const elements = {
   printButton,
   hardwareTypeRadios,
   hardwareTypeSelect,
+  hardwareTypePicker,
+  hardwareTypePickerButton,
+  hardwareTypePickerList,
   hardwareTypeOptions,
   systemTypeRadios,
   fuseTypeRadios,

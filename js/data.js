@@ -222,6 +222,13 @@ export const hardwareImageFolders = {
   'Threaded Heat Insert': 'threaded_heat_insert',
 };
 
+export const hardwareTypeImageMap = {
+  Bolt: 'images/bolts/head/countersunk_head.svg',
+  'Threaded Heat Insert': 'images/threaded_heat_insert/heat_insert.svg',
+  Nut: 'images/nuts/hex_nut.svg',
+  Fuse: 'images/fuses/glass_fuse.svg',
+};
+
 export const connectorCatalog = [
   {
     id: 'pre-insulated-crimp',

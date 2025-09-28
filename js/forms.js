@@ -7,6 +7,7 @@ import {
   boltDriveOptions,
   nutTypeOptions,
   hardwareCatalog,
+  hardwareTypeImageMap,
   connectorCatalog,
   STANDARD_PLACEHOLDER_TEXT,
   CONNECTOR_PLACEHOLDER_TEXT,
@@ -64,18 +65,174 @@ const {
   defaultStandardLabel,
   hardwareTypeRadios,
   hardwareTypeSelect,
+  hardwareTypePickerButton,
+  hardwareTypePickerList,
   hardwareTypeOptions,
   systemTypeRadios,
   componentCategoryRadios,
   componentMountRadios,
 } = elements;
 
+const HARDWARE_TYPE_PLACEHOLDER_TEXT = 'Select hardware…';
 const BOLT_DRIVE_PLACEHOLDER_TEXT = 'Select drive…';
 const BOLT_HEAD_PLACEHOLDER_TEXT = 'Select head…';
 const validBoltDriveIds = new Set(boltDriveOptions.map(option => option.id));
 const validBoltHeadIds = new Set(boltHeadOptions.map(option => option.id));
 const NUT_TYPE_PLACEHOLDER_TEXT = 'Select type…';
 const validNutTypeIds = new Set(nutTypeOptions.map(option => option.id));
+
+function createHardwareTypeOption(optionElement) {
+  if (!hardwareTypePickerList) {
+    return;
+  }
+  const value = optionElement.value;
+  if (!value) {
+    return;
+  }
+
+  const item = document.createElement('li');
+  item.className = 'bolt-drive-picker__option';
+  item.dataset.value = value;
+  item.setAttribute('role', 'option');
+  item.setAttribute('aria-selected', 'false');
+  item.tabIndex = -1;
+
+  const icon = document.createElement('span');
+  icon.className = 'bolt-drive-picker__option-icon';
+
+  const imageSrc = hardwareTypeImageMap[value];
+  if (imageSrc) {
+    const image = document.createElement('img');
+    image.className = 'bolt-drive-picker__option-icon-image';
+    if (value === 'Bolt') {
+      image.classList.add('is-rotated-90');
+    }
+    image.src = imageSrc;
+    image.alt = '';
+    image.loading = 'lazy';
+    image.decoding = 'async';
+    icon.appendChild(image);
+  } else {
+    icon.classList.add('is-empty');
+  }
+
+  const label = document.createElement('span');
+  label.className = 'bolt-drive-picker__option-label';
+  label.textContent = optionElement.textContent.trim();
+
+  item.appendChild(icon);
+  item.appendChild(label);
+
+  hardwareTypePickerList.appendChild(item);
+}
+
+export function populateHardwareTypePicker() {
+  if (!hardwareTypePickerList) {
+    return;
+  }
+
+  hardwareTypePickerList.innerHTML = '';
+
+  if (!hardwareTypeSelect) {
+    return;
+  }
+
+  const children = Array.from(hardwareTypeSelect.children);
+  children.forEach(child => {
+    if (!child || !(child instanceof Element)) {
+      return;
+    }
+    const tagName = child.tagName.toLowerCase();
+    if (tagName === 'optgroup') {
+      const optionElements = Array.from(child.children).filter(
+        option => option instanceof HTMLOptionElement,
+      );
+      if (optionElements.length === 0) {
+        return;
+      }
+      const header = document.createElement('li');
+      header.className = 'bolt-drive-picker__group';
+      header.textContent = child.label;
+      header.setAttribute('role', 'presentation');
+      hardwareTypePickerList.appendChild(header);
+      optionElements.forEach(option => {
+        createHardwareTypeOption(option);
+      });
+      return;
+    }
+    if (tagName === 'option') {
+      createHardwareTypeOption(child);
+    }
+  });
+
+  if (hardwareTypePickerButton) {
+    hardwareTypePickerButton.disabled = false;
+    hardwareTypePickerButton.setAttribute('aria-expanded', 'false');
+  }
+  hardwareTypePickerList.hidden = true;
+
+  syncHardwareTypePicker();
+}
+
+export function syncHardwareTypePicker() {
+  const currentValue = typeof state.hardwareType === 'string' ? state.hardwareType : '';
+  const sanitizedValue = hardwareTypeOptions.has(currentValue) ? currentValue : '';
+
+  if (hardwareTypeSelect) {
+    hardwareTypeSelect.value = sanitizedValue || hardwareTypeSelect.value;
+  }
+
+  if (hardwareTypePickerButton) {
+    const label = hardwareTypePickerButton.querySelector('.bolt-drive-picker__current-label');
+    const iconWrapper = hardwareTypePickerButton.querySelector('.bolt-drive-picker__current-icon');
+    const iconImage = hardwareTypePickerButton.querySelector(
+      '.bolt-drive-picker__current-icon-image',
+    );
+
+    let optionLabel = HARDWARE_TYPE_PLACEHOLDER_TEXT;
+    if (sanitizedValue && hardwareTypeSelect) {
+      const match = Array.from(hardwareTypeSelect.options).find(
+        option => option.value === sanitizedValue,
+      );
+      if (match) {
+        optionLabel = match.textContent.trim() || HARDWARE_TYPE_PLACEHOLDER_TEXT;
+      }
+    }
+
+    if (label) {
+      label.textContent = optionLabel;
+    }
+
+    if (iconWrapper && iconImage) {
+      const imageSrc = sanitizedValue ? hardwareTypeImageMap[sanitizedValue] : '';
+      iconImage.classList.remove('is-rotated-90');
+      if (imageSrc) {
+        iconImage.src = imageSrc;
+        iconImage.hidden = false;
+        if (sanitizedValue === 'Bolt') {
+          iconImage.classList.add('is-rotated-90');
+        }
+        iconWrapper.classList.remove('is-empty');
+      } else {
+        iconImage.hidden = true;
+        iconImage.removeAttribute('src');
+        iconWrapper.classList.add('is-empty');
+      }
+    }
+  }
+
+  if (hardwareTypePickerList) {
+    const optionItems = Array.from(
+      hardwareTypePickerList.querySelectorAll('[role="option"]'),
+    );
+    optionItems.forEach(item => {
+      const isSelected = item.dataset.value === sanitizedValue;
+      item.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      item.classList.toggle('is-selected', isSelected);
+      item.tabIndex = -1;
+    });
+  }
+}
 
 export function syncBoltDrivePicker({ isValid = true } = {}) {
   if (!boltDriveSelect) {
@@ -999,12 +1156,17 @@ export function handleStandardSelectKeydown(event) {
 
 function syncHardwareTypeControls(nextType) {
   const desiredType = nextType || state.hardwareType;
-  if (hardwareTypeSelect) {
-    hardwareTypeSelect.value = desiredType;
+  const sanitizedType = hardwareTypeOptions.has(desiredType) ? desiredType : '';
+
+  if (hardwareTypeSelect && sanitizedType) {
+    hardwareTypeSelect.value = sanitizedType;
   }
+
   hardwareTypeRadios.forEach(radio => {
-    radio.checked = radio.value === desiredType;
+    radio.checked = radio.value === sanitizedType;
   });
+
+  syncHardwareTypePicker();
 }
 
 export function onHardwareTypeChange() {

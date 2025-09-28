@@ -348,6 +348,12 @@ main {
   visibility: hidden;
 }
 
+.bolt-drive-picker__current-icon-image.is-rotated-90,
+.bolt-drive-picker__option-icon-image.is-rotated-90 {
+  transform: rotate(90deg);
+  transform-origin: 50% 50%;
+}
+
 .bolt-drive-picker__current-icon-image {
   max-width: 100%;
   max-height: 100%;
@@ -442,6 +448,10 @@ main {
   flex-shrink: 0;
 }
 
+.bolt-drive-picker__option-icon.is-empty {
+  visibility: hidden;
+}
+
 .bolt-drive-picker__option-icon-image {
   max-width: 100%;
   max-height: 100%;
@@ -458,6 +468,23 @@ main {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.bolt-drive-picker__group {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--bs-secondary-color, #64748b);
+}
+
+.bolt-drive-picker__group + .bolt-drive-picker__option {
+  margin-top: 0.25rem;
+}
+
+.bolt-drive-picker__option + .bolt-drive-picker__group {
+  margin-top: 0.5rem;
 }
 
 .bolt-head-picker .bolt-drive-picker__current-icon-image,

@@ -129,10 +129,10 @@
                   >
                     Hardware Type
                   </label>
-                  <div>
+                  <div class="bolt-drive-picker" id="hardware-type-picker">
                     <select
                       id="hardware-type-select"
-                      class="form-select"
+                      class="visually-hidden"
                       aria-labelledby="hardware-type-label"
                     >
                       <optgroup label="Hardware">
@@ -152,6 +152,34 @@
                       </optgroup>
                       <option value="Custom">Custom</option>
                     </select>
+                    <button
+                      type="button"
+                      class="bolt-drive-picker__button"
+                      id="hardware-type-picker-button"
+                      aria-haspopup="listbox"
+                      aria-expanded="false"
+                      aria-controls="hardware-type-picker-list"
+                    >
+                      <span class="bolt-drive-picker__current">
+                        <span class="bolt-drive-picker__current-icon is-empty" aria-hidden="true">
+                          <img
+                            class="bolt-drive-picker__current-icon-image"
+                            src=""
+                            alt=""
+                            hidden
+                          />
+                        </span>
+                        <span class="bolt-drive-picker__current-label">Select hardware…</span>
+                      </span>
+                      <span class="bolt-drive-picker__chevron" aria-hidden="true"></span>
+                    </button>
+                    <ul
+                      class="bolt-drive-picker__list"
+                      id="hardware-type-picker-list"
+                      role="listbox"
+                      aria-labelledby="hardware-type-picker-button"
+                      hidden
+                    ></ul>
                   </div>
                 </div>
                 <div id="custom-fields" class="d-none">
