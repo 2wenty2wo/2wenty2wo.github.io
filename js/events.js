@@ -14,6 +14,8 @@ import {
   setBoltHeadSelection,
   syncBoltDrivePicker,
   syncBoltHeadPicker,
+  setNutTypeSelection,
+  syncNutTypePicker,
 } from './forms.js';
 import { updatePreview, updateDownloadState, updateQrContentVisibility } from './render.js';
 import { downloadLabel, printLabel, shareLabel } from './actions.js';
@@ -46,6 +48,10 @@ const {
   boltDrivePicker,
   boltDrivePickerButton,
   boltDrivePickerList,
+  nutTypeSelect,
+  nutTypePicker,
+  nutTypePickerButton,
+  nutTypePickerList,
   standardSelect,
   standardToggle,
   imageToggle,
@@ -61,6 +67,7 @@ const {
 
 let boltDrivePickerOpen = false;
 let boltHeadPickerOpen = false;
+let nutTypePickerOpen = false;
 
 function getBoltDriveOptionElements() {
   if (!boltDrivePickerList) {
@@ -488,6 +495,219 @@ function handleBoltHeadListFocusOut() {
   }, 0);
 }
 
+function getNutTypeOptionElements() {
+  if (!nutTypePickerList) {
+    return [];
+  }
+  return Array.from(nutTypePickerList.querySelectorAll('[role="option"]'));
+}
+
+function focusNutTypeOption(option) {
+  if (!option) {
+    return;
+  }
+  const options = getNutTypeOptionElements();
+  options.forEach(opt => {
+    opt.tabIndex = opt === option ? 0 : -1;
+  });
+  option.focus();
+  if (typeof option.scrollIntoView === 'function') {
+    option.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function openNutTypePicker() {
+  if (!nutTypePicker || !nutTypePickerButton || !nutTypePickerList) {
+    return;
+  }
+  if (nutTypePickerButton.disabled) {
+    return;
+  }
+  if (nutTypePickerOpen) {
+    return;
+  }
+  nutTypePickerOpen = true;
+  nutTypePicker.classList.add('is-open');
+  nutTypePickerList.hidden = false;
+  nutTypePickerButton.setAttribute('aria-expanded', 'true');
+  syncNutTypePicker({ isValid: true });
+
+  const options = getNutTypeOptionElements();
+  if (options.length === 0) {
+    return;
+  }
+  const currentValue = typeof state.nutType === 'string' ? state.nutType : '';
+  const selectedOption = options.find(option => option.dataset.value === currentValue);
+  focusNutTypeOption(selectedOption || options[0]);
+}
+
+function closeNutTypePicker({ focusButton = false } = {}) {
+  if (!nutTypePicker || !nutTypePickerButton || !nutTypePickerList) {
+    return;
+  }
+  if (!nutTypePickerOpen) {
+    if (focusButton && !nutTypePickerButton.disabled) {
+      nutTypePickerButton.focus();
+    }
+    return;
+  }
+  nutTypePickerOpen = false;
+  nutTypePicker.classList.remove('is-open');
+  nutTypePickerList.hidden = true;
+  nutTypePickerButton.setAttribute('aria-expanded', 'false');
+  if (focusButton && !nutTypePickerButton.disabled) {
+    nutTypePickerButton.focus();
+  }
+}
+
+function toggleNutTypePicker() {
+  if (nutTypePickerOpen) {
+    closeNutTypePicker({ focusButton: false });
+  } else {
+    openNutTypePicker();
+  }
+}
+
+function moveNutTypeOption(delta) {
+  if (!nutTypePickerList) {
+    return;
+  }
+  const options = getNutTypeOptionElements();
+  if (options.length === 0) {
+    return;
+  }
+  const active = document.activeElement;
+  const activeOption = active && nutTypePickerList.contains(active)
+    ? active.closest('[role="option"]')
+    : null;
+  let index = activeOption ? options.indexOf(activeOption) : -1;
+  if (index === -1) {
+    const currentValue = typeof state.nutType === 'string' ? state.nutType : '';
+    index = options.findIndex(option => option.dataset.value === currentValue);
+  }
+  let nextIndex = index + delta;
+  if (nextIndex < 0) {
+    nextIndex = options.length - 1;
+  } else if (nextIndex >= options.length) {
+    nextIndex = 0;
+  }
+  const nextOption = options[nextIndex];
+  if (nextOption) {
+    focusNutTypeOption(nextOption);
+  }
+}
+
+function handleNutTypeButtonKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    openNutTypePicker();
+    moveNutTypeOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    openNutTypePicker();
+    moveNutTypeOption(-1);
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    toggleNutTypePicker();
+    return;
+  }
+  if (key === 'Escape' && nutTypePickerOpen) {
+    event.preventDefault();
+    closeNutTypePicker({ focusButton: true });
+  }
+}
+
+function handleNutTypeListKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    moveNutTypeOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    moveNutTypeOption(-1);
+    return;
+  }
+  if (key === 'Home') {
+    event.preventDefault();
+    const options = getNutTypeOptionElements();
+    if (options.length > 0) {
+      focusNutTypeOption(options[0]);
+    }
+    return;
+  }
+  if (key === 'End') {
+    event.preventDefault();
+    const options = getNutTypeOptionElements();
+    if (options.length > 0) {
+      focusNutTypeOption(options[options.length - 1]);
+    }
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    const target = event.target;
+    if (target && target instanceof HTMLElement) {
+      const option = target.closest('[role="option"]');
+      if (option) {
+        setNutTypeSelection(option.dataset.value || '');
+        closeNutTypePicker({ focusButton: true });
+      }
+    }
+    return;
+  }
+  if (key === 'Escape') {
+    event.preventDefault();
+    closeNutTypePicker({ focusButton: true });
+    return;
+  }
+  if (key === 'Tab') {
+    closeNutTypePicker();
+  }
+}
+
+function handleNutTypeListClick(event) {
+  if (!nutTypePickerList) {
+    return;
+  }
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+  const option = target.closest('[role="option"]');
+  if (!option || !nutTypePickerList.contains(option)) {
+    return;
+  }
+  event.preventDefault();
+  setNutTypeSelection(option.dataset.value || '');
+  closeNutTypePicker({ focusButton: true });
+}
+
+function handleNutTypeListFocusOut() {
+  if (!nutTypePickerOpen) {
+    return;
+  }
+  setTimeout(() => {
+    if (!nutTypePickerOpen) {
+      return;
+    }
+    if (!nutTypePicker) {
+      closeNutTypePicker();
+      return;
+    }
+    const active = document.activeElement;
+    if (!active || !nutTypePicker.contains(active)) {
+      closeNutTypePicker();
+    }
+  }, 0);
+}
+
 function handleDocumentPointer(event) {
   const target = event.target;
   if (boltDrivePickerOpen && boltDrivePicker) {
@@ -498,6 +718,11 @@ function handleDocumentPointer(event) {
   if (boltHeadPickerOpen && boltHeadPicker) {
     if (!(target instanceof Node) || !boltHeadPicker.contains(target)) {
       closeBoltHeadPicker();
+    }
+  }
+  if (nutTypePickerOpen && nutTypePicker) {
+    if (!(target instanceof Node) || !nutTypePicker.contains(target)) {
+      closeNutTypePicker();
     }
   }
 }
@@ -512,6 +737,11 @@ function handleDocumentFocusIn(event) {
   if (boltHeadPickerOpen && boltHeadPicker) {
     if (!(target instanceof Node) || !boltHeadPicker.contains(target)) {
       closeBoltHeadPicker();
+    }
+  }
+  if (nutTypePickerOpen && nutTypePicker) {
+    if (!(target instanceof Node) || !nutTypePicker.contains(target)) {
+      closeNutTypePicker();
     }
   }
 }
@@ -717,6 +947,12 @@ export function initEventHandlers() {
     standardSelect.addEventListener('blur', clearStandardFilter);
   }
 
+  if (nutTypeSelect) {
+    nutTypeSelect.addEventListener('change', () => {
+      setNutTypeSelection(nutTypeSelect.value);
+    });
+  }
+
   if (boltHeadSelect) {
     boltHeadSelect.addEventListener('change', () => {
       setBoltHeadSelection(boltHeadSelect.value);
@@ -749,7 +985,17 @@ export function initEventHandlers() {
     boltDrivePickerList.addEventListener('keydown', handleBoltDriveListKeydown);
     boltDrivePickerList.addEventListener('focusout', handleBoltDriveListFocusOut);
   }
-  if (boltDrivePicker || boltHeadPicker) {
+  if (nutTypePickerButton && nutTypePickerList) {
+    nutTypePickerButton.addEventListener('click', event => {
+      event.preventDefault();
+      toggleNutTypePicker();
+    });
+    nutTypePickerButton.addEventListener('keydown', handleNutTypeButtonKeydown);
+    nutTypePickerList.addEventListener('click', handleNutTypeListClick);
+    nutTypePickerList.addEventListener('keydown', handleNutTypeListKeydown);
+    nutTypePickerList.addEventListener('focusout', handleNutTypeListFocusOut);
+  }
+  if (boltDrivePicker || boltHeadPicker || nutTypePicker) {
     document.addEventListener('pointerdown', handleDocumentPointer);
     document.addEventListener('focusin', handleDocumentFocusIn);
   }

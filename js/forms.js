@@ -5,6 +5,7 @@ import {
   bearingOptions,
   boltHeadOptions,
   boltDriveOptions,
+  nutTypeOptions,
   hardwareCatalog,
   connectorCatalog,
   STANDARD_PLACEHOLDER_TEXT,
@@ -26,6 +27,11 @@ const {
   glassSlowBlowCheckbox,
   glassFastBlowCheckbox,
   notesInput,
+  nutTypeContainer,
+  nutTypePicker,
+  nutTypePickerButton,
+  nutTypePickerList,
+  nutTypeSelect,
   measurementSystemContainer,
   connectorCategoryContainer,
   connectorCategorySelect,
@@ -68,6 +74,8 @@ const BOLT_DRIVE_PLACEHOLDER_TEXT = 'Select drive…';
 const BOLT_HEAD_PLACEHOLDER_TEXT = 'Select head…';
 const validBoltDriveIds = new Set(boltDriveOptions.map(option => option.id));
 const validBoltHeadIds = new Set(boltHeadOptions.map(option => option.id));
+const NUT_TYPE_PLACEHOLDER_TEXT = 'Select type…';
+const validNutTypeIds = new Set(nutTypeOptions.map(option => option.id));
 
 export function syncBoltDrivePicker({ isValid = true } = {}) {
   if (!boltDriveSelect) {
@@ -233,6 +241,164 @@ export function setBoltHeadSelection(nextId, { triggerUpdate = true } = {}) {
     updatePreview();
     updateDownloadState();
   }
+}
+
+export function syncNutTypePicker({ isValid = true } = {}) {
+  if (!nutTypeSelect) {
+    return;
+  }
+
+  const currentValue = typeof state.nutType === 'string' ? state.nutType : '';
+  const sanitizedValue = validNutTypeIds.has(currentValue) ? currentValue : '';
+  if (sanitizedValue !== currentValue) {
+    state.nutType = sanitizedValue;
+  }
+
+  nutTypeSelect.value = sanitizedValue;
+  if (!sanitizedValue && nutTypeSelect.options.length > 0) {
+    nutTypeSelect.selectedIndex = 0;
+  }
+
+  const selectedOption = sanitizedValue
+    ? nutTypeOptions.find(option => option.id === sanitizedValue) || null
+    : null;
+
+  if (nutTypePickerButton) {
+    const label = nutTypePickerButton.querySelector('.bolt-drive-picker__current-label');
+    const iconWrapper = nutTypePickerButton.querySelector('.bolt-drive-picker__current-icon');
+    const iconImage = nutTypePickerButton.querySelector('.bolt-drive-picker__current-icon-image');
+
+    if (label) {
+      label.textContent = selectedOption ? selectedOption.label : NUT_TYPE_PLACEHOLDER_TEXT;
+    }
+
+    if (iconWrapper && iconImage) {
+      if (selectedOption) {
+        iconImage.src = `images/nuts/${selectedOption.image}.svg`;
+        iconImage.hidden = false;
+        iconWrapper.classList.remove('is-empty');
+      } else {
+        iconImage.hidden = true;
+        iconImage.removeAttribute('src');
+        iconWrapper.classList.add('is-empty');
+      }
+    }
+
+    if (isValid) {
+      nutTypePickerButton.classList.remove('is-invalid');
+      nutTypePickerButton.removeAttribute('aria-invalid');
+    } else {
+      nutTypePickerButton.classList.add('is-invalid');
+      nutTypePickerButton.setAttribute('aria-invalid', 'true');
+    }
+  }
+
+  if (nutTypePicker) {
+    nutTypePicker.classList.toggle('is-invalid', !isValid);
+  }
+
+  if (nutTypePickerList) {
+    const optionElements = Array.from(
+      nutTypePickerList.querySelectorAll('[role="option"]'),
+    );
+    optionElements.forEach(optionElement => {
+      const isSelected = optionElement.dataset.value === sanitizedValue;
+      optionElement.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      optionElement.classList.toggle('is-selected', isSelected);
+      optionElement.tabIndex = -1;
+    });
+  }
+}
+
+export function setNutTypeSelection(nextId, { triggerUpdate = true } = {}) {
+  const desiredValue = typeof nextId === 'string' ? nextId.trim() : '';
+  const sanitizedValue = validNutTypeIds.has(desiredValue) ? desiredValue : '';
+  const previousValue = typeof state.nutType === 'string' ? state.nutType : '';
+
+  state.nutType = sanitizedValue;
+  syncNutTypePicker({ isValid: true });
+
+  if (triggerUpdate && previousValue !== sanitizedValue) {
+    updatePreview();
+    updateDownloadState();
+  }
+}
+
+export function populateNutTypeOptions() {
+  if (!nutTypeSelect) {
+    state.nutType = '';
+    return;
+  }
+
+  const previousType = typeof state.nutType === 'string' ? state.nutType : '';
+
+  nutTypeSelect.innerHTML = '';
+  if (nutTypePickerList) {
+    nutTypePickerList.innerHTML = '';
+  }
+
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = NUT_TYPE_PLACEHOLDER_TEXT;
+  placeholder.disabled = true;
+  placeholder.selected = !previousType;
+  nutTypeSelect.appendChild(placeholder);
+
+  nutTypeOptions.forEach(option => {
+    const opt = document.createElement('option');
+    opt.value = option.id;
+    opt.textContent = option.label;
+    nutTypeSelect.appendChild(opt);
+
+    if (nutTypePickerList) {
+      const item = document.createElement('li');
+      item.className = 'bolt-drive-picker__option';
+      item.dataset.value = option.id;
+      item.setAttribute('role', 'option');
+      item.tabIndex = -1;
+
+      const icon = document.createElement('span');
+      icon.className = 'bolt-drive-picker__option-icon';
+
+      const image = document.createElement('img');
+      image.className = 'bolt-drive-picker__option-icon-image';
+      image.src = `images/nuts/${option.image}.svg`;
+      image.alt = '';
+      image.loading = 'lazy';
+      image.decoding = 'async';
+      icon.appendChild(image);
+
+      const label = document.createElement('span');
+      label.className = 'bolt-drive-picker__option-label';
+      label.textContent = option.label;
+
+      item.appendChild(icon);
+      item.appendChild(label);
+
+      nutTypePickerList.appendChild(item);
+    }
+  });
+
+  const sanitizedValue = validNutTypeIds.has(previousType) ? previousType : '';
+  state.nutType = sanitizedValue;
+  nutTypeSelect.value = sanitizedValue;
+  if (!sanitizedValue) {
+    placeholder.selected = true;
+  }
+
+  nutTypeSelect.disabled = false;
+  nutTypeSelect.title = 'Select nut style';
+  nutTypeSelect.setAttribute('aria-required', 'true');
+
+  if (nutTypePickerButton) {
+    nutTypePickerButton.disabled = false;
+    nutTypePickerButton.setAttribute('aria-expanded', 'false');
+  }
+  if (nutTypePickerList) {
+    nutTypePickerList.hidden = true;
+  }
+
+  syncNutTypePicker({ isValid: true });
 }
 
 export function populateConnectorCategories() {
@@ -580,6 +746,20 @@ export function populateStandards() {
     return;
   }
 
+  if (state.hardwareType === 'Nut') {
+    if (standardSelect) {
+      standardSelect.innerHTML = '';
+      standardSelect.disabled = true;
+      standardSelect.title = '';
+      standardSelect.value = '';
+    }
+    state.standard = '';
+    state.standardCode = '';
+    populateNutTypeOptions();
+    updatePreview();
+    return;
+  }
+
   if (!standardSelect) {
     return;
   }
@@ -837,6 +1017,7 @@ export function onHardwareTypeChange() {
   const showCustomFields = type === 'Custom';
   const showBearingFields = type === 'Bearing';
   const showBoltFields = type === 'Bolt';
+  const showNutFields = type === 'Nut';
 
   if (lengthContainer) {
     lengthContainer.style.display = requiresThreadDetails ? '' : 'none';
@@ -939,7 +1120,8 @@ export function onHardwareTypeChange() {
         !showConnectorFields &&
         !showCustomFields &&
         !showBearingFields &&
-        !showComponentFields,
+        !showComponentFields &&
+        !showNutFields,
     );
     threadLengthRow.style.display = hideThreadLength ? 'none' : '';
   }
@@ -983,7 +1165,7 @@ export function onHardwareTypeChange() {
   if (standardField) {
     standardField.classList.toggle(
       'd-none',
-      showCustomFields || showBearingFields || showComponentFields || showFuseFields,
+      showCustomFields || showBearingFields || showComponentFields || showFuseFields || showNutFields,
     );
   }
   if (standardLabel) {
@@ -995,7 +1177,7 @@ export function onHardwareTypeChange() {
     standardLabel.setAttribute('for', showBoltFields ? 'bolt-head-select' : 'standard-select');
   }
   if (standardSelect) {
-    const hideStandardSelect = showBoltFields || showFuseFields;
+    const hideStandardSelect = showBoltFields || showFuseFields || showNutFields;
     standardSelect.classList.toggle('d-none', hideStandardSelect);
     if (hideStandardSelect) {
       standardSelect.disabled = true;
@@ -1051,6 +1233,34 @@ export function onHardwareTypeChange() {
   if (!showBoltFields) {
     syncBoltHeadPicker({ isValid: true });
     syncBoltDrivePicker({ isValid: true });
+  }
+  if (nutTypeContainer) {
+    const hidden = !showNutFields;
+    nutTypeContainer.classList.toggle('d-none', hidden);
+    nutTypeContainer.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+  }
+  if (nutTypeSelect) {
+    nutTypeSelect.disabled = !showNutFields;
+    if (!showNutFields) {
+      nutTypeSelect.removeAttribute('aria-required');
+      nutTypeSelect.title = '';
+    }
+  }
+  if (nutTypePickerButton) {
+    nutTypePickerButton.disabled = !showNutFields;
+    if (!showNutFields) {
+      nutTypePickerButton.setAttribute('aria-expanded', 'false');
+    }
+  }
+  if (nutTypePickerList) {
+    nutTypePickerList.hidden = true;
+  }
+  if (nutTypePicker) {
+    nutTypePicker.classList.toggle('is-disabled', !showNutFields);
+  }
+  if (!showNutFields) {
+    state.nutType = '';
+    syncNutTypePicker({ isValid: true });
   }
   if (notesInput) {
     if (showConnectorFields) {

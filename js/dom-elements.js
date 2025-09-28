@@ -13,6 +13,12 @@ const lengthContainer = document.getElementById('length-container');
 const lengthInput = document.getElementById('length-input');
 const threadSizeMessage = document.getElementById('thread-size-message');
 const lengthMessage = document.getElementById('length-message');
+const nutTypeContainer = document.getElementById('nut-type-container');
+const nutTypePicker = document.getElementById('nut-type-picker');
+const nutTypePickerButton = document.getElementById('nut-type-picker-button');
+const nutTypePickerList = document.getElementById('nut-type-picker-list');
+const nutTypeSelect = document.getElementById('nut-type-select');
+const nutTypeMessage = document.getElementById('nut-type-message');
 const fuseTypeContainer = document.getElementById('fuse-type-container');
 const fuseValueContainer = document.getElementById('fuse-value-container');
 const glassOptionsContainer = document.getElementById('glass-options-container');
@@ -124,6 +130,12 @@ export const elements = {
   lengthInput,
   threadSizeMessage,
   lengthMessage,
+  nutTypeContainer,
+  nutTypePicker,
+  nutTypePickerButton,
+  nutTypePickerList,
+  nutTypeSelect,
+  nutTypeMessage,
   fuseTypeContainer,
   fuseValueContainer,
   glassOptionsContainer,

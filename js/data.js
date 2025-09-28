@@ -93,6 +93,13 @@ export const boltDriveOptions = [
 export const boltHeadMap = new Map(boltHeadOptions.map(option => [option.id, option]));
 export const boltDriveMap = new Map(boltDriveOptions.map(option => [option.id, option]));
 
+export const nutTypeOptions = [
+  { id: 'hex', label: 'Hex Nut', image: 'hex_nut' },
+  { id: 'square', label: 'Square Nut', image: 'square_nut' },
+];
+
+export const nutTypeMap = new Map(nutTypeOptions.map(option => [option.id, option]));
+
 export const bearingOptions = [
   { code: '608ZZ', description: '8 × 22 × 7 mm, metal shields' },
   { code: '608-2RS', description: '8 × 22 × 7 mm, rubber seals' },
