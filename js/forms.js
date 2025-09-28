@@ -618,6 +618,21 @@ export function populateStandards() {
     return;
   }
 
+  if (state.hardwareType === 'Fuse') {
+    placeholder.textContent = 'Not used for fuse labels';
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    placeholder.dataset.defaultText = placeholder.textContent;
+    standardSelect.appendChild(placeholder);
+    standardSelect.disabled = true;
+    standardSelect.title = '';
+    state.standard = '';
+    state.standardCode = '';
+    standardSelect.value = '';
+    updatePreview();
+    return;
+  }
+
   let standards = [];
   let placeholderText = STANDARD_PLACEHOLDER_TEXT;
   let noOptionsText = 'No standards available';
@@ -968,7 +983,7 @@ export function onHardwareTypeChange() {
   if (standardField) {
     standardField.classList.toggle(
       'd-none',
-      showCustomFields || showBearingFields || showComponentFields,
+      showCustomFields || showBearingFields || showComponentFields || showFuseFields,
     );
   }
   if (standardLabel) {
@@ -980,8 +995,9 @@ export function onHardwareTypeChange() {
     standardLabel.setAttribute('for', showBoltFields ? 'bolt-head-select' : 'standard-select');
   }
   if (standardSelect) {
-    standardSelect.classList.toggle('d-none', showBoltFields);
-    if (showBoltFields) {
+    const hideStandardSelect = showBoltFields || showFuseFields;
+    standardSelect.classList.toggle('d-none', hideStandardSelect);
+    if (hideStandardSelect) {
       standardSelect.disabled = true;
       standardSelect.setAttribute('aria-hidden', 'true');
       standardSelect.setAttribute('aria-required', 'false');

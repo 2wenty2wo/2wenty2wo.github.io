@@ -150,6 +150,44 @@ main {
   font-weight: 600;
 }
 
+.fuse-type-option {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  min-height: 100%;
+  padding: 0.85rem 1rem;
+}
+
+.fuse-type-option__icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+}
+
+.fuse-type-option__icon img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.fuse-type-option__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.fuse-type-option__title {
+  font-weight: 600;
+}
+
+.fuse-type-option__description {
+  font-size: 0.95rem;
+}
+
 /*
  * Previously `.field-invalid` added an outline via a pseudo-element.  That
  * extra ring duplicated Bootstrap's native validation styling, so the
@@ -582,6 +620,12 @@ main {
   max-width: 100%;
   max-height: 100%;
   filter: grayscale(100%);
+}
+
+.hardware-icon img.hardware-illustration {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
 }
 
 .label-inner.has-hardware-image .text-block {

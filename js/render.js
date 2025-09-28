@@ -84,6 +84,17 @@ let previewReadyState = false;
 let previewStatusFrameId = null;
 let qrRenderRequestId = 0;
 
+const fuseIllustrations = {
+  Glass: {
+    src: 'images/fuses/glass_fuse.svg',
+    alt: 'Glass fuse illustration',
+  },
+  Blade: {
+    src: 'images/fuses/blade_fuse.svg',
+    alt: 'Blade fuse illustration',
+  },
+};
+
 function mmToPx(mm) {
   return Number.isFinite(mm) ? mm * pxPerMm : 0;
 }
@@ -687,6 +698,18 @@ function resolveHardwareImageInfo() {
       ],
     };
   }
+  if (state.hardwareType === 'Fuse') {
+    const fuseType = (state.fuseType || '').trim();
+    const illustration = fuseIllustrations[fuseType] || fuseIllustrations.Glass;
+    if (!illustration) {
+      return null;
+    }
+    return {
+      type: 'fuse-illustration',
+      src: illustration.src,
+      alt: illustration.alt,
+    };
+  }
   const folder = hardwareImageFolders[state.hardwareType];
   if (!folder) {
     return null;
@@ -800,6 +823,27 @@ function renderHardwareImage(imageInfo, innerHeightPx, contentWidthPx, gapPx) {
     });
     hardwareImageDiv.appendChild(group);
     usedWidthPx = maxWidth;
+  } else if (imageInfo.type === 'fuse-illustration') {
+    const maxWidth = Math.max(Math.min(contentWidthPx, innerHeightPx * 1.15), Math.round(innerHeightPx * 0.85));
+    const wrapper = document.createElement('div');
+    wrapper.style.display = 'flex';
+    wrapper.style.alignItems = 'center';
+    wrapper.style.justifyContent = 'center';
+    wrapper.style.width = `${maxWidth}px`;
+    wrapper.style.height = `${innerHeightPx}px`;
+
+    const img = document.createElement('img');
+    img.src = imageInfo.src;
+    img.alt = imageInfo.alt || 'Fuse illustration';
+    img.className = 'hardware-illustration';
+    img.style.maxHeight = '100%';
+    img.style.maxWidth = '100%';
+    img.decoding = 'async';
+    img.loading = 'lazy';
+
+    wrapper.appendChild(img);
+    hardwareImageDiv.appendChild(wrapper);
+    usedWidthPx = maxWidth;
   } else {
     const maxWidth = Math.max(Math.min(contentWidthPx, innerHeightPx * 1.2), innerHeightPx * 0.8);
     const img = document.createElement('img');
@@ -868,21 +912,22 @@ function buildTextLines() {
   }
 
   if (state.hardwareType === 'Fuse') {
-    const parts = [];
-    const fuseLabel = state.fuseType ? `${state.fuseType} Fuse` : 'Fuse';
-    parts.push(fuseLabel);
-    if (state.fuseValue) {
-      parts.push(`${state.fuseValue} A`);
-    }
+    const valueLabel = state.fuseValue ? `${state.fuseValue} A` : 'Fuse';
+    const typeLabel = state.fuseType ? `${state.fuseType} Fuse` : 'Fuse';
+    const typeParts = [typeLabel];
     if (state.glassSize) {
-      parts.push(state.glassSize);
+      typeParts.push(state.glassSize);
     }
+    const line2 = typeParts.filter(Boolean).join(' — ');
+    const line3Parts = [];
     if (state.glassSpeed) {
-      parts.push(state.glassSpeed);
+      line3Parts.push(state.glassSpeed);
     }
-    const line1 = parts.filter(Boolean).join(' — ');
-    const line2 = state.notes || '';
-    return { line1, line2, line3: '' };
+    if (state.notes) {
+      line3Parts.push(state.notes);
+    }
+    const line3 = line3Parts.join(' • ');
+    return { line1: valueLabel, line2, line3 };
   }
 
   if (state.hardwareType === 'Connector') {
