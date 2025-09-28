@@ -3,6 +3,7 @@ import { elements } from './dom-elements.js';
 import { initTheme } from './theme.js';
 import {
   populateFuseValues,
+  populateFuseTypePicker,
   populateConnectorCategories,
   populateBearingOptions,
   populateHardwareTypePicker,
@@ -11,6 +12,7 @@ import {
   setBoltDriveSelection,
   setBoltHeadSelection,
   setNutTypeSelection,
+  setFuseTypeSelection,
 } from './forms.js';
 import { updateDownloadState, updateQrContentVisibility, updatePreview } from './render.js';
 import { initEventHandlers } from './events.js';
@@ -19,7 +21,6 @@ import { hydrateStateFromUrl } from './url-state.js';
 function applyStateToControls() {
   const {
     systemTypeRadios,
-    fuseTypeRadios,
     fuseValueSelect,
     glassSizeSelect,
     glassSlowBlowCheckbox,
@@ -47,12 +48,7 @@ function applyStateToControls() {
       radio.checked = radio.value === state.systemType;
     });
   }
-  if (Array.isArray(fuseTypeRadios)) {
-    fuseTypeRadios.forEach(radio => {
-      radio.checked = radio.value === state.fuseType;
-    });
-  }
-
+  setFuseTypeSelection(state.fuseType || 'Glass', { triggerUpdate: false });
   if (fuseValueSelect) {
     fuseValueSelect.value = state.fuseValue || '';
   }
@@ -126,6 +122,7 @@ function init() {
   initTheme();
   hydrateStateFromUrl();
   populateFuseValues();
+  populateFuseTypePicker();
   populateConnectorCategories();
   populateBearingOptions();
   populateHardwareTypePicker();

@@ -58,6 +58,11 @@ export const fuseValues = [
   '40',
 ];
 
+export const fuseTypeOptions = [
+  { id: 'Glass', label: 'Glass Fuse', image: 'images/fuses/glass_fuse.svg' },
+  { id: 'Blade', label: 'Blade Fuse', image: 'images/fuses/blade_fuse.svg' },
+];
+
 export const boltHeadOptions = [
   { id: 'button_head', label: 'Button Head', image: 'button_head' },
   { id: 'cap_head', label: 'Socket Cap', image: 'cap_head' },

@@ -466,85 +466,72 @@
                     ></div>
                   </div>
                 </div>
-                <div id="fuse-type-container" class="d-none">
-                  <label class="form-label fw-semibold">Fuse Type</label>
-                  <div class="row g-2" id="fuse-type-group">
-                    <div class="col-12 col-sm-6">
-                      <input
-                        type="radio"
-                        class="btn-check"
-                        name="fuse-type"
-                        id="fuse-type-glass"
-                        value="Glass"
-                        autocomplete="off"
-                        checked
-                      />
-                      <label
-                        class="btn btn-outline-secondary w-100 fuse-type-option text-start"
-                        for="fuse-type-glass"
+                <div id="fuse-selection-row" class="row g-3 d-none">
+                  <div class="col-12 col-sm-6" id="fuse-type-container">
+                    <label
+                      for="fuse-type-select"
+                      id="fuse-type-label"
+                      class="form-label fw-semibold"
+                      >Fuse Type</label
+                    >
+                    <div class="bolt-drive-picker" id="fuse-type-picker">
+                      <select
+                        id="fuse-type-select"
+                        class="visually-hidden"
+                        aria-labelledby="fuse-type-label"
                       >
-                        <span class="fuse-type-option__icon" aria-hidden="true">
-                          <img
-                            src="images/fuses/glass_fuse.svg"
-                            width="64"
-                            height="64"
-                            loading="lazy"
-                            alt=""
-                          />
-                        </span>
-                        <span class="fuse-type-option__content">
-                          <span class="fuse-type-option__title">Glass Fuse</span>
-                          <span class="fuse-type-option__description text-muted"
-                            >Cartridge-style tube fuse for electronics.</span
+                        <option value="Glass">Glass Fuse</option>
+                        <option value="Blade">Blade Fuse</option>
+                      </select>
+                      <button
+                        type="button"
+                        class="bolt-drive-picker__button"
+                        id="fuse-type-picker-button"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                        aria-controls="fuse-type-picker-list"
+                      >
+                        <span class="bolt-drive-picker__current">
+                          <span
+                            class="bolt-drive-picker__current-icon is-empty"
+                            aria-hidden="true"
+                          >
+                            <img
+                              src=""
+                              alt=""
+                              class="bolt-drive-picker__current-icon-image"
+                              hidden
+                            />
+                          </span>
+                          <span class="bolt-drive-picker__current-label"
+                            >Select fuse type…</span
                           >
                         </span>
-                      </label>
-                    </div>
-                    <div class="col-12 col-sm-6">
-                      <input
-                        type="radio"
-                        class="btn-check"
-                        name="fuse-type"
-                        id="fuse-type-blade"
-                        value="Blade"
-                        autocomplete="off"
-                      />
-                      <label
-                        class="btn btn-outline-secondary w-100 fuse-type-option text-start"
-                        for="fuse-type-blade"
-                      >
-                        <span class="fuse-type-option__icon" aria-hidden="true">
-                          <img
-                            src="images/fuses/blade_fuse.svg"
-                            width="64"
-                            height="64"
-                            loading="lazy"
-                            alt=""
-                          />
-                        </span>
-                        <span class="fuse-type-option__content">
-                          <span class="fuse-type-option__title">Blade Fuse</span>
-                          <span class="fuse-type-option__description text-muted"
-                            >Automotive blade fuse for DC circuits.</span
-                          >
-                        </span>
-                      </label>
+                        <span class="bolt-drive-picker__chevron" aria-hidden="true"></span>
+                      </button>
+                      <ul
+                        class="bolt-drive-picker__list"
+                        id="fuse-type-picker-list"
+                        role="listbox"
+                        aria-labelledby="fuse-type-picker-button"
+                        hidden
+                      ></ul>
                     </div>
                   </div>
-                </div>
-                <div id="fuse-value-container" class="d-none">
-                  <label for="fuse-value-select" class="form-label fw-semibold"
-                    >Fuse Value (amps)</label
-                  >
-                  <select
-                    id="fuse-value-select"
-                    class="form-select"
-                    aria-describedby="fuse-value-message"
-                  ></select>
-                  <div
-                    id="fuse-value-message"
-                    class="validation-message text-danger small mt-2 d-none"
-                  ></div>
+                  <div class="col-12 col-sm-6" id="fuse-value-container">
+                    <label for="fuse-value-select" class="form-label fw-semibold"
+                      >Fuse Value (amps)</label
+                    >
+                    <select
+                      id="fuse-value-select"
+                      class="form-select"
+                      aria-describedby="fuse-value-message"
+                    ></select>
+                    <div
+                      id="fuse-value-message"
+                      class="validation-message text-danger small mt-2 d-none"
+                    ></div>
+                  </div>
                 </div>
                 <div id="glass-options-container" class="d-none">
                   <span class="form-label d-block fw-semibold">Glass Fuse Options</span>

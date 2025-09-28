@@ -19,7 +19,12 @@ const nutTypePickerButton = document.getElementById('nut-type-picker-button');
 const nutTypePickerList = document.getElementById('nut-type-picker-list');
 const nutTypeSelect = document.getElementById('nut-type-select');
 const nutTypeMessage = document.getElementById('nut-type-message');
+const fuseSelectionRow = document.getElementById('fuse-selection-row');
 const fuseTypeContainer = document.getElementById('fuse-type-container');
+const fuseTypeSelect = document.getElementById('fuse-type-select');
+const fuseTypePicker = document.getElementById('fuse-type-picker');
+const fuseTypePickerButton = document.getElementById('fuse-type-picker-button');
+const fuseTypePickerList = document.getElementById('fuse-type-picker-list');
 const fuseValueContainer = document.getElementById('fuse-value-container');
 const glassOptionsContainer = document.getElementById('glass-options-container');
 const fuseValueSelect = document.getElementById('fuse-value-select');
@@ -112,7 +117,6 @@ const hardwareTypeOptions = new Set(
     .filter(Boolean),
 );
 const systemTypeRadios = Array.from(document.querySelectorAll('input[name="system-type"]'));
-const fuseTypeRadios = Array.from(document.querySelectorAll('input[name="fuse-type"]'));
 const heightRadios = Array.from(document.querySelectorAll('input[name="label-height"]'));
 const componentCategoryRadios = Array.from(
   document.querySelectorAll('input[name="component-category"]'),
@@ -139,7 +143,12 @@ export const elements = {
   nutTypePickerList,
   nutTypeSelect,
   nutTypeMessage,
+  fuseSelectionRow,
   fuseTypeContainer,
+  fuseTypeSelect,
+  fuseTypePicker,
+  fuseTypePickerButton,
+  fuseTypePickerList,
   fuseValueContainer,
   glassOptionsContainer,
   fuseValueSelect,
@@ -224,7 +233,6 @@ export const elements = {
   hardwareTypePickerList,
   hardwareTypeOptions,
   systemTypeRadios,
-  fuseTypeRadios,
   heightRadios,
   componentCategoryRadios,
   componentMountRadios,

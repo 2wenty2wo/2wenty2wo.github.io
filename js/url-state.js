@@ -50,7 +50,9 @@ const REVERSE_FIELD_MAP = Object.entries(FIELD_MAP).reduce((acc, [key, code]) =>
 
 const hardwareTypeOptions = elements.hardwareTypeOptions || new Set();
 const fuseTypeOptions = new Set(
-  Array.isArray(elements.fuseTypeRadios) ? elements.fuseTypeRadios.map(radio => radio.value) : [],
+  elements.fuseTypeSelect
+    ? Array.from(elements.fuseTypeSelect.options, option => option.value).filter(Boolean)
+    : [],
 );
 const componentCategoryOptions = new Set(
   Array.isArray(elements.componentCategoryRadios)
