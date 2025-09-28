@@ -2,6 +2,7 @@ import { state, standardFilterState } from './state.js';
 import { elements } from './dom-elements.js';
 import {
   fuseValues,
+  fuseTypeOptions,
   bearingOptions,
   boltHeadOptions,
   boltDriveOptions,
@@ -20,7 +21,12 @@ const {
   threadSizeContainer,
   threadLengthRow,
   lengthContainer,
+  fuseSelectionRow,
   fuseTypeContainer,
+  fuseTypeSelect,
+  fuseTypePicker,
+  fuseTypePickerButton,
+  fuseTypePickerList,
   fuseValueContainer,
   glassOptionsContainer,
   fuseValueSelect,
@@ -80,6 +86,9 @@ const validBoltDriveIds = new Set(boltDriveOptions.map(option => option.id));
 const validBoltHeadIds = new Set(boltHeadOptions.map(option => option.id));
 const NUT_TYPE_PLACEHOLDER_TEXT = 'Select type…';
 const validNutTypeIds = new Set(nutTypeOptions.map(option => option.id));
+const FUSE_TYPE_PLACEHOLDER_TEXT = 'Select fuse type…';
+const DEFAULT_FUSE_TYPE = 'Glass';
+const validFuseTypeIds = new Set(fuseTypeOptions.map(option => option.id));
 
 function createHardwareTypeOption(optionElement) {
   if (!hardwareTypePickerList) {
@@ -232,6 +241,154 @@ export function syncHardwareTypePicker() {
       item.tabIndex = -1;
     });
   }
+}
+
+export function syncFuseTypePicker({ isValid = true } = {}) {
+  const currentValue = typeof state.fuseType === 'string' ? state.fuseType : '';
+  const sanitizedValue = validFuseTypeIds.has(currentValue) ? currentValue : DEFAULT_FUSE_TYPE;
+
+  if (sanitizedValue !== currentValue) {
+    state.fuseType = sanitizedValue;
+  }
+
+  if (fuseTypeSelect) {
+    fuseTypeSelect.value = sanitizedValue;
+  }
+
+  const selectedOption = fuseTypeOptions.find(option => option.id === sanitizedValue) || null;
+
+  if (fuseTypePickerButton) {
+    const label = fuseTypePickerButton.querySelector('.bolt-drive-picker__current-label');
+    const iconWrapper = fuseTypePickerButton.querySelector('.bolt-drive-picker__current-icon');
+    const iconImage = fuseTypePickerButton.querySelector('.bolt-drive-picker__current-icon-image');
+
+    if (label) {
+      label.textContent = selectedOption ? selectedOption.label : FUSE_TYPE_PLACEHOLDER_TEXT;
+    }
+
+    if (iconWrapper && iconImage) {
+      if (selectedOption && selectedOption.image) {
+        iconImage.src = selectedOption.image;
+        iconImage.hidden = false;
+        iconWrapper.classList.remove('is-empty');
+      } else {
+        iconImage.hidden = true;
+        iconImage.removeAttribute('src');
+        iconWrapper.classList.add('is-empty');
+      }
+    }
+
+    if (isValid) {
+      fuseTypePickerButton.classList.remove('is-invalid');
+      fuseTypePickerButton.removeAttribute('aria-invalid');
+    } else {
+      fuseTypePickerButton.classList.add('is-invalid');
+      fuseTypePickerButton.setAttribute('aria-invalid', 'true');
+    }
+  }
+
+  if (fuseTypePicker) {
+    fuseTypePicker.classList.toggle('is-invalid', !isValid);
+  }
+
+  if (fuseTypePickerList) {
+    const optionElements = Array.from(
+      fuseTypePickerList.querySelectorAll('[role="option"]'),
+    );
+    optionElements.forEach(optionElement => {
+      const isSelected = optionElement.dataset.value === sanitizedValue;
+      optionElement.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      optionElement.classList.toggle('is-selected', isSelected);
+      optionElement.tabIndex = -1;
+    });
+  }
+}
+
+export function setFuseTypeSelection(nextId, { triggerUpdate = true } = {}) {
+  const desiredValue = typeof nextId === 'string' ? nextId.trim() : '';
+  const sanitizedValue = validFuseTypeIds.has(desiredValue) ? desiredValue : DEFAULT_FUSE_TYPE;
+  const previousValue = validFuseTypeIds.has(state.fuseType)
+    ? state.fuseType
+    : DEFAULT_FUSE_TYPE;
+
+  state.fuseType = sanitizedValue;
+  syncFuseTypePicker({ isValid: true });
+
+  const shouldResetGlassOptions = previousValue === 'Glass' && sanitizedValue !== 'Glass';
+  updateGlassOptionVisibility({ resetIfHidden: shouldResetGlassOptions });
+
+  if (triggerUpdate && previousValue !== sanitizedValue) {
+    updateDownloadState();
+    updatePreview();
+  }
+}
+
+export function populateFuseTypePicker() {
+  if (!fuseTypeSelect) {
+    state.fuseType = DEFAULT_FUSE_TYPE;
+    return;
+  }
+
+  const previousType = typeof state.fuseType === 'string' ? state.fuseType : DEFAULT_FUSE_TYPE;
+
+  fuseTypeSelect.innerHTML = '';
+  if (fuseTypePickerList) {
+    fuseTypePickerList.innerHTML = '';
+  }
+
+  fuseTypeOptions.forEach(option => {
+    const opt = document.createElement('option');
+    opt.value = option.id;
+    opt.textContent = option.label;
+    fuseTypeSelect.appendChild(opt);
+
+    if (fuseTypePickerList) {
+      const item = document.createElement('li');
+      item.className = 'bolt-drive-picker__option';
+      item.dataset.value = option.id;
+      item.setAttribute('role', 'option');
+      item.tabIndex = -1;
+
+      const icon = document.createElement('span');
+      icon.className = 'bolt-drive-picker__option-icon';
+
+      if (option.image) {
+        const image = document.createElement('img');
+        image.className = 'bolt-drive-picker__option-icon-image';
+        image.src = option.image;
+        image.alt = '';
+        image.loading = 'lazy';
+        image.decoding = 'async';
+        icon.appendChild(image);
+      } else {
+        icon.classList.add('is-empty');
+      }
+
+      const label = document.createElement('span');
+      label.className = 'bolt-drive-picker__option-label';
+      label.textContent = option.label;
+
+      item.appendChild(icon);
+      item.appendChild(label);
+
+      fuseTypePickerList.appendChild(item);
+    }
+  });
+
+  const sanitizedValue = validFuseTypeIds.has(previousType) ? previousType : DEFAULT_FUSE_TYPE;
+  state.fuseType = sanitizedValue;
+  fuseTypeSelect.value = sanitizedValue;
+  fuseTypeSelect.disabled = false;
+
+  if (fuseTypePickerButton) {
+    fuseTypePickerButton.disabled = false;
+    fuseTypePickerButton.setAttribute('aria-expanded', 'false');
+  }
+  if (fuseTypePickerList) {
+    fuseTypePickerList.hidden = true;
+  }
+
+  syncFuseTypePicker({ isValid: true });
 }
 
 export function syncBoltDrivePicker({ isValid = true } = {}) {
@@ -1297,6 +1454,33 @@ export function onHardwareTypeChange() {
         ? 'none'
         : '';
   }
+  if (fuseSelectionRow) {
+    fuseSelectionRow.classList.toggle('d-none', !showFuseFields);
+  }
+  if (fuseTypeSelect) {
+    fuseTypeSelect.disabled = !showFuseFields;
+    if (showFuseFields) {
+      const desiredType = validFuseTypeIds.has(state.fuseType)
+        ? state.fuseType
+        : DEFAULT_FUSE_TYPE;
+      fuseTypeSelect.value = desiredType;
+    }
+  }
+  if (fuseTypePickerButton) {
+    fuseTypePickerButton.disabled = !showFuseFields;
+    if (!showFuseFields) {
+      fuseTypePickerButton.setAttribute('aria-expanded', 'false');
+    }
+  }
+  if (fuseTypePickerList) {
+    fuseTypePickerList.hidden = !showFuseFields;
+  }
+  if (!showFuseFields && fuseTypePicker) {
+    fuseTypePicker.classList.remove('is-open');
+  }
+  if (!showFuseFields) {
+    document.dispatchEvent(new CustomEvent('gridfinity:fuse-picker-close'));
+  }
   if (fuseTypeContainer) {
     fuseTypeContainer.classList.toggle('d-none', !showFuseFields);
   }
@@ -1308,6 +1492,9 @@ export function onHardwareTypeChange() {
     if (showFuseFields) {
       fuseValueSelect.value = state.fuseValue || '';
     }
+  }
+  if (showFuseFields) {
+    syncFuseTypePicker();
   }
   if (connectorNotesHint) {
     connectorNotesHint.classList.toggle('d-none', !showConnectorFields);

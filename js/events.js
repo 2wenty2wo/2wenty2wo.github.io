@@ -4,7 +4,6 @@ import {
   applyHardwareTypeSelection,
   populateThreadSizes,
   populateStandards,
-  updateGlassOptionVisibility,
   updateConnectorCategoryUi,
   handleCustomImageFile,
   clearCustomImage,
@@ -17,6 +16,8 @@ import {
   setNutTypeSelection,
   syncNutTypePicker,
   syncHardwareTypePicker,
+  setFuseTypeSelection,
+  syncFuseTypePicker,
 } from './forms.js';
 import { updatePreview, updateDownloadState, updateQrContentVisibility } from './render.js';
 import { downloadLabel, printLabel, shareLabel } from './actions.js';
@@ -32,7 +33,10 @@ const {
   componentMountRadios,
   bearingTypeSelect,
   systemTypeRadios,
-  fuseTypeRadios,
+  fuseTypeSelect,
+  fuseTypePicker,
+  fuseTypePickerButton,
+  fuseTypePickerList,
   threadSizeSelect,
   fuseValueSelect,
   glassSlowBlowCheckbox,
@@ -70,6 +74,7 @@ const {
 } = elements;
 
 let hardwareTypePickerOpen = false;
+let fuseTypePickerOpen = false;
 let boltDrivePickerOpen = false;
 let boltHeadPickerOpen = false;
 let nutTypePickerOpen = false;
@@ -283,6 +288,219 @@ function handleHardwareTypeListFocusOut() {
     const active = document.activeElement;
     if (!active || !hardwareTypePicker.contains(active)) {
       closeHardwareTypePicker();
+    }
+  }, 0);
+}
+
+function getFuseTypeOptionElements() {
+  if (!fuseTypePickerList) {
+    return [];
+  }
+  return Array.from(fuseTypePickerList.querySelectorAll('[role="option"]'));
+}
+
+function focusFuseTypeOption(option) {
+  if (!option) {
+    return;
+  }
+  const options = getFuseTypeOptionElements();
+  options.forEach(opt => {
+    opt.tabIndex = opt === option ? 0 : -1;
+  });
+  option.focus();
+  if (typeof option.scrollIntoView === 'function') {
+    option.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function openFuseTypePicker() {
+  if (!fuseTypePicker || !fuseTypePickerButton || !fuseTypePickerList) {
+    return;
+  }
+  if (fuseTypePickerButton.disabled) {
+    return;
+  }
+  if (fuseTypePickerOpen) {
+    return;
+  }
+  fuseTypePickerOpen = true;
+  fuseTypePicker.classList.add('is-open');
+  fuseTypePickerList.hidden = false;
+  fuseTypePickerButton.setAttribute('aria-expanded', 'true');
+  syncFuseTypePicker();
+
+  const options = getFuseTypeOptionElements();
+  if (options.length === 0) {
+    return;
+  }
+  const currentValue = typeof state.fuseType === 'string' ? state.fuseType : '';
+  const selectedOption = options.find(option => option.dataset.value === currentValue);
+  focusFuseTypeOption(selectedOption || options[0]);
+}
+
+function closeFuseTypePicker({ focusButton = false } = {}) {
+  if (!fuseTypePicker || !fuseTypePickerButton || !fuseTypePickerList) {
+    return;
+  }
+  if (!fuseTypePickerOpen) {
+    if (focusButton && !fuseTypePickerButton.disabled) {
+      fuseTypePickerButton.focus();
+    }
+    return;
+  }
+  fuseTypePickerOpen = false;
+  fuseTypePicker.classList.remove('is-open');
+  fuseTypePickerList.hidden = true;
+  fuseTypePickerButton.setAttribute('aria-expanded', 'false');
+  if (focusButton && !fuseTypePickerButton.disabled) {
+    fuseTypePickerButton.focus();
+  }
+}
+
+function toggleFuseTypePicker() {
+  if (fuseTypePickerOpen) {
+    closeFuseTypePicker({ focusButton: false });
+  } else {
+    openFuseTypePicker();
+  }
+}
+
+function moveFuseTypeOption(delta) {
+  if (!fuseTypePickerList) {
+    return;
+  }
+  const options = getFuseTypeOptionElements();
+  if (options.length === 0) {
+    return;
+  }
+  const active = document.activeElement;
+  const activeOption = active && fuseTypePickerList.contains(active)
+    ? active.closest('[role="option"]')
+    : null;
+  let index = activeOption ? options.indexOf(activeOption) : -1;
+  if (index === -1) {
+    const currentValue = typeof state.fuseType === 'string' ? state.fuseType : '';
+    index = options.findIndex(option => option.dataset.value === currentValue);
+  }
+  let nextIndex = index + delta;
+  if (nextIndex < 0) {
+    nextIndex = options.length - 1;
+  } else if (nextIndex >= options.length) {
+    nextIndex = 0;
+  }
+  const nextOption = options[nextIndex];
+  if (nextOption) {
+    focusFuseTypeOption(nextOption);
+  }
+}
+
+function handleFuseTypeButtonKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    openFuseTypePicker();
+    moveFuseTypeOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    openFuseTypePicker();
+    moveFuseTypeOption(-1);
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    toggleFuseTypePicker();
+    return;
+  }
+  if (key === 'Escape' && fuseTypePickerOpen) {
+    event.preventDefault();
+    closeFuseTypePicker({ focusButton: true });
+  }
+}
+
+function handleFuseTypeListKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    moveFuseTypeOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    moveFuseTypeOption(-1);
+    return;
+  }
+  if (key === 'Home') {
+    event.preventDefault();
+    const options = getFuseTypeOptionElements();
+    if (options.length > 0) {
+      focusFuseTypeOption(options[0]);
+    }
+    return;
+  }
+  if (key === 'End') {
+    event.preventDefault();
+    const options = getFuseTypeOptionElements();
+    if (options.length > 0) {
+      focusFuseTypeOption(options[options.length - 1]);
+    }
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    const target = event.target;
+    if (target && target instanceof HTMLElement) {
+      const option = target.closest('[role="option"]');
+      if (option) {
+        setFuseTypeSelection(option.dataset.value || '');
+        closeFuseTypePicker({ focusButton: true });
+      }
+    }
+    return;
+  }
+  if (key === 'Escape') {
+    event.preventDefault();
+    closeFuseTypePicker({ focusButton: true });
+    return;
+  }
+  if (key === 'Tab') {
+    closeFuseTypePicker();
+  }
+}
+
+function handleFuseTypeListClick(event) {
+  if (!fuseTypePickerList) {
+    return;
+  }
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+  const option = target.closest('[role="option"]');
+  if (!option || !fuseTypePickerList.contains(option)) {
+    return;
+  }
+  event.preventDefault();
+  setFuseTypeSelection(option.dataset.value || '');
+  closeFuseTypePicker({ focusButton: true });
+}
+
+function handleFuseTypeListFocusOut() {
+  if (!fuseTypePickerOpen) {
+    return;
+  }
+  setTimeout(() => {
+    if (!fuseTypePickerOpen) {
+      return;
+    }
+    if (!fuseTypePicker) {
+      closeFuseTypePicker();
+      return;
+    }
+    const active = document.activeElement;
+    if (!active || !fuseTypePicker.contains(active)) {
+      closeFuseTypePicker();
     }
   }, 0);
 }
@@ -933,6 +1151,11 @@ function handleDocumentPointer(event) {
       closeHardwareTypePicker();
     }
   }
+  if (fuseTypePickerOpen && fuseTypePicker) {
+    if (!(target instanceof Node) || !fuseTypePicker.contains(target)) {
+      closeFuseTypePicker();
+    }
+  }
   if (boltDrivePickerOpen && boltDrivePicker) {
     if (!(target instanceof Node) || !boltDrivePicker.contains(target)) {
       closeBoltDrivePicker();
@@ -955,6 +1178,11 @@ function handleDocumentFocusIn(event) {
   if (hardwareTypePickerOpen && hardwareTypePicker) {
     if (!(target instanceof Node) || !hardwareTypePicker.contains(target)) {
       closeHardwareTypePicker();
+    }
+  }
+  if (fuseTypePickerOpen && fuseTypePicker) {
+    if (!(target instanceof Node) || !fuseTypePicker.contains(target)) {
+      closeFuseTypePicker();
     }
   }
   if (boltDrivePickerOpen && boltDrivePicker) {
@@ -1000,6 +1228,17 @@ export function initEventHandlers() {
     hardwareTypePickerList.addEventListener('click', handleHardwareTypeListClick);
     hardwareTypePickerList.addEventListener('keydown', handleHardwareTypeListKeydown);
     hardwareTypePickerList.addEventListener('focusout', handleHardwareTypeListFocusOut);
+  }
+
+  if (fuseTypePickerButton && fuseTypePickerList) {
+    fuseTypePickerButton.addEventListener('click', event => {
+      event.preventDefault();
+      toggleFuseTypePicker();
+    });
+    fuseTypePickerButton.addEventListener('keydown', handleFuseTypeButtonKeydown);
+    fuseTypePickerList.addEventListener('click', handleFuseTypeListClick);
+    fuseTypePickerList.addEventListener('keydown', handleFuseTypeListKeydown);
+    fuseTypePickerList.addEventListener('focusout', handleFuseTypeListFocusOut);
   }
 
   if (connectorCategorySelect) {
@@ -1055,17 +1294,11 @@ export function initEventHandlers() {
     });
   });
 
-  fuseTypeRadios.forEach(radio => {
-    radio.addEventListener('change', () => {
-      if (radio.checked) {
-        const previousType = state.fuseType;
-        state.fuseType = radio.value;
-        const shouldReset = previousType === 'Glass' && state.fuseType !== 'Glass';
-        updateGlassOptionVisibility({ resetIfHidden: shouldReset });
-        updatePreview();
-      }
+  if (fuseTypeSelect) {
+    fuseTypeSelect.addEventListener('change', () => {
+      setFuseTypeSelection(fuseTypeSelect.value);
     });
-  });
+  }
 
   if (threadSizeSelect) {
     threadSizeSelect.addEventListener('change', () => {
@@ -1234,10 +1467,14 @@ export function initEventHandlers() {
     nutTypePickerList.addEventListener('keydown', handleNutTypeListKeydown);
     nutTypePickerList.addEventListener('focusout', handleNutTypeListFocusOut);
   }
-  if (hardwareTypePicker || boltDrivePicker || boltHeadPicker || nutTypePicker) {
+  if (hardwareTypePicker || fuseTypePicker || boltDrivePicker || boltHeadPicker || nutTypePicker) {
     document.addEventListener('pointerdown', handleDocumentPointer);
     document.addEventListener('focusin', handleDocumentFocusIn);
   }
+
+  document.addEventListener('gridfinity:fuse-picker-close', () => {
+    closeFuseTypePicker();
+  });
 
   if (standardToggle) {
     standardToggle.addEventListener('change', () => {
