@@ -197,7 +197,7 @@ export const hardwareCatalog = {
     { code: 'DIN 93', name: 'Tab Washer' },
     { code: 'DIN 988', name: 'Shim Ring' },
   ],
-  'Heat Insert': [],
+  'Threaded Heat Insert': [],
   Bearing: [],
   Component: [],
   Fuse: [
@@ -212,6 +212,7 @@ export const hardwareImageFolders = {
   Screw: 'screws',
   Nut: 'nuts',
   Washer: 'washers',
+  'Threaded Heat Insert': 'threaded_heat_insert',
 };
 
 export const connectorCatalog = [
