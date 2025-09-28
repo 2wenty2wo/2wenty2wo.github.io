@@ -65,6 +65,7 @@ const standardFieldLabel = document.getElementById('standard-field-label');
 const boltStandardGroup = document.getElementById('bolt-standard-group');
 const boltHeadField = document.getElementById('bolt-head-field');
 const boltDriveField = document.getElementById('bolt-drive-field');
+const boltHeadLabel = document.querySelector('label[for="bolt-head-select"]');
 const boltHeadPicker = document.getElementById('bolt-head-picker');
 const boltHeadPickerButton = document.getElementById('bolt-head-picker-button');
 const boltHeadPickerList = document.getElementById('bolt-head-picker-list');
@@ -195,6 +196,7 @@ export const elements = {
   boltStandardGroup,
   boltHeadField,
   boltDriveField,
+  boltHeadLabel,
   boltHeadPicker,
   boltHeadPickerButton,
   boltHeadPickerList,
