@@ -3,7 +3,118 @@ import { elements } from './dom-elements.js';
 import { metricThreadSizes, imperialThreadSizes } from './data.js';
 import { updatePreview, updateDownloadState } from './render.js';
 
-const { threadSizeSelect } = elements;
+const {
+  threadSizeSelect,
+  threadSizePicker,
+  threadSizePickerButton,
+  threadSizePickerList,
+} = elements;
+
+const THREAD_SIZE_PLACEHOLDER_TEXT = 'Select size…';
+const THREAD_SIZE_NOT_APPLICABLE_TEXT = 'Not applicable';
+
+let validThreadSizes = new Set();
+
+function updateThreadSizePickerLabel(text) {
+  if (!threadSizePickerButton) {
+    return;
+  }
+  const label = threadSizePickerButton.querySelector('.bolt-drive-picker__current-label');
+  if (label) {
+    label.textContent = text;
+  }
+  const iconWrapper = threadSizePickerButton.querySelector('.bolt-drive-picker__current-icon');
+  if (iconWrapper) {
+    iconWrapper.classList.add('is-empty');
+  }
+}
+
+function buildThreadSizeOptionItem(value) {
+  if (!threadSizePickerList) {
+    return;
+  }
+  const item = document.createElement('li');
+  item.className = 'bolt-drive-picker__option';
+  item.dataset.value = value;
+  item.setAttribute('role', 'option');
+  item.tabIndex = -1;
+  item.setAttribute('aria-selected', 'false');
+
+  const icon = document.createElement('span');
+  icon.className = 'bolt-drive-picker__option-icon is-empty';
+  icon.setAttribute('aria-hidden', 'true');
+  item.appendChild(icon);
+
+  const label = document.createElement('span');
+  label.className = 'bolt-drive-picker__option-label';
+  label.textContent = value;
+  item.appendChild(label);
+
+  threadSizePickerList.appendChild(item);
+}
+
+export function syncThreadSizePicker({ isValid = true } = {}) {
+  if (!threadSizeSelect) {
+    return;
+  }
+
+  const currentValue = typeof state.threadSize === 'string' ? state.threadSize.trim() : '';
+  const sanitizedValue = validThreadSizes.has(currentValue) ? currentValue : '';
+
+  if (sanitizedValue !== currentValue) {
+    state.threadSize = sanitizedValue;
+  }
+
+  threadSizeSelect.value = sanitizedValue;
+  if (!sanitizedValue && threadSizeSelect.options.length > 0) {
+    threadSizeSelect.selectedIndex = 0;
+  }
+
+  if (threadSizePickerButton) {
+    const labelText = threadSizePickerButton.disabled
+      ? THREAD_SIZE_NOT_APPLICABLE_TEXT
+      : sanitizedValue || THREAD_SIZE_PLACEHOLDER_TEXT;
+    updateThreadSizePickerLabel(labelText);
+
+    if (isValid) {
+      threadSizePickerButton.classList.remove('is-invalid');
+      threadSizePickerButton.removeAttribute('aria-invalid');
+    } else {
+      threadSizePickerButton.classList.add('is-invalid');
+      threadSizePickerButton.setAttribute('aria-invalid', 'true');
+    }
+  }
+
+  if (threadSizePicker) {
+    threadSizePicker.classList.toggle('is-invalid', !isValid);
+  }
+
+  if (threadSizePickerList) {
+    const optionElements = Array.from(
+      threadSizePickerList.querySelectorAll('[role="option"]'),
+    );
+    optionElements.forEach(optionElement => {
+      const isSelected = optionElement.dataset.value === sanitizedValue;
+      optionElement.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      optionElement.classList.toggle('is-selected', isSelected);
+      optionElement.tabIndex = -1;
+    });
+  }
+}
+
+export function setThreadSizeSelection(nextValue, { triggerUpdate = true } = {}) {
+  const desiredValue = typeof nextValue === 'string' ? nextValue.trim() : '';
+  const sanitizedValue = desiredValue && validThreadSizes.has(desiredValue) ? desiredValue : '';
+  const previousValue = typeof state.threadSize === 'string' ? state.threadSize : '';
+
+  state.threadSize = sanitizedValue;
+  syncThreadSizePicker({ isValid: true });
+
+  if (triggerUpdate && previousValue !== sanitizedValue) {
+    updateDownloadState();
+    updatePreview();
+  }
+}
 
 export function populateThreadSizes() {
   if (
@@ -13,14 +124,27 @@ export function populateThreadSizes() {
     state.hardwareType === 'Bearing' ||
     state.hardwareType === 'Component'
   ) {
+    validThreadSizes = new Set();
     if (threadSizeSelect) {
       threadSizeSelect.innerHTML = '';
       const placeholder = document.createElement('option');
       placeholder.value = '';
-      placeholder.textContent = 'Not applicable';
+      placeholder.textContent = THREAD_SIZE_NOT_APPLICABLE_TEXT;
       placeholder.selected = true;
       threadSizeSelect.appendChild(placeholder);
       threadSizeSelect.disabled = true;
+    }
+    if (threadSizePickerList) {
+      threadSizePickerList.innerHTML = '';
+      threadSizePickerList.hidden = true;
+    }
+    if (threadSizePickerButton) {
+      threadSizePickerButton.disabled = true;
+      threadSizePickerButton.setAttribute('aria-expanded', 'false');
+      updateThreadSizePickerLabel(THREAD_SIZE_NOT_APPLICABLE_TEXT);
+    }
+    if (threadSizePicker) {
+      threadSizePicker.classList.remove('is-open');
     }
     state.threadSize = '';
     updateDownloadState();
@@ -29,6 +153,8 @@ export function populateThreadSizes() {
   }
 
   const list = state.systemType === 'Metric' ? metricThreadSizes : imperialThreadSizes;
+  validThreadSizes = new Set(list);
+
   if (!threadSizeSelect) {
     state.threadSize = '';
     updateDownloadState();
@@ -40,10 +166,9 @@ export function populateThreadSizes() {
   threadSizeSelect.innerHTML = '';
   const placeholder = document.createElement('option');
   placeholder.value = '';
-  placeholder.textContent = 'Select size…';
+  placeholder.textContent = THREAD_SIZE_PLACEHOLDER_TEXT;
   threadSizeSelect.appendChild(placeholder);
 
-  const validSizes = new Set(list);
   list.forEach(size => {
     const opt = document.createElement('option');
     opt.value = size;
@@ -52,12 +177,29 @@ export function populateThreadSizes() {
   });
 
   const previous = typeof state.threadSize === 'string' ? state.threadSize.trim() : '';
-  const normalized = previous && validSizes.has(previous) ? previous : '';
+  const normalized = previous && validThreadSizes.has(previous) ? previous : '';
   state.threadSize = normalized;
   threadSizeSelect.value = normalized;
   if (!normalized) {
     placeholder.selected = true;
   }
+
+  if (threadSizePickerList) {
+    threadSizePickerList.innerHTML = '';
+    list.forEach(size => {
+      buildThreadSizeOptionItem(size);
+    });
+    threadSizePickerList.hidden = false;
+  }
+  if (threadSizePickerButton) {
+    threadSizePickerButton.disabled = false;
+    threadSizePickerButton.setAttribute('aria-expanded', 'false');
+  }
+  if (threadSizePicker) {
+    threadSizePicker.classList.remove('is-open');
+  }
+
+  syncThreadSizePicker({ isValid: true });
   updateDownloadState();
   updatePreview();
 }

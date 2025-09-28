@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { elements } from './dom-elements.js';
-import { syncBoltDrivePicker } from './forms.js';
+import { syncBoltDrivePicker, syncThreadSizePicker, syncFuseValuePicker } from './forms.js';
 import {
   pxPerMm,
   hardwareImageFolders,
@@ -396,6 +396,7 @@ function applyValidationFeedback(disabled) {
       messageElement: threadSizeMessage,
       valid,
     });
+    syncThreadSizePicker({ isValid: valid });
     if (!valid) {
       requirements.push('select a size');
     }
@@ -406,6 +407,7 @@ function applyValidationFeedback(disabled) {
       messageElement: threadSizeMessage,
       valid: true,
     });
+    syncThreadSizePicker({ isValid: true });
   }
 
   const requiresLength =
@@ -440,6 +442,7 @@ function applyValidationFeedback(disabled) {
       messageElement: fuseValueMessage,
       valid,
     });
+    syncFuseValuePicker({ isValid: valid });
     if (!valid) {
       requirements.push('choose a fuse value');
     }
@@ -450,6 +453,7 @@ function applyValidationFeedback(disabled) {
       messageElement: fuseValueMessage,
       valid: true,
     });
+    syncFuseValuePicker({ isValid: true });
   }
 
   if (hardwareType === 'Bolt' && (state.showImage || state.showStandard)) {
