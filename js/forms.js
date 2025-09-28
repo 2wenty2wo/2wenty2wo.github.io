@@ -145,7 +145,7 @@ function createHardwareTypeOption(optionElement) {
   if (imageSrc) {
     const image = document.createElement('img');
     image.className = 'bolt-drive-picker__option-icon-image';
-    if (value === 'Bolt') {
+    if (value === 'Bolt' || value === 'Screw') {
       image.classList.add('is-rotated-90');
     }
     image.src = imageSrc;
@@ -250,7 +250,7 @@ export function syncHardwareTypePicker() {
       if (imageSrc) {
         iconImage.src = imageSrc;
         iconImage.hidden = false;
-        if (sanitizedValue === 'Bolt') {
+        if (sanitizedValue === 'Bolt' || sanitizedValue === 'Screw') {
           iconImage.classList.add('is-rotated-90');
         }
         iconWrapper.classList.remove('is-empty');
