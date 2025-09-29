@@ -100,6 +100,7 @@ const NUT_TYPE_PLACEHOLDER_TEXT = 'Select type…';
 const validNutTypeIds = new Set(nutTypeOptions.map(option => option.id));
 const FUSE_TYPE_PLACEHOLDER_TEXT = 'Select fuse type…';
 const DEFAULT_FUSE_TYPE = 'Glass';
+const CARTRIDGE_FUSE_TYPES = new Set(['Glass', 'Ceramic']);
 const validFuseTypeIds = new Set(fuseTypeOptions.map(option => option.id));
 const FUSE_VALUE_PLACEHOLDER_TEXT = 'Select value…';
 const validFuseValuesSet = new Set(fuseValues.map(value => String(value)));
@@ -346,8 +347,10 @@ export function setFuseTypeSelection(nextId, { triggerUpdate = true } = {}) {
   state.fuseType = sanitizedValue;
   syncFuseTypePicker({ isValid: true });
 
-  const shouldResetGlassOptions = previousValue === 'Glass' && sanitizedValue !== 'Glass';
-  updateGlassOptionVisibility({ resetIfHidden: shouldResetGlassOptions });
+  const previousWasCartridge = CARTRIDGE_FUSE_TYPES.has(previousValue);
+  const nextIsCartridge = CARTRIDGE_FUSE_TYPES.has(sanitizedValue);
+  const shouldResetCartridgeOptions = previousWasCartridge && !nextIsCartridge;
+  updateGlassOptionVisibility({ resetIfHidden: shouldResetCartridgeOptions });
 
   if (triggerUpdate && previousValue !== sanitizedValue) {
     updateDownloadState();
@@ -966,7 +969,8 @@ export function populateFuseValues() {
 }
 
 export function updateGlassOptionVisibility({ resetIfHidden = false } = {}) {
-  const shouldShow = state.hardwareType === 'Fuse' && state.fuseType === 'Glass';
+  const shouldShow =
+    state.hardwareType === 'Fuse' && CARTRIDGE_FUSE_TYPES.has(state.fuseType);
   if (glassOptionsContainer) {
     glassOptionsContainer.classList.toggle('d-none', !shouldShow);
   }
