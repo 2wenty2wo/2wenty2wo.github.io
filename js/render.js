@@ -1,6 +1,11 @@
 import { state } from './state.js';
 import { elements } from './dom-elements.js';
-import { syncBoltDrivePicker, syncThreadSizePicker, syncFuseValuePicker } from './forms.js';
+import {
+  syncBoltDrivePicker,
+  syncBoltHeadPicker,
+  syncThreadSizePicker,
+  syncFuseValuePicker,
+} from './forms.js';
 import {
   pxPerMm,
   hardwareImageFolders,
@@ -472,6 +477,7 @@ function applyValidationFeedback(disabled) {
       messageElement: boltDriveMessage,
       valid: driveValid,
     });
+    syncBoltHeadPicker({ isValid: headValid });
     syncBoltDrivePicker({ isValid: driveValid });
     if (!headValid) {
       requirements.push(hardwareType === 'Screw' ? 'choose a screw type' : 'select a head style');
@@ -492,6 +498,7 @@ function applyValidationFeedback(disabled) {
       messageElement: boltDriveMessage,
       valid: true,
     });
+    syncBoltHeadPicker({ isValid: true });
     syncBoltDrivePicker({ isValid: true });
   }
 
