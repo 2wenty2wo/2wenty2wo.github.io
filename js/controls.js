@@ -15,6 +15,7 @@ import {
   setBoltDriveSelection,
   setBoltHeadSelection,
   setNutTypeSelection,
+  setBearingTypeSelection,
   setFuseTypeSelection,
   setThreadSizeSelection,
   setFuseValueSelection,
@@ -47,7 +48,6 @@ function applyStateToControls() {
     heightRadios,
     connectorCategorySelect,
     nutTypeSelect,
-    bearingTypeSelect,
   } = elements;
 
   if (Array.isArray(systemTypeRadios)) {
@@ -74,9 +74,7 @@ function applyStateToControls() {
   if (nutTypeSelect) {
     nutTypeSelect.value = state.nutType || '';
   }
-  if (bearingTypeSelect) {
-    bearingTypeSelect.value = state.bearingType || '';
-  }
+  setBearingTypeSelection(state.bearingType || '', { triggerUpdate: false });
   setComponentMountSelection(state.componentMount || 'Through-Hole', { triggerUpdate: false });
   setResistorValueSelection(state.resistorValue || '', { triggerUpdate: false });
   setCapacitorValueSelection(state.capacitorValue || '', { triggerUpdate: false });
