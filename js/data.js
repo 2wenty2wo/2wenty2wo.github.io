@@ -60,6 +60,7 @@ export const fuseValues = [
 
 export const fuseTypeOptions = [
   { id: 'Glass', label: 'Glass Fuse', image: 'images/fuses/glass_fuse.svg' },
+  { id: 'Ceramic', label: 'Ceramic Fuse', image: 'images/fuses/ceramic_fuse.svg' },
   { id: 'Blade', label: 'Blade Fuse', image: 'images/fuses/blade_fuse.svg' },
 ];
 
