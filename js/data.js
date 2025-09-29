@@ -77,6 +77,11 @@ export const componentImageMap = {
     SMD: 'images/capacitors/capacitor_smd.svg',
     default: 'images/capacitors/capacitor_through_hole.svg',
   },
+  Diode: {
+    'Through-Hole': 'images/diodes/diode_through_hole.svg',
+    SMD: 'images/diodes/diode_smd.svg',
+    default: 'images/diodes/diode_through_hole.svg',
+  },
 };
 
 export const componentMountOptions = [
@@ -307,47 +312,17 @@ export const hardwareCatalog = {
     { code: 'ISO 7040', name: 'Prevailing Torque Type Hexagon Nut' },
   ],
   Washer: [
-    { code: 'DIN 1052', name: 'Washer for Wood Construction' },
-    { code: 'DIN 125', name: 'Plain Washer' },
-    { code: 'DIN 127', name: 'Spring Lock Washer' },
-    { code: 'DIN 128', name: 'Spring Lock Washer' },
-    { code: 'DIN 137', name: 'Spring Lock Washer' },
-    { code: 'DIN 1440', name: 'Plain Washer' },
-    { code: 'DIN 1441', name: 'Plain Washer' },
-    { code: 'DIN 2093', name: 'Disc Spring' },
-    { code: 'DIN 25201', name: 'Wedge Lock Washer' },
-    { code: 'DIN 432', name: 'Square Washer' },
-    { code: 'DIN 433', name: 'Plain Washer' },
-    { code: 'DIN 434', name: 'Square Taper Washer' },
-    { code: 'DIN 435', name: 'Square Taper Washer' },
-    { code: 'DIN 436', name: 'Square Washer' },
-    { code: 'DIN 440', name: 'Plain Washer' },
-    { code: 'DIN 462', name: 'Square Washer' },
-    { code: 'DIN 463', name: 'Square Washer' },
-    { code: 'DIN 5406', name: 'Tooth Lock Washer' },
-    { code: 'DIN 6319', name: 'Spherical Washer' },
-    { code: 'DIN 6340', name: 'Heavy Duty Plain Washer' },
-    { code: 'DIN 6796', name: 'Conical Spring Washer' },
-    { code: 'DIN 6797', name: 'Tooth Lock Washer' },
-    { code: 'DIN 6798', name: 'Tooth Lock Washer' },
-    { code: 'DIN 6916', name: 'High-Strength Structural Washer' },
-    { code: 'DIN 6917', name: 'Square Taper Washer' },
-    { code: 'DIN 6918', name: 'Square Taper Washer' },
-    { code: 'DIN 70952', name: 'Plain Washer' },
-    { code: 'DIN 7349', name: 'Heavy Duty Plain Washer' },
-    { code: 'DIN 74361', name: 'Plain Washer' },
-    { code: 'DIN 7603', name: 'Sealing Washer' },
-    { code: 'DIN 7980', name: 'Spring Lock Washer' },
-    { code: 'DIN 7989', name: 'Plain Washer' },
-    { code: 'DIN 9021', name: 'Plain Washer' },
-    { code: 'DIN 93', name: 'Tab Washer' },
-    { code: 'DIN 988', name: 'Shim Ring' },
+    { code: 'Plain Washer', name: 'General Purpose Flat Washer' },
+    { code: 'Spring Washer', name: 'Split Lock Washer' },
   ],
   'Threaded Heat Insert': [],
   Bearing: [],
   Resistor: [],
   Capacitor: [],
-  Diode: [],
+  Diode: [
+    { code: 'General Purpose', name: 'Rectifier Diode' },
+    { code: 'Signal', name: 'Small Signal Diode' },
+  ],
   Fuse: [
     { code: 'IEC 60127-2', name: 'Time-Lag Cartridge Fuse' },
     { code: 'IEC 60127-3', name: 'Fast-Acting Cartridge Fuse' },
@@ -363,6 +338,10 @@ export const hardwareImageFolders = {
   'Threaded Heat Insert': 'threaded_heat_insert',
 };
 
+export const hardwareImageExtensions = {
+  Washer: 'svg',
+};
+
 export const hardwareTypeImageMap = {
   Bolt: 'images/bolts/head/countersunk_head.svg',
   Screw: 'images/screws/countersunk_wood_screw.svg',
@@ -371,6 +350,8 @@ export const hardwareTypeImageMap = {
   Fuse: 'images/fuses/glass_fuse.svg',
   Resistor: 'images/resistors/resistor_through_hole.svg',
   Capacitor: 'images/capacitors/capacitor_through_hole.svg',
+  Washer: 'images/washers/plain_washer.svg',
+  Diode: 'images/diodes/diode_through_hole.svg',
 };
 
 export const connectorCatalog = [

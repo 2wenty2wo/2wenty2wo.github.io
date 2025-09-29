@@ -12,6 +12,7 @@ import {
 import {
   pxPerMm,
   hardwareImageFolders,
+  hardwareImageExtensions,
   findConnectorCategory,
   boltHeadMap,
   boltDriveMap,
@@ -935,6 +936,8 @@ function resolveHardwareImageInfo() {
   if (!filename) {
     return null;
   }
+  const extensionEntry = hardwareImageExtensions[state.hardwareType];
+  const extension = typeof extensionEntry === 'string' && extensionEntry.trim() ? extensionEntry : 'png';
   const standardName = (state.standard || '').trim();
   const altPieces = [];
   if (code) {
@@ -948,7 +951,7 @@ function resolveHardwareImageInfo() {
     : 'Hardware reference illustration';
   return {
     type: 'photo',
-    src: `images/${folder}/${filename}.png`,
+    src: `images/${folder}/${filename}.${extension}`,
     alt,
   };
 }
