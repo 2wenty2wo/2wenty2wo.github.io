@@ -7,6 +7,8 @@ import {
   populateConnectorCategories,
   populateBearingOptions,
   populateHardwareTypePicker,
+  populateComponentMountPicker,
+  populateResistorValues,
   updateCustomImageUi,
   onHardwareTypeChange,
   setBoltDriveSelection,
@@ -15,6 +17,9 @@ import {
   setFuseTypeSelection,
   setThreadSizeSelection,
   setFuseValueSelection,
+  setComponentMountSelection,
+  setResistorValueSelection,
+  updateComponentValueUi,
 } from './forms.js';
 import { updateDownloadState, updateQrContentVisibility, updatePreview } from './render.js';
 import { initEventHandlers } from './events.js';
@@ -70,6 +75,9 @@ function applyStateToControls() {
   if (bearingTypeSelect) {
     bearingTypeSelect.value = state.bearingType || '';
   }
+  setComponentMountSelection(state.componentMount || 'Through-Hole', { triggerUpdate: false });
+  setResistorValueSelection(state.resistorValue || '', { triggerUpdate: false });
+  updateComponentValueUi({ resetIfHidden: false });
 
   if (lengthInput) {
     lengthInput.value = state.length || '';
@@ -122,6 +130,8 @@ function init() {
   populateConnectorCategories();
   populateBearingOptions();
   populateHardwareTypePicker();
+  populateComponentMountPicker();
+  populateResistorValues();
   updateCustomImageUi();
   onHardwareTypeChange();
   applyStateToControls();

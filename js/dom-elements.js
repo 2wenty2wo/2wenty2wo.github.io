@@ -48,6 +48,16 @@ const connectorCategoryMessage = document.getElementById('connector-category-mes
 const connectorNotesMessage = document.getElementById('connector-notes-message');
 const componentCategoryContainer = document.getElementById('component-category-container');
 const componentMountContainer = document.getElementById('component-mount-container');
+const componentMountPicker = document.getElementById('component-mount-picker');
+const componentMountPickerButton = document.getElementById('component-mount-picker-button');
+const componentMountPickerList = document.getElementById('component-mount-picker-list');
+const componentMountSelect = document.getElementById('component-mount-select');
+const resistorValueField = document.getElementById('resistor-value-field');
+const resistorValuePicker = document.getElementById('resistor-value-picker');
+const resistorValuePickerButton = document.getElementById('resistor-value-picker-button');
+const resistorValuePickerList = document.getElementById('resistor-value-picker-list');
+const resistorValueSelect = document.getElementById('resistor-value-select');
+const resistorValueMessage = document.getElementById('resistor-value-message');
 const bearingOptionsContainer = document.getElementById('bearing-options-container');
 const bearingTypeSelect = document.getElementById('bearing-type-select');
 const bearingTypeMessage = document.getElementById('bearing-type-message');
@@ -128,7 +138,6 @@ const heightRadios = Array.from(document.querySelectorAll('input[name="label-hei
 const componentCategoryRadios = Array.from(
   document.querySelectorAll('input[name="component-category"]'),
 );
-const componentMountRadios = Array.from(document.querySelectorAll('input[name="component-mount"]'));
 const componentCategoryMessage = document.getElementById('component-category-message');
 const componentMountMessage = document.getElementById('component-mount-message');
 const formStatusMessage = document.getElementById('form-status-message');
@@ -179,6 +188,16 @@ export const elements = {
   connectorNotesMessage,
   componentCategoryContainer,
   componentMountContainer,
+  componentMountPicker,
+  componentMountPickerButton,
+  componentMountPickerList,
+  componentMountSelect,
+  resistorValueField,
+  resistorValuePicker,
+  resistorValuePickerButton,
+  resistorValuePickerList,
+  resistorValueSelect,
+  resistorValueMessage,
   bearingOptionsContainer,
   bearingTypeSelect,
   bearingTypeMessage,
@@ -249,7 +268,6 @@ export const elements = {
   systemTypeRadios,
   heightRadios,
   componentCategoryRadios,
-  componentMountRadios,
   componentCategoryMessage,
   componentMountMessage,
   formStatusMessage,
