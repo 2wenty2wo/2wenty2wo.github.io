@@ -25,6 +25,7 @@
   --field-invalid-ring: rgba(220, 53, 69, 0.45);
   --field-help-bg: rgba(148, 163, 184, 0.12);
   --field-help-border: rgba(148, 163, 184, 0.4);
+  --picker-control-height: 2.875rem;
   --label-preview-bg: #f8fafc;
   --label-preview-check-1: rgba(148, 163, 184, 0.24);
   --label-preview-check-2: rgba(148, 163, 184, 0.1);
@@ -250,7 +251,7 @@ main {
     background-color 0.2s ease;
   font-size: 1rem;
   line-height: 1.35;
-  min-height: 2.875rem;
+  min-height: var(--picker-control-height);
 }
 
 .bolt-drive-picker__button:focus-visible {
@@ -285,8 +286,8 @@ main {
   border: 1px solid var(--bs-border-color, rgba(148, 163, 184, 0.38));
   background-color: var(--bs-body-bg, #ffffff);
   padding: 0.625rem 0.875rem;
-  min-height: 2.875rem;
-  height: 2.875rem;
+  min-height: var(--picker-control-height);
+  height: var(--picker-control-height);
   font-size: 1rem;
   line-height: 1.35;
   font-weight: 600;
