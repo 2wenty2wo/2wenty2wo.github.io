@@ -618,7 +618,7 @@ function applyValidationFeedback(disabled) {
       container: resistorValueField,
       messageElement: resistorValueMessage,
       valid: valueValid,
-      message: valueValid ? '' : 'Select a resistor value',
+      message: '',
     });
     syncResistorValuePicker({ isValid: valueValid });
     if (requiresValue && !valueValid) {
