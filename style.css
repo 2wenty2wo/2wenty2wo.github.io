@@ -252,6 +252,7 @@ main {
   font-size: 1rem;
   line-height: 1.35;
   min-height: var(--picker-control-height);
+  height: var(--picker-control-height);
 }
 
 .bolt-drive-picker__button:focus-visible {
