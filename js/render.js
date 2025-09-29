@@ -7,6 +7,7 @@ import {
   syncFuseValuePicker,
   syncComponentMountPicker,
   syncResistorValuePicker,
+  syncCapacitorValuePicker,
 } from './forms.js';
 import {
   pxPerMm,
@@ -77,6 +78,9 @@ const {
   resistorValueField,
   resistorValueSelect,
   resistorValueMessage,
+  capacitorValueField,
+  capacitorValueSelect,
+  capacitorValueMessage,
   customLine1Input,
   customLine1Field,
   customLine1Message,
@@ -370,9 +374,14 @@ export function isLabelReady() {
     return Boolean(state.bearingType);
   }
   if (ELECTRICAL_COMPONENT_TYPES.has(state.hardwareType)) {
-    const requiresValue = (state.componentCategory || state.hardwareType) === 'Resistor';
-    if (requiresValue) {
+    const category = state.componentCategory || state.hardwareType;
+    const requiresResistorValue = category === 'Resistor';
+    const requiresCapacitorValue = category === 'Capacitor';
+    if (requiresResistorValue) {
       return Boolean(state.componentCategory && state.componentMount && state.resistorValue);
+    }
+    if (requiresCapacitorValue) {
+      return Boolean(state.componentCategory && state.componentMount && state.capacitorValue);
     }
     return Boolean(state.componentCategory && state.componentMount);
   }
@@ -611,18 +620,32 @@ function applyValidationFeedback(disabled) {
       requirements.push('choose a mounting style');
     }
 
-    const requiresValue = (state.componentCategory || state.hardwareType) === 'Resistor';
-    const valueValid = !requiresValue || Boolean(state.resistorValue);
+    const category = (state.componentCategory || state.hardwareType || '').trim();
+    const requiresResistorValue = category === 'Resistor';
+    const requiresCapacitorValue = category === 'Capacitor';
+    const resistorValid = !requiresResistorValue || Boolean(state.resistorValue);
+    const capacitorValid = !requiresCapacitorValue || Boolean(state.capacitorValue);
     updateInputFieldState({
       input: resistorValueSelect,
       container: resistorValueField,
       messageElement: resistorValueMessage,
-      valid: valueValid,
+      valid: resistorValid,
       message: '',
     });
-    syncResistorValuePicker({ isValid: valueValid });
-    if (requiresValue && !valueValid) {
+    updateInputFieldState({
+      input: capacitorValueSelect,
+      container: capacitorValueField,
+      messageElement: capacitorValueMessage,
+      valid: capacitorValid,
+      message: '',
+    });
+    syncResistorValuePicker({ isValid: resistorValid });
+    syncCapacitorValuePicker({ isValid: capacitorValid });
+    if (requiresResistorValue && !resistorValid) {
       requirements.push('select a resistor value');
+    }
+    if (requiresCapacitorValue && !capacitorValid) {
+      requirements.push('select a capacitor value');
     }
   } else {
     updateRadioGroupFeedback({
@@ -646,7 +669,15 @@ function applyValidationFeedback(disabled) {
       valid: true,
       message: '',
     });
+    updateInputFieldState({
+      input: capacitorValueSelect,
+      container: capacitorValueField,
+      messageElement: capacitorValueMessage,
+      valid: true,
+      message: '',
+    });
     syncResistorValuePicker({ isValid: true });
+    syncCapacitorValuePicker({ isValid: true });
   }
 
   if (hardwareType === 'Custom') {
@@ -1138,6 +1169,17 @@ function buildTextLines() {
     const category = state.componentCategory || state.hardwareType || 'Component';
     if (category === 'Resistor') {
       const line1 = state.resistorValue || 'Resistor';
+      const line2Parts = [];
+      if (state.componentMount) {
+        line2Parts.push(state.componentMount);
+      }
+      if (state.notes) {
+        line2Parts.push(state.notes);
+      }
+      return { line1, line2: line2Parts.join(' — '), line3: '' };
+    }
+    if (category === 'Capacitor') {
+      const line1 = state.capacitorValue || 'Capacitor';
       const line2Parts = [];
       if (state.componentMount) {
         line2Parts.push(state.componentMount);

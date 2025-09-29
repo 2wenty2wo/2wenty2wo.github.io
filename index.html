@@ -352,6 +352,53 @@
                         class="validation-message text-danger small mt-2 d-none"
                       ></div>
                     </div>
+                    <div class="col-12 col-lg-6 d-none" id="capacitor-value-field" aria-hidden="true">
+                      <label class="form-label fw-semibold" for="capacitor-value-picker-button"
+                        >Capacitor Value</label
+                      >
+                      <div class="bolt-drive-picker" id="capacitor-value-picker">
+                        <select
+                          id="capacitor-value-select"
+                          class="visually-hidden"
+                          aria-labelledby="capacitor-value-picker-button"
+                        >
+                          <option value="">Select value…</option>
+                        </select>
+                        <button
+                          type="button"
+                          class="bolt-drive-picker__button"
+                          id="capacitor-value-picker-button"
+                          aria-haspopup="listbox"
+                          aria-expanded="false"
+                          aria-controls="capacitor-value-picker-list"
+                          disabled
+                        >
+                          <span class="bolt-drive-picker__current">
+                            <span class="bolt-drive-picker__current-icon is-empty" aria-hidden="true">
+                              <img
+                                class="bolt-drive-picker__current-icon-image"
+                                src=""
+                                alt=""
+                                hidden
+                              />
+                            </span>
+                            <span class="bolt-drive-picker__current-label">Select value…</span>
+                          </span>
+                          <span class="bolt-drive-picker__chevron" aria-hidden="true"></span>
+                        </button>
+                        <ul
+                          class="bolt-drive-picker__list"
+                          id="capacitor-value-picker-list"
+                          role="listbox"
+                          aria-labelledby="capacitor-value-picker-button"
+                          hidden
+                        ></ul>
+                      </div>
+                      <div
+                        id="capacitor-value-message"
+                        class="validation-message text-danger small mt-2 d-none"
+                      ></div>
+                    </div>
                   </div>
                   <div
                     id="component-mount-message"
