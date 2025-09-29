@@ -23,7 +23,6 @@ import { hydrateStateFromUrl } from './url-state.js';
 function applyStateToControls() {
   const {
     systemTypeRadios,
-    fuseValueSelect,
     glassSizeSelect,
     glassSlowBlowCheckbox,
     glassFastBlowCheckbox,
@@ -40,7 +39,6 @@ function applyStateToControls() {
     widthValueSpan,
     heightRadios,
     connectorCategorySelect,
-    threadSizeSelect,
     nutTypeSelect,
     bearingTypeSelect,
   } = elements;

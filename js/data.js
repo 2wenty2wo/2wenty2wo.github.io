@@ -64,6 +64,15 @@ export const fuseTypeOptions = [
   { id: 'Blade', label: 'Blade Fuse', image: 'images/fuses/blade_fuse.svg' },
 ];
 
+export const electricalComponentTypes = ['Resistor', 'Capacitor', 'Diode'];
+
+export const componentImageMap = {
+  Resistor: {
+    'Through-Hole': 'images/resistors/resistor_through_hole.svg',
+    default: 'images/resistors/resistor_through_hole.svg',
+  },
+};
+
 export const boltHeadOptions = [
   { id: 'button_head', label: 'Button Head', image: 'button_head' },
   { id: 'cap_head', label: 'Socket Cap', image: 'cap_head' },
@@ -219,7 +228,9 @@ export const hardwareCatalog = {
   ],
   'Threaded Heat Insert': [],
   Bearing: [],
-  Component: [],
+  Resistor: [],
+  Capacitor: [],
+  Diode: [],
   Fuse: [
     { code: 'IEC 60127-2', name: 'Time-Lag Cartridge Fuse' },
     { code: 'IEC 60127-3', name: 'Fast-Acting Cartridge Fuse' },
@@ -241,6 +252,7 @@ export const hardwareTypeImageMap = {
   'Threaded Heat Insert': 'images/threaded_heat_insert/heat_insert.svg',
   Nut: 'images/nuts/hex_nut.svg',
   Fuse: 'images/fuses/glass_fuse.svg',
+  Resistor: 'images/resistors/resistor_through_hole.svg',
 };
 
 export const connectorCatalog = [

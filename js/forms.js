@@ -14,6 +14,7 @@ import {
   STANDARD_PLACEHOLDER_TEXT,
   CONNECTOR_PLACEHOLDER_TEXT,
   findConnectorCategory,
+  electricalComponentTypes,
 } from './data.js';
 import { updatePreview, updateDownloadState } from './render.js';
 import {
@@ -104,6 +105,7 @@ const CARTRIDGE_FUSE_TYPES = new Set(['Glass', 'Ceramic']);
 const validFuseTypeIds = new Set(fuseTypeOptions.map(option => option.id));
 const FUSE_VALUE_PLACEHOLDER_TEXT = 'Select value…';
 const validFuseValuesSet = new Set(fuseValues.map(value => String(value)));
+const ELECTRICAL_COMPONENT_TYPES = new Set(electricalComponentTypes);
 
 function getFastenerHeadOptions() {
   return state.hardwareType === 'Screw' ? screwTypeOptions : boltHeadOptions;
@@ -1228,8 +1230,8 @@ export function populateStandards() {
   const placeholder = document.createElement('option');
   placeholder.value = '';
 
-  if (state.hardwareType === 'Component') {
-    placeholder.textContent = 'Not used for component labels';
+  if (ELECTRICAL_COMPONENT_TYPES.has(state.hardwareType)) {
+    placeholder.textContent = 'Not used for electrical component labels';
     placeholder.disabled = true;
     placeholder.selected = true;
     placeholder.dataset.defaultText = placeholder.textContent;
@@ -1474,11 +1476,14 @@ function syncHardwareTypeControls(nextType) {
 
 export function onHardwareTypeChange() {
   const type = state.hardwareType;
+  if (ELECTRICAL_COMPONENT_TYPES.has(type)) {
+    state.componentCategory = type;
+  }
   syncHardwareTypeControls(type);
   const requiresThreadDetails = type === 'Bolt' || type === 'Screw';
   const showFuseFields = type === 'Fuse';
   const showConnectorFields = type === 'Connector';
-  const showComponentFields = type === 'Component';
+  const showComponentFields = ELECTRICAL_COMPONENT_TYPES.has(type);
   const showCustomFields = type === 'Custom';
   const showBearingFields = type === 'Bearing';
   const showBoltFields = type === 'Bolt';
@@ -1677,7 +1682,7 @@ export function onHardwareTypeChange() {
     if (showConnectorFields) {
       notesLabel.textContent = 'Connector Details (optional)';
     } else if (showComponentFields) {
-      notesLabel.textContent = 'Component Notes';
+      notesLabel.textContent = 'Electrical Component Notes';
     } else {
       notesLabel.textContent = defaultNotesLabel;
     }

@@ -1,6 +1,10 @@
 import { state } from './state.js';
 import { elements } from './dom-elements.js';
-import { metricThreadSizes, imperialThreadSizes } from './data.js';
+import {
+  metricThreadSizes,
+  imperialThreadSizes,
+  electricalComponentTypes,
+} from './data.js';
 import { updatePreview, updateDownloadState } from './render.js';
 
 const {
@@ -14,6 +18,7 @@ const THREAD_SIZE_PLACEHOLDER_TEXT = 'Select size…';
 const THREAD_SIZE_NOT_APPLICABLE_TEXT = 'Not applicable';
 
 let validThreadSizes = new Set();
+const ELECTRICAL_COMPONENT_TYPES = new Set(electricalComponentTypes);
 
 function updateThreadSizePickerLabel(text) {
   if (!threadSizePickerButton) {
@@ -122,7 +127,7 @@ export function populateThreadSizes() {
     state.hardwareType === 'Connector' ||
     state.hardwareType === 'Custom' ||
     state.hardwareType === 'Bearing' ||
-    state.hardwareType === 'Component'
+    ELECTRICAL_COMPONENT_TYPES.has(state.hardwareType)
   ) {
     validThreadSizes = new Set();
     if (threadSizeSelect) {
