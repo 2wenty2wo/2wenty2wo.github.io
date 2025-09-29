@@ -10,6 +10,8 @@ import {
   boltDriveOptions,
   screwTypeOptions,
   electricalComponentTypes,
+  componentMountOptions as componentMountOptionList,
+  resistorValueOptions,
 } from './data.js';
 
 export const SHARE_QUERY_PARAM = 'label';
@@ -37,6 +39,7 @@ const FIELD_MAP = {
   connectorCategory: 'cc',
   componentCategory: 'cmp',
   componentMount: 'cm',
+  resistorValue: 'rv',
   bearingType: 'bt',
   bearingDetails: 'bd',
   customLine1: 'c1',
@@ -59,11 +62,8 @@ const fuseTypeOptions = new Set(
 const ELECTRICAL_COMPONENT_TYPES = new Set(electricalComponentTypes);
 const DEFAULT_COMPONENT_TYPE = electricalComponentTypes[0] || 'Resistor';
 const componentCategoryOptions = new Set(electricalComponentTypes);
-const componentMountOptions = new Set(
-  Array.isArray(elements.componentMountRadios)
-    ? elements.componentMountRadios.map(radio => radio.value)
-    : [],
-);
+const componentMountOptions = new Set(componentMountOptionList.map(option => option.id));
+const resistorValueOptionSet = new Set(resistorValueOptions.map(option => option.id));
 const heightOptions = new Set(
   Array.isArray(elements.heightRadios)
     ? elements.heightRadios
@@ -297,6 +297,12 @@ function applyExpandedPayload(expanded) {
   ) {
     state.componentMount = expanded.componentMount;
   }
+  if (
+    typeof expanded.resistorValue === 'string' &&
+    resistorValueOptionSet.has(expanded.resistorValue)
+  ) {
+    state.resistorValue = expanded.resistorValue;
+  }
   if (typeof expanded.bearingType === 'string') {
     const trimmed = expanded.bearingType.trim();
     if (!trimmed) {
@@ -309,6 +315,8 @@ function applyExpandedPayload(expanded) {
 
   if (ELECTRICAL_COMPONENT_TYPES.has(state.hardwareType)) {
     state.componentCategory = state.hardwareType;
+  } else {
+    state.resistorValue = '';
   }
 
   const sanitizedThread = sanitizeThreadSize(expanded.threadSize, state.hardwareType);

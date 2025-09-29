@@ -257,37 +257,100 @@
                     class="validation-message text-danger small mt-2 d-none"
                   ></div>
                 </div>
-                <div id="component-mount-container" class="d-none">
-                  <span class="form-label d-block fw-semibold">Mounting Style</span>
-                  <div class="row g-2" id="component-mount-group">
-                    <div class="col-12 col-sm-6">
-                      <input
-                        type="radio"
-                        class="btn-check"
-                        name="component-mount"
-                        id="component-mount-through-hole"
-                        value="Through-Hole"
-                        autocomplete="off"
-                        checked
-                      />
+                <div id="component-mount-container" class="d-none" aria-hidden="true">
+                  <div class="row g-3 align-items-end">
+                    <div class="col-12 col-lg-6" id="component-mount-field">
                       <label
-                        class="btn btn-outline-secondary w-100"
-                        for="component-mount-through-hole"
-                        >Through-Hole</label
+                        class="form-label fw-semibold"
+                        for="component-mount-picker-button"
+                        >Mounting Style</label
                       >
+                      <div class="bolt-drive-picker" id="component-mount-picker">
+                        <select
+                          id="component-mount-select"
+                          class="visually-hidden"
+                          aria-labelledby="component-mount-picker-button"
+                        >
+                          <option value="">Select mounting…</option>
+                          <option value="Through-Hole">Through-Hole</option>
+                          <option value="SMD">SMD</option>
+                        </select>
+                        <button
+                          type="button"
+                          class="bolt-drive-picker__button"
+                          id="component-mount-picker-button"
+                          aria-haspopup="listbox"
+                          aria-expanded="false"
+                          aria-controls="component-mount-picker-list"
+                        >
+                          <span class="bolt-drive-picker__current">
+                            <span class="bolt-drive-picker__current-icon is-empty" aria-hidden="true">
+                              <img
+                                class="bolt-drive-picker__current-icon-image"
+                                src=""
+                                alt=""
+                                hidden
+                              />
+                            </span>
+                            <span class="bolt-drive-picker__current-label">Select mounting…</span>
+                          </span>
+                          <span class="bolt-drive-picker__chevron" aria-hidden="true"></span>
+                        </button>
+                        <ul
+                          class="bolt-drive-picker__list"
+                          id="component-mount-picker-list"
+                          role="listbox"
+                          aria-labelledby="component-mount-picker-button"
+                          hidden
+                        ></ul>
+                      </div>
                     </div>
-                    <div class="col-12 col-sm-6">
-                      <input
-                        type="radio"
-                        class="btn-check"
-                        name="component-mount"
-                        id="component-mount-smd"
-                        value="SMD"
-                        autocomplete="off"
-                      />
-                      <label class="btn btn-outline-secondary w-100" for="component-mount-smd"
-                        >SMD</label
+                    <div class="col-12 col-lg-6 d-none" id="resistor-value-field" aria-hidden="true">
+                      <label class="form-label fw-semibold" for="resistor-value-picker-button"
+                        >Resistor Value</label
                       >
+                      <div class="bolt-drive-picker" id="resistor-value-picker">
+                        <select
+                          id="resistor-value-select"
+                          class="visually-hidden"
+                          aria-labelledby="resistor-value-picker-button"
+                        >
+                          <option value="">Select value…</option>
+                        </select>
+                        <button
+                          type="button"
+                          class="bolt-drive-picker__button"
+                          id="resistor-value-picker-button"
+                          aria-haspopup="listbox"
+                          aria-expanded="false"
+                          aria-controls="resistor-value-picker-list"
+                          disabled
+                        >
+                          <span class="bolt-drive-picker__current">
+                            <span class="bolt-drive-picker__current-icon is-empty" aria-hidden="true">
+                              <img
+                                class="bolt-drive-picker__current-icon-image"
+                                src=""
+                                alt=""
+                                hidden
+                              />
+                            </span>
+                            <span class="bolt-drive-picker__current-label">Select value…</span>
+                          </span>
+                          <span class="bolt-drive-picker__chevron" aria-hidden="true"></span>
+                        </button>
+                        <ul
+                          class="bolt-drive-picker__list"
+                          id="resistor-value-picker-list"
+                          role="listbox"
+                          aria-labelledby="resistor-value-picker-button"
+                          hidden
+                        ></ul>
+                      </div>
+                      <div
+                        id="resistor-value-message"
+                        class="validation-message text-danger small mt-2 d-none"
+                      ></div>
                     </div>
                   </div>
                   <div

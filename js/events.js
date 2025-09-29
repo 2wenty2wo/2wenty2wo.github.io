@@ -22,6 +22,9 @@ import {
   syncFuseTypePicker,
   setFuseValueSelection,
   syncFuseValuePicker,
+  setComponentMountSelection,
+  setResistorValueSelection,
+  updateComponentValueUi,
 } from './forms.js';
 import { updatePreview, updateDownloadState, updateQrContentVisibility } from './render.js';
 import { downloadLabel, printLabel, shareLabel } from './actions.js';
@@ -34,7 +37,14 @@ const {
   hardwareTypePickerList,
   connectorCategorySelect,
   componentCategoryRadios,
-  componentMountRadios,
+  componentMountSelect,
+  componentMountPicker,
+  componentMountPickerButton,
+  componentMountPickerList,
+  resistorValueSelect,
+  resistorValuePicker,
+  resistorValuePickerButton,
+  resistorValuePickerList,
   bearingTypeSelect,
   systemTypeRadios,
   fuseTypeSelect,
@@ -90,6 +100,8 @@ let boltDrivePickerOpen = false;
 let boltHeadPickerOpen = false;
 let nutTypePickerOpen = false;
 let fuseValuePickerOpen = false;
+let componentMountPickerOpen = false;
+let resistorValuePickerOpen = false;
 
 function getHardwareTypeOptionElements() {
   if (!hardwareTypePickerList) {
@@ -937,6 +949,424 @@ function handleFuseValueListFocusOut() {
   }, 0);
 }
 
+function getComponentMountOptionElements() {
+  if (!componentMountPickerList) {
+    return [];
+  }
+  return Array.from(componentMountPickerList.querySelectorAll('[role="option"]'));
+}
+
+function focusComponentMountOption(option) {
+  if (!option) {
+    return;
+  }
+  const options = getComponentMountOptionElements();
+  options.forEach(opt => {
+    opt.tabIndex = opt === option ? 0 : -1;
+  });
+  option.focus();
+  if (typeof option.scrollIntoView === 'function') {
+    option.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function openComponentMountPicker() {
+  if (!componentMountPicker || !componentMountPickerButton || !componentMountPickerList) {
+    return;
+  }
+  if (componentMountPickerButton.disabled) {
+    return;
+  }
+  if (componentMountPickerOpen) {
+    return;
+  }
+  componentMountPickerOpen = true;
+  componentMountPicker.classList.add('is-open');
+  componentMountPickerList.hidden = false;
+  componentMountPickerButton.setAttribute('aria-expanded', 'true');
+
+  const options = getComponentMountOptionElements();
+  const currentValue = typeof state.componentMount === 'string' ? state.componentMount : '';
+  const selectedOption = options.find(option => option.dataset.value === currentValue);
+  focusComponentMountOption(selectedOption || options[0]);
+}
+
+function closeComponentMountPicker({ focusButton = false } = {}) {
+  if (!componentMountPicker || !componentMountPickerButton || !componentMountPickerList) {
+    return;
+  }
+  if (!componentMountPickerOpen) {
+    if (focusButton && !componentMountPickerButton.disabled) {
+      componentMountPickerButton.focus();
+    }
+    return;
+  }
+  componentMountPickerOpen = false;
+  componentMountPicker.classList.remove('is-open');
+  componentMountPickerList.hidden = true;
+  componentMountPickerButton.setAttribute('aria-expanded', 'false');
+  if (focusButton && !componentMountPickerButton.disabled) {
+    componentMountPickerButton.focus();
+  }
+}
+
+function toggleComponentMountPicker() {
+  if (componentMountPickerOpen) {
+    closeComponentMountPicker({ focusButton: false });
+  } else {
+    openComponentMountPicker();
+  }
+}
+
+function moveComponentMountOption(delta) {
+  if (!componentMountPickerList) {
+    return;
+  }
+  const options = getComponentMountOptionElements();
+  if (options.length === 0) {
+    return;
+  }
+  const active = document.activeElement;
+  const activeOption = active && componentMountPickerList.contains(active)
+    ? active.closest('[role="option"]')
+    : null;
+  let index = activeOption ? options.indexOf(activeOption) : -1;
+  if (index === -1) {
+    const currentValue = typeof state.componentMount === 'string' ? state.componentMount : '';
+    index = options.findIndex(option => option.dataset.value === currentValue);
+  }
+  let nextIndex = index + delta;
+  if (nextIndex < 0) {
+    nextIndex = options.length - 1;
+  } else if (nextIndex >= options.length) {
+    nextIndex = 0;
+  }
+  const nextOption = options[nextIndex];
+  if (nextOption) {
+    focusComponentMountOption(nextOption);
+  }
+}
+
+function handleComponentMountButtonKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    openComponentMountPicker();
+    moveComponentMountOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    openComponentMountPicker();
+    moveComponentMountOption(-1);
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    toggleComponentMountPicker();
+    return;
+  }
+  if (key === 'Escape' && componentMountPickerOpen) {
+    event.preventDefault();
+    closeComponentMountPicker({ focusButton: true });
+  }
+}
+
+function handleComponentMountListKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    moveComponentMountOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    moveComponentMountOption(-1);
+    return;
+  }
+  if (key === 'Home') {
+    event.preventDefault();
+    const options = getComponentMountOptionElements();
+    if (options.length > 0) {
+      focusComponentMountOption(options[0]);
+    }
+    return;
+  }
+  if (key === 'End') {
+    event.preventDefault();
+    const options = getComponentMountOptionElements();
+    if (options.length > 0) {
+      focusComponentMountOption(options[options.length - 1]);
+    }
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    const target = event.target;
+    if (target && target instanceof HTMLElement) {
+      const option = target.closest('[role="option"]');
+      if (option) {
+        setComponentMountSelection(option.dataset.value || '');
+        closeComponentMountPicker({ focusButton: true });
+      }
+    }
+    return;
+  }
+  if (key === 'Escape') {
+    event.preventDefault();
+    closeComponentMountPicker({ focusButton: true });
+    return;
+  }
+  if (key === 'Tab') {
+    closeComponentMountPicker();
+  }
+}
+
+function handleComponentMountListClick(event) {
+  if (!componentMountPickerList) {
+    return;
+  }
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+  const option = target.closest('[role="option"]');
+  if (!option || !componentMountPickerList.contains(option)) {
+    return;
+  }
+  event.preventDefault();
+  setComponentMountSelection(option.dataset.value || '');
+  closeComponentMountPicker({ focusButton: true });
+}
+
+function handleComponentMountListFocusOut() {
+  if (!componentMountPickerOpen) {
+    return;
+  }
+  setTimeout(() => {
+    if (!componentMountPickerOpen) {
+      return;
+    }
+    if (!componentMountPicker) {
+      closeComponentMountPicker();
+      return;
+    }
+    const active = document.activeElement;
+    if (!active || !componentMountPicker.contains(active)) {
+      closeComponentMountPicker();
+    }
+  }, 0);
+}
+
+function getResistorValueOptionElements() {
+  if (!resistorValuePickerList) {
+    return [];
+  }
+  return Array.from(resistorValuePickerList.querySelectorAll('[role="option"]'));
+}
+
+function focusResistorValueOption(option) {
+  if (!option) {
+    return;
+  }
+  const options = getResistorValueOptionElements();
+  options.forEach(opt => {
+    opt.tabIndex = opt === option ? 0 : -1;
+  });
+  option.focus();
+  if (typeof option.scrollIntoView === 'function') {
+    option.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function openResistorValuePicker() {
+  if (!resistorValuePicker || !resistorValuePickerButton || !resistorValuePickerList) {
+    return;
+  }
+  if (resistorValuePickerButton.disabled) {
+    return;
+  }
+  if (resistorValuePickerOpen) {
+    return;
+  }
+  resistorValuePickerOpen = true;
+  resistorValuePicker.classList.add('is-open');
+  resistorValuePickerList.hidden = false;
+  resistorValuePickerButton.setAttribute('aria-expanded', 'true');
+
+  const options = getResistorValueOptionElements();
+  const currentValue = typeof state.resistorValue === 'string' ? state.resistorValue : '';
+  const selectedOption = options.find(option => option.dataset.value === currentValue);
+  focusResistorValueOption(selectedOption || options[0]);
+}
+
+function closeResistorValuePicker({ focusButton = false } = {}) {
+  if (!resistorValuePicker || !resistorValuePickerButton || !resistorValuePickerList) {
+    return;
+  }
+  if (!resistorValuePickerOpen) {
+    if (focusButton && !resistorValuePickerButton.disabled) {
+      resistorValuePickerButton.focus();
+    }
+    return;
+  }
+  resistorValuePickerOpen = false;
+  resistorValuePicker.classList.remove('is-open');
+  resistorValuePickerList.hidden = true;
+  resistorValuePickerButton.setAttribute('aria-expanded', 'false');
+  if (focusButton && !resistorValuePickerButton.disabled) {
+    resistorValuePickerButton.focus();
+  }
+}
+
+function toggleResistorValuePicker() {
+  if (resistorValuePickerOpen) {
+    closeResistorValuePicker({ focusButton: false });
+  } else {
+    openResistorValuePicker();
+  }
+}
+
+function moveResistorValueOption(delta) {
+  if (!resistorValuePickerList) {
+    return;
+  }
+  const options = getResistorValueOptionElements();
+  if (options.length === 0) {
+    return;
+  }
+  const active = document.activeElement;
+  const activeOption = active && resistorValuePickerList.contains(active)
+    ? active.closest('[role="option"]')
+    : null;
+  let index = activeOption ? options.indexOf(activeOption) : -1;
+  if (index === -1) {
+    const currentValue = typeof state.resistorValue === 'string' ? state.resistorValue : '';
+    index = options.findIndex(option => option.dataset.value === currentValue);
+  }
+  let nextIndex = index + delta;
+  if (nextIndex < 0) {
+    nextIndex = options.length - 1;
+  } else if (nextIndex >= options.length) {
+    nextIndex = 0;
+  }
+  const nextOption = options[nextIndex];
+  if (nextOption) {
+    focusResistorValueOption(nextOption);
+  }
+}
+
+function handleResistorValueButtonKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    openResistorValuePicker();
+    moveResistorValueOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    openResistorValuePicker();
+    moveResistorValueOption(-1);
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    toggleResistorValuePicker();
+    return;
+  }
+  if (key === 'Escape' && resistorValuePickerOpen) {
+    event.preventDefault();
+    closeResistorValuePicker({ focusButton: true });
+  }
+}
+
+function handleResistorValueListKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    moveResistorValueOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    moveResistorValueOption(-1);
+    return;
+  }
+  if (key === 'Home') {
+    event.preventDefault();
+    const options = getResistorValueOptionElements();
+    if (options.length > 0) {
+      focusResistorValueOption(options[0]);
+    }
+    return;
+  }
+  if (key === 'End') {
+    event.preventDefault();
+    const options = getResistorValueOptionElements();
+    if (options.length > 0) {
+      focusResistorValueOption(options[options.length - 1]);
+    }
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    const target = event.target;
+    if (target && target instanceof HTMLElement) {
+      const option = target.closest('[role="option"]');
+      if (option) {
+        setResistorValueSelection(option.dataset.value || '');
+        closeResistorValuePicker({ focusButton: true });
+      }
+    }
+    return;
+  }
+  if (key === 'Escape') {
+    event.preventDefault();
+    closeResistorValuePicker({ focusButton: true });
+    return;
+  }
+  if (key === 'Tab') {
+    closeResistorValuePicker();
+  }
+}
+
+function handleResistorValueListClick(event) {
+  if (!resistorValuePickerList) {
+    return;
+  }
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+  const option = target.closest('[role="option"]');
+  if (!option || !resistorValuePickerList.contains(option)) {
+    return;
+  }
+  event.preventDefault();
+  setResistorValueSelection(option.dataset.value || '');
+  closeResistorValuePicker({ focusButton: true });
+}
+
+function handleResistorValueListFocusOut() {
+  if (!resistorValuePickerOpen) {
+    return;
+  }
+  setTimeout(() => {
+    if (!resistorValuePickerOpen) {
+      return;
+    }
+    if (!resistorValuePicker) {
+      closeResistorValuePicker();
+      return;
+    }
+    const active = document.activeElement;
+    if (!active || !resistorValuePicker.contains(active)) {
+      closeResistorValuePicker();
+    }
+  }, 0);
+}
+
 function getBoltDriveOptionElements() {
   if (!boltDrivePickerList) {
     return [];
@@ -1613,6 +2043,16 @@ function handleDocumentPointer(event) {
       closeFuseValuePicker();
     }
   }
+  if (componentMountPickerOpen && componentMountPicker) {
+    if (!(target instanceof Node) || !componentMountPicker.contains(target)) {
+      closeComponentMountPicker();
+    }
+  }
+  if (resistorValuePickerOpen && resistorValuePicker) {
+    if (!(target instanceof Node) || !resistorValuePicker.contains(target)) {
+      closeResistorValuePicker();
+    }
+  }
 }
 
 function handleDocumentFocusIn(event) {
@@ -1650,6 +2090,16 @@ function handleDocumentFocusIn(event) {
   if (fuseValuePickerOpen && fuseValuePicker) {
     if (!(target instanceof Node) || !fuseValuePicker.contains(target)) {
       closeFuseValuePicker();
+    }
+  }
+  if (componentMountPickerOpen && componentMountPicker) {
+    if (!(target instanceof Node) || !componentMountPicker.contains(target)) {
+      closeComponentMountPicker();
+    }
+  }
+  if (resistorValuePickerOpen && resistorValuePicker) {
+    if (!(target instanceof Node) || !resistorValuePicker.contains(target)) {
+      closeResistorValuePicker();
     }
   }
 }
@@ -1729,21 +2179,46 @@ export function initEventHandlers() {
     radio.addEventListener('change', () => {
       if (radio.checked) {
         state.componentCategory = radio.value;
+        updateComponentValueUi({ resetIfHidden: true });
         updateDownloadState();
         updatePreview();
       }
     });
   });
 
-  componentMountRadios.forEach(radio => {
-    radio.addEventListener('change', () => {
-      if (radio.checked) {
-        state.componentMount = radio.value;
-        updateDownloadState();
-        updatePreview();
-      }
+  if (componentMountSelect) {
+    componentMountSelect.addEventListener('change', () => {
+      setComponentMountSelection(componentMountSelect.value);
     });
-  });
+  }
+
+  if (componentMountPickerButton && componentMountPickerList) {
+    componentMountPickerButton.addEventListener('click', event => {
+      event.preventDefault();
+      toggleComponentMountPicker();
+    });
+    componentMountPickerButton.addEventListener('keydown', handleComponentMountButtonKeydown);
+    componentMountPickerList.addEventListener('click', handleComponentMountListClick);
+    componentMountPickerList.addEventListener('keydown', handleComponentMountListKeydown);
+    componentMountPickerList.addEventListener('focusout', handleComponentMountListFocusOut);
+  }
+
+  if (resistorValueSelect) {
+    resistorValueSelect.addEventListener('change', () => {
+      setResistorValueSelection(resistorValueSelect.value);
+    });
+  }
+
+  if (resistorValuePickerButton && resistorValuePickerList) {
+    resistorValuePickerButton.addEventListener('click', event => {
+      event.preventDefault();
+      toggleResistorValuePicker();
+    });
+    resistorValuePickerButton.addEventListener('keydown', handleResistorValueButtonKeydown);
+    resistorValuePickerList.addEventListener('click', handleResistorValueListClick);
+    resistorValuePickerList.addEventListener('keydown', handleResistorValueListKeydown);
+    resistorValuePickerList.addEventListener('focusout', handleResistorValueListFocusOut);
+  }
 
   if (bearingTypeSelect) {
     bearingTypeSelect.addEventListener('change', () => {
@@ -1944,7 +2419,9 @@ export function initEventHandlers() {
     boltDrivePicker ||
     boltHeadPicker ||
     nutTypePicker ||
-    fuseValuePicker
+    fuseValuePicker ||
+    componentMountPicker ||
+    resistorValuePicker
   ) {
     document.addEventListener('pointerdown', handleDocumentPointer);
     document.addEventListener('focusin', handleDocumentFocusIn);
@@ -1953,6 +2430,11 @@ export function initEventHandlers() {
   document.addEventListener('gridfinity:fuse-picker-close', () => {
     closeFuseTypePicker();
     closeFuseValuePicker();
+  });
+
+  document.addEventListener('gridfinity:component-picker-close', () => {
+    closeComponentMountPicker();
+    closeResistorValuePicker();
   });
 
   if (standardToggle) {

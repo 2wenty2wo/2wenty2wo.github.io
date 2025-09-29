@@ -69,9 +69,62 @@ export const electricalComponentTypes = ['Resistor', 'Capacitor', 'Diode'];
 export const componentImageMap = {
   Resistor: {
     'Through-Hole': 'images/resistors/resistor_through_hole.svg',
+    SMD: 'images/resistors/resistor_smd.svg',
     default: 'images/resistors/resistor_through_hole.svg',
   },
 };
+
+export const componentMountOptions = [
+  {
+    id: 'Through-Hole',
+    label: 'Through-Hole',
+    image: 'images/resistors/resistor_through_hole.svg',
+  },
+  { id: 'SMD', label: 'SMD', image: 'images/resistors/resistor_smd.svg' },
+];
+
+const E12_BASE_VALUES = [1, 1.2, 1.5, 1.8, 2.2, 2.7, 3.3, 3.9, 4.7, 5.6, 6.8, 8.2];
+const RESISTOR_DECADES = [0.1, 1, 10, 100, 1000, 10000, 100000, 1000000];
+
+function formatResistorValue(value) {
+  if (value === 0) {
+    return '0 Ω';
+  }
+  if (value < 1) {
+    const rounded = Math.round(value * 100) / 100;
+    return `${rounded.toString().replace(/\.0+$/, '')} Ω`;
+  }
+  if (value < 1000) {
+    const rounded = Math.round(value * 10) / 10;
+    const normalized = Number.isInteger(rounded) ? rounded.toString() : rounded.toFixed(1);
+    return `${normalized.replace(/\.0+$/, '')} Ω`;
+  }
+  if (value < 1000000) {
+    const kilo = value / 1000;
+    const rounded = Math.round(kilo * 10) / 10;
+    const normalized = Number.isInteger(rounded) ? rounded.toString() : rounded.toFixed(1);
+    return `${normalized.replace(/\.0+$/, '')} kΩ`;
+  }
+  const mega = value / 1000000;
+  const rounded = Math.round(mega * 10) / 10;
+  const normalized = Number.isInteger(rounded) ? rounded.toString() : rounded.toFixed(1);
+  return `${normalized.replace(/\.0+$/, '')} MΩ`;
+}
+
+const resistorValueSet = new Set([0]);
+RESISTOR_DECADES.forEach(multiplier => {
+  E12_BASE_VALUES.forEach(base => {
+    const value = Math.round(base * multiplier * 100) / 100;
+    resistorValueSet.add(value);
+  });
+});
+
+export const resistorValueOptions = Array.from(resistorValueSet)
+  .sort((a, b) => a - b)
+  .map(value => {
+    const label = formatResistorValue(value);
+    return { id: label, label };
+  });
 
 export const boltHeadOptions = [
   { id: 'button_head', label: 'Button Head', image: 'button_head' },

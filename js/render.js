@@ -5,6 +5,8 @@ import {
   syncBoltHeadPicker,
   syncThreadSizePicker,
   syncFuseValuePicker,
+  syncComponentMountPicker,
+  syncResistorValuePicker,
 } from './forms.js';
 import {
   pxPerMm,
@@ -70,8 +72,11 @@ const {
   componentCategoryRadios,
   componentCategoryMessage,
   componentMountContainer,
-  componentMountRadios,
+  componentMountSelect,
   componentMountMessage,
+  resistorValueField,
+  resistorValueSelect,
+  resistorValueMessage,
   customLine1Input,
   customLine1Field,
   customLine1Message,
@@ -365,6 +370,10 @@ export function isLabelReady() {
     return Boolean(state.bearingType);
   }
   if (ELECTRICAL_COMPONENT_TYPES.has(state.hardwareType)) {
+    const requiresValue = (state.componentCategory || state.hardwareType) === 'Resistor';
+    if (requiresValue) {
+      return Boolean(state.componentCategory && state.componentMount && state.resistorValue);
+    }
     return Boolean(state.componentCategory && state.componentMount);
   }
   if (state.hardwareType === 'Bolt' || state.hardwareType === 'Screw') {
@@ -590,14 +599,30 @@ function applyValidationFeedback(disabled) {
       valid: true,
     });
     const mountValid = Boolean(state.componentMount);
-    updateRadioGroupFeedback({
-      radios: componentMountRadios,
+    updateInputFieldState({
+      input: componentMountSelect,
       container: componentMountContainer,
       messageElement: componentMountMessage,
       valid: mountValid,
+      message: mountValid ? '' : 'Choose a mounting style',
     });
+    syncComponentMountPicker({ isValid: mountValid });
     if (!mountValid) {
       requirements.push('choose a mounting style');
+    }
+
+    const requiresValue = (state.componentCategory || state.hardwareType) === 'Resistor';
+    const valueValid = !requiresValue || Boolean(state.resistorValue);
+    updateInputFieldState({
+      input: resistorValueSelect,
+      container: resistorValueField,
+      messageElement: resistorValueMessage,
+      valid: valueValid,
+      message: valueValid ? '' : 'Select a resistor value',
+    });
+    syncResistorValuePicker({ isValid: valueValid });
+    if (requiresValue && !valueValid) {
+      requirements.push('select a resistor value');
     }
   } else {
     updateRadioGroupFeedback({
@@ -606,12 +631,22 @@ function applyValidationFeedback(disabled) {
       messageElement: componentCategoryMessage,
       valid: true,
     });
-    updateRadioGroupFeedback({
-      radios: componentMountRadios,
+    updateInputFieldState({
+      input: componentMountSelect,
       container: componentMountContainer,
       messageElement: componentMountMessage,
       valid: true,
+      message: '',
     });
+    syncComponentMountPicker({ isValid: true });
+    updateInputFieldState({
+      input: resistorValueSelect,
+      container: resistorValueField,
+      messageElement: resistorValueMessage,
+      valid: true,
+      message: '',
+    });
+    syncResistorValuePicker({ isValid: true });
   }
 
   if (hardwareType === 'Custom') {
@@ -1100,6 +1135,18 @@ function buildTextLines() {
   }
 
   if (ELECTRICAL_COMPONENT_TYPES.has(state.hardwareType)) {
+    const category = state.componentCategory || state.hardwareType || 'Component';
+    if (category === 'Resistor') {
+      const line1 = state.resistorValue || 'Resistor';
+      const line2Parts = [];
+      if (state.componentMount) {
+        line2Parts.push(state.componentMount);
+      }
+      if (state.notes) {
+        line2Parts.push(state.notes);
+      }
+      return { line1, line2: line2Parts.join(' — '), line3: '' };
+    }
     const parts = [];
     if (state.componentCategory) {
       parts.push(state.componentCategory);
