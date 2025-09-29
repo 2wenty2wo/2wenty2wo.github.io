@@ -9,6 +9,7 @@ import {
   boltHeadOptions,
   boltDriveOptions,
   screwTypeOptions,
+  electricalComponentTypes,
 } from './data.js';
 
 export const SHARE_QUERY_PARAM = 'label';
@@ -55,11 +56,9 @@ const fuseTypeOptions = new Set(
     ? Array.from(elements.fuseTypeSelect.options, option => option.value).filter(Boolean)
     : [],
 );
-const componentCategoryOptions = new Set(
-  Array.isArray(elements.componentCategoryRadios)
-    ? elements.componentCategoryRadios.map(radio => radio.value)
-    : [],
-);
+const ELECTRICAL_COMPONENT_TYPES = new Set(electricalComponentTypes);
+const DEFAULT_COMPONENT_TYPE = electricalComponentTypes[0] || 'Resistor';
+const componentCategoryOptions = new Set(electricalComponentTypes);
 const componentMountOptions = new Set(
   Array.isArray(elements.componentMountRadios)
     ? elements.componentMountRadios.map(radio => radio.value)
@@ -162,7 +161,7 @@ function sanitizeThreadSize(value, hardwareType) {
     hardwareType === 'Connector' ||
     hardwareType === 'Custom' ||
     hardwareType === 'Bearing' ||
-    hardwareType === 'Component'
+    ELECTRICAL_COMPONENT_TYPES.has(hardwareType)
   ) {
     return '';
   }
@@ -259,8 +258,23 @@ function expandPayload(payload) {
 }
 
 function applyExpandedPayload(expanded) {
-  if (typeof expanded.hardwareType === 'string' && hardwareTypeOptions.has(expanded.hardwareType)) {
-    state.hardwareType = expanded.hardwareType;
+  const payloadComponentCategory =
+    typeof expanded.componentCategory === 'string' &&
+    componentCategoryOptions.has(expanded.componentCategory)
+      ? expanded.componentCategory
+      : '';
+
+  if (typeof expanded.hardwareType === 'string') {
+    const trimmedType = expanded.hardwareType.trim();
+    let desiredType = trimmedType;
+    if (!hardwareTypeOptions.has(trimmedType)) {
+      if (trimmedType === 'Component') {
+        desiredType = payloadComponentCategory || DEFAULT_COMPONENT_TYPE;
+      }
+    }
+    if (hardwareTypeOptions.has(desiredType)) {
+      state.hardwareType = desiredType;
+    }
   }
   if (typeof expanded.systemType === 'string' && systemTypeOptions.has(expanded.systemType)) {
     state.systemType = expanded.systemType;
@@ -274,11 +288,8 @@ function applyExpandedPayload(expanded) {
   ) {
     state.connectorCategory = expanded.connectorCategory;
   }
-  if (
-    typeof expanded.componentCategory === 'string' &&
-    componentCategoryOptions.has(expanded.componentCategory)
-  ) {
-    state.componentCategory = expanded.componentCategory;
+  if (payloadComponentCategory) {
+    state.componentCategory = payloadComponentCategory;
   }
   if (
     typeof expanded.componentMount === 'string' &&
@@ -294,6 +305,10 @@ function applyExpandedPayload(expanded) {
     } else if (bearingCodeOptions.has(trimmed)) {
       state.bearingType = trimmed;
     }
+  }
+
+  if (ELECTRICAL_COMPONENT_TYPES.has(state.hardwareType)) {
+    state.componentCategory = state.hardwareType;
   }
 
   const sanitizedThread = sanitizeThreadSize(expanded.threadSize, state.hardwareType);

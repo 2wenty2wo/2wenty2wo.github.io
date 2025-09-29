@@ -14,6 +14,8 @@ import {
   boltDriveMap,
   nutTypeMap,
   screwTypeMap,
+  electricalComponentTypes,
+  componentImageMap,
 } from './data.js';
 import { loadQrCodeLibrary } from './lazy-loaders.js';
 
@@ -79,6 +81,8 @@ const {
   formStatusMessage,
 } = elements;
 
+const ELECTRICAL_COMPONENT_TYPES = new Set(electricalComponentTypes);
+
 const HORIZONTAL_SAFE_MARGIN_PER_SIDE_MM = 2;
 const VERTICAL_SAFE_MARGIN_PER_SIDE_MM = 1;
 const MIN_TEXT_WIDTH_MM = 9;
@@ -98,6 +102,10 @@ const fuseIllustrations = {
   Glass: {
     src: 'images/fuses/glass_fuse.svg',
     alt: 'Glass fuse illustration',
+  },
+  Ceramic: {
+    src: 'images/fuses/ceramic_fuse.svg',
+    alt: 'Ceramic fuse illustration',
   },
   Blade: {
     src: 'images/fuses/blade_fuse.svg',
@@ -356,7 +364,7 @@ export function isLabelReady() {
   if (state.hardwareType === 'Bearing') {
     return Boolean(state.bearingType);
   }
-  if (state.hardwareType === 'Component') {
+  if (ELECTRICAL_COMPONENT_TYPES.has(state.hardwareType)) {
     return Boolean(state.componentCategory && state.componentMount);
   }
   if (state.hardwareType === 'Bolt' || state.hardwareType === 'Screw') {
@@ -574,24 +582,20 @@ function applyValidationFeedback(disabled) {
     });
   }
 
-  if (hardwareType === 'Component') {
-    const categoryValid = Boolean(state.componentCategory);
-    const mountValid = Boolean(state.componentMount);
+  if (ELECTRICAL_COMPONENT_TYPES.has(hardwareType)) {
     updateRadioGroupFeedback({
       radios: componentCategoryRadios,
       container: componentCategoryContainer,
       messageElement: componentCategoryMessage,
-      valid: categoryValid,
+      valid: true,
     });
+    const mountValid = Boolean(state.componentMount);
     updateRadioGroupFeedback({
       radios: componentMountRadios,
       container: componentMountContainer,
       messageElement: componentMountMessage,
       valid: mountValid,
     });
-    if (!categoryValid) {
-      requirements.push('choose a component type');
-    }
     if (!mountValid) {
       requirements.push('choose a mounting style');
     }
@@ -712,6 +716,49 @@ function resolveHardwareImageInfo() {
       hasImage,
       src: state.customImageData || '',
       alt: state.customImageName || 'Custom image',
+    };
+  }
+  if (ELECTRICAL_COMPONENT_TYPES.has(state.hardwareType)) {
+    const categoryKey = (state.componentCategory || state.hardwareType || '').trim();
+    const mount = (state.componentMount || '').trim();
+    const imageGroup =
+      componentImageMap[categoryKey] || componentImageMap[state.hardwareType] || null;
+    if (!imageGroup) {
+      return null;
+    }
+    let imageSrc = '';
+    if (mount && imageGroup[mount]) {
+      imageSrc = imageGroup[mount];
+    }
+    if (!imageSrc && mount) {
+      const normalizedMount = mount.toLowerCase();
+      imageSrc =
+        imageGroup[normalizedMount] ||
+        imageGroup[normalizedMount.replace(/\s+/g, '')] ||
+        imageGroup[normalizedMount.replace(/[-\s]+/g, '_')];
+    }
+    if (!imageSrc) {
+      imageSrc =
+        imageGroup.default || imageGroup['Through-Hole'] || imageGroup['through-hole'] || '';
+    }
+    if (!imageSrc) {
+      return null;
+    }
+    const altParts = [];
+    if (categoryKey) {
+      altParts.push(categoryKey);
+    }
+    if (mount) {
+      altParts.push(`${mount} mounting`);
+    }
+    const alt =
+      altParts.length > 0
+        ? `${altParts.join(' — ')} illustration`
+        : 'Component illustration';
+    return {
+      type: 'photo',
+      src: imageSrc,
+      alt,
     };
   }
   if (state.hardwareType === 'Bolt') {
@@ -1052,7 +1099,7 @@ function buildTextLines() {
     return { line1, line2, line3 };
   }
 
-  if (state.hardwareType === 'Component') {
+  if (ELECTRICAL_COMPONENT_TYPES.has(state.hardwareType)) {
     const parts = [];
     if (state.componentCategory) {
       parts.push(state.componentCategory);
@@ -1060,7 +1107,8 @@ function buildTextLines() {
     if (state.componentMount) {
       parts.push(state.componentMount);
     }
-    const line1 = parts.join(' — ') || 'Component';
+    const fallbackLabel = state.hardwareType || 'Component';
+    const line1 = parts.join(' — ') || fallbackLabel;
     const line2 = state.notes || '';
     return { line1, line2, line3: '' };
   }
