@@ -406,14 +406,52 @@
                   ></div>
                 </div>
                 <div id="bearing-options-container" class="d-none">
-                  <label for="bearing-type-select" class="form-label fw-semibold"
+                  <label
+                    for="bearing-type-picker-button"
+                    class="form-label fw-semibold"
                     >Bearing Selection</label
                   >
-                  <select
-                    id="bearing-type-select"
-                    class="form-select"
-                    aria-describedby="bearing-type-message"
-                  ></select>
+                  <div class="bolt-drive-picker" id="bearing-type-picker">
+                    <select
+                      id="bearing-type-select"
+                      class="visually-hidden"
+                      aria-describedby="bearing-type-message"
+                    ></select>
+                    <button
+                      type="button"
+                      class="bolt-drive-picker__button"
+                      id="bearing-type-picker-button"
+                      aria-haspopup="listbox"
+                      aria-expanded="false"
+                      aria-controls="bearing-type-picker-list"
+                      disabled
+                    >
+                      <span class="bolt-drive-picker__current">
+                        <span
+                          class="bolt-drive-picker__current-icon is-empty"
+                          aria-hidden="true"
+                        >
+                          <img
+                            class="bolt-drive-picker__current-icon-image"
+                            src=""
+                            alt=""
+                            hidden
+                          />
+                        </span>
+                        <span class="bolt-drive-picker__current-label"
+                          >Select bearing…</span
+                        >
+                      </span>
+                      <span class="bolt-drive-picker__chevron" aria-hidden="true"></span>
+                    </button>
+                    <ul
+                      class="bolt-drive-picker__list"
+                      id="bearing-type-picker-list"
+                      role="listbox"
+                      aria-labelledby="bearing-type-picker-button"
+                      hidden
+                    ></ul>
+                  </div>
                   <div class="form-text">
                     Common miniature and deep-groove bearings used in hobby projects.
                   </div>

@@ -65,6 +65,9 @@ const capacitorValuePickerList = document.getElementById('capacitor-value-picker
 const capacitorValueSelect = document.getElementById('capacitor-value-select');
 const capacitorValueMessage = document.getElementById('capacitor-value-message');
 const bearingOptionsContainer = document.getElementById('bearing-options-container');
+const bearingTypePicker = document.getElementById('bearing-type-picker');
+const bearingTypePickerButton = document.getElementById('bearing-type-picker-button');
+const bearingTypePickerList = document.getElementById('bearing-type-picker-list');
 const bearingTypeSelect = document.getElementById('bearing-type-select');
 const bearingTypeMessage = document.getElementById('bearing-type-message');
 const customFieldsContainer = document.getElementById('custom-fields');
@@ -211,6 +214,9 @@ export const elements = {
   capacitorValueSelect,
   capacitorValueMessage,
   bearingOptionsContainer,
+  bearingTypePicker,
+  bearingTypePickerButton,
+  bearingTypePickerList,
   bearingTypeSelect,
   bearingTypeMessage,
   customFieldsContainer,

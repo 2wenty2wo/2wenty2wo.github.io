@@ -8,6 +8,7 @@ import {
   syncComponentMountPicker,
   syncResistorValuePicker,
   syncCapacitorValuePicker,
+  syncBearingTypePicker,
 } from './forms.js';
 import {
   pxPerMm,
@@ -589,6 +590,7 @@ function applyValidationFeedback(disabled) {
       messageElement: bearingTypeMessage,
       valid,
     });
+    syncBearingTypePicker({ isValid: valid });
     if (!valid) {
       requirements.push('select a bearing');
     }
@@ -599,6 +601,7 @@ function applyValidationFeedback(disabled) {
       messageElement: bearingTypeMessage,
       valid: true,
     });
+    syncBearingTypePicker({ isValid: true });
   }
 
   if (ELECTRICAL_COMPONENT_TYPES.has(hardwareType)) {

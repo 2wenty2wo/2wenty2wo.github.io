@@ -74,6 +74,9 @@ const {
   capacitorValuePickerList,
   capacitorValueSelect,
   bearingOptionsContainer,
+  bearingTypePicker,
+  bearingTypePickerButton,
+  bearingTypePickerList,
   bearingTypeSelect,
   customFieldsContainer,
   customImageInput,
@@ -129,6 +132,8 @@ const RESISTOR_VALUE_PLACEHOLDER_TEXT = 'Select value…';
 const validResistorValues = new Set(resistorValueOptions.map(option => option.id));
 const CAPACITOR_VALUE_PLACEHOLDER_TEXT = 'Select value…';
 const validCapacitorValues = new Set(capacitorValueOptions.map(option => option.id));
+const BEARING_TYPE_PLACEHOLDER_TEXT = 'Select bearing…';
+const validBearingCodes = new Set(bearingOptions.map(option => option.code));
 
 function getFastenerHeadOptions() {
   return state.hardwareType === 'Screw' ? screwTypeOptions : boltHeadOptions;
@@ -1344,35 +1349,169 @@ export function populateConnectorCategories() {
   connectorCategorySelect.value = state.connectorCategory || '';
 }
 
+function findBearingOption(code) {
+  if (!code) {
+    return null;
+  }
+  return bearingOptions.find(option => option.code === code) || null;
+}
+
+export function syncBearingTypePicker({ isValid = true } = {}) {
+  const currentValue = typeof state.bearingType === 'string' ? state.bearingType.trim() : '';
+  const sanitizedValue = validBearingCodes.has(currentValue) ? currentValue : '';
+  const optionElement =
+    sanitizedValue && bearingTypeSelect
+      ? bearingTypeSelect.querySelector(`option[value="${sanitizedValue}"]`)
+      : null;
+  const labelText = optionElement
+    ? optionElement.textContent.trim()
+    : BEARING_TYPE_PLACEHOLDER_TEXT;
+
+  if (bearingTypeSelect) {
+    bearingTypeSelect.value = sanitizedValue;
+  }
+
+  if (bearingTypePickerButton) {
+    const label = bearingTypePickerButton.querySelector('.bolt-drive-picker__current-label');
+    if (label) {
+      label.textContent = labelText;
+    }
+    const iconWrapper = bearingTypePickerButton.querySelector('.bolt-drive-picker__current-icon');
+    const iconImage = bearingTypePickerButton.querySelector(
+      '.bolt-drive-picker__current-icon-image',
+    );
+    if (iconWrapper) {
+      if (iconImage) {
+        if (sanitizedValue) {
+          iconImage.src = 'images/bearings/bearing.svg';
+          iconImage.hidden = false;
+          iconWrapper.classList.remove('is-empty');
+        } else {
+          iconImage.hidden = true;
+          iconImage.removeAttribute('src');
+          iconWrapper.classList.add('is-empty');
+        }
+      } else if (!sanitizedValue) {
+        iconWrapper.classList.add('is-empty');
+      }
+    }
+
+    if (isValid) {
+      bearingTypePickerButton.classList.remove('is-invalid');
+      bearingTypePickerButton.removeAttribute('aria-invalid');
+    } else {
+      bearingTypePickerButton.classList.add('is-invalid');
+      bearingTypePickerButton.setAttribute('aria-invalid', 'true');
+    }
+  }
+
+  if (bearingTypePicker) {
+    bearingTypePicker.classList.toggle('is-invalid', !isValid);
+  }
+
+  if (bearingTypePickerList) {
+    const optionElements = Array.from(bearingTypePickerList.querySelectorAll('[role="option"]'));
+    optionElements.forEach(option => {
+      const isSelected = option.dataset.value === sanitizedValue;
+      option.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      option.classList.toggle('is-selected', isSelected);
+      option.tabIndex = -1;
+    });
+  }
+}
+
+export function setBearingTypeSelection(nextCode, { triggerUpdate = true } = {}) {
+  const desiredValue = typeof nextCode === 'string' ? nextCode.trim() : '';
+  const sanitizedValue = validBearingCodes.has(desiredValue) ? desiredValue : '';
+  const previousValue = typeof state.bearingType === 'string' ? state.bearingType : '';
+  const optionData = findBearingOption(sanitizedValue);
+
+  state.bearingType = sanitizedValue;
+  state.bearingDetails = optionData ? optionData.description : '';
+
+  syncBearingTypePicker({ isValid: true });
+
+  if (triggerUpdate && previousValue !== sanitizedValue) {
+    updatePreview();
+    updateDownloadState();
+  }
+}
+
 export function populateBearingOptions() {
   if (!bearingTypeSelect) {
+    state.bearingType = '';
+    state.bearingDetails = '';
     return;
   }
+
+  const previousValue = typeof state.bearingType === 'string' ? state.bearingType : '';
+  const sanitizedValue = validBearingCodes.has(previousValue) ? previousValue : '';
+
   bearingTypeSelect.innerHTML = '';
+  if (bearingTypePickerList) {
+    bearingTypePickerList.innerHTML = '';
+  }
+
   const placeholder = document.createElement('option');
   placeholder.value = '';
-  placeholder.textContent = 'Select bearing…';
+  placeholder.textContent = BEARING_TYPE_PLACEHOLDER_TEXT;
   placeholder.disabled = true;
-  placeholder.selected = !state.bearingType;
+  placeholder.selected = !sanitizedValue;
   bearingTypeSelect.appendChild(placeholder);
+
   bearingOptions.forEach(option => {
     const opt = document.createElement('option');
     opt.value = option.code;
     opt.textContent = `${option.code} — ${option.description}`;
     opt.dataset.description = option.description;
     bearingTypeSelect.appendChild(opt);
+
+    if (bearingTypePickerList) {
+      const item = document.createElement('li');
+      item.className = 'bolt-drive-picker__option';
+      item.dataset.value = option.code;
+      item.setAttribute('role', 'option');
+      item.tabIndex = -1;
+
+      const icon = document.createElement('span');
+      icon.className = 'bolt-drive-picker__option-icon';
+
+      const image = document.createElement('img');
+      image.className = 'bolt-drive-picker__option-icon-image';
+      image.src = 'images/bearings/bearing.svg';
+      image.alt = '';
+      image.loading = 'lazy';
+      image.decoding = 'async';
+      icon.appendChild(image);
+
+      const label = document.createElement('span');
+      label.className = 'bolt-drive-picker__option-label';
+      label.textContent = `${option.code} — ${option.description}`;
+
+      item.appendChild(icon);
+      item.appendChild(label);
+
+      bearingTypePickerList.appendChild(item);
+    }
   });
-  const validCodes = new Set(bearingOptions.map(option => option.code));
-  const desired = typeof state.bearingType === 'string' ? state.bearingType : '';
-  if (desired && validCodes.has(desired)) {
-    bearingTypeSelect.value = desired;
-    const selectedOption = bearingOptions.find(option => option.code === desired);
-    state.bearingDetails = selectedOption ? selectedOption.description : state.bearingDetails;
-  } else {
-    bearingTypeSelect.value = '';
-    state.bearingType = '';
-    state.bearingDetails = '';
+
+  const selectedOption = findBearingOption(sanitizedValue);
+  state.bearingType = sanitizedValue;
+  state.bearingDetails = selectedOption ? selectedOption.description : '';
+
+  if (bearingTypePickerButton) {
+    bearingTypePickerButton.disabled = bearingOptions.length === 0;
+    bearingTypePickerButton.setAttribute('aria-expanded', 'false');
   }
+  if (bearingTypePickerList) {
+    bearingTypePickerList.hidden = true;
+  }
+  if (bearingTypePicker) {
+    bearingTypePicker.classList.toggle('is-disabled', bearingOptions.length === 0);
+    bearingTypePicker.classList.remove('is-open');
+  }
+
+  syncBearingTypePicker({ isValid: true });
 }
 
 function ensureConnectorCategory() {
@@ -2072,9 +2211,25 @@ export function onHardwareTypeChange() {
   }
   if (bearingTypeSelect) {
     bearingTypeSelect.disabled = !showBearingFields;
-    if (showBearingFields) {
-      bearingTypeSelect.value = state.bearingType || '';
+  }
+  if (bearingTypePickerButton) {
+    bearingTypePickerButton.disabled = !showBearingFields || bearingOptions.length === 0;
+    if (!showBearingFields) {
+      bearingTypePickerButton.setAttribute('aria-expanded', 'false');
     }
+  }
+  if (bearingTypePickerList) {
+    bearingTypePickerList.hidden = true;
+  }
+  if (bearingTypePicker) {
+    if (!showBearingFields) {
+      bearingTypePicker.classList.remove('is-open');
+    }
+    const isDisabled = !showBearingFields || bearingOptions.length === 0;
+    bearingTypePicker.classList.toggle('is-disabled', isDisabled);
+  }
+  if (showBearingFields) {
+    syncBearingTypePicker({ isValid: true });
   }
 
   if (customFieldsContainer) {
