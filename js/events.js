@@ -24,6 +24,7 @@ import {
   syncFuseValuePicker,
   setComponentMountSelection,
   setResistorValueSelection,
+  setCapacitorValueSelection,
   updateComponentValueUi,
 } from './forms.js';
 import { updatePreview, updateDownloadState, updateQrContentVisibility } from './render.js';
@@ -45,6 +46,10 @@ const {
   resistorValuePicker,
   resistorValuePickerButton,
   resistorValuePickerList,
+  capacitorValueSelect,
+  capacitorValuePicker,
+  capacitorValuePickerButton,
+  capacitorValuePickerList,
   bearingTypeSelect,
   systemTypeRadios,
   fuseTypeSelect,
@@ -102,6 +107,7 @@ let nutTypePickerOpen = false;
 let fuseValuePickerOpen = false;
 let componentMountPickerOpen = false;
 let resistorValuePickerOpen = false;
+let capacitorValuePickerOpen = false;
 
 function getHardwareTypeOptionElements() {
   if (!hardwareTypePickerList) {
@@ -1367,6 +1373,215 @@ function handleResistorValueListFocusOut() {
   }, 0);
 }
 
+function getCapacitorValueOptionElements() {
+  if (!capacitorValuePickerList) {
+    return [];
+  }
+  return Array.from(capacitorValuePickerList.querySelectorAll('[role="option"]'));
+}
+
+function focusCapacitorValueOption(option) {
+  if (!option) {
+    return;
+  }
+  const options = getCapacitorValueOptionElements();
+  options.forEach(opt => {
+    opt.tabIndex = opt === option ? 0 : -1;
+  });
+  option.focus();
+  if (typeof option.scrollIntoView === 'function') {
+    option.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function openCapacitorValuePicker() {
+  if (!capacitorValuePicker || !capacitorValuePickerButton || !capacitorValuePickerList) {
+    return;
+  }
+  if (capacitorValuePickerButton.disabled) {
+    return;
+  }
+  if (capacitorValuePickerOpen) {
+    return;
+  }
+  capacitorValuePickerOpen = true;
+  capacitorValuePicker.classList.add('is-open');
+  capacitorValuePickerList.hidden = false;
+  capacitorValuePickerButton.setAttribute('aria-expanded', 'true');
+
+  const options = getCapacitorValueOptionElements();
+  const currentValue = typeof state.capacitorValue === 'string' ? state.capacitorValue : '';
+  const selectedOption = options.find(option => option.dataset.value === currentValue);
+  focusCapacitorValueOption(selectedOption || options[0]);
+}
+
+function closeCapacitorValuePicker({ focusButton = false } = {}) {
+  if (!capacitorValuePicker || !capacitorValuePickerButton || !capacitorValuePickerList) {
+    return;
+  }
+  if (!capacitorValuePickerOpen) {
+    if (focusButton && !capacitorValuePickerButton.disabled) {
+      capacitorValuePickerButton.focus();
+    }
+    return;
+  }
+  capacitorValuePickerOpen = false;
+  capacitorValuePicker.classList.remove('is-open');
+  capacitorValuePickerList.hidden = true;
+  capacitorValuePickerButton.setAttribute('aria-expanded', 'false');
+  if (focusButton && !capacitorValuePickerButton.disabled) {
+    capacitorValuePickerButton.focus();
+  }
+}
+
+function toggleCapacitorValuePicker() {
+  if (capacitorValuePickerOpen) {
+    closeCapacitorValuePicker({ focusButton: false });
+  } else {
+    openCapacitorValuePicker();
+  }
+}
+
+function moveCapacitorValueOption(delta) {
+  if (!capacitorValuePickerList) {
+    return;
+  }
+  const options = getCapacitorValueOptionElements();
+  if (options.length === 0) {
+    return;
+  }
+  const active = document.activeElement;
+  const activeOption = active && capacitorValuePickerList.contains(active)
+    ? active.closest('[role="option"]')
+    : null;
+  let index = activeOption ? options.indexOf(activeOption) : -1;
+  if (index === -1) {
+    const currentValue = typeof state.capacitorValue === 'string' ? state.capacitorValue : '';
+    index = options.findIndex(option => option.dataset.value === currentValue);
+  }
+  let nextIndex = index + delta;
+  if (nextIndex < 0) {
+    nextIndex = options.length - 1;
+  } else if (nextIndex >= options.length) {
+    nextIndex = 0;
+  }
+  const nextOption = options[nextIndex];
+  if (nextOption) {
+    focusCapacitorValueOption(nextOption);
+  }
+}
+
+function handleCapacitorValueButtonKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    openCapacitorValuePicker();
+    moveCapacitorValueOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    openCapacitorValuePicker();
+    moveCapacitorValueOption(-1);
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    toggleCapacitorValuePicker();
+    return;
+  }
+  if (key === 'Escape' && capacitorValuePickerOpen) {
+    event.preventDefault();
+    closeCapacitorValuePicker({ focusButton: true });
+  }
+}
+
+function handleCapacitorValueListKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    moveCapacitorValueOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    moveCapacitorValueOption(-1);
+    return;
+  }
+  if (key === 'Home') {
+    event.preventDefault();
+    const options = getCapacitorValueOptionElements();
+    if (options.length > 0) {
+      focusCapacitorValueOption(options[0]);
+    }
+    return;
+  }
+  if (key === 'End') {
+    event.preventDefault();
+    const options = getCapacitorValueOptionElements();
+    if (options.length > 0) {
+      focusCapacitorValueOption(options[options.length - 1]);
+    }
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    const target = event.target;
+    if (target && target instanceof HTMLElement) {
+      const option = target.closest('[role="option"]');
+      if (option) {
+        setCapacitorValueSelection(option.dataset.value || '');
+        closeCapacitorValuePicker({ focusButton: true });
+      }
+    }
+    return;
+  }
+  if (key === 'Escape') {
+    event.preventDefault();
+    closeCapacitorValuePicker({ focusButton: true });
+    return;
+  }
+  if (key === 'Tab') {
+    closeCapacitorValuePicker();
+  }
+}
+
+function handleCapacitorValueListClick(event) {
+  if (!capacitorValuePickerList) {
+    return;
+  }
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+  const option = target.closest('[role="option"]');
+  if (!option || !capacitorValuePickerList.contains(option)) {
+    return;
+  }
+  event.preventDefault();
+  setCapacitorValueSelection(option.dataset.value || '');
+  closeCapacitorValuePicker({ focusButton: true });
+}
+
+function handleCapacitorValueListFocusOut() {
+  if (!capacitorValuePickerOpen) {
+    return;
+  }
+  setTimeout(() => {
+    if (!capacitorValuePickerOpen) {
+      return;
+    }
+    if (!capacitorValuePicker) {
+      closeCapacitorValuePicker();
+      return;
+    }
+    const active = document.activeElement;
+    if (!active || !capacitorValuePicker.contains(active)) {
+      closeCapacitorValuePicker();
+    }
+  }, 0);
+}
+
 function getBoltDriveOptionElements() {
   if (!boltDrivePickerList) {
     return [];
@@ -2053,6 +2268,11 @@ function handleDocumentPointer(event) {
       closeResistorValuePicker();
     }
   }
+  if (capacitorValuePickerOpen && capacitorValuePicker) {
+    if (!(target instanceof Node) || !capacitorValuePicker.contains(target)) {
+      closeCapacitorValuePicker();
+    }
+  }
 }
 
 function handleDocumentFocusIn(event) {
@@ -2100,6 +2320,11 @@ function handleDocumentFocusIn(event) {
   if (resistorValuePickerOpen && resistorValuePicker) {
     if (!(target instanceof Node) || !resistorValuePicker.contains(target)) {
       closeResistorValuePicker();
+    }
+  }
+  if (capacitorValuePickerOpen && capacitorValuePicker) {
+    if (!(target instanceof Node) || !capacitorValuePicker.contains(target)) {
+      closeCapacitorValuePicker();
     }
   }
 }
@@ -2218,6 +2443,23 @@ export function initEventHandlers() {
     resistorValuePickerList.addEventListener('click', handleResistorValueListClick);
     resistorValuePickerList.addEventListener('keydown', handleResistorValueListKeydown);
     resistorValuePickerList.addEventListener('focusout', handleResistorValueListFocusOut);
+  }
+
+  if (capacitorValueSelect) {
+    capacitorValueSelect.addEventListener('change', () => {
+      setCapacitorValueSelection(capacitorValueSelect.value);
+    });
+  }
+
+  if (capacitorValuePickerButton && capacitorValuePickerList) {
+    capacitorValuePickerButton.addEventListener('click', event => {
+      event.preventDefault();
+      toggleCapacitorValuePicker();
+    });
+    capacitorValuePickerButton.addEventListener('keydown', handleCapacitorValueButtonKeydown);
+    capacitorValuePickerList.addEventListener('click', handleCapacitorValueListClick);
+    capacitorValuePickerList.addEventListener('keydown', handleCapacitorValueListKeydown);
+    capacitorValuePickerList.addEventListener('focusout', handleCapacitorValueListFocusOut);
   }
 
   if (bearingTypeSelect) {
@@ -2421,7 +2663,8 @@ export function initEventHandlers() {
     nutTypePicker ||
     fuseValuePicker ||
     componentMountPicker ||
-    resistorValuePicker
+    resistorValuePicker ||
+    capacitorValuePicker
   ) {
     document.addEventListener('pointerdown', handleDocumentPointer);
     document.addEventListener('focusin', handleDocumentFocusIn);
@@ -2435,6 +2678,7 @@ export function initEventHandlers() {
   document.addEventListener('gridfinity:component-picker-close', () => {
     closeComponentMountPicker();
     closeResistorValuePicker();
+    closeCapacitorValuePicker();
   });
 
   if (standardToggle) {

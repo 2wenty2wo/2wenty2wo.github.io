@@ -72,15 +72,16 @@ export const componentImageMap = {
     SMD: 'images/resistors/resistor_smd.svg',
     default: 'images/resistors/resistor_through_hole.svg',
   },
+  Capacitor: {
+    'Through-Hole': 'images/capacitors/capacitor_through_hole.svg',
+    SMD: 'images/capacitors/capacitor_smd.svg',
+    default: 'images/capacitors/capacitor_through_hole.svg',
+  },
 };
 
 export const componentMountOptions = [
-  {
-    id: 'Through-Hole',
-    label: 'Through-Hole',
-    image: 'images/resistors/resistor_through_hole.svg',
-  },
-  { id: 'SMD', label: 'SMD', image: 'images/resistors/resistor_smd.svg' },
+  { id: 'Through-Hole', label: 'Through-Hole' },
+  { id: 'SMD', label: 'SMD' },
 ];
 
 const E12_BASE_VALUES = [1, 1.2, 1.5, 1.8, 2.2, 2.7, 3.3, 3.9, 4.7, 5.6, 6.8, 8.2];
@@ -123,6 +124,69 @@ export const resistorValueOptions = Array.from(resistorValueSet)
   .sort((a, b) => a - b)
   .map(value => {
     const label = formatResistorValue(value);
+    return { id: label, label };
+  });
+
+function formatCapacitorValue(value) {
+  const absolute = Math.abs(value);
+  if (!Number.isFinite(absolute) || absolute <= 0) {
+    return '0 F';
+  }
+  if (absolute >= 1) {
+    const rounded = Math.round(value * 100) / 100;
+    const normalized = Number.isInteger(rounded) ? rounded.toString() : rounded.toFixed(2);
+    return `${normalized.replace(/\.0+$/, '').replace(/(\.\d*[1-9])0+$/, '$1')} F`;
+  }
+  if (absolute >= 0.001) {
+    const milli = value * 1000;
+    const rounded = Math.round(milli * 100) / 100;
+    const normalized = Number.isInteger(rounded) ? rounded.toString() : rounded.toFixed(2);
+    return `${normalized.replace(/\.0+$/, '').replace(/(\.\d*[1-9])0+$/, '$1')} mF`;
+  }
+  if (absolute >= 0.000001) {
+    const micro = value * 1000000;
+    const rounded = Math.round(micro * 100) / 100;
+    const normalized = Number.isInteger(rounded) ? rounded.toString() : rounded.toFixed(2);
+    return `${normalized.replace(/\.0+$/, '').replace(/(\.\d*[1-9])0+$/, '$1')} µF`;
+  }
+  if (absolute >= 0.000000001) {
+    const nano = value * 1000000000;
+    const rounded = Math.round(nano * 100) / 100;
+    const normalized = Number.isInteger(rounded) ? rounded.toString() : rounded.toFixed(2);
+    return `${normalized.replace(/\.0+$/, '').replace(/(\.\d*[1-9])0+$/, '$1')} nF`;
+  }
+  const pico = value * 1000000000000;
+  const rounded = Math.round(pico * 100) / 100;
+  const normalized = Number.isInteger(rounded) ? rounded.toString() : rounded.toFixed(2);
+  return `${normalized.replace(/\.0+$/, '').replace(/(\.\d*[1-9])0+$/, '$1')} pF`;
+}
+
+const capacitorValueSet = new Set();
+const CAPACITOR_BASE_VALUES = [1, 1.2, 1.5, 1.8, 2.2, 2.7, 3.3, 3.9, 4.7, 5.6, 6.8, 8.2];
+const CAPACITOR_DECADES = [
+  1e-12,
+  1e-11,
+  1e-10,
+  1e-9,
+  1e-8,
+  1e-7,
+  1e-6,
+  1e-5,
+  1e-4,
+  1e-3,
+];
+
+CAPACITOR_DECADES.forEach(multiplier => {
+  CAPACITOR_BASE_VALUES.forEach(base => {
+    const value = Math.round(base * multiplier * 1000000000000) / 1000000000000;
+    capacitorValueSet.add(value);
+  });
+});
+
+export const capacitorValueOptions = Array.from(capacitorValueSet)
+  .sort((a, b) => a - b)
+  .map(value => {
+    const label = formatCapacitorValue(value);
     return { id: label, label };
   });
 
@@ -306,6 +370,7 @@ export const hardwareTypeImageMap = {
   Nut: 'images/nuts/hex_nut.svg',
   Fuse: 'images/fuses/glass_fuse.svg',
   Resistor: 'images/resistors/resistor_through_hole.svg',
+  Capacitor: 'images/capacitors/capacitor_through_hole.svg',
 };
 
 export const connectorCatalog = [

@@ -12,6 +12,7 @@ import {
   electricalComponentTypes,
   componentMountOptions as componentMountOptionList,
   resistorValueOptions,
+  capacitorValueOptions,
 } from './data.js';
 
 export const SHARE_QUERY_PARAM = 'label';
@@ -40,6 +41,7 @@ const FIELD_MAP = {
   componentCategory: 'cmp',
   componentMount: 'cm',
   resistorValue: 'rv',
+  capacitorValue: 'cv',
   bearingType: 'bt',
   bearingDetails: 'bd',
   customLine1: 'c1',
@@ -64,6 +66,7 @@ const DEFAULT_COMPONENT_TYPE = electricalComponentTypes[0] || 'Resistor';
 const componentCategoryOptions = new Set(electricalComponentTypes);
 const componentMountOptions = new Set(componentMountOptionList.map(option => option.id));
 const resistorValueOptionSet = new Set(resistorValueOptions.map(option => option.id));
+const capacitorValueOptionSet = new Set(capacitorValueOptions.map(option => option.id));
 const heightOptions = new Set(
   Array.isArray(elements.heightRadios)
     ? elements.heightRadios
@@ -303,6 +306,12 @@ function applyExpandedPayload(expanded) {
   ) {
     state.resistorValue = expanded.resistorValue;
   }
+  if (
+    typeof expanded.capacitorValue === 'string' &&
+    capacitorValueOptionSet.has(expanded.capacitorValue)
+  ) {
+    state.capacitorValue = expanded.capacitorValue;
+  }
   if (typeof expanded.bearingType === 'string') {
     const trimmed = expanded.bearingType.trim();
     if (!trimmed) {
@@ -317,6 +326,15 @@ function applyExpandedPayload(expanded) {
     state.componentCategory = state.hardwareType;
   } else {
     state.resistorValue = '';
+    state.capacitorValue = '';
+  }
+
+  const activeCategory = state.componentCategory || state.hardwareType || '';
+  if (activeCategory !== 'Resistor') {
+    state.resistorValue = '';
+  }
+  if (activeCategory !== 'Capacitor') {
+    state.capacitorValue = '';
   }
 
   const sanitizedThread = sanitizeThreadSize(expanded.threadSize, state.hardwareType);

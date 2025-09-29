@@ -23,6 +23,7 @@ export const state = {
   componentCategory: 'Resistor',
   componentMount: 'Through-Hole',
   resistorValue: '',
+  capacitorValue: '',
   bearingType: '',
   bearingDetails: '',
   customLine1: '',

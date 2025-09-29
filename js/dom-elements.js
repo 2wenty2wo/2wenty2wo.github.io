@@ -58,6 +58,12 @@ const resistorValuePickerButton = document.getElementById('resistor-value-picker
 const resistorValuePickerList = document.getElementById('resistor-value-picker-list');
 const resistorValueSelect = document.getElementById('resistor-value-select');
 const resistorValueMessage = document.getElementById('resistor-value-message');
+const capacitorValueField = document.getElementById('capacitor-value-field');
+const capacitorValuePicker = document.getElementById('capacitor-value-picker');
+const capacitorValuePickerButton = document.getElementById('capacitor-value-picker-button');
+const capacitorValuePickerList = document.getElementById('capacitor-value-picker-list');
+const capacitorValueSelect = document.getElementById('capacitor-value-select');
+const capacitorValueMessage = document.getElementById('capacitor-value-message');
 const bearingOptionsContainer = document.getElementById('bearing-options-container');
 const bearingTypeSelect = document.getElementById('bearing-type-select');
 const bearingTypeMessage = document.getElementById('bearing-type-message');
@@ -198,6 +204,12 @@ export const elements = {
   resistorValuePickerList,
   resistorValueSelect,
   resistorValueMessage,
+  capacitorValueField,
+  capacitorValuePicker,
+  capacitorValuePickerButton,
+  capacitorValuePickerList,
+  capacitorValueSelect,
+  capacitorValueMessage,
   bearingOptionsContainer,
   bearingTypeSelect,
   bearingTypeMessage,
