@@ -14,7 +14,8 @@ const {
   threadSizePickerList,
 } = elements;
 
-const THREAD_SIZE_PLACEHOLDER_TEXT = 'Select size…';
+const THREAD_SIZE_PLACEHOLDER_TEXT = '\u00a0';
+// Non-breaking space preserves control height without visible placeholder text.
 const THREAD_SIZE_NOT_APPLICABLE_TEXT = 'Not applicable';
 
 let validThreadSizes = new Set();

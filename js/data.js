@@ -509,8 +509,9 @@ export const connectorCatalog = [
 // Match the 300 DPI artwork emitted by gridfinitylabels.com.
 export const pxPerMm = 300 / 25.4;
 
-export const STANDARD_PLACEHOLDER_TEXT = 'Select standard… (type to filter, Esc clears)';
-export const CONNECTOR_PLACEHOLDER_TEXT = 'Select connector series… (type to filter, Esc clears)';
+export const STANDARD_PLACEHOLDER_TEXT = '\u00a0';
+export const CONNECTOR_PLACEHOLDER_TEXT = '\u00a0';
+// Non-breaking space placeholders maintain control sizing while hiding helper text.
 
 export function findConnectorCategory(id) {
   return connectorCatalog.find(category => category.id === id);

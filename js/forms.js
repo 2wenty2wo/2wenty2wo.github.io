@@ -124,7 +124,9 @@ const {
   componentCategoryRadios,
 } = elements;
 
-const HARDWARE_TYPE_PLACEHOLDER_TEXT = 'Select part type…';
+const PLACEHOLDER_BLANK = '\u00a0';
+// Non-breaking space keeps custom pickers aligned without displaying placeholder copy.
+const HARDWARE_TYPE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const HARDWARE_TYPE_ALL_FILTER = 'All';
 const HARDWARE_TYPE_DEFAULT_CATEGORY = 'Uncategorized';
 const HARDWARE_TYPE_RECENT_STORAGE_KEY = 'gridfinity.recentHardwareTypes';
@@ -141,31 +143,31 @@ let hardwareTypeCategories = [];
 let hardwareTypeRecentValues = [];
 let hardwareTypeSelectListenerAttached = false;
 let hardwareTypeDialogMode = 'dialog';
-const BOLT_DRIVE_PLACEHOLDER_TEXT = 'Select drive…';
-const BOLT_HEAD_PLACEHOLDER_TEXT = 'Select head…';
-const SCREW_TYPE_PLACEHOLDER_TEXT = 'Select type…';
+const BOLT_DRIVE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
+const BOLT_HEAD_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
+const SCREW_TYPE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const validBoltDriveIds = new Set(boltDriveOptions.map(option => option.id));
 const validBoltHeadIds = new Set(
   boltHeadOptions.concat(screwTypeOptions).map(option => option.id),
 );
-const NUT_TYPE_PLACEHOLDER_TEXT = 'Select type…';
+const NUT_TYPE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const validNutTypeIds = new Set(nutTypeOptions.map(option => option.id));
-const FUSE_TYPE_PLACEHOLDER_TEXT = 'Select fuse type…';
+const FUSE_TYPE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const DEFAULT_FUSE_TYPE = 'Glass';
 const CARTRIDGE_FUSE_TYPES = new Set(['Glass', 'Ceramic']);
 const validFuseTypeIds = new Set(fuseTypeOptions.map(option => option.id));
-const FUSE_VALUE_PLACEHOLDER_TEXT = 'Select value…';
+const FUSE_VALUE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const validFuseValuesSet = new Set(fuseValues.map(value => String(value)));
 const ELECTRICAL_COMPONENT_TYPES = new Set(electricalComponentTypes);
-const COMPONENT_MOUNT_PLACEHOLDER_TEXT = 'Select mounting…';
+const COMPONENT_MOUNT_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const validComponentMounts = new Set(componentMountOptions.map(option => option.id));
-const RESISTOR_VALUE_PLACEHOLDER_TEXT = 'Select value…';
+const RESISTOR_VALUE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const validResistorValues = new Set(resistorValueOptions.map(option => option.id));
-const CAPACITOR_VALUE_PLACEHOLDER_TEXT = 'Select value…';
+const CAPACITOR_VALUE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const validCapacitorValues = new Set(capacitorValueOptions.map(option => option.id));
-const DIODE_VALUE_PLACEHOLDER_TEXT = 'Select value…';
+const DIODE_VALUE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const validDiodeValues = new Set(diodeValueOptions.map(option => option.id));
-const BEARING_TYPE_PLACEHOLDER_TEXT = 'Select bearing…';
+const BEARING_TYPE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const validBearingCodes = new Set(bearingOptions.map(option => option.code));
 
 function getFastenerHeadOptions() {
@@ -1849,7 +1851,7 @@ export function populateConnectorCategories() {
   connectorCategorySelect.innerHTML = '';
   const placeholder = document.createElement('option');
   placeholder.value = '';
-  placeholder.textContent = 'Select connector category…';
+  placeholder.textContent = PLACEHOLDER_BLANK;
   placeholder.disabled = true;
   placeholder.selected = !state.connectorCategory;
   connectorCategorySelect.appendChild(placeholder);

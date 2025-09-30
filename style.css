@@ -1116,19 +1116,24 @@ main {
 }
 
 .part-type-picker__chip {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 0.85rem 0.4rem 0.6rem;
-  border-radius: 999px;
+  gap: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.75rem;
   border: 1px solid var(--bs-border-color, rgba(148, 163, 184, 0.38));
   background-color: var(--bs-body-bg, #ffffff);
   color: inherit;
   font-weight: 600;
+  font-size: 1rem;
+  line-height: 1.35;
   cursor: pointer;
   transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
-  min-height: 2.25rem;
+  min-height: var(--picker-control-height);
+  height: var(--picker-control-height);
+  width: 100%;
   max-width: 100%;
+  justify-content: flex-start;
 }
 
 .part-type-picker__chip:focus-visible {
@@ -1149,8 +1154,8 @@ main {
 .part-type-picker__chip-thumbnail {
   width: 2.25rem;
   height: 2.25rem;
-  border-radius: 50%;
-  background: rgba(148, 163, 184, 0.18);
+  border-radius: 0.65rem;
+  background: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1183,10 +1188,11 @@ main {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  font-size: 0.95rem;
+  font-size: 1rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex: 1 1 auto;
 }
 
 .part-type-picker__dialog {
@@ -1461,7 +1467,7 @@ body.part-type-picker-open {
 }
 
 :root[data-theme='dark'] .part-type-picker__chip-thumbnail {
-  background: rgba(148, 163, 184, 0.28);
+  background: none;
 }
 
 :root[data-theme='dark'] .part-type-picker__dialog-surface {
