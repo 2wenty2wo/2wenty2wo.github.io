@@ -387,6 +387,7 @@ export const hardwareTypeImageMap = {
   'Threaded Heat Insert': 'images/threaded_heat_insert/heat_insert.svg',
   Nut: 'images/nuts/hex_nut.svg',
   Fuse: 'images/fuses/glass_fuse.svg',
+  Connector: 'images/connectors/connector.svg',
   Resistor: 'images/resistors/resistor_through_hole.svg',
   Capacitor: 'images/capacitors/capacitor_through_hole.svg',
   Washer: 'images/washers/plain_washer.svg',
