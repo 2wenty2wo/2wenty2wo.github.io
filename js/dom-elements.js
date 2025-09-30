@@ -112,17 +112,7 @@ const previewContainer = document.getElementById('preview-container');
 const previewViewport = previewContainer ? previewContainer.parentElement : null;
 const previewPlaceholder = document.getElementById('preview-placeholder');
 const previewStatusText = document.getElementById('preview-status-text');
-const labelSvg = document.getElementById('label-svg');
-const labelFrame = labelSvg ? labelSvg.querySelector('#label-frame') : null;
-const printableGroup = labelSvg ? labelSvg.querySelector('#printable') : null;
-const printableForeignObject = labelSvg ? labelSvg.querySelector('#printable-foreignObject') : null;
-const labelInner = document.getElementById('label-inner');
-const hardwareImageDiv = document.getElementById('hardware-image');
-const textBlockDiv = document.getElementById('preview-text');
-const line1Div = document.getElementById('line1');
-const line2Div = document.getElementById('line2');
-const line3Div = document.getElementById('line3');
-const qrCanvas = document.getElementById('qr-canvas');
+const labelPreviewImage = document.getElementById('label-preview-image');
 const qrContentWrapper = document.getElementById('qr-content-wrapper');
 const qrContentInput = document.getElementById('qr-content-input');
 const downloadButton = document.getElementById('download-button');
@@ -261,17 +251,7 @@ export const elements = {
   previewContainer,
   previewPlaceholder,
   previewStatusText,
-  labelSvg,
-  labelFrame,
-  printableGroup,
-  printableForeignObject,
-  labelInner,
-  hardwareImageDiv,
-  textBlockDiv,
-  line1Div,
-  line2Div,
-  line3Div,
-  qrCanvas,
+  labelPreviewImage,
   qrContentWrapper,
   qrContentInput,
   downloadButton,
