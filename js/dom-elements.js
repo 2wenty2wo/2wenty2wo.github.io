@@ -22,6 +22,12 @@ const nutTypePickerButton = document.getElementById('nut-type-picker-button');
 const nutTypePickerList = document.getElementById('nut-type-picker-list');
 const nutTypeSelect = document.getElementById('nut-type-select');
 const nutTypeMessage = document.getElementById('nut-type-message');
+const washerTypeContainer = document.getElementById('washer-type-container');
+const washerTypePicker = document.getElementById('washer-type-picker');
+const washerTypePickerButton = document.getElementById('washer-type-picker-button');
+const washerTypePickerList = document.getElementById('washer-type-picker-list');
+const washerTypeSelect = document.getElementById('washer-type-select');
+const washerTypeMessage = document.getElementById('washer-type-message');
 const fuseSelectionRow = document.getElementById('fuse-selection-row');
 const fuseTypeContainer = document.getElementById('fuse-type-container');
 const fuseTypeSelect = document.getElementById('fuse-type-select');
@@ -180,6 +186,12 @@ export const elements = {
   nutTypePickerList,
   nutTypeSelect,
   nutTypeMessage,
+  washerTypeContainer,
+  washerTypePicker,
+  washerTypePickerButton,
+  washerTypePickerList,
+  washerTypeSelect,
+  washerTypeMessage,
   fuseSelectionRow,
   fuseTypeContainer,
   fuseTypeSelect,

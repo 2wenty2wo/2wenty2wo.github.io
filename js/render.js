@@ -9,6 +9,7 @@ import {
   syncResistorValuePicker,
   syncCapacitorValuePicker,
   syncBearingTypePicker,
+  syncWasherTypePicker,
 } from './forms.js';
 import {
   pxPerMm,
@@ -18,6 +19,7 @@ import {
   boltHeadMap,
   boltDriveMap,
   nutTypeMap,
+  washerTypeMap,
   screwTypeMap,
   electricalComponentTypes,
   componentImageMap,
@@ -45,6 +47,9 @@ const {
   nutTypeSelect,
   nutTypeContainer,
   nutTypeMessage,
+  washerTypeSelect,
+  washerTypeContainer,
+  washerTypeMessage,
   fuseValueSelect,
   fuseValueContainer,
   connectorCategorySelect,
@@ -906,6 +911,11 @@ export function isLabelReady() {
     const detailsSatisfied = !detailsRequired || (hasHead && hasDrive);
     return Boolean(hasThread && hasLength && detailsSatisfied);
   }
+  if (state.hardwareType === 'Washer') {
+    const hasThread = Boolean(state.threadSize);
+    const hasType = Boolean(state.washerType);
+    return Boolean(hasThread && hasType);
+  }
   if (state.hardwareType === 'Nut') {
     const hasThread = Boolean(state.threadSize);
     const detailsRequired = Boolean(state.showImage || state.showStandard);
@@ -1038,6 +1048,28 @@ function applyValidationFeedback(disabled) {
     });
     syncBoltHeadPicker({ isValid: true });
     syncBoltDrivePicker({ isValid: true });
+  }
+
+  if (hardwareType === 'Washer') {
+    const typeValid = Boolean(state.washerType);
+    updateInputFieldState({
+      input: washerTypeSelect,
+      container: washerTypeContainer,
+      messageElement: washerTypeMessage,
+      valid: typeValid,
+    });
+    syncWasherTypePicker({ isValid: typeValid });
+    if (!typeValid) {
+      requirements.push('choose a washer type');
+    }
+  } else {
+    updateInputFieldState({
+      input: washerTypeSelect,
+      container: washerTypeContainer,
+      messageElement: washerTypeMessage,
+      valid: true,
+    });
+    syncWasherTypePicker({ isValid: true });
   }
 
   if (hardwareType === 'Nut' && (state.showImage || state.showStandard)) {
@@ -1420,6 +1452,23 @@ function resolveHardwareImageInfo() {
       alt: 'Threaded heat insert reference illustration',
     };
   }
+  if (state.hardwareType === 'Washer') {
+    const typeId = (state.washerType || '').trim();
+    const typeEntry = washerTypeMap.get(typeId);
+    if (!typeEntry) {
+      return null;
+    }
+    const image = (typeEntry.image || '').trim();
+    if (!image) {
+      return null;
+    }
+    const label = typeEntry.label || '';
+    return {
+      type: 'photo',
+      src: `images/washers/${image}.svg`,
+      alt: label ? `${label} reference illustration` : 'Washer reference illustration',
+    };
+  }
   if (state.hardwareType === 'Nut') {
     const typeId = (state.nutType || '').trim();
     const typeEntry = nutTypeMap.get(typeId);
@@ -1633,6 +1682,16 @@ function buildTextLines() {
     const showType = Boolean(state.showStandard && typeLabel);
     const line2 = showType ? typeLabel : notes;
     const line3 = showType ? notes : '';
+    return { line1, line2, line3 };
+  }
+
+  if (state.hardwareType === 'Washer') {
+    const line1 = state.threadSize || 'Washer';
+    const typeEntry = washerTypeMap.get((state.washerType || '').trim());
+    const typeLabel = typeEntry ? typeEntry.label : '';
+    const notes = state.notes || '';
+    const line2 = typeLabel;
+    const line3 = notes;
     return { line1, line2, line3 };
   }
 
