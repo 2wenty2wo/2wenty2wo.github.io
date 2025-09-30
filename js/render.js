@@ -93,6 +93,8 @@ const LABEL_BACKGROUND_COLOR = '#ffffff';
 const LABEL_TEXT_COLOR = '#000000';
 const FRAME_STROKE_COLOR = 'rgba(100, 116, 139, 0.6)';
 
+const inlineImageCache = new Map();
+
 const previewDimensions = {
   width: 0,
   height: 0,
@@ -161,34 +163,142 @@ function escapeXml(str) {
     .replace(/'/g, '&#39;');
 }
 
-function resolveSvgImageHref(src) {
-  if (!src) {
-    return '';
+function appendUniqueCandidate(list, value) {
+  if (typeof value !== 'string') {
+    return;
   }
-  if (/^(data:|https?:|file:|blob:|\/\/)/i.test(src)) {
+  const trimmed = value.trim();
+  if (!trimmed || list.includes(trimmed)) {
+    return;
+  }
+  list.push(trimmed);
+}
+
+function resolveToAbsoluteUrl(src) {
+  if (/^(data:|blob:)/i.test(src)) {
     return src;
   }
+  if (/^(https?:|file:|\/\/)/i.test(src)) {
+    return src;
+  }
+
+  const candidates = [];
+
   if (typeof document !== 'undefined') {
-    const base = document.baseURI || (typeof window !== 'undefined' && window.location
-      ? window.location.href
-      : '');
-    if (base) {
-      try {
-        return new URL(src, base).href;
-      } catch (error) {
-        console.warn('Unable to resolve SVG image href, using original path.', error);
-        return src;
-      }
+    appendUniqueCandidate(candidates, document.baseURI);
+    if (document.location) {
+      appendUniqueCandidate(candidates, document.location.href);
+      appendUniqueCandidate(candidates, document.location.origin);
     }
-  } else if (typeof window !== 'undefined' && window.location) {
+  }
+  if (typeof window !== 'undefined' && window.location) {
+    appendUniqueCandidate(candidates, window.location.href);
+    appendUniqueCandidate(candidates, window.location.origin);
+  }
+
+  for (const base of candidates) {
+    try {
+      const resolved = new URL(src, base).href;
+      if (resolved) {
+        return resolved;
+      }
+    } catch (error) {
+      console.warn('Unable to resolve SVG image href, trying next base.', error);
+    }
+  }
+
+  if (typeof window !== 'undefined' && window.location && window.location.href) {
     try {
       return new URL(src, window.location.href).href;
     } catch (error) {
-      console.warn('Unable to resolve SVG image href, using original path.', error);
-      return src;
+      console.warn('Unable to resolve SVG image href with window href fallback.', error);
     }
   }
+
   return src;
+}
+
+function bufferToBase64(bytes) {
+  if (typeof bytes === 'string') {
+    return bytes;
+  }
+  if (typeof window !== 'undefined' && typeof window.btoa === 'function') {
+    let binary = '';
+    const chunkSize = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+      binary += String.fromCharCode(...chunk);
+    }
+    return window.btoa(binary);
+  }
+  if (typeof globalThis !== 'undefined' && globalThis.Buffer) {
+    return globalThis.Buffer.from(bytes).toString('base64');
+  }
+  throw new Error('Base64 encoding is not supported in this environment.');
+}
+
+async function blobToDataUrl(blob) {
+  const arrayBuffer = await blob.arrayBuffer();
+  const bytes = new Uint8Array(arrayBuffer);
+  const base64 = bufferToBase64(bytes);
+  const mimeType = blob.type || 'application/octet-stream';
+  return `data:${mimeType};base64,${base64}`;
+}
+
+function shouldInlineUrl(url) {
+  if (/^data:/i.test(url)) {
+    return false;
+  }
+  if (typeof window === 'undefined' || !window.location) {
+    return false;
+  }
+  try {
+    const parsed = new URL(url, window.location.href);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:' || parsed.protocol === 'file:') {
+      if (parsed.origin === 'null') {
+        return true;
+      }
+      return parsed.origin === window.location.origin;
+    }
+  } catch (error) {
+    console.warn('Unable to inspect URL for inlining.', error);
+  }
+  return false;
+}
+
+async function resolveSvgImageHref(src) {
+  if (!src) {
+    return '';
+  }
+
+  const absolute = resolveToAbsoluteUrl(src);
+  if (!shouldInlineUrl(absolute)) {
+    return absolute;
+  }
+
+  if (inlineImageCache.has(absolute)) {
+    return inlineImageCache.get(absolute);
+  }
+
+  if (typeof fetch !== 'function') {
+    inlineImageCache.set(absolute, absolute);
+    return absolute;
+  }
+
+  try {
+    const response = await fetch(absolute, { cache: 'force-cache' });
+    if (!response.ok) {
+      throw new Error(`Unexpected response status ${response.status}`);
+    }
+    const blob = await response.blob();
+    const dataUrl = await blobToDataUrl(blob);
+    inlineImageCache.set(absolute, dataUrl);
+    return dataUrl;
+  } catch (error) {
+    console.warn('Unable to inline SVG image asset, using absolute URL instead.', error);
+    inlineImageCache.set(absolute, absolute);
+    return absolute;
+  }
 }
 
 function createSvgDataUrl(svgMarkup) {
@@ -529,9 +639,9 @@ async function buildLabelSvg() {
     `<rect x="0" y="0" width="${labelWidthPx}" height="${labelHeightPx}" fill="${LABEL_BACKGROUND_COLOR}" stroke="${FRAME_STROKE_COLOR}" stroke-width="${strokeWidth}" vector-effect="non-scaling-stroke" />`,
   );
 
-  hardwareLayout.elements.forEach(element => {
+  for (const element of hardwareLayout.elements) {
     if (element.type === 'image') {
-      const resolvedHref = resolveSvgImageHref(element.href);
+      const resolvedHref = await resolveSvgImageHref(element.href);
       const escapedHref = escapeXml(resolvedHref);
       svgParts.push(
         `<image x="${formatNumber(element.x)}" y="${formatNumber(element.y)}" width="${formatNumber(element.width)}" height="${formatNumber(element.height)}" href="${escapedHref}" xlink:href="${escapedHref}">` +
@@ -552,7 +662,7 @@ async function buildLabelSvg() {
         )}>${escapeXml(element.label || 'Add image')}</text>`,
       );
     }
-  });
+  }
 
   textLayout.forEach(line => {
     svgParts.push(
