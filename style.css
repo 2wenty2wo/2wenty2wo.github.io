@@ -1165,6 +1165,10 @@ main {
   filter: var(--form-icon-filter);
 }
 
+.part-type-picker__chip-image.is-rotated-90 {
+  transform: rotate(90deg);
+}
+
 .part-type-picker__chip-fallback {
   width: 1.75rem;
   height: 1.75rem;
