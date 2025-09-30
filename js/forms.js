@@ -108,14 +108,39 @@ const {
   defaultStandardLabel,
   hardwareTypeRadios,
   hardwareTypeSelect,
+  hardwareTypePicker,
   hardwareTypePickerButton,
+  hardwareTypePickerDialog,
+  hardwareTypePickerFallback,
+  hardwareTypePickerSurface,
+  hardwareTypePickerSearch,
+  hardwareTypePickerFilters,
+  hardwareTypePickerRecentSection,
+  hardwareTypePickerRecent,
   hardwareTypePickerList,
+  hardwareTypePickerEmpty,
   hardwareTypeOptions,
   systemTypeRadios,
   componentCategoryRadios,
 } = elements;
 
-const HARDWARE_TYPE_PLACEHOLDER_TEXT = 'Select hardware…';
+const HARDWARE_TYPE_PLACEHOLDER_TEXT = 'Select part type…';
+const HARDWARE_TYPE_ALL_FILTER = 'All';
+const HARDWARE_TYPE_DEFAULT_CATEGORY = 'Uncategorized';
+const HARDWARE_TYPE_RECENT_STORAGE_KEY = 'gridfinity.recentHardwareTypes';
+const HARDWARE_TYPE_RECENT_LIMIT = 5;
+const PART_TYPE_PLACEHOLDER_IMAGE =
+  'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"%3E%3Crect width="80" height="80" rx="14" fill="%23e2e8f0"/%3E%3Cpath fill="%2394a3b8" d="M24 26h32v8H24zm0 16h32v8H24zm0 16h32v8H24z"/%3E%3C/svg%3E';
+const hardwareTypeOptionRecords = new Map();
+const hardwareTypeFilterButtons = new Map();
+const hardwareTypeFilterState = {
+  category: HARDWARE_TYPE_ALL_FILTER,
+  query: '',
+};
+let hardwareTypeCategories = [];
+let hardwareTypeRecentValues = [];
+let hardwareTypeSelectListenerAttached = false;
+let hardwareTypeDialogMode = 'dialog';
 const BOLT_DRIVE_PLACEHOLDER_TEXT = 'Select drive…';
 const BOLT_HEAD_PLACEHOLDER_TEXT = 'Select head…';
 const SCREW_TYPE_PLACEHOLDER_TEXT = 'Select type…';
@@ -161,95 +186,393 @@ function getFastenerHeadImagePath(option) {
   return `${basePath}/${option.image}.svg`;
 }
 
-function createHardwareTypeOption(optionElement) {
-  if (!hardwareTypePickerList) {
-    return;
-  }
-  const value = optionElement.value;
-  if (!value) {
-    return;
-  }
-
-  const item = document.createElement('li');
-  item.className = 'bolt-drive-picker__option';
-  item.dataset.value = value;
-  item.setAttribute('role', 'option');
-  item.setAttribute('aria-selected', 'false');
-  item.tabIndex = -1;
-
-  const icon = document.createElement('span');
-  icon.className = 'bolt-drive-picker__option-icon';
-
-  const imageSrc = hardwareTypeImageMap[value];
-  if (imageSrc) {
-    const image = document.createElement('img');
-    image.className = 'bolt-drive-picker__option-icon-image';
-    if (value === 'Bolt' || value === 'Screw') {
-      image.classList.add('is-rotated-90');
-    }
-    image.src = imageSrc;
-    image.alt = '';
-    image.loading = 'lazy';
-    image.decoding = 'async';
-    icon.appendChild(image);
-  } else {
-    icon.classList.add('is-empty');
-  }
-
-  const label = document.createElement('span');
-  label.className = 'bolt-drive-picker__option-label';
-  label.textContent = optionElement.textContent.trim();
-
-  item.appendChild(icon);
-  item.appendChild(label);
-
-  hardwareTypePickerList.appendChild(item);
+function normalizeText(value) {
+  return typeof value === 'string' ? value.trim().toLowerCase() : '';
 }
 
-export function populateHardwareTypePicker() {
-  if (!hardwareTypePickerList) {
+function getOptionCategory(optionElement) {
+  if (!optionElement) {
+    return HARDWARE_TYPE_DEFAULT_CATEGORY;
+  }
+  const rawCategory = optionElement.dataset.cat;
+  if (typeof rawCategory === 'string' && rawCategory.trim()) {
+    return rawCategory.trim();
+  }
+  const parent = optionElement.parentElement;
+  if (parent instanceof HTMLOptGroupElement && parent.label) {
+    return parent.label.trim() || HARDWARE_TYPE_DEFAULT_CATEGORY;
+  }
+  return HARDWARE_TYPE_DEFAULT_CATEGORY;
+}
+
+function getOptionImage(optionElement) {
+  if (!optionElement) {
+    return '';
+  }
+  const rawImage = optionElement.dataset.img;
+  if (typeof rawImage === 'string' && rawImage.trim()) {
+    return rawImage.trim();
+  }
+  return hardwareTypeImageMap[optionElement.value] || '';
+}
+
+function createPartTypeCard(record, { variant = 'grid' } = {}) {
+  const card = document.createElement('button');
+  card.type = 'button';
+  card.className = 'part-type-card';
+  if (variant === 'recent') {
+    card.classList.add('part-type-card--recent');
+  }
+  card.dataset.value = record.value;
+  card.dataset.category = record.category;
+  card.dataset.label = record.normalizedLabel;
+  card.dataset.variant = variant;
+  card.dataset.hardwareTypeOption = 'true';
+  card.dataset.hasCustomImage = record.hasCustomImage ? 'true' : 'false';
+  card.setAttribute('role', 'option');
+  card.setAttribute('aria-selected', 'false');
+  card.tabIndex = -1;
+
+  const thumb = document.createElement('span');
+  thumb.className = 'part-type-card__thumb';
+
+  const image = document.createElement('img');
+  image.className = 'part-type-card__image';
+  image.alt = '';
+  image.decoding = 'async';
+  image.loading = 'lazy';
+  image.src = record.image;
+  thumb.appendChild(image);
+
+  const label = document.createElement('span');
+  label.className = 'part-type-card__label';
+  label.textContent = record.label;
+
+  card.appendChild(thumb);
+  card.appendChild(label);
+
+  return card;
+}
+
+function loadHardwareTypeRecentValues() {
+  try {
+    const stored = localStorage.getItem(HARDWARE_TYPE_RECENT_STORAGE_KEY);
+    if (!stored) {
+      return [];
+    }
+    const parsed = JSON.parse(stored);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+    return parsed
+      .map(value => (typeof value === 'string' ? value.trim() : ''))
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+function saveHardwareTypeRecentValues(values) {
+  try {
+    if (!Array.isArray(values) || values.length === 0) {
+      localStorage.removeItem(HARDWARE_TYPE_RECENT_STORAGE_KEY);
+      return;
+    }
+    localStorage.setItem(HARDWARE_TYPE_RECENT_STORAGE_KEY, JSON.stringify(values));
+  } catch {
+    // Ignore storage failures.
+  }
+}
+
+function updateHardwareTypeRecentUi() {
+  if (!hardwareTypePickerRecentSection || !hardwareTypePickerRecent) {
     return;
   }
 
-  hardwareTypePickerList.innerHTML = '';
+  hardwareTypePickerRecent.innerHTML = '';
+  hardwareTypeOptionRecords.forEach(record => {
+    record.recentElement = null;
+  });
 
+  const sanitizedValues = hardwareTypeRecentValues.filter(value =>
+    hardwareTypeOptionRecords.has(value),
+  );
+  const limitedValues = sanitizedValues.slice(0, HARDWARE_TYPE_RECENT_LIMIT);
+  hardwareTypeRecentValues = limitedValues;
+
+  limitedValues.forEach(value => {
+    const record = hardwareTypeOptionRecords.get(value);
+    if (!record) {
+      return;
+    }
+    const recentCard = createPartTypeCard(record, { variant: 'recent' });
+    record.recentElement = recentCard;
+    hardwareTypePickerRecent.appendChild(recentCard);
+  });
+
+  const hasRecent = hardwareTypePickerRecent.children.length > 0;
+  hardwareTypePickerRecentSection.hidden = !hasRecent;
+
+  if (sanitizedValues.length !== limitedValues.length) {
+    saveHardwareTypeRecentValues(hardwareTypeRecentValues);
+  }
+}
+
+function setHardwareTypeOptionVisibility(record, isVisible) {
+  const shouldHide = !isVisible;
+  if (record.mainElement) {
+    record.mainElement.classList.toggle('is-hidden', shouldHide);
+    record.mainElement.toggleAttribute('hidden', shouldHide);
+  }
+  if (record.recentElement) {
+    record.recentElement.classList.toggle('is-hidden', shouldHide);
+    record.recentElement.toggleAttribute('hidden', shouldHide);
+  }
+}
+
+function updateHardwareTypeOptionTabState() {
+  if (!hardwareTypePicker) {
+    return;
+  }
+  const optionElements = Array.from(
+    hardwareTypePicker.querySelectorAll('[data-hardware-type-option="true"]'),
+  );
+  let firstVisible = null;
+  optionElements.forEach(optionElement => {
+    const hidden =
+      optionElement.hasAttribute('hidden') || optionElement.classList.contains('is-hidden');
+    if (!hidden && !firstVisible) {
+      firstVisible = optionElement;
+    }
+    optionElement.tabIndex = -1;
+  });
+  if (firstVisible) {
+    firstVisible.tabIndex = 0;
+  }
+}
+
+function applyHardwareTypeFilters() {
+  const categoryFilter = hardwareTypeFilterState.category.toLowerCase();
+  const queryFilter = hardwareTypeFilterState.query;
+  let visibleCount = 0;
+
+  hardwareTypeOptionRecords.forEach(record => {
+    const matchesCategory =
+      categoryFilter === HARDWARE_TYPE_ALL_FILTER.toLowerCase() ||
+      record.normalizedCategory === categoryFilter;
+    const matchesQuery = !queryFilter || record.normalizedLabel.includes(queryFilter);
+    const isVisible = matchesCategory && matchesQuery;
+
+    setHardwareTypeOptionVisibility(record, isVisible);
+    if (isVisible) {
+      visibleCount += 1;
+    }
+  });
+
+  if (hardwareTypePickerEmpty) {
+    hardwareTypePickerEmpty.hidden = visibleCount > 0;
+  }
+
+  if (hardwareTypePickerRecentSection && hardwareTypePickerRecent) {
+    const hasVisibleRecent = Array.from(hardwareTypePickerRecent.children).some(element => {
+      if (!(element instanceof HTMLElement)) {
+        return false;
+      }
+      return !element.hasAttribute('hidden') && !element.classList.contains('is-hidden');
+    });
+    hardwareTypePickerRecentSection.hidden = !hasVisibleRecent;
+  }
+
+  updateHardwareTypeOptionTabState();
+
+  return visibleCount;
+}
+
+function renderHardwareTypeFilterChips() {
+  if (!hardwareTypePickerFilters) {
+    return;
+  }
+
+  hardwareTypePickerFilters.innerHTML = '';
+  hardwareTypeFilterButtons.clear();
+
+  const categories = [HARDWARE_TYPE_ALL_FILTER, ...hardwareTypeCategories];
+  categories.forEach(category => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'part-type-picker__filter';
+    button.textContent = category;
+    button.dataset.category = category;
+    const isActive = category === hardwareTypeFilterState.category;
+    button.classList.toggle('is-active', isActive);
+    button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    hardwareTypePickerFilters.appendChild(button);
+    hardwareTypeFilterButtons.set(category.toLowerCase(), button);
+  });
+}
+
+function rememberHardwareTypeSelection(value) {
+  const trimmed = typeof value === 'string' ? value.trim() : '';
+  if (!trimmed || !hardwareTypeOptionRecords.has(trimmed)) {
+    return;
+  }
+
+  const existingIndex = hardwareTypeRecentValues.indexOf(trimmed);
+  if (existingIndex !== -1) {
+    hardwareTypeRecentValues.splice(existingIndex, 1);
+  }
+  hardwareTypeRecentValues.unshift(trimmed);
+  if (hardwareTypeRecentValues.length > HARDWARE_TYPE_RECENT_LIMIT) {
+    hardwareTypeRecentValues = hardwareTypeRecentValues.slice(0, HARDWARE_TYPE_RECENT_LIMIT);
+  }
+  saveHardwareTypeRecentValues(hardwareTypeRecentValues);
+  updateHardwareTypeRecentUi();
+  applyHardwareTypeFilters();
+}
+
+function setupHardwareTypeDialogMode() {
+  if (!hardwareTypePicker) {
+    return;
+  }
+
+  hardwareTypeDialogMode = 'dialog';
+  if (hardwareTypePickerDialog && typeof hardwareTypePickerDialog.showModal === 'function') {
+    hardwareTypePicker.dataset.dialogMode = 'dialog';
+    hardwareTypePickerDialog.setAttribute('aria-modal', 'true');
+    return;
+  }
+
+  if (hardwareTypePickerFallback && hardwareTypePickerSurface) {
+    if (!hardwareTypePickerFallback.contains(hardwareTypePickerSurface)) {
+      hardwareTypePickerFallback.appendChild(hardwareTypePickerSurface);
+    }
+    hardwareTypePickerFallback.setAttribute('role', 'dialog');
+    hardwareTypePickerFallback.setAttribute('aria-modal', 'true');
+    hardwareTypePickerFallback.setAttribute('aria-labelledby', 'hardware-type-picker-title');
+    hardwareTypePickerFallback.hidden = true;
+    hardwareTypePicker.dataset.dialogMode = 'overlay';
+    hardwareTypeDialogMode = 'overlay';
+  }
+}
+
+function handleHardwareTypeSelectChangeForRecents() {
   if (!hardwareTypeSelect) {
     return;
   }
+  rememberHardwareTypeSelection(hardwareTypeSelect.value);
+}
 
-  const children = Array.from(hardwareTypeSelect.children);
-  children.forEach(child => {
-    if (!child || !(child instanceof Element)) {
-      return;
+export function getHardwareTypePickerMode() {
+  return hardwareTypeDialogMode;
+}
+
+export function setHardwareTypeFilterCategory(nextCategory) {
+  const normalized = normalizeText(nextCategory);
+  let resolvedCategory = HARDWARE_TYPE_ALL_FILTER;
+  if (normalized && normalized !== HARDWARE_TYPE_ALL_FILTER.toLowerCase()) {
+    const match = hardwareTypeCategories.find(
+      category => category.toLowerCase() === normalized,
+    );
+    if (match) {
+      resolvedCategory = match;
     }
-    const tagName = child.tagName.toLowerCase();
-    if (tagName === 'optgroup') {
-      const optionElements = Array.from(child.children).filter(
-        option => option instanceof HTMLOptionElement,
-      );
-      if (optionElements.length === 0) {
-        return;
-      }
-      const header = document.createElement('li');
-      header.className = 'bolt-drive-picker__group';
-      header.textContent = child.label;
-      header.setAttribute('role', 'presentation');
-      hardwareTypePickerList.appendChild(header);
-      optionElements.forEach(option => {
-        createHardwareTypeOption(option);
-      });
-      return;
-    }
-    if (tagName === 'option') {
-      createHardwareTypeOption(child);
-    }
+  }
+  hardwareTypeFilterState.category = resolvedCategory;
+
+  hardwareTypeFilterButtons.forEach((button, key) => {
+    const isActive = key === resolvedCategory.toLowerCase();
+    button.classList.toggle('is-active', isActive);
+    button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
   });
+
+  applyHardwareTypeFilters();
+}
+
+export function setHardwareTypeSearchQuery(nextQuery) {
+  hardwareTypeFilterState.query = normalizeText(nextQuery);
+  applyHardwareTypeFilters();
+}
+
+export function populateHardwareTypePicker() {
+  if (!hardwareTypePickerList || !hardwareTypeSelect) {
+    return;
+  }
+
+  hardwareTypeSelect.classList.add('visually-hidden');
+
+  hardwareTypeOptionRecords.clear();
+  hardwareTypeFilterButtons.clear();
+  hardwareTypePickerList.innerHTML = '';
+  if (hardwareTypePickerRecent) {
+    hardwareTypePickerRecent.innerHTML = '';
+  }
+  if (hardwareTypePickerFilters) {
+    hardwareTypePickerFilters.innerHTML = '';
+  }
+
+  const optionElements = Array.from(hardwareTypeSelect.querySelectorAll('option'));
+  const categorySet = new Set();
+
+  optionElements.forEach(option => {
+    if (!(option instanceof HTMLOptionElement)) {
+      return;
+    }
+    const value = option.value.trim();
+    if (!value) {
+      return;
+    }
+
+    const label = option.textContent.trim() || value;
+    const category = getOptionCategory(option);
+    const normalizedCategory = normalizeText(category);
+    const rawImage = getOptionImage(option);
+
+    const record = {
+      value,
+      label,
+      normalizedLabel: normalizeText(label),
+      category,
+      normalizedCategory,
+      image: rawImage || PART_TYPE_PLACEHOLDER_IMAGE,
+      hasCustomImage: Boolean(rawImage),
+      mainElement: null,
+      recentElement: null,
+    };
+
+    const card = createPartTypeCard(record, { variant: 'grid' });
+    record.mainElement = card;
+    hardwareTypePickerList.appendChild(card);
+    hardwareTypeOptionRecords.set(value, record);
+    categorySet.add(category);
+  });
+
+  hardwareTypeCategories = Array.from(categorySet).sort((a, b) =>
+    a.localeCompare(b, undefined, { sensitivity: 'base' }),
+  );
+
+  hardwareTypeFilterState.category = HARDWARE_TYPE_ALL_FILTER;
+  hardwareTypeFilterState.query = '';
+  if (hardwareTypePickerSearch) {
+    hardwareTypePickerSearch.value = '';
+  }
+
+  renderHardwareTypeFilterChips();
+
+  hardwareTypeRecentValues = loadHardwareTypeRecentValues();
+  updateHardwareTypeRecentUi();
+
+  applyHardwareTypeFilters();
+  setupHardwareTypeDialogMode();
 
   if (hardwareTypePickerButton) {
     hardwareTypePickerButton.disabled = false;
     hardwareTypePickerButton.setAttribute('aria-expanded', 'false');
   }
-  hardwareTypePickerList.hidden = true;
+
+  if (!hardwareTypeSelectListenerAttached) {
+    hardwareTypeSelect.addEventListener('change', handleHardwareTypeSelectChangeForRecents);
+    hardwareTypeSelectListenerAttached = true;
+  }
 
   syncHardwareTypePicker();
 }

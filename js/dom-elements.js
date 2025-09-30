@@ -129,7 +129,20 @@ const hardwareTypeRadios = Array.from(document.querySelectorAll('input[name="har
 const hardwareTypeSelect = document.getElementById('hardware-type-select');
 const hardwareTypePicker = document.getElementById('hardware-type-picker');
 const hardwareTypePickerButton = document.getElementById('hardware-type-picker-button');
+const hardwareTypePickerDialog = document.getElementById('hardware-type-picker-dialog');
+const hardwareTypePickerFallback = document.getElementById('hardware-type-picker-fallback');
+const hardwareTypePickerSurface = hardwareTypePickerDialog
+  ? hardwareTypePickerDialog.querySelector('[data-part-type-dialog-surface]')
+  : null;
+const hardwareTypePickerCloseButton = hardwareTypePicker
+  ? hardwareTypePicker.querySelector('[data-part-type-picker-close]')
+  : null;
+const hardwareTypePickerSearch = document.getElementById('hardware-type-picker-search');
+const hardwareTypePickerFilters = document.getElementById('hardware-type-picker-filters');
+const hardwareTypePickerRecentSection = document.getElementById('hardware-type-picker-recent-section');
+const hardwareTypePickerRecent = document.getElementById('hardware-type-picker-recent');
 const hardwareTypePickerList = document.getElementById('hardware-type-picker-list');
+const hardwareTypePickerEmpty = document.getElementById('hardware-type-picker-empty');
 const hardwareTypeOptions = new Set(
   hardwareTypeRadios
     .map(radio => radio.value)
@@ -273,7 +286,16 @@ export const elements = {
   hardwareTypeSelect,
   hardwareTypePicker,
   hardwareTypePickerButton,
+  hardwareTypePickerDialog,
+  hardwareTypePickerFallback,
+  hardwareTypePickerSurface,
+  hardwareTypePickerCloseButton,
+  hardwareTypePickerSearch,
+  hardwareTypePickerFilters,
+  hardwareTypePickerRecentSection,
+  hardwareTypePickerRecent,
   hardwareTypePickerList,
+  hardwareTypePickerEmpty,
   hardwareTypeOptions,
   systemTypeRadios,
   heightRadios,
