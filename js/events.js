@@ -118,6 +118,15 @@ const {
 
 let hardwareTypePickerOpen = false;
 let fuseTypePickerOpen = false;
+
+const coarsePointerMediaQuery =
+  typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    ? window.matchMedia('(hover: none) and (pointer: coarse)')
+    : null;
+
+function isCoarsePointerDevice() {
+  return Boolean(coarsePointerMediaQuery && coarsePointerMediaQuery.matches);
+}
 let threadSizePickerOpen = false;
 let boltDrivePickerOpen = false;
 let boltHeadPickerOpen = false;
@@ -255,10 +264,13 @@ function openHardwareTypePicker() {
     modalRoot.setAttribute('aria-hidden', 'false');
   }
 
-  if (hardwareTypePickerSearch) {
+  if (hardwareTypePickerSearch && !isCoarsePointerDevice()) {
     hardwareTypePickerSearch.focus();
     hardwareTypePickerSearch.select();
   } else {
+    if (hardwareTypePickerSearch) {
+      hardwareTypePickerSearch.blur();
+    }
     focusHardwareTypeDefaultOption();
   }
   updateHardwareTypeTrapElements();
@@ -297,9 +309,21 @@ function closeHardwareTypePicker({ focusButton = true } = {}) {
   hardwareTypeTrapElements = [];
   hardwareTypeActiveOptionIndex = -1;
 
-  if (focusButton && hardwareTypePickerButton) {
+  if (hardwareTypePickerSearch) {
+    hardwareTypePickerSearch.blur();
+  }
+
+  const suppressFocusRestore = isCoarsePointerDevice();
+  if (suppressFocusRestore) {
+    const activeElement = document.activeElement;
+    if (activeElement instanceof HTMLElement) {
+      activeElement.blur();
+    }
+  }
+
+  if (!suppressFocusRestore && focusButton && hardwareTypePickerButton) {
     hardwareTypePickerButton.focus();
-  } else if (!focusButton && hardwareTypePreviouslyFocusedElement) {
+  } else if (!suppressFocusRestore && !focusButton && hardwareTypePreviouslyFocusedElement) {
     hardwareTypePreviouslyFocusedElement.focus();
   }
   hardwareTypePreviouslyFocusedElement = null;
