@@ -21,6 +21,7 @@ import {
   screwTypeMap,
   electricalComponentTypes,
   componentImageMap,
+  diodeValueLabelMap,
 } from './data.js';
 import { loadQrCodeLibrary } from './lazy-loaders.js';
 
@@ -1573,8 +1574,18 @@ function buildTextLines() {
       return { line1, line2, line3: line3Parts.join(' — ') };
     }
     if (category === 'Diode') {
-      const line1 = state.diodeValue || 'Diode';
-      const line2 = 'Diode';
+      const selectedDiodeId = state.diodeValue || '';
+      const line1 = selectedDiodeId || 'Diode';
+      const diodeLabel = selectedDiodeId ? diodeValueLabelMap[selectedDiodeId] : '';
+      let line2 = 'Diode';
+      if (diodeLabel) {
+        if (diodeLabel.startsWith(`${selectedDiodeId} `)) {
+          const typeLabel = diodeLabel.slice(selectedDiodeId.length).trim();
+          line2 = typeLabel || diodeLabel;
+        } else {
+          line2 = diodeLabel;
+        }
+      }
       const line3Parts = [];
       if (state.componentMount) {
         line3Parts.push(state.componentMount);

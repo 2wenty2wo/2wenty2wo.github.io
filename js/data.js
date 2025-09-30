@@ -229,6 +229,11 @@ export const diodeValueOptions = [
   { id: 'MMBZ5V6', label: 'MMBZ5V6 Zener Diode' },
 ];
 
+export const diodeValueLabelMap = diodeValueOptions.reduce((map, option) => {
+  map[option.id] = option.label;
+  return map;
+}, {});
+
 export const boltHeadOptions = [
   { id: 'button_head', label: 'Button Head', image: 'button_head' },
   { id: 'cap_head', label: 'Socket Cap', image: 'cap_head' },
