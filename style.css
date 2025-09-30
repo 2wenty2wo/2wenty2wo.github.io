@@ -1317,7 +1317,12 @@ main {
 }
 
 .part-type-picker__recent {
-  padding: 0.5rem 1.5rem 0.5rem;
+  padding: 1rem 1.5rem 1.5rem;
+  margin: 0 1.5rem 1.75rem;
+  background: rgba(148, 163, 184, 0.16);
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 1.25rem;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
 }
 
 .part-type-picker__section-title {
@@ -1354,16 +1359,19 @@ main {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   border-radius: 1rem;
   border: 1px solid rgba(148, 163, 184, 0.32);
   background: rgba(148, 163, 184, 0.12);
-  padding: 0.85rem 0.75rem;
+  padding: 0.75rem;
   cursor: pointer;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-  min-height: 7.25rem;
   text-align: center;
   color: inherit;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  box-sizing: border-box;
 }
 
 .part-type-card:focus-visible {
@@ -1385,7 +1393,7 @@ main {
 
 .part-type-card__thumb {
   width: 100%;
-  height: 4.5rem;
+  height: min(4rem, 52%);
   border-radius: 0;
   background: transparent;
   display: flex;
@@ -1450,6 +1458,10 @@ body.part-type-picker-open {
     padding-left: 1rem;
     padding-right: 1rem;
   }
+  .part-type-picker__recent {
+    margin-left: 1rem;
+    margin-right: 1rem;
+  }
 }
 
 :root[data-theme='dark'] .part-type-picker__chip {
@@ -1473,6 +1485,12 @@ body.part-type-picker-open {
 :root[data-theme='dark'] .part-type-picker__dialog-surface {
   background-color: rgba(15, 23, 42, 0.98);
   box-shadow: 0 32px 56px rgba(2, 6, 23, 0.65);
+}
+
+:root[data-theme='dark'] .part-type-picker__recent {
+  background: rgba(15, 23, 42, 0.72);
+  border-color: rgba(148, 163, 184, 0.35);
+  box-shadow: 0 18px 36px rgba(2, 6, 23, 0.65);
 }
 
 :root[data-theme='dark'] .part-type-picker__subtitle,
