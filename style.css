@@ -199,6 +199,29 @@ main {
   gap: 0.2rem;
 }
 
+@media (max-width: 575.98px) {
+  #fuse-selection-row {
+    --bs-gutter-x: 0.75rem;
+  }
+
+  #fuse-selection-row > [class*='col-'] {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+
+  .actions {
+    flex-wrap: nowrap !important;
+    gap: 0.75rem;
+  }
+
+  .actions .btn {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-inline: 0.75rem;
+    font-size: 0.95rem;
+  }
+}
+
 .fuse-type-option__title {
   font-weight: 600;
 }

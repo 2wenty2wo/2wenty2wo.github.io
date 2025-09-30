@@ -35,6 +35,7 @@ const fuseTypePicker = document.getElementById('fuse-type-picker');
 const fuseTypePickerButton = document.getElementById('fuse-type-picker-button');
 const fuseTypePickerList = document.getElementById('fuse-type-picker-list');
 const fuseValueContainer = document.getElementById('fuse-value-container');
+const fuseTypeMessage = document.getElementById('fuse-type-message');
 const glassOptionsContainer = document.getElementById('glass-options-container');
 const fuseValueSelect = document.getElementById('fuse-value-select');
 const fuseValuePicker = document.getElementById('fuse-value-picker');
@@ -164,7 +165,6 @@ const componentCategoryRadios = Array.from(
 );
 const componentCategoryMessage = document.getElementById('component-category-message');
 const componentMountMessage = document.getElementById('component-mount-message');
-const formStatusMessage = document.getElementById('form-status-message');
 
 export const elements = {
   themeToggleButton,
@@ -198,6 +198,7 @@ export const elements = {
   fuseTypePicker,
   fuseTypePickerButton,
   fuseTypePickerList,
+  fuseTypeMessage,
   fuseValueContainer,
   glassOptionsContainer,
   fuseValueSelect,
@@ -314,5 +315,4 @@ export const elements = {
   componentCategoryRadios,
   componentCategoryMessage,
   componentMountMessage,
-  formStatusMessage,
 };

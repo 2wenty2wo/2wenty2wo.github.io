@@ -799,7 +799,7 @@
                   </div>
                 </div>
                 <div id="fuse-selection-row" class="row g-3 d-none">
-                  <div class="col-12 col-sm-6" id="fuse-type-container">
+                  <div class="col-6" id="fuse-type-container">
                     <label
                       for="fuse-type-select"
                       id="fuse-type-label"
@@ -850,8 +850,12 @@
                         hidden
                       ></ul>
                     </div>
+                    <div
+                      id="fuse-type-message"
+                      class="validation-message text-danger small mt-2 d-none"
+                    ></div>
                   </div>
-                  <div class="col-12 col-sm-6" id="fuse-value-container">
+                  <div class="col-6" id="fuse-value-container">
                     <label for="fuse-value-select" class="form-label fw-semibold"
                       >Fuse Value (amps)</label
                     >
@@ -1236,12 +1240,6 @@
           </div>
         </div>
       </section>
-      <div
-        id="form-status-message"
-        class="alert alert-warning d-none mt-4"
-        role="status"
-        aria-live="polite"
-      ></div>
       <div class="actions d-flex flex-wrap justify-content-center gap-3 mt-4">
         <button
           id="download-button"
@@ -1255,17 +1253,6 @@
           <span>Download</span>
         </button>
         <button
-          id="share-button"
-          class="btn btn-outline-primary btn-lg px-4 d-inline-flex align-items-center"
-          type="button"
-          disabled
-          aria-label="Share a link to this label"
-          title="Share a link to this label"
-        >
-          <i class="fa-solid fa-share-nodes me-2" aria-hidden="true"></i>
-          <span>Share</span>
-        </button>
-        <button
           id="print-button"
           class="btn btn-outline-primary btn-lg px-4 d-inline-flex align-items-center"
           type="button"
@@ -1275,6 +1262,17 @@
         >
           <i class="fa-solid fa-print me-2" aria-hidden="true"></i>
           <span>Print</span>
+        </button>
+        <button
+          id="share-button"
+          class="btn btn-outline-primary btn-lg px-4 d-inline-flex align-items-center"
+          type="button"
+          disabled
+          aria-label="Share a link to this label"
+          title="Share a link to this label"
+        >
+          <i class="fa-solid fa-share-nodes me-2" aria-hidden="true"></i>
+          <span>Share</span>
         </button>
       </div>
     </main>
