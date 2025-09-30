@@ -10,6 +10,7 @@ import {
   populateComponentMountPicker,
   populateResistorValues,
   populateCapacitorValues,
+  populateDiodeValues,
   updateCustomImageUi,
   onHardwareTypeChange,
   setBoltDriveSelection,
@@ -22,6 +23,7 @@ import {
   setComponentMountSelection,
   setResistorValueSelection,
   setCapacitorValueSelection,
+  setDiodeValueSelection,
   updateComponentValueUi,
 } from './forms.js';
 import { updateDownloadState, updateQrContentVisibility, updatePreview } from './render.js';
@@ -78,6 +80,7 @@ function applyStateToControls() {
   setComponentMountSelection(state.componentMount || 'Through-Hole', { triggerUpdate: false });
   setResistorValueSelection(state.resistorValue || '', { triggerUpdate: false });
   setCapacitorValueSelection(state.capacitorValue || '', { triggerUpdate: false });
+  setDiodeValueSelection(state.diodeValue || '', { triggerUpdate: false });
   updateComponentValueUi({ resetIfHidden: false });
 
   if (lengthInput) {
@@ -134,6 +137,7 @@ function init() {
   populateComponentMountPicker();
   populateResistorValues();
   populateCapacitorValues();
+  populateDiodeValues();
   updateCustomImageUi();
   onHardwareTypeChange();
   applyStateToControls();

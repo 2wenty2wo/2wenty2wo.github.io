@@ -24,6 +24,7 @@ export const state = {
   componentMount: 'Through-Hole',
   resistorValue: '',
   capacitorValue: '',
+  diodeValue: '',
   bearingType: '',
   bearingDetails: '',
   customLine1: '',

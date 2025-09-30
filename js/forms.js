@@ -19,6 +19,7 @@ import {
   componentMountOptions,
   resistorValueOptions,
   capacitorValueOptions,
+  diodeValueOptions,
 } from './data.js';
 import { updatePreview, updateDownloadState } from './render.js';
 import {
@@ -73,6 +74,11 @@ const {
   capacitorValuePickerButton,
   capacitorValuePickerList,
   capacitorValueSelect,
+  diodeValueField,
+  diodeValuePicker,
+  diodeValuePickerButton,
+  diodeValuePickerList,
+  diodeValueSelect,
   bearingOptionsContainer,
   bearingTypePicker,
   bearingTypePickerButton,
@@ -132,6 +138,8 @@ const RESISTOR_VALUE_PLACEHOLDER_TEXT = 'Select value…';
 const validResistorValues = new Set(resistorValueOptions.map(option => option.id));
 const CAPACITOR_VALUE_PLACEHOLDER_TEXT = 'Select value…';
 const validCapacitorValues = new Set(capacitorValueOptions.map(option => option.id));
+const DIODE_VALUE_PLACEHOLDER_TEXT = 'Select value…';
+const validDiodeValues = new Set(diodeValueOptions.map(option => option.id));
 const BEARING_TYPE_PLACEHOLDER_TEXT = 'Select bearing…';
 const validBearingCodes = new Set(bearingOptions.map(option => option.code));
 
@@ -527,6 +535,7 @@ export function updateComponentValueUi({ resetIfHidden = true } = {}) {
   const category = (state.componentCategory || state.hardwareType || '').trim();
   const showResistorValues = showComponentFields && category === 'Resistor';
   const showCapacitorValues = showComponentFields && category === 'Capacitor';
+  const showDiodeValues = showComponentFields && category === 'Diode';
 
   if (resistorValueField) {
     resistorValueField.classList.toggle('d-none', !showResistorValues);
@@ -606,10 +615,46 @@ export function updateComponentValueUi({ resetIfHidden = true } = {}) {
     state.capacitorValue = '';
   }
 
+  if (diodeValueField) {
+    diodeValueField.classList.toggle('d-none', !showDiodeValues);
+    diodeValueField.setAttribute('aria-hidden', showDiodeValues ? 'false' : 'true');
+  }
+
+  if (diodeValueSelect) {
+    diodeValueSelect.disabled = !showDiodeValues;
+  }
+
+  if (diodeValuePickerButton) {
+    diodeValuePickerButton.disabled = !showDiodeValues;
+    const isOpen = Boolean(
+      showDiodeValues && diodeValuePicker && diodeValuePicker.classList.contains('is-open'),
+    );
+    diodeValuePickerButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  }
+
+  if (diodeValuePickerList) {
+    const shouldHideList =
+      !showDiodeValues || !diodeValuePicker || !diodeValuePicker.classList.contains('is-open');
+    diodeValuePickerList.hidden = shouldHideList;
+  }
+
+  if (diodeValuePicker) {
+    if (!showDiodeValues) {
+      diodeValuePicker.classList.remove('is-open');
+      document.dispatchEvent(new CustomEvent('gridfinity:component-picker-close'));
+    }
+    diodeValuePicker.classList.toggle('is-disabled', !showDiodeValues);
+  }
+
+  if (!showDiodeValues && resetIfHidden) {
+    state.diodeValue = '';
+  }
+
   refreshComponentMountPickerIcons();
   syncComponentMountPicker({ isValid: true });
   syncResistorValuePicker({ isValid: true });
   syncCapacitorValuePicker({ isValid: true });
+  syncDiodeValuePicker({ isValid: true });
 }
 
 export function syncResistorValuePicker({ isValid = true } = {}) {
@@ -731,6 +776,63 @@ export function populateCapacitorValues() {
   updateComponentValueUi({ resetIfHidden: false });
 }
 
+export function populateDiodeValues() {
+  if (!diodeValueSelect) {
+    return;
+  }
+
+  const previousValue = typeof state.diodeValue === 'string' ? state.diodeValue : '';
+
+  diodeValueSelect.innerHTML = '';
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = DIODE_VALUE_PLACEHOLDER_TEXT;
+  diodeValueSelect.appendChild(placeholder);
+
+  diodeValueOptions.forEach(option => {
+    const opt = document.createElement('option');
+    opt.value = option.id;
+    opt.textContent = option.label;
+    diodeValueSelect.appendChild(opt);
+  });
+
+  const sanitizedValue = validDiodeValues.has(previousValue) ? previousValue : '';
+  state.diodeValue = sanitizedValue;
+  diodeValueSelect.value = sanitizedValue;
+
+  if (diodeValuePickerList) {
+    diodeValuePickerList.innerHTML = '';
+    diodeValueOptions.forEach(option => {
+      const item = document.createElement('li');
+      item.className = 'bolt-drive-picker__option';
+      item.dataset.value = option.id;
+      item.setAttribute('role', 'option');
+      item.setAttribute('aria-selected', 'false');
+      item.tabIndex = -1;
+
+      const icon = document.createElement('span');
+      icon.className = 'bolt-drive-picker__option-icon is-empty';
+      icon.setAttribute('aria-hidden', 'true');
+      item.appendChild(icon);
+
+      const label = document.createElement('span');
+      label.className = 'bolt-drive-picker__option-label';
+      label.textContent = option.label;
+      item.appendChild(label);
+
+      diodeValuePickerList.appendChild(item);
+    });
+    diodeValuePickerList.hidden = true;
+  }
+
+  if (diodeValuePickerButton) {
+    diodeValuePickerButton.setAttribute('aria-expanded', 'false');
+  }
+
+  syncDiodeValuePicker({ isValid: true });
+  updateComponentValueUi({ resetIfHidden: false });
+}
+
 export function syncCapacitorValuePicker({ isValid = true } = {}) {
   if (!capacitorValueSelect) {
     return;
@@ -786,6 +888,68 @@ export function setCapacitorValueSelection(nextValue, { triggerUpdate = true } =
 
   state.capacitorValue = sanitizedValue;
   syncCapacitorValuePicker({ isValid: true });
+
+  if (triggerUpdate && previousValue !== sanitizedValue) {
+    updateDownloadState();
+    updatePreview();
+  }
+}
+
+export function syncDiodeValuePicker({ isValid = true } = {}) {
+  if (!diodeValueSelect) {
+    return;
+  }
+
+  const currentValue = typeof state.diodeValue === 'string' ? state.diodeValue : '';
+  const sanitizedValue = validDiodeValues.has(currentValue) ? currentValue : '';
+  if (sanitizedValue !== currentValue) {
+    state.diodeValue = sanitizedValue;
+  }
+
+  diodeValueSelect.value = sanitizedValue;
+  if (!sanitizedValue && diodeValueSelect.options.length > 0) {
+    diodeValueSelect.selectedIndex = 0;
+  }
+
+  if (diodeValuePickerButton) {
+    const label = diodeValuePickerButton.querySelector('.bolt-drive-picker__current-label');
+    if (label) {
+      label.textContent = sanitizedValue ? sanitizedValue : DIODE_VALUE_PLACEHOLDER_TEXT;
+    }
+
+    if (isValid) {
+      diodeValuePickerButton.classList.remove('is-invalid');
+      diodeValuePickerButton.removeAttribute('aria-invalid');
+    } else {
+      diodeValuePickerButton.classList.add('is-invalid');
+      diodeValuePickerButton.setAttribute('aria-invalid', 'true');
+    }
+  }
+
+  if (diodeValuePicker) {
+    diodeValuePicker.classList.toggle('is-invalid', !isValid);
+  }
+
+  if (diodeValuePickerList) {
+    const optionElements = Array.from(
+      diodeValuePickerList.querySelectorAll('[role="option"]'),
+    );
+    optionElements.forEach(optionElement => {
+      const isSelected = optionElement.dataset.value === sanitizedValue;
+      optionElement.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      optionElement.classList.toggle('is-selected', isSelected);
+      optionElement.tabIndex = -1;
+    });
+  }
+}
+
+export function setDiodeValueSelection(nextValue, { triggerUpdate = true } = {}) {
+  const desiredValue = typeof nextValue === 'string' ? nextValue.trim() : '';
+  const sanitizedValue = validDiodeValues.has(desiredValue) ? desiredValue : '';
+  const previousValue = typeof state.diodeValue === 'string' ? state.diodeValue : '';
+
+  state.diodeValue = sanitizedValue;
+  syncDiodeValuePicker({ isValid: true });
 
   if (triggerUpdate && previousValue !== sanitizedValue) {
     updateDownloadState();

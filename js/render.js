@@ -1572,6 +1572,18 @@ function buildTextLines() {
       }
       return { line1, line2, line3: line3Parts.join(' — ') };
     }
+    if (category === 'Diode') {
+      const line1 = state.diodeValue || 'Diode';
+      const line2 = 'Diode';
+      const line3Parts = [];
+      if (state.componentMount) {
+        line3Parts.push(state.componentMount);
+      }
+      if (state.notes) {
+        line3Parts.push(state.notes);
+      }
+      return { line1, line2, line3: line3Parts.join(' — ') };
+    }
     const parts = [];
     if (state.componentCategory) {
       parts.push(state.componentCategory);
