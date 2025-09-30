@@ -1289,11 +1289,10 @@ export function syncHardwareTypePicker() {
   }
 
   if (hardwareTypePickerButton) {
-    const label = hardwareTypePickerButton.querySelector('.bolt-drive-picker__current-label');
-    const iconWrapper = hardwareTypePickerButton.querySelector('.bolt-drive-picker__current-icon');
-    const iconImage = hardwareTypePickerButton.querySelector(
-      '.bolt-drive-picker__current-icon-image',
-    );
+    const label = hardwareTypePickerButton.querySelector('.part-type-picker__chip-label');
+    const iconImage = hardwareTypePickerButton.querySelector('.part-type-picker__chip-image');
+    const fallback = hardwareTypePickerButton.querySelector('.part-type-picker__chip-fallback');
+    const imageSrc = sanitizedValue ? hardwareTypeImageMap[sanitizedValue] : '';
 
     let optionLabel = HARDWARE_TYPE_PLACEHOLDER_TEXT;
     if (sanitizedValue && hardwareTypeSelect) {
@@ -1309,20 +1308,34 @@ export function syncHardwareTypePicker() {
       label.textContent = optionLabel;
     }
 
-    if (iconWrapper && iconImage) {
-      const imageSrc = sanitizedValue ? hardwareTypeImageMap[sanitizedValue] : '';
+    if (iconImage) {
       iconImage.classList.remove('is-rotated-90');
+
       if (imageSrc) {
         iconImage.src = imageSrc;
         iconImage.hidden = false;
         if (sanitizedValue === 'Bolt' || sanitizedValue === 'Screw') {
           iconImage.classList.add('is-rotated-90');
         }
-        iconWrapper.classList.remove('is-empty');
       } else {
         iconImage.hidden = true;
         iconImage.removeAttribute('src');
-        iconWrapper.classList.add('is-empty');
+      }
+    }
+
+    if (fallback instanceof HTMLElement) {
+      if (imageSrc) {
+        fallback.hidden = true;
+        fallback.style.backgroundImage = '';
+        fallback.style.backgroundSize = '';
+        fallback.style.backgroundPosition = '';
+        fallback.style.backgroundRepeat = '';
+      } else {
+        fallback.hidden = false;
+        fallback.style.backgroundImage = `url("${PART_TYPE_PLACEHOLDER_IMAGE}")`;
+        fallback.style.backgroundSize = 'cover';
+        fallback.style.backgroundPosition = 'center';
+        fallback.style.backgroundRepeat = 'no-repeat';
       }
     }
   }
