@@ -4,6 +4,7 @@ import {
   syncBoltDrivePicker,
   syncBoltHeadPicker,
   syncThreadSizePicker,
+  syncFuseTypePicker,
   syncFuseValuePicker,
   syncComponentMountPicker,
   syncResistorValuePicker,
@@ -51,6 +52,9 @@ const {
   washerTypeSelect,
   washerTypeContainer,
   washerTypeMessage,
+  fuseTypeSelect,
+  fuseTypeContainer,
+  fuseTypeMessage,
   fuseValueSelect,
   fuseValueContainer,
   connectorCategorySelect,
@@ -86,7 +90,6 @@ const {
   threadSizeMessage,
   lengthMessage,
   fuseValueMessage,
-  formStatusMessage,
 } = elements;
 
 const ELECTRICAL_COMPONENT_TYPES = new Set(electricalComponentTypes);
@@ -867,20 +870,9 @@ function updateRadioGroupFeedback({ radios, container, messageElement, valid, me
   setMessageVisibility(messageElement, normalized, shouldShow);
 }
 
-function formatRequirementSummary(requirements) {
-  if (!Array.isArray(requirements) || requirements.length === 0) {
-    return '';
-  }
-  if (requirements.length === 1) {
-    return requirements[0];
-  }
-  const allButLast = requirements.slice(0, -1);
-  const last = requirements[requirements.length - 1];
-  return `${allButLast.join(', ')} and ${last}`;
-}
 export function isLabelReady() {
   if (state.hardwareType === 'Fuse') {
-    return Boolean(state.fuseValue);
+    return Boolean(state.fuseType && state.fuseValue);
   }
   if (state.hardwareType === 'Connector') {
     return Boolean(state.connectorCategory);
@@ -928,8 +920,7 @@ export function isLabelReady() {
   return Boolean(state.threadSize);
 }
 
-function applyValidationFeedback(disabled) {
-  const requirements = [];
+function applyValidationFeedback() {
   const hardwareType = state.hardwareType;
   const requiresThread =
     hardwareType === 'Bolt' ||
@@ -947,9 +938,6 @@ function applyValidationFeedback(disabled) {
       valid,
     });
     syncThreadSizePicker({ isValid: valid });
-    if (!valid) {
-      requirements.push('select a size');
-    }
   } else {
     updateInputFieldState({
       input: threadSizeSelect,
@@ -972,9 +960,6 @@ function applyValidationFeedback(disabled) {
       messageElement: lengthMessage,
       valid,
     });
-    if (!valid) {
-      requirements.push('add a length');
-    }
   } else {
     updateInputFieldState({
       input: lengthInput,
@@ -985,18 +970,31 @@ function applyValidationFeedback(disabled) {
   }
 
   if (hardwareType === 'Fuse') {
-    const valid = Boolean(state.fuseValue);
+    const typeValid = Boolean(state.fuseType);
+    updateInputFieldState({
+      input: fuseTypeSelect,
+      container: fuseTypeContainer,
+      messageElement: fuseTypeMessage,
+      valid: typeValid,
+    });
+    syncFuseTypePicker({ isValid: typeValid });
+    const valueValid = Boolean(state.fuseValue);
     updateInputFieldState({
       input: fuseValueSelect,
       container: fuseValueContainer,
       messageElement: fuseValueMessage,
-      valid,
+      valid: valueValid,
     });
-    syncFuseValuePicker({ isValid: valid });
-    if (!valid) {
-      requirements.push('choose a fuse value');
-    }
+    syncFuseValuePicker({ isValid: valueValid });
   } else {
+    updateInputFieldState({
+      input: fuseTypeSelect,
+      container: fuseTypeContainer,
+      messageElement: fuseTypeMessage,
+      valid: true,
+    });
+    syncFuseTypePicker({ isValid: true });
+
     updateInputFieldState({
       input: fuseValueSelect,
       container: fuseValueContainer,
@@ -1026,12 +1024,6 @@ function applyValidationFeedback(disabled) {
     });
     syncBoltHeadPicker({ isValid: headValid });
     syncBoltDrivePicker({ isValid: driveValid });
-    if (!headValid) {
-      requirements.push(hardwareType === 'Screw' ? 'choose a screw type' : 'select a head style');
-    }
-    if (!driveValid) {
-      requirements.push('select a drive style');
-    }
   } else {
     updateInputFieldState({
       input: boltHeadSelect,
@@ -1058,9 +1050,6 @@ function applyValidationFeedback(disabled) {
       valid: typeValid,
     });
     syncWasherTypePicker({ isValid: typeValid });
-    if (!typeValid) {
-      requirements.push('choose a washer type');
-    }
   } else {
     updateInputFieldState({
       input: washerTypeSelect,
@@ -1080,9 +1069,6 @@ function applyValidationFeedback(disabled) {
       valid: typeValid,
     });
     syncNutTypePicker({ isValid: typeValid });
-    if (!typeValid) {
-      requirements.push('choose a nut type');
-    }
   } else {
     updateInputFieldState({
       input: nutTypeSelect,
@@ -1107,9 +1093,6 @@ function applyValidationFeedback(disabled) {
       messageElement: connectorNotesMessage,
       valid: true,
     });
-    if (!categoryValid) {
-      requirements.push('choose a connector category');
-    }
   } else {
     updateInputFieldState({
       input: connectorCategorySelect,
@@ -1134,9 +1117,6 @@ function applyValidationFeedback(disabled) {
       valid,
     });
     syncBearingTypePicker({ isValid: valid });
-    if (!valid) {
-      requirements.push('select a bearing');
-    }
   } else {
     updateInputFieldState({
       input: bearingTypeSelect,
@@ -1163,9 +1143,6 @@ function applyValidationFeedback(disabled) {
       message: mountValid ? '' : 'Choose a mounting style',
     });
     syncComponentMountPicker({ isValid: mountValid });
-    if (!mountValid) {
-      requirements.push('choose a mounting style');
-    }
 
     const category = (state.componentCategory || state.hardwareType || '').trim();
     const requiresResistorValue = category === 'Resistor';
@@ -1188,12 +1165,6 @@ function applyValidationFeedback(disabled) {
     });
     syncResistorValuePicker({ isValid: resistorValid });
     syncCapacitorValuePicker({ isValid: capacitorValid });
-    if (requiresResistorValue && !resistorValid) {
-      requirements.push('select a resistor value');
-    }
-    if (requiresCapacitorValue && !capacitorValid) {
-      requirements.push('select a capacitor value');
-    }
   } else {
     updateRadioGroupFeedback({
       radios: componentCategoryRadios,
@@ -1236,9 +1207,6 @@ function applyValidationFeedback(disabled) {
       messageElement: customLine1Message,
       valid,
     });
-    if (!valid) {
-      requirements.push('add a custom label title');
-    }
   } else {
     updateInputFieldState({
       input: customLine1Input,
@@ -1248,19 +1216,6 @@ function applyValidationFeedback(disabled) {
     });
   }
 
-  if (formStatusMessage) {
-    if (disabled) {
-      const summary =
-        requirements.length > 0
-          ? formatRequirementSummary(requirements)
-          : 'complete the required fields';
-      formStatusMessage.textContent = `To enable Download and Print, ${summary}.`;
-      formStatusMessage.classList.remove('d-none');
-    } else {
-      formStatusMessage.textContent = '';
-      formStatusMessage.classList.add('d-none');
-    }
-  }
 }
 
 export function updateDownloadState() {
@@ -1290,7 +1245,7 @@ export function updateDownloadState() {
       ? 'Complete the label details to enable sharing.'
       : label;
   }
-  applyValidationFeedback(disabled);
+  applyValidationFeedback();
 }
 
 export function updateQrContentVisibility(options = {}) {
