@@ -1281,23 +1281,36 @@ export function setDiodeValueSelection(nextValue, { triggerUpdate = true } = {})
 }
 
 export function syncHardwareTypePicker() {
-  const currentValue = typeof state.hardwareType === 'string' ? state.hardwareType : '';
-  const sanitizedValue = hardwareTypeOptions.has(currentValue) ? currentValue : '';
+  const currentValue =
+    typeof state.hardwareType === 'string' ? state.hardwareType.trim() : '';
+  let resolvedValue = hardwareTypeOptions.has(currentValue) ? currentValue : '';
+
+  if (!resolvedValue && hardwareTypeSelect) {
+    const selectValue = typeof hardwareTypeSelect.value === 'string'
+      ? hardwareTypeSelect.value.trim()
+      : '';
+    if (selectValue && hardwareTypeOptions.has(selectValue)) {
+      resolvedValue = selectValue;
+      if (currentValue !== selectValue) {
+        state.hardwareType = selectValue;
+      }
+    }
+  }
 
   if (hardwareTypeSelect) {
-    hardwareTypeSelect.value = sanitizedValue || hardwareTypeSelect.value;
+    hardwareTypeSelect.value = resolvedValue || hardwareTypeSelect.value;
   }
 
   if (hardwareTypePickerButton) {
     const label = hardwareTypePickerButton.querySelector('.part-type-picker__chip-label');
     const iconImage = hardwareTypePickerButton.querySelector('.part-type-picker__chip-image');
     const fallback = hardwareTypePickerButton.querySelector('.part-type-picker__chip-fallback');
-    const imageSrc = sanitizedValue ? hardwareTypeImageMap[sanitizedValue] : '';
+    const imageSrc = resolvedValue ? hardwareTypeImageMap[resolvedValue] : '';
 
     let optionLabel = HARDWARE_TYPE_PLACEHOLDER_TEXT;
-    if (sanitizedValue && hardwareTypeSelect) {
+    if (resolvedValue && hardwareTypeSelect) {
       const match = Array.from(hardwareTypeSelect.options).find(
-        option => option.value === sanitizedValue,
+        option => option.value === resolvedValue,
       );
       if (match) {
         optionLabel = match.textContent.trim() || HARDWARE_TYPE_PLACEHOLDER_TEXT;
@@ -1314,7 +1327,7 @@ export function syncHardwareTypePicker() {
       if (imageSrc) {
         iconImage.src = imageSrc;
         iconImage.hidden = false;
-        if (sanitizedValue === 'Bolt' || sanitizedValue === 'Screw') {
+        if (resolvedValue === 'Bolt' || resolvedValue === 'Screw') {
           iconImage.classList.add('is-rotated-90');
         }
       } else {
@@ -1345,7 +1358,7 @@ export function syncHardwareTypePicker() {
       hardwareTypePickerList.querySelectorAll('[role="option"]'),
     );
     optionItems.forEach(item => {
-      const isSelected = item.dataset.value === sanitizedValue;
+      const isSelected = item.dataset.value === resolvedValue;
       item.setAttribute('aria-selected', isSelected ? 'true' : 'false');
       item.classList.toggle('is-selected', isSelected);
       item.tabIndex = -1;
