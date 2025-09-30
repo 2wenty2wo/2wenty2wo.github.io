@@ -735,6 +735,52 @@
                       class="validation-message text-danger small mt-2 d-none"
                     ></div>
                   </div>
+                  <div
+                    class="col-12 col-sm-6 thread-length-field d-none"
+                    id="washer-type-container"
+                  >
+                    <label for="washer-type-select" class="form-label fw-semibold"
+                      >Washer Type</label
+                    >
+                    <div class="bolt-drive-picker" id="washer-type-picker">
+                      <select id="washer-type-select" class="visually-hidden"></select>
+                      <button
+                        type="button"
+                        class="bolt-drive-picker__button"
+                        id="washer-type-picker-button"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                        aria-controls="washer-type-picker-list"
+                      >
+                        <span class="bolt-drive-picker__current">
+                          <span
+                            class="bolt-drive-picker__current-icon is-empty"
+                            aria-hidden="true"
+                          >
+                            <img
+                              class="bolt-drive-picker__current-icon-image"
+                              src=""
+                              alt=""
+                              hidden
+                            />
+                          </span>
+                          <span class="bolt-drive-picker__current-label">&nbsp;</span>
+                        </span>
+                        <span class="bolt-drive-picker__chevron" aria-hidden="true"></span>
+                      </button>
+                      <ul
+                        class="bolt-drive-picker__list"
+                        id="washer-type-picker-list"
+                        role="listbox"
+                        aria-labelledby="washer-type-picker-button"
+                        hidden
+                      ></ul>
+                    </div>
+                    <div
+                      id="washer-type-message"
+                      class="validation-message text-danger small mt-2 d-none"
+                    ></div>
+                  </div>
                   <div class="col-12 col-sm-6 thread-length-field" id="length-container">
                     <label for="length-input" class="form-label fw-semibold">Length</label>
                     <input

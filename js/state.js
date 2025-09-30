@@ -13,6 +13,7 @@ export const state = {
   boltHead: '',
   boltDrive: '',
   nutType: '',
+  washerType: '',
   showStandard: true,
   showImage: true,
   showQr: false,

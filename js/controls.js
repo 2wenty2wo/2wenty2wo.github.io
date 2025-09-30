@@ -11,11 +11,13 @@ import {
   populateResistorValues,
   populateCapacitorValues,
   populateDiodeValues,
+  populateWasherTypeOptions,
   updateCustomImageUi,
   onHardwareTypeChange,
   setBoltDriveSelection,
   setBoltHeadSelection,
   setNutTypeSelection,
+  setWasherTypeSelection,
   setBearingTypeSelection,
   setFuseTypeSelection,
   setThreadSizeSelection,
@@ -50,6 +52,7 @@ function applyStateToControls() {
     heightRadios,
     connectorCategorySelect,
     nutTypeSelect,
+    washerTypeSelect,
   } = elements;
 
   if (Array.isArray(systemTypeRadios)) {
@@ -76,6 +79,9 @@ function applyStateToControls() {
   if (nutTypeSelect) {
     nutTypeSelect.value = state.nutType || '';
   }
+  if (washerTypeSelect) {
+    washerTypeSelect.value = state.washerType || '';
+  }
   setBearingTypeSelection(state.bearingType || '', { triggerUpdate: false });
   setComponentMountSelection(state.componentMount || 'Through-Hole', { triggerUpdate: false });
   setResistorValueSelection(state.resistorValue || '', { triggerUpdate: false });
@@ -101,6 +107,7 @@ function applyStateToControls() {
   setBoltHeadSelection(state.boltHead || '', { triggerUpdate: false });
   setBoltDriveSelection(state.boltDrive || '', { triggerUpdate: false });
   setNutTypeSelection(state.nutType || '', { triggerUpdate: false });
+  setWasherTypeSelection(state.washerType || '', { triggerUpdate: false });
   if (standardToggle) {
     standardToggle.checked = state.showStandard;
   }
@@ -138,6 +145,7 @@ function init() {
   populateResistorValues();
   populateCapacitorValues();
   populateDiodeValues();
+  populateWasherTypeOptions();
   updateCustomImageUi();
   onHardwareTypeChange();
   applyStateToControls();

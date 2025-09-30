@@ -17,6 +17,8 @@ import {
   syncBoltHeadPicker,
   setNutTypeSelection,
   syncNutTypePicker,
+  setWasherTypeSelection,
+  syncWasherTypePicker,
   syncHardwareTypePicker,
   setHardwareTypeFilterCategory,
   setHardwareTypeSearchQuery,
@@ -103,6 +105,10 @@ const {
   nutTypePicker,
   nutTypePickerButton,
   nutTypePickerList,
+  washerTypeSelect,
+  washerTypePicker,
+  washerTypePickerButton,
+  washerTypePickerList,
   standardSelect,
   standardToggle,
   imageToggle,
@@ -131,6 +137,7 @@ let threadSizePickerOpen = false;
 let boltDrivePickerOpen = false;
 let boltHeadPickerOpen = false;
 let nutTypePickerOpen = false;
+let washerTypePickerOpen = false;
 let fuseValuePickerOpen = false;
 let componentMountPickerOpen = false;
 let resistorValuePickerOpen = false;
@@ -2863,6 +2870,195 @@ function handleNutTypeListFocusOut() {
   }, 0);
 }
 
+function getWasherTypeOptionElements() {
+  if (!washerTypePickerList) {
+    return [];
+  }
+  return Array.from(washerTypePickerList.querySelectorAll('[role="option"]'));
+}
+
+function focusWasherTypeOption(option) {
+  if (!option) {
+    return;
+  }
+  const options = getWasherTypeOptionElements();
+  options.forEach(opt => {
+    opt.tabIndex = opt === option ? 0 : -1;
+  });
+  option.focus();
+  if (typeof option.scrollIntoView === 'function') {
+    option.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function openWasherTypePicker() {
+  if (!washerTypePicker || !washerTypePickerButton || !washerTypePickerList) {
+    return;
+  }
+  if (washerTypePickerButton.disabled) {
+    return;
+  }
+  if (washerTypePickerOpen) {
+    return;
+  }
+  washerTypePickerOpen = true;
+  washerTypePicker.classList.add('is-open');
+  washerTypePickerList.hidden = false;
+  washerTypePickerButton.setAttribute('aria-expanded', 'true');
+  syncWasherTypePicker({ isValid: true });
+
+  const options = getWasherTypeOptionElements();
+  if (options.length === 0) {
+    return;
+  }
+  const currentValue = typeof state.washerType === 'string' ? state.washerType : '';
+  const selectedOption = options.find(option => option.dataset.value === currentValue);
+  focusWasherTypeOption(selectedOption || options[0]);
+}
+
+function closeWasherTypePicker({ focusButton = false } = {}) {
+  if (!washerTypePicker || !washerTypePickerButton || !washerTypePickerList) {
+    return;
+  }
+  if (!washerTypePickerOpen) {
+    if (focusButton && !washerTypePickerButton.disabled) {
+      washerTypePickerButton.focus();
+    }
+    return;
+  }
+  washerTypePickerOpen = false;
+  washerTypePicker.classList.remove('is-open');
+  washerTypePickerList.hidden = true;
+  washerTypePickerButton.setAttribute('aria-expanded', 'false');
+  if (focusButton && !washerTypePickerButton.disabled) {
+    washerTypePickerButton.focus();
+  }
+}
+
+function toggleWasherTypePicker() {
+  if (washerTypePickerOpen) {
+    closeWasherTypePicker({ focusButton: false });
+  } else {
+    openWasherTypePicker();
+  }
+}
+
+function moveWasherTypeOption(delta) {
+  const options = getWasherTypeOptionElements();
+  if (options.length === 0) {
+    return;
+  }
+  const active = document.activeElement;
+  const activeIndex = options.findIndex(option => option === active);
+  let nextIndex = activeIndex + delta;
+  if (nextIndex < 0) {
+    nextIndex = options.length - 1;
+  }
+  if (nextIndex >= options.length) {
+    nextIndex = 0;
+  }
+  focusWasherTypeOption(options[nextIndex]);
+}
+
+function handleWasherTypeButtonKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown' || key === 'ArrowUp' || key === 'Enter' || key === ' ') {
+    event.preventDefault();
+    openWasherTypePicker();
+    return;
+  }
+  if (key === 'Escape') {
+    event.preventDefault();
+    closeWasherTypePicker({ focusButton: true });
+  }
+}
+
+function handleWasherTypeListKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    moveWasherTypeOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    moveWasherTypeOption(-1);
+    return;
+  }
+  if (key === 'Home') {
+    event.preventDefault();
+    const options = getWasherTypeOptionElements();
+    if (options.length > 0) {
+      focusWasherTypeOption(options[0]);
+    }
+    return;
+  }
+  if (key === 'End') {
+    event.preventDefault();
+    const options = getWasherTypeOptionElements();
+    if (options.length > 0) {
+      focusWasherTypeOption(options[options.length - 1]);
+    }
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    const target = event.target;
+    if (target && target instanceof HTMLElement) {
+      const option = target.closest('[role="option"]');
+      if (option) {
+        setWasherTypeSelection(option.dataset.value || '');
+        closeWasherTypePicker({ focusButton: true });
+      }
+    }
+    return;
+  }
+  if (key === 'Escape') {
+    event.preventDefault();
+    closeWasherTypePicker({ focusButton: true });
+    return;
+  }
+  if (key === 'Tab') {
+    closeWasherTypePicker();
+  }
+}
+
+function handleWasherTypeListClick(event) {
+  if (!washerTypePickerList) {
+    return;
+  }
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+  const option = target.closest('[role="option"]');
+  if (!option || !washerTypePickerList.contains(option)) {
+    return;
+  }
+  event.preventDefault();
+  setWasherTypeSelection(option.dataset.value || '');
+  closeWasherTypePicker({ focusButton: true });
+}
+
+function handleWasherTypeListFocusOut() {
+  if (!washerTypePickerOpen) {
+    return;
+  }
+  setTimeout(() => {
+    if (!washerTypePickerOpen) {
+      return;
+    }
+    if (!washerTypePicker) {
+      closeWasherTypePicker();
+      return;
+    }
+    const active = document.activeElement;
+    if (!active || !washerTypePicker.contains(active)) {
+      closeWasherTypePicker();
+    }
+  }, 0);
+}
+
 function handleDocumentPointer(event) {
   const target = event.target;
   if (fuseTypePickerOpen && fuseTypePicker) {
@@ -2888,6 +3084,11 @@ function handleDocumentPointer(event) {
   if (nutTypePickerOpen && nutTypePicker) {
     if (!(target instanceof Node) || !nutTypePicker.contains(target)) {
       closeNutTypePicker();
+    }
+  }
+  if (washerTypePickerOpen && washerTypePicker) {
+    if (!(target instanceof Node) || !washerTypePicker.contains(target)) {
+      closeWasherTypePicker();
     }
   }
   if (fuseValuePickerOpen && fuseValuePicker) {
@@ -3307,6 +3508,11 @@ export function initEventHandlers() {
       setNutTypeSelection(nutTypeSelect.value);
     });
   }
+  if (washerTypeSelect) {
+    washerTypeSelect.addEventListener('change', () => {
+      setWasherTypeSelection(washerTypeSelect.value);
+    });
+  }
 
   if (boltHeadSelect) {
     boltHeadSelect.addEventListener('change', () => {
@@ -3349,6 +3555,16 @@ export function initEventHandlers() {
     nutTypePickerList.addEventListener('click', handleNutTypeListClick);
     nutTypePickerList.addEventListener('keydown', handleNutTypeListKeydown);
     nutTypePickerList.addEventListener('focusout', handleNutTypeListFocusOut);
+  }
+  if (washerTypePickerButton && washerTypePickerList) {
+    washerTypePickerButton.addEventListener('click', event => {
+      event.preventDefault();
+      toggleWasherTypePicker();
+    });
+    washerTypePickerButton.addEventListener('keydown', handleWasherTypeButtonKeydown);
+    washerTypePickerList.addEventListener('click', handleWasherTypeListClick);
+    washerTypePickerList.addEventListener('keydown', handleWasherTypeListKeydown);
+    washerTypePickerList.addEventListener('focusout', handleWasherTypeListFocusOut);
   }
   if (
     hardwareTypePicker ||

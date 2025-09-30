@@ -283,6 +283,15 @@ export const nutTypeOptions = [
 
 export const nutTypeMap = new Map(nutTypeOptions.map(option => [option.id, option]));
 
+export const washerTypeOptions = [
+  { id: 'plain_washer', label: 'Plain Washer', image: 'plain_washer' },
+  { id: 'spring_washer', label: 'Spring Washer', image: 'spring_washer' },
+];
+
+export const washerTypeMap = new Map(
+  washerTypeOptions.map(option => [option.id, option]),
+);
+
 export const bearingOptions = [
   { code: '608ZZ', description: '8 × 22 × 7 mm, metal shields' },
   { code: '608-2RS', description: '8 × 22 × 7 mm, rubber seals' },

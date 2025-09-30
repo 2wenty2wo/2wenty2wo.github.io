@@ -8,6 +8,7 @@ import {
   boltDriveOptions,
   screwTypeOptions,
   nutTypeOptions,
+  washerTypeOptions,
   hardwareCatalog,
   hardwareTypeImageMap,
   connectorCatalog,
@@ -53,6 +54,11 @@ const {
   nutTypePickerButton,
   nutTypePickerList,
   nutTypeSelect,
+  washerTypeContainer,
+  washerTypePicker,
+  washerTypePickerButton,
+  washerTypePickerList,
+  washerTypeSelect,
   measurementSystemContainer,
   connectorCategoryContainer,
   connectorCategorySelect,
@@ -152,6 +158,8 @@ const validBoltHeadIds = new Set(
 );
 const NUT_TYPE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const validNutTypeIds = new Set(nutTypeOptions.map(option => option.id));
+const WASHER_TYPE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
+const validWasherTypeIds = new Set(washerTypeOptions.map(option => option.id));
 const FUSE_TYPE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const DEFAULT_FUSE_TYPE = 'Glass';
 const CARTRIDGE_FUSE_TYPES = new Set(['Glass', 'Ceramic']);
@@ -1844,6 +1852,166 @@ export function populateNutTypeOptions() {
   syncNutTypePicker({ isValid: true });
 }
 
+export function syncWasherTypePicker({ isValid = true } = {}) {
+  if (!washerTypeSelect) {
+    return;
+  }
+
+  const currentValue = typeof state.washerType === 'string' ? state.washerType : '';
+  const sanitizedValue = validWasherTypeIds.has(currentValue) ? currentValue : '';
+  if (sanitizedValue !== currentValue) {
+    state.washerType = sanitizedValue;
+  }
+
+  washerTypeSelect.value = sanitizedValue;
+  if (!sanitizedValue && washerTypeSelect.options.length > 0) {
+    washerTypeSelect.selectedIndex = 0;
+  }
+
+  const selectedOption = sanitizedValue
+    ? washerTypeOptions.find(option => option.id === sanitizedValue) || null
+    : null;
+
+  if (washerTypePickerButton) {
+    const label = washerTypePickerButton.querySelector('.bolt-drive-picker__current-label');
+    const iconWrapper = washerTypePickerButton.querySelector('.bolt-drive-picker__current-icon');
+    const iconImage = washerTypePickerButton.querySelector('.bolt-drive-picker__current-icon-image');
+
+    if (label) {
+      label.textContent = selectedOption
+        ? selectedOption.label
+        : WASHER_TYPE_PLACEHOLDER_TEXT;
+    }
+
+    if (iconWrapper && iconImage) {
+      if (selectedOption) {
+        iconImage.src = `images/washers/${selectedOption.image}.svg`;
+        iconImage.hidden = false;
+        iconWrapper.classList.remove('is-empty');
+      } else {
+        iconImage.hidden = true;
+        iconImage.removeAttribute('src');
+        iconWrapper.classList.add('is-empty');
+      }
+    }
+
+    if (isValid) {
+      washerTypePickerButton.classList.remove('is-invalid');
+      washerTypePickerButton.removeAttribute('aria-invalid');
+    } else {
+      washerTypePickerButton.classList.add('is-invalid');
+      washerTypePickerButton.setAttribute('aria-invalid', 'true');
+    }
+  }
+
+  if (washerTypePicker) {
+    washerTypePicker.classList.toggle('is-invalid', !isValid);
+  }
+
+  if (washerTypePickerList) {
+    const optionElements = Array.from(
+      washerTypePickerList.querySelectorAll('[role="option"]'),
+    );
+    optionElements.forEach(optionElement => {
+      const isSelected = optionElement.dataset.value === sanitizedValue;
+      optionElement.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      optionElement.classList.toggle('is-selected', isSelected);
+      optionElement.tabIndex = -1;
+    });
+  }
+}
+
+export function setWasherTypeSelection(nextId, { triggerUpdate = true } = {}) {
+  const desiredValue = typeof nextId === 'string' ? nextId.trim() : '';
+  const sanitizedValue = validWasherTypeIds.has(desiredValue) ? desiredValue : '';
+  const previousValue = typeof state.washerType === 'string' ? state.washerType : '';
+
+  state.washerType = sanitizedValue;
+  syncWasherTypePicker({ isValid: true });
+
+  if (triggerUpdate && previousValue !== sanitizedValue) {
+    updatePreview();
+    updateDownloadState();
+  }
+}
+
+export function populateWasherTypeOptions() {
+  if (!washerTypeSelect) {
+    state.washerType = '';
+    return;
+  }
+
+  const previousType = typeof state.washerType === 'string' ? state.washerType : '';
+
+  washerTypeSelect.innerHTML = '';
+  if (washerTypePickerList) {
+    washerTypePickerList.innerHTML = '';
+  }
+
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = WASHER_TYPE_PLACEHOLDER_TEXT;
+  placeholder.disabled = true;
+  placeholder.selected = !previousType;
+  washerTypeSelect.appendChild(placeholder);
+
+  washerTypeOptions.forEach(option => {
+    const opt = document.createElement('option');
+    opt.value = option.id;
+    opt.textContent = option.label;
+    washerTypeSelect.appendChild(opt);
+
+    if (washerTypePickerList) {
+      const item = document.createElement('li');
+      item.className = 'bolt-drive-picker__option';
+      item.dataset.value = option.id;
+      item.setAttribute('role', 'option');
+      item.tabIndex = -1;
+
+      const icon = document.createElement('span');
+      icon.className = 'bolt-drive-picker__option-icon';
+
+      const image = document.createElement('img');
+      image.className = 'bolt-drive-picker__option-icon-image';
+      image.src = `images/washers/${option.image}.svg`;
+      image.alt = '';
+      image.loading = 'lazy';
+      image.decoding = 'async';
+      icon.appendChild(image);
+
+      const label = document.createElement('span');
+      label.className = 'bolt-drive-picker__option-label';
+      label.textContent = option.label;
+
+      item.appendChild(icon);
+      item.appendChild(label);
+
+      washerTypePickerList.appendChild(item);
+    }
+  });
+
+  const sanitizedValue = validWasherTypeIds.has(previousType) ? previousType : '';
+  state.washerType = sanitizedValue;
+  washerTypeSelect.value = sanitizedValue;
+  if (!sanitizedValue) {
+    placeholder.selected = true;
+  }
+
+  washerTypeSelect.disabled = false;
+  washerTypeSelect.title = 'Select washer style';
+  washerTypeSelect.setAttribute('aria-required', 'true');
+
+  if (washerTypePickerButton) {
+    washerTypePickerButton.disabled = false;
+    washerTypePickerButton.setAttribute('aria-expanded', 'false');
+  }
+  if (washerTypePickerList) {
+    washerTypePickerList.hidden = true;
+  }
+
+  syncWasherTypePicker({ isValid: true });
+}
+
 export function populateConnectorCategories() {
   if (!connectorCategorySelect) {
     return;
@@ -2446,6 +2614,20 @@ export function populateStandards() {
     return;
   }
 
+  if (state.hardwareType === 'Washer') {
+    if (standardSelect) {
+      standardSelect.innerHTML = '';
+      standardSelect.disabled = true;
+      standardSelect.title = '';
+      standardSelect.value = '';
+    }
+    state.standard = '';
+    state.standardCode = '';
+    populateWasherTypeOptions();
+    updatePreview();
+    return;
+  }
+
   if (!standardSelect) {
     return;
   }
@@ -2714,6 +2896,7 @@ export function onHardwareTypeChange() {
   const showScrewFields = type === 'Screw';
   const showFastenerFields = showBoltFields || showScrewFields;
   const showNutFields = type === 'Nut';
+  const showWasherFields = type === 'Washer';
 
   if (lengthContainer) {
     lengthContainer.style.display = requiresThreadDetails ? '' : 'none';
@@ -2863,7 +3046,8 @@ export function onHardwareTypeChange() {
         !showCustomFields &&
         !showBearingFields &&
         !showComponentFields &&
-        !showNutFields,
+        !showNutFields &&
+        !showWasherFields,
     );
     threadLengthRow.style.display = hideThreadLength ? 'none' : '';
   }
@@ -3059,6 +3243,34 @@ export function onHardwareTypeChange() {
   if (!showNutFields) {
     state.nutType = '';
     syncNutTypePicker({ isValid: true });
+  }
+  if (washerTypeContainer) {
+    const hidden = !showWasherFields;
+    washerTypeContainer.classList.toggle('d-none', hidden);
+    washerTypeContainer.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+  }
+  if (washerTypeSelect) {
+    washerTypeSelect.disabled = !showWasherFields;
+    if (!showWasherFields) {
+      washerTypeSelect.removeAttribute('aria-required');
+      washerTypeSelect.title = '';
+    }
+  }
+  if (washerTypePickerButton) {
+    washerTypePickerButton.disabled = !showWasherFields;
+    if (!showWasherFields) {
+      washerTypePickerButton.setAttribute('aria-expanded', 'false');
+    }
+  }
+  if (washerTypePickerList) {
+    washerTypePickerList.hidden = true;
+  }
+  if (washerTypePicker) {
+    washerTypePicker.classList.toggle('is-disabled', !showWasherFields);
+  }
+  if (!showWasherFields) {
+    state.washerType = '';
+    syncWasherTypePicker({ isValid: true });
   }
   if (notesInput) {
     if (showConnectorFields) {
