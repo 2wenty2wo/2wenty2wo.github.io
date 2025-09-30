@@ -161,6 +161,36 @@ function escapeXml(str) {
     .replace(/'/g, '&#39;');
 }
 
+function resolveSvgImageHref(src) {
+  if (!src) {
+    return '';
+  }
+  if (/^(data:|https?:|file:|blob:|\/\/)/i.test(src)) {
+    return src;
+  }
+  if (typeof document !== 'undefined') {
+    const base = document.baseURI || (typeof window !== 'undefined' && window.location
+      ? window.location.href
+      : '');
+    if (base) {
+      try {
+        return new URL(src, base).href;
+      } catch (error) {
+        console.warn('Unable to resolve SVG image href, using original path.', error);
+        return src;
+      }
+    }
+  } else if (typeof window !== 'undefined' && window.location) {
+    try {
+      return new URL(src, window.location.href).href;
+    } catch (error) {
+      console.warn('Unable to resolve SVG image href, using original path.', error);
+      return src;
+    }
+  }
+  return src;
+}
+
 function createSvgDataUrl(svgMarkup) {
   const encoded = encodeURIComponent(svgMarkup)
     .replace(/'/g, '%27')
@@ -492,7 +522,7 @@ async function buildLabelSvg() {
 
   const svgParts = [];
   svgParts.push(
-    `<svg xmlns="${SVG_XMLNS}" width="${labelWidthPx}" height="${labelHeightPx}" viewBox="0 0 ${labelWidthPx} ${labelHeightPx}">`,
+    `<svg xmlns="${SVG_XMLNS}" xmlns:xlink="http://www.w3.org/1999/xlink" width="${labelWidthPx}" height="${labelHeightPx}" viewBox="0 0 ${labelWidthPx} ${labelHeightPx}">`,
   );
   const strokeWidth = formatNumber(mmToPx(0.25));
   svgParts.push(
@@ -501,8 +531,10 @@ async function buildLabelSvg() {
 
   hardwareLayout.elements.forEach(element => {
     if (element.type === 'image') {
+      const resolvedHref = resolveSvgImageHref(element.href);
+      const escapedHref = escapeXml(resolvedHref);
       svgParts.push(
-        `<image x="${formatNumber(element.x)}" y="${formatNumber(element.y)}" width="${formatNumber(element.width)}" height="${formatNumber(element.height)}" href="${element.href}">` +
+        `<image x="${formatNumber(element.x)}" y="${formatNumber(element.y)}" width="${formatNumber(element.width)}" height="${formatNumber(element.height)}" href="${escapedHref}" xlink:href="${escapedHref}">` +
           (element.title ? `<title>${escapeXml(element.title)}</title>` : '') +
           '</image>',
       );
@@ -533,8 +565,9 @@ async function buildLabelSvg() {
   });
 
   if (qrLayout) {
+    const escapedQrHref = escapeXml(qrLayout.dataUrl);
     svgParts.push(
-      `<image x="${formatNumber(qrLayout.x)}" y="${formatNumber(qrLayout.y)}" width="${formatNumber(qrLayout.size)}" height="${formatNumber(qrLayout.size)}" href="${qrLayout.dataUrl}" />`,
+      `<image x="${formatNumber(qrLayout.x)}" y="${formatNumber(qrLayout.y)}" width="${formatNumber(qrLayout.size)}" height="${formatNumber(qrLayout.size)}" href="${escapedQrHref}" xlink:href="${escapedQrHref}" />`,
     );
   }
 
