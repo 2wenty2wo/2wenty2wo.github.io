@@ -584,10 +584,13 @@ main {
   z-index: 1;
 }
 
-.label-svg {
-  display: block;
+.label-preview-image {
+  display: none;
   width: 100%;
   height: 100%;
+  object-fit: contain;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
 }
 
 .label-frame {
