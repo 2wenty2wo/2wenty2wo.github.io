@@ -132,59 +132,168 @@
                   >
                     Part Type
                   </label>
-                  <div class="bolt-drive-picker" id="hardware-type-picker">
+                  <div class="part-type-picker" id="hardware-type-picker">
                     <select
                       id="hardware-type-select"
-                      class="visually-hidden"
                       aria-labelledby="hardware-type-label"
                     >
                       <optgroup label="Hardware">
-                        <option value="Bolt" selected>Bolt</option>
-                        <option value="Threaded Heat Insert">Threaded Heat Insert</option>
-                        <option value="Nut">Nut</option>
-                        <option value="Screw">Screw</option>
-                        <option value="Washer">Washer</option>
+                        <option
+                          value="Bolt"
+                          data-img="images/bolts/head/countersunk_head.svg"
+                          data-cat="Hardware"
+                          selected
+                        >
+                          Bolt
+                        </option>
+                        <option
+                          value="Threaded Heat Insert"
+                          data-img="images/threaded_heat_insert/heat_insert.svg"
+                          data-cat="Hardware"
+                        >
+                          Threaded Heat Insert
+                        </option>
+                        <option value="Nut" data-img="images/nuts/hex_nut.svg" data-cat="Hardware">
+                          Nut
+                        </option>
+                        <option
+                          value="Screw"
+                          data-img="images/screws/countersunk_wood_screw.svg"
+                          data-cat="Hardware"
+                        >
+                          Screw
+                        </option>
+                        <option value="Washer" data-img="images/washers/plain_washer.svg" data-cat="Hardware">
+                          Washer
+                        </option>
                       </optgroup>
                       <optgroup label="Electrical">
-                        <option value="Fuse">Fuse</option>
-                        <option value="Connector">Connector</option>
-                        <option value="Resistor">Resistor</option>
-                        <option value="Capacitor">Capacitor</option>
-                        <option value="Diode">Diode</option>
+                        <option value="Fuse" data-img="images/fuses/glass_fuse.svg" data-cat="Electrical">
+                          Fuse
+                        </option>
+                        <option
+                          value="Connector"
+                          data-img="images/connectors/connector.svg"
+                          data-cat="Electrical"
+                        >
+                          Connector
+                        </option>
+                        <option
+                          value="Resistor"
+                          data-img="images/resistors/resistor_through_hole.svg"
+                          data-cat="Electrical"
+                        >
+                          Resistor
+                        </option>
+                        <option
+                          value="Capacitor"
+                          data-img="images/capacitors/capacitor_through_hole.svg"
+                          data-cat="Electrical"
+                        >
+                          Capacitor
+                        </option>
+                        <option value="Diode" data-img="images/diodes/diode_through_hole.svg" data-cat="Electrical">
+                          Diode
+                        </option>
                       </optgroup>
                       <optgroup label="Mechanical">
-                        <option value="Bearing">Bearing</option>
+                        <option value="Bearing" data-img="images/bearings/bearing.svg" data-cat="Mechanical">
+                          Bearing
+                        </option>
                       </optgroup>
-                      <option value="Custom">Custom</option>
+                      <option value="Custom" data-cat="Custom">Custom</option>
                     </select>
                     <button
                       type="button"
-                      class="bolt-drive-picker__button"
+                      class="part-type-picker__chip"
                       id="hardware-type-picker-button"
-                      aria-haspopup="listbox"
+                      aria-haspopup="dialog"
                       aria-expanded="false"
-                      aria-controls="hardware-type-picker-list"
+                      aria-controls="hardware-type-picker-dialog"
                     >
-                      <span class="bolt-drive-picker__current">
-                        <span class="bolt-drive-picker__current-icon is-empty" aria-hidden="true">
-                          <img
-                            class="bolt-drive-picker__current-icon-image"
-                            src=""
-                            alt=""
-                            hidden
-                          />
-                        </span>
-                        <span class="bolt-drive-picker__current-label">Select hardware…</span>
+                      <span class="part-type-picker__chip-thumbnail" aria-hidden="true">
+                        <img
+                          class="part-type-picker__chip-image"
+                          src=""
+                          alt=""
+                          hidden
+                          loading="lazy"
+                          decoding="async"
+                        />
+                        <span class="part-type-picker__chip-fallback" aria-hidden="true"></span>
                       </span>
-                      <span class="bolt-drive-picker__chevron" aria-hidden="true"></span>
+                      <span class="part-type-picker__chip-label">Select part type…</span>
                     </button>
-                    <ul
-                      class="bolt-drive-picker__list"
-                      id="hardware-type-picker-list"
-                      role="listbox"
-                      aria-labelledby="hardware-type-picker-button"
+                    <dialog
+                      class="part-type-picker__dialog"
+                      id="hardware-type-picker-dialog"
+                      aria-labelledby="hardware-type-picker-title"
+                    >
+                      <div class="part-type-picker__dialog-surface" data-part-type-dialog-surface>
+                        <header class="part-type-picker__header">
+                          <div class="part-type-picker__title-group">
+                            <h2 class="part-type-picker__title" id="hardware-type-picker-title">
+                              Choose a part type
+                            </h2>
+                            <p class="part-type-picker__subtitle">Browse by category or search the catalog.</p>
+                          </div>
+                          <button
+                            type="button"
+                            class="part-type-picker__close"
+                            data-part-type-picker-close
+                            aria-label="Close part type picker"
+                          >
+                            <span aria-hidden="true">&times;</span>
+                          </button>
+                        </header>
+                        <div class="part-type-picker__search-row">
+                          <label for="hardware-type-picker-search" class="visually-hidden"
+                            >Search part types</label
+                          >
+                          <input
+                            type="search"
+                            class="part-type-picker__search"
+                            id="hardware-type-picker-search"
+                            name="hardware-type-picker-search"
+                            placeholder="Search part types"
+                            autocomplete="off"
+                          />
+                        </div>
+                        <div
+                          class="part-type-picker__filters"
+                          id="hardware-type-picker-filters"
+                          role="group"
+                          aria-label="Filter part types by category"
+                        ></div>
+                        <section
+                          class="part-type-picker__recent"
+                          id="hardware-type-picker-recent-section"
+                          hidden
+                        >
+                          <h3 class="part-type-picker__section-title">Recently used</h3>
+                          <div
+                            class="part-type-picker__recent-grid"
+                            id="hardware-type-picker-recent"
+                            role="listbox"
+                            aria-label="Recently used part types"
+                          ></div>
+                        </section>
+                        <p class="part-type-picker__empty" id="hardware-type-picker-empty" hidden>
+                          No part types match your filters.
+                        </p>
+                        <div
+                          class="part-type-picker__grid"
+                          id="hardware-type-picker-list"
+                          role="listbox"
+                          aria-label="All part types"
+                        ></div>
+                      </div>
+                    </dialog>
+                    <div
+                      class="part-type-picker__fallback-backdrop"
+                      id="hardware-type-picker-fallback"
                       hidden
-                    ></ul>
+                    ></div>
                   </div>
                 </div>
                 <div id="custom-fields" class="d-none">
