@@ -1561,14 +1561,15 @@ function buildTextLines() {
     }
     if (category === 'Capacitor') {
       const line1 = state.capacitorValue || 'Capacitor';
-      const line2Parts = [];
+      const line2 = 'Capacitor';
+      const line3Parts = [];
       if (state.componentMount) {
-        line2Parts.push(state.componentMount);
+        line3Parts.push(state.componentMount);
       }
       if (state.notes) {
-        line2Parts.push(state.notes);
+        line3Parts.push(state.notes);
       }
-      return { line1, line2: line2Parts.join(' — '), line3: '' };
+      return { line1, line2, line3: line3Parts.join(' — ') };
     }
     const parts = [];
     if (state.componentCategory) {
