@@ -10,6 +10,7 @@ import {
   syncCapacitorValuePicker,
   syncBearingTypePicker,
   syncWasherTypePicker,
+  syncNutTypePicker,
 } from './forms.js';
 import {
   pxPerMm,
@@ -918,10 +919,8 @@ export function isLabelReady() {
   }
   if (state.hardwareType === 'Nut') {
     const hasThread = Boolean(state.threadSize);
-    const detailsRequired = Boolean(state.showImage || state.showStandard);
     const hasType = Boolean(state.nutType);
-    const detailsSatisfied = !detailsRequired || hasType;
-    return Boolean(hasThread && detailsSatisfied);
+    return Boolean(hasThread && hasType);
   }
   if (state.hardwareType === 'Threaded Heat Insert') {
     return Boolean(state.threadSize && state.length);
@@ -1072,7 +1071,7 @@ function applyValidationFeedback(disabled) {
     syncWasherTypePicker({ isValid: true });
   }
 
-  if (hardwareType === 'Nut' && (state.showImage || state.showStandard)) {
+  if (hardwareType === 'Nut') {
     const typeValid = Boolean(state.nutType);
     updateInputFieldState({
       input: nutTypeSelect,
@@ -1080,6 +1079,7 @@ function applyValidationFeedback(disabled) {
       messageElement: nutTypeMessage,
       valid: typeValid,
     });
+    syncNutTypePicker({ isValid: typeValid });
     if (!typeValid) {
       requirements.push('choose a nut type');
     }
@@ -1090,6 +1090,7 @@ function applyValidationFeedback(disabled) {
       messageElement: nutTypeMessage,
       valid: true,
     });
+    syncNutTypePicker({ isValid: true });
   }
 
   if (hardwareType === 'Connector') {
