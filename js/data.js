@@ -211,6 +211,24 @@ export const capacitorValueOptions = Array.from(capacitorValueSet)
     return { id: label, label };
   });
 
+export const diodeValueOptions = [
+  { id: '1N4148', label: '1N4148 Signal Diode' },
+  { id: '1N914', label: '1N914 Signal Diode' },
+  { id: '1N4001', label: '1N4001 Rectifier Diode' },
+  { id: '1N4002', label: '1N4002 Rectifier Diode' },
+  { id: '1N4004', label: '1N4004 Rectifier Diode' },
+  { id: '1N4007', label: '1N4007 Rectifier Diode' },
+  { id: '1N5817', label: '1N5817 Schottky Diode' },
+  { id: '1N5819', label: '1N5819 Schottky Diode' },
+  { id: 'SS14', label: 'SS14 Schottky Diode' },
+  { id: 'UF4007', label: 'UF4007 Ultrafast Rectifier' },
+  { id: 'BAV99', label: 'BAV99 Dual Switching Diode' },
+  { id: 'BAT54', label: 'BAT54 Schottky Diode' },
+  { id: 'BZX55C5V1', label: 'BZX55C5V1 Zener Diode' },
+  { id: 'BZX55C12', label: 'BZX55C12 Zener Diode' },
+  { id: 'MMBZ5V6', label: 'MMBZ5V6 Zener Diode' },
+];
+
 export const boltHeadOptions = [
   { id: 'button_head', label: 'Button Head', image: 'button_head' },
   { id: 'cap_head', label: 'Socket Cap', image: 'cap_head' },

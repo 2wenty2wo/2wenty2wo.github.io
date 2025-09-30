@@ -64,6 +64,12 @@ const capacitorValuePickerButton = document.getElementById('capacitor-value-pick
 const capacitorValuePickerList = document.getElementById('capacitor-value-picker-list');
 const capacitorValueSelect = document.getElementById('capacitor-value-select');
 const capacitorValueMessage = document.getElementById('capacitor-value-message');
+const diodeValueField = document.getElementById('diode-value-field');
+const diodeValuePicker = document.getElementById('diode-value-picker');
+const diodeValuePickerButton = document.getElementById('diode-value-picker-button');
+const diodeValuePickerList = document.getElementById('diode-value-picker-list');
+const diodeValueSelect = document.getElementById('diode-value-select');
+const diodeValueMessage = document.getElementById('diode-value-message');
 const bearingOptionsContainer = document.getElementById('bearing-options-container');
 const bearingTypePicker = document.getElementById('bearing-type-picker');
 const bearingTypePickerButton = document.getElementById('bearing-type-picker-button');
@@ -203,6 +209,12 @@ export const elements = {
   capacitorValuePickerList,
   capacitorValueSelect,
   capacitorValueMessage,
+  diodeValueField,
+  diodeValuePicker,
+  diodeValuePickerButton,
+  diodeValuePickerList,
+  diodeValueSelect,
+  diodeValueMessage,
   bearingOptionsContainer,
   bearingTypePicker,
   bearingTypePickerButton,

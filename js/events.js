@@ -25,6 +25,7 @@ import {
   setComponentMountSelection,
   setResistorValueSelection,
   setCapacitorValueSelection,
+  setDiodeValueSelection,
   updateComponentValueUi,
   setBearingTypeSelection,
   syncBearingTypePicker,
@@ -52,6 +53,10 @@ const {
   capacitorValuePicker,
   capacitorValuePickerButton,
   capacitorValuePickerList,
+  diodeValueSelect,
+  diodeValuePicker,
+  diodeValuePickerButton,
+  diodeValuePickerList,
   bearingTypeSelect,
   bearingTypePicker,
   bearingTypePickerButton,
@@ -113,6 +118,7 @@ let fuseValuePickerOpen = false;
 let componentMountPickerOpen = false;
 let resistorValuePickerOpen = false;
 let capacitorValuePickerOpen = false;
+let diodeValuePickerOpen = false;
 let bearingTypePickerOpen = false;
 
 function getHardwareTypeOptionElements() {
@@ -1588,6 +1594,215 @@ function handleCapacitorValueListFocusOut() {
   }, 0);
 }
 
+function getDiodeValueOptionElements() {
+  if (!diodeValuePickerList) {
+    return [];
+  }
+  return Array.from(diodeValuePickerList.querySelectorAll('[role="option"]'));
+}
+
+function focusDiodeValueOption(option) {
+  if (!option) {
+    return;
+  }
+  const options = getDiodeValueOptionElements();
+  options.forEach(opt => {
+    opt.tabIndex = opt === option ? 0 : -1;
+  });
+  option.focus();
+  if (typeof option.scrollIntoView === 'function') {
+    option.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function openDiodeValuePicker() {
+  if (!diodeValuePicker || !diodeValuePickerButton || !diodeValuePickerList) {
+    return;
+  }
+  if (diodeValuePickerButton.disabled) {
+    return;
+  }
+  if (diodeValuePickerOpen) {
+    return;
+  }
+  diodeValuePickerOpen = true;
+  diodeValuePicker.classList.add('is-open');
+  diodeValuePickerList.hidden = false;
+  diodeValuePickerButton.setAttribute('aria-expanded', 'true');
+
+  const options = getDiodeValueOptionElements();
+  const currentValue = typeof state.diodeValue === 'string' ? state.diodeValue : '';
+  const selectedOption = options.find(option => option.dataset.value === currentValue);
+  focusDiodeValueOption(selectedOption || options[0]);
+}
+
+function closeDiodeValuePicker({ focusButton = false } = {}) {
+  if (!diodeValuePicker || !diodeValuePickerButton || !diodeValuePickerList) {
+    return;
+  }
+  if (!diodeValuePickerOpen) {
+    if (focusButton && !diodeValuePickerButton.disabled) {
+      diodeValuePickerButton.focus();
+    }
+    return;
+  }
+  diodeValuePickerOpen = false;
+  diodeValuePicker.classList.remove('is-open');
+  diodeValuePickerList.hidden = true;
+  diodeValuePickerButton.setAttribute('aria-expanded', 'false');
+  if (focusButton && !diodeValuePickerButton.disabled) {
+    diodeValuePickerButton.focus();
+  }
+}
+
+function toggleDiodeValuePicker() {
+  if (diodeValuePickerOpen) {
+    closeDiodeValuePicker({ focusButton: false });
+  } else {
+    openDiodeValuePicker();
+  }
+}
+
+function moveDiodeValueOption(delta) {
+  if (!diodeValuePickerList) {
+    return;
+  }
+  const options = getDiodeValueOptionElements();
+  if (options.length === 0) {
+    return;
+  }
+  const active = document.activeElement;
+  const activeOption = active && diodeValuePickerList.contains(active)
+    ? active.closest('[role="option"]')
+    : null;
+  let index = activeOption ? options.indexOf(activeOption) : -1;
+  if (index === -1) {
+    const currentValue = typeof state.diodeValue === 'string' ? state.diodeValue : '';
+    index = options.findIndex(option => option.dataset.value === currentValue);
+  }
+  let nextIndex = index + delta;
+  if (nextIndex < 0) {
+    nextIndex = options.length - 1;
+  } else if (nextIndex >= options.length) {
+    nextIndex = 0;
+  }
+  const nextOption = options[nextIndex];
+  if (nextOption) {
+    focusDiodeValueOption(nextOption);
+  }
+}
+
+function handleDiodeValueButtonKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    openDiodeValuePicker();
+    moveDiodeValueOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    openDiodeValuePicker();
+    moveDiodeValueOption(-1);
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    toggleDiodeValuePicker();
+    return;
+  }
+  if (key === 'Escape' && diodeValuePickerOpen) {
+    event.preventDefault();
+    closeDiodeValuePicker({ focusButton: true });
+  }
+}
+
+function handleDiodeValueListKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    moveDiodeValueOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    moveDiodeValueOption(-1);
+    return;
+  }
+  if (key === 'Home') {
+    event.preventDefault();
+    const options = getDiodeValueOptionElements();
+    if (options.length > 0) {
+      focusDiodeValueOption(options[0]);
+    }
+    return;
+  }
+  if (key === 'End') {
+    event.preventDefault();
+    const options = getDiodeValueOptionElements();
+    if (options.length > 0) {
+      focusDiodeValueOption(options[options.length - 1]);
+    }
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    const target = event.target;
+    if (target && target instanceof HTMLElement) {
+      const option = target.closest('[role="option"]');
+      if (option) {
+        setDiodeValueSelection(option.dataset.value || '');
+        closeDiodeValuePicker({ focusButton: true });
+      }
+    }
+    return;
+  }
+  if (key === 'Escape') {
+    event.preventDefault();
+    closeDiodeValuePicker({ focusButton: true });
+    return;
+  }
+  if (key === 'Tab') {
+    closeDiodeValuePicker();
+  }
+}
+
+function handleDiodeValueListClick(event) {
+  if (!diodeValuePickerList) {
+    return;
+  }
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+  const option = target.closest('[role="option"]');
+  if (!option || !diodeValuePickerList.contains(option)) {
+    return;
+  }
+  event.preventDefault();
+  setDiodeValueSelection(option.dataset.value || '');
+  closeDiodeValuePicker({ focusButton: true });
+}
+
+function handleDiodeValueListFocusOut() {
+  if (!diodeValuePickerOpen) {
+    return;
+  }
+  setTimeout(() => {
+    if (!diodeValuePickerOpen) {
+      return;
+    }
+    if (!diodeValuePicker) {
+      closeDiodeValuePicker();
+      return;
+    }
+    const active = document.activeElement;
+    if (!active || !diodeValuePicker.contains(active)) {
+      closeDiodeValuePicker();
+    }
+  }, 0);
+}
+
 function getBearingTypeOptionElements() {
   if (!bearingTypePickerList) {
     return [];
@@ -2489,6 +2704,11 @@ function handleDocumentPointer(event) {
       closeCapacitorValuePicker();
     }
   }
+  if (diodeValuePickerOpen && diodeValuePicker) {
+    if (!(target instanceof Node) || !diodeValuePicker.contains(target)) {
+      closeDiodeValuePicker();
+    }
+  }
   if (bearingTypePickerOpen && bearingTypePicker) {
     if (!(target instanceof Node) || !bearingTypePicker.contains(target)) {
       closeBearingTypePicker();
@@ -2546,6 +2766,11 @@ function handleDocumentFocusIn(event) {
   if (capacitorValuePickerOpen && capacitorValuePicker) {
     if (!(target instanceof Node) || !capacitorValuePicker.contains(target)) {
       closeCapacitorValuePicker();
+    }
+  }
+  if (diodeValuePickerOpen && diodeValuePicker) {
+    if (!(target instanceof Node) || !diodeValuePicker.contains(target)) {
+      closeDiodeValuePicker();
     }
   }
   if (bearingTypePickerOpen && bearingTypePicker) {
@@ -2669,6 +2894,23 @@ export function initEventHandlers() {
     resistorValuePickerList.addEventListener('click', handleResistorValueListClick);
     resistorValuePickerList.addEventListener('keydown', handleResistorValueListKeydown);
     resistorValuePickerList.addEventListener('focusout', handleResistorValueListFocusOut);
+  }
+
+  if (diodeValueSelect) {
+    diodeValueSelect.addEventListener('change', () => {
+      setDiodeValueSelection(diodeValueSelect.value);
+    });
+  }
+
+  if (diodeValuePickerButton && diodeValuePickerList) {
+    diodeValuePickerButton.addEventListener('click', event => {
+      event.preventDefault();
+      toggleDiodeValuePicker();
+    });
+    diodeValuePickerButton.addEventListener('keydown', handleDiodeValueButtonKeydown);
+    diodeValuePickerList.addEventListener('click', handleDiodeValueListClick);
+    diodeValuePickerList.addEventListener('keydown', handleDiodeValueListKeydown);
+    diodeValuePickerList.addEventListener('focusout', handleDiodeValueListFocusOut);
   }
 
   if (capacitorValueSelect) {
