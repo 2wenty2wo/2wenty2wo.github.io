@@ -205,6 +205,12 @@ main {
   transform: rotate(180deg);
 }
 
+@media (min-width: 769px) {
+  .section-toggle-button {
+    display: none;
+  }
+}
+
 [data-collapsible-content] {
   /*
    * Allow validation outlines and other visual affordances to render fully

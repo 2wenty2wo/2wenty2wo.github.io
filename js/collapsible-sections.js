@@ -1,5 +1,6 @@
 const STORAGE_KEY = 'gridfinity-collapsible-sections';
 const MOBILE_BREAKPOINT_QUERY = '(max-width: 768px)';
+const mobileQuery = window.matchMedia(MOBILE_BREAKPOINT_QUERY);
 const sections = new Map();
 const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 let storedStates = {};
@@ -162,7 +163,21 @@ function deriveLabel(section, fallback) {
   return fallback;
 }
 
-function registerSection(section, defaultExpanded) {
+function configureToggleForViewport(sectionData, isMobile) {
+  const { toggle } = sectionData;
+  if (isMobile) {
+    toggle.disabled = false;
+    toggle.removeAttribute('aria-hidden');
+    toggle.removeAttribute('tabindex');
+  } else {
+    toggle.disabled = true;
+    toggle.setAttribute('aria-hidden', 'true');
+    toggle.setAttribute('tabindex', '-1');
+    toggle.blur();
+  }
+}
+
+function registerSection(section, isMobile) {
   const id = section.getAttribute('data-collapsible');
   const toggle = section.querySelector('[data-collapsible-toggle]');
   const content = section.querySelector('[data-collapsible-content]');
@@ -184,12 +199,20 @@ function registerSection(section, defaultExpanded) {
   const sectionData = { id, section, toggle, content, label };
   sections.set(id, sectionData);
 
-  const hasStoredState = Object.prototype.hasOwnProperty.call(storedStates, id);
+  const hasStoredState = isMobile && Object.prototype.hasOwnProperty.call(storedStates, id);
+  const defaultExpanded = !isMobile;
   const initialExpanded = hasStoredState ? Boolean(storedStates[id]) : defaultExpanded;
 
-  applySectionState(sectionData, initialExpanded, { animate: false, save: hasStoredState });
+  configureToggleForViewport(sectionData, isMobile);
+  applySectionState(sectionData, initialExpanded, {
+    animate: false,
+    save: isMobile && hasStoredState,
+  });
 
   toggle.addEventListener('click', event => {
+    if (!mobileQuery.matches) {
+      return;
+    }
     event.preventDefault();
     const expanded = toggle.getAttribute('aria-expanded') === 'true';
     applySectionState(sectionData, !expanded);
@@ -198,9 +221,33 @@ function registerSection(section, defaultExpanded) {
 
 function initCollapsibleSections() {
   storedStates = loadStoredStates();
-  const defaultExpanded = !window.matchMedia(MOBILE_BREAKPOINT_QUERY).matches;
+  const isMobile = mobileQuery.matches;
   const sectionElements = document.querySelectorAll('[data-collapsible]');
-  sectionElements.forEach(section => registerSection(section, defaultExpanded));
+  sectionElements.forEach(section => registerSection(section, isMobile));
+
+  const handleViewportChange = event => {
+    const matches = event.matches;
+    sections.forEach(sectionData => {
+      configureToggleForViewport(sectionData, matches);
+      const { id } = sectionData;
+      const hasStoredState = matches
+        && Object.prototype.hasOwnProperty.call(storedStates, id);
+      const defaultExpanded = !matches;
+      const targetExpanded = hasStoredState
+        ? Boolean(storedStates[id])
+        : defaultExpanded;
+      applySectionState(sectionData, targetExpanded, {
+        animate: false,
+        save: matches && hasStoredState,
+      });
+    });
+  };
+
+  if (typeof mobileQuery.addEventListener === 'function') {
+    mobileQuery.addEventListener('change', handleViewportChange);
+  } else if (typeof mobileQuery.addListener === 'function') {
+    mobileQuery.addListener(handleViewportChange);
+  }
 }
 
 function expandAllCollapsibleSections({ animate = true } = {}) {
