@@ -48,6 +48,11 @@ const FIELD_MAP = {
   bearingDetails: 'bd',
   customLine1: 'c1',
   customLine2: 'c2',
+  customGraphicSource: 'cgs',
+  customIconStyle: 'cis',
+  customIconName: 'cinm',
+  customIconUnicode: 'ciu',
+  customIconLabel: 'cil',
   customImageData: 'cid',
   customImageName: 'cin',
 };
@@ -96,6 +101,7 @@ const boltHeadIds = new Set(
   boltHeadOptions.concat(screwTypeOptions).map(option => option.id),
 );
 const boltDriveIds = new Set(boltDriveOptions.map(option => option.id));
+const iconStyleOptions = new Set(['solid', 'regular', 'brands']);
 
 function encodeToBase64Url(input) {
   const encoder = new TextEncoder();
@@ -233,6 +239,22 @@ function sanitizeCustomImageName(value) {
     return '';
   }
   return value.slice(0, 200);
+}
+
+function sanitizeCustomGraphicSource(value) {
+  if (typeof value !== 'string') {
+    return 'image';
+  }
+  const normalized = value.trim().toLowerCase();
+  return normalized === 'icon' ? 'icon' : 'image';
+}
+
+function sanitizeIconStyle(value) {
+  if (typeof value !== 'string') {
+    return 'solid';
+  }
+  const normalized = value.trim().toLowerCase();
+  return iconStyleOptions.has(normalized) ? normalized : 'solid';
 }
 
 function sanitizeWidth(value) {
@@ -435,6 +457,21 @@ function applyExpandedPayload(expanded) {
   }
   if (typeof expanded.customLine2 === 'string') {
     state.customLine2 = expanded.customLine2.slice(0, 120);
+  }
+  if (typeof expanded.customGraphicSource === 'string') {
+    state.customGraphicSource = sanitizeCustomGraphicSource(expanded.customGraphicSource);
+  }
+  if (typeof expanded.customIconStyle === 'string') {
+    state.customIconStyle = sanitizeIconStyle(expanded.customIconStyle);
+  }
+  if (typeof expanded.customIconName === 'string') {
+    state.customIconName = expanded.customIconName.slice(0, 120);
+  }
+  if (typeof expanded.customIconUnicode === 'string') {
+    state.customIconUnicode = expanded.customIconUnicode.slice(0, 20);
+  }
+  if (typeof expanded.customIconLabel === 'string') {
+    state.customIconLabel = sanitizeShortText(expanded.customIconLabel);
   }
   if (typeof expanded.customImageData === 'string') {
     state.customImageData = expanded.customImageData;

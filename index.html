@@ -297,27 +297,94 @@
                   </div>
                 </div>
                 <div id="custom-fields" class="d-none">
-                  <label for="custom-image-input" class="form-label d-block fw-semibold"
-                    >Custom Image</label
-                  >
-                  <input
-                    type="file"
-                    class="form-control"
-                    id="custom-image-input"
-                    accept="image/*"
-                  />
-                  <div class="form-text">
-                    Square images work best. PNG, JPG and SVG files are supported.
+                  <div class="mb-3">
+                    <span class="form-label d-block fw-semibold">Custom Graphic</span>
+                    <div
+                      class="btn-group"
+                      role="group"
+                      aria-label="Select custom graphic source"
+                    >
+                      <input
+                        type="radio"
+                        class="btn-check"
+                        name="custom-graphic-source"
+                        id="custom-graphic-source-image"
+                        value="image"
+                        checked
+                      />
+                      <label class="btn btn-outline-secondary btn-sm" for="custom-graphic-source-image">
+                        <i class="fa-solid fa-image me-1" aria-hidden="true"></i>
+                        Upload image
+                      </label>
+                      <input
+                        type="radio"
+                        class="btn-check"
+                        name="custom-graphic-source"
+                        id="custom-graphic-source-icon"
+                        value="icon"
+                      />
+                      <label class="btn btn-outline-secondary btn-sm" for="custom-graphic-source-icon">
+                        <i class="fa-solid fa-icons me-1" aria-hidden="true"></i>
+                        Font Awesome icon
+                      </label>
+                    </div>
                   </div>
-                  <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+                  <div id="custom-image-fields">
+                    <label for="custom-image-input" class="form-label fw-semibold"
+                      >Upload image</label
+                    >
+                    <input
+                      type="file"
+                      class="form-control"
+                      id="custom-image-input"
+                      accept="image/*"
+                    />
+                    <div class="form-text">
+                      Square images work best. PNG, JPG and SVG files are supported.
+                    </div>
+                  </div>
+                  <div id="custom-icon-fields" class="d-none">
+                    <label for="custom-icon-style" class="form-label fw-semibold">Icon style</label>
+                    <select class="form-select" id="custom-icon-style">
+                      <option value="solid" selected>Solid</option>
+                      <option value="regular">Regular</option>
+                      <option value="brands">Brands</option>
+                    </select>
+                    <div class="mt-3">
+                      <label for="custom-icon-search" class="form-label fw-semibold">Search icons</label>
+                      <input
+                        type="search"
+                        class="form-control"
+                        id="custom-icon-search"
+                        placeholder="Search by name or keyword"
+                        aria-describedby="custom-icon-help custom-icon-status"
+                      />
+                      <div class="form-text" id="custom-icon-help">
+                        Browse the complete Font Awesome Free collection. Results update as you type.
+                      </div>
+                    </div>
+                    <select
+                      class="form-select mt-3"
+                      id="custom-icon-select"
+                      size="8"
+                      aria-describedby="custom-icon-status"
+                    ></select>
+                    <div class="form-text mt-2" id="custom-icon-status" aria-live="polite"></div>
+                  </div>
+                  <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
                     <button
                       type="button"
                       class="btn btn-outline-secondary btn-sm"
                       id="custom-image-clear"
                       disabled
                     >
-                      Remove image
+                      Clear selection
                     </button>
+                    <span
+                      id="custom-icon-preview"
+                      class="custom-icon-preview d-none"
+                      aria-hidden="true"
+                    ></span>
                     <span id="custom-image-name" class="text-muted small d-none"></span>
                   </div>
                   <div class="mt-3" id="custom-line1-field">

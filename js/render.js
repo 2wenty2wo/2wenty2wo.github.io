@@ -436,31 +436,55 @@ function layoutHardware(imageInfo, options) {
   let usedWidth = 0;
   const safeGap = Math.max(0, gap || 0);
 
-  if (imageInfo.type === 'custom') {
+  if (imageInfo.type === 'custom-image' || imageInfo.type === 'custom-icon') {
     const targetWidth = Math.min(maxWidth, Math.max(height * 0.75, Math.min(height, maxWidth)));
     if (!(targetWidth > 0)) {
       return { width: 0, elements: [] };
     }
-    const top = y + (height - height) / 2;
-    if (imageInfo.hasImage && imageInfo.src) {
-      elements.push({
-        type: 'image',
-        href: imageInfo.src,
-        x,
-        y: top,
-        width: targetWidth,
-        height,
-        title: imageInfo.alt || 'Custom image',
-      });
-    } else {
-      elements.push({
-        type: 'placeholder',
-        x,
-        y: top,
-        width: targetWidth,
-        height,
-        label: 'Add image',
-      });
+    const top = y;
+    if (imageInfo.type === 'custom-image') {
+      if (imageInfo.hasImage && imageInfo.src) {
+        elements.push({
+          type: 'image',
+          href: imageInfo.src,
+          x,
+          y: top,
+          width: targetWidth,
+          height,
+          title: imageInfo.alt || 'Custom image',
+        });
+      } else {
+        elements.push({
+          type: 'placeholder',
+          x,
+          y: top,
+          width: targetWidth,
+          height,
+          label: 'Add image',
+        });
+      }
+    } else if (imageInfo.type === 'custom-icon') {
+      if (imageInfo.hasIcon && imageInfo.iconUnicode) {
+        elements.push({
+          type: 'icon',
+          x,
+          y: top,
+          width: targetWidth,
+          height,
+          unicode: imageInfo.iconUnicode,
+          style: imageInfo.iconStyle || 'solid',
+          label: imageInfo.iconLabel || 'Custom icon',
+        });
+      } else {
+        elements.push({
+          type: 'placeholder',
+          x,
+          y: top,
+          width: targetWidth,
+          height,
+          label: 'Choose icon',
+        });
+      }
     }
     usedWidth = targetWidth;
     return { width: usedWidth, elements };
@@ -670,6 +694,18 @@ async function buildLabelSvg() {
         `<text x="${formatNumber(centerX)}" y="${formatNumber(centerY)}" font-size="${placeholderFont}" font-weight="700" text-anchor="middle" fill="${LABEL_TEXT_COLOR}" font-family=${JSON.stringify(
           LABEL_FONT_FAMILY,
         )}>${escapeXml(element.label || 'Add image')}</text>`,
+      );
+    } else if (element.type === 'icon') {
+      const fontFamily =
+        element.style === 'brands' ? 'Font Awesome 6 Brands' : 'Font Awesome 6 Free';
+      const fontWeight = element.style === 'regular' ? 400 : element.style === 'solid' ? 900 : 400;
+      const iconSize = Math.max(12, Math.min(element.width, element.height) * 0.8);
+      const centerX = element.x + element.width / 2;
+      const centerY = element.y + element.height / 2;
+      const glyph = element.unicode ? `&#x${element.unicode};` : '';
+      const title = element.label ? `<title>${escapeXml(element.label)}</title>` : '';
+      svgParts.push(
+        `<g>${title}<text x="${formatNumber(centerX)}" y="${formatNumber(centerY)}" font-family=${JSON.stringify(fontFamily)} font-weight="${fontWeight}" font-size="${formatNumber(iconSize)}" text-anchor="middle" dominant-baseline="middle" fill="${LABEL_TEXT_COLOR}">${glyph}</text></g>`,
       );
     }
   }
@@ -1278,9 +1314,21 @@ function resolveHardwareImageInfo() {
     return null;
   }
   if (state.hardwareType === 'Custom') {
+    const source = state.customGraphicSource === 'icon' ? 'icon' : 'image';
+    if (source === 'icon') {
+      const hasIcon = Boolean(state.customIconUnicode && state.customIconName);
+      return {
+        type: 'custom-icon',
+        hasIcon,
+        iconName: state.customIconName || '',
+        iconUnicode: state.customIconUnicode || '',
+        iconStyle: state.customIconStyle || 'solid',
+        iconLabel: state.customIconLabel || state.customIconName || 'Custom icon',
+      };
+    }
     const hasImage = Boolean(state.customImageData);
     return {
-      type: 'custom',
+      type: 'custom-image',
       hasImage,
       src: state.customImageData || '',
       alt: state.customImageName || 'Custom image',

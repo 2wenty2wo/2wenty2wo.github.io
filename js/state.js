@@ -30,6 +30,11 @@ export const state = {
   bearingDetails: '',
   customLine1: '',
   customLine2: '',
+  customGraphicSource: 'image',
+  customIconStyle: 'solid',
+  customIconName: '',
+  customIconUnicode: '',
+  customIconLabel: '',
   customImageData: '',
   customImageName: '',
 };

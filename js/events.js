@@ -7,6 +7,10 @@ import {
   updateConnectorCategoryUi,
   handleCustomImageFile,
   clearCustomImage,
+  setCustomGraphicSource,
+  setCustomIconStyle,
+  setCustomIconSelection,
+  refreshCustomIconOptions,
   handleStandardSelectKeydown,
   clearStandardFilter,
   setThreadSizeSelection,
@@ -89,6 +93,10 @@ const {
   glassSizeSelect,
   lengthInput,
   notesInput,
+  customGraphicSourceRadios,
+  customIconStyleSelect,
+  customIconSearchInput,
+  customIconSelect,
   customLine1Input,
   customLine2Input,
   customImageInput,
@@ -3468,6 +3476,58 @@ export function initEventHandlers() {
     customLine2Input.addEventListener('input', () => {
       state.customLine2 = customLine2Input.value;
       updatePreview();
+    });
+  }
+
+  if (Array.isArray(customGraphicSourceRadios)) {
+    customGraphicSourceRadios.forEach(radio => {
+      if (!radio) {
+        return;
+      }
+      radio.addEventListener('change', () => {
+        if (radio.checked) {
+          setCustomGraphicSource(radio.value);
+        }
+      });
+    });
+  }
+
+  if (customIconStyleSelect) {
+    customIconStyleSelect.addEventListener('change', () => {
+      setCustomIconStyle(customIconStyleSelect.value);
+    });
+  }
+
+  if (customIconSearchInput) {
+    let iconSearchTimeoutId = 0;
+    const scheduleIconSearch = () => {
+      if (typeof window !== 'undefined' && typeof window.clearTimeout === 'function' && typeof window.setTimeout === 'function') {
+        if (iconSearchTimeoutId) {
+          window.clearTimeout(iconSearchTimeoutId);
+        }
+        iconSearchTimeoutId = window.setTimeout(() => {
+          refreshCustomIconOptions({ preserveSelection: true });
+        }, 120);
+      } else {
+        refreshCustomIconOptions({ preserveSelection: true });
+      }
+    };
+    customIconSearchInput.addEventListener('input', scheduleIconSearch);
+  }
+
+  if (customIconSelect) {
+    customIconSelect.addEventListener('change', () => {
+      const selected = customIconSelect.selectedOptions[0];
+      if (!selected) {
+        setCustomIconSelection({ name: '', unicode: '', label: '', style: customIconStyleSelect ? customIconStyleSelect.value : undefined });
+        return;
+      }
+      setCustomIconSelection({
+        name: selected.value,
+        unicode: selected.dataset.unicode || '',
+        label: selected.dataset.label || selected.textContent || selected.value,
+        style: selected.dataset.style || (customIconStyleSelect ? customIconStyleSelect.value : undefined),
+      });
     });
   }
 
