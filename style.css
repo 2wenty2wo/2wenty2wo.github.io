@@ -135,6 +135,10 @@ main {
   height: auto;
 }
 
+:root[data-theme='dark'] .title-logo {
+  filter: brightness(0) invert(1);
+}
+
 .title-heading {
   font-family: 'Poppins', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   font-size: clamp(1.75rem, 6vw, 3.25rem);
