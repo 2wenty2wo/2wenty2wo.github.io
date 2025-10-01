@@ -399,6 +399,7 @@ export const hardwareTypeImageMap = {
   Connector: 'images/connectors/connector.svg',
   Resistor: 'images/resistors/resistor_through_hole.svg',
   Capacitor: 'images/capacitors/capacitor_through_hole.svg',
+  Bearing: 'images/bearings/bearing.svg',
   Washer: 'images/washers/plain_washer.svg',
   Diode: 'images/diodes/diode_through_hole.svg',
 };
