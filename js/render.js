@@ -1527,6 +1527,26 @@ function resolveHardwareImageInfo() {
       alt: 'Threaded heat insert reference illustration',
     };
   }
+  if (state.hardwareType === 'Bearing') {
+    const bearingCode = (state.bearingType || '').trim();
+    const bearingDescription = (state.bearingDetails || '').trim();
+    const altParts = [];
+    if (bearingCode) {
+      altParts.push(bearingCode);
+    }
+    if (bearingDescription && bearingDescription.toLowerCase() !== bearingCode.toLowerCase()) {
+      altParts.push(bearingDescription);
+    }
+    const altText =
+      altParts.length > 0
+        ? `${altParts.join(' — ')} bearing illustration`
+        : 'Bearing reference illustration';
+    return {
+      type: 'photo',
+      src: 'images/bearings/bearing.svg',
+      alt: altText,
+    };
+  }
   if (state.hardwareType === 'Washer') {
     const typeId = (state.washerType || '').trim();
     const typeEntry = washerTypeMap.get(typeId);

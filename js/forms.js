@@ -2486,22 +2486,10 @@ export function populateBearingOptions() {
       item.setAttribute('role', 'option');
       item.tabIndex = -1;
 
-      const icon = document.createElement('span');
-      icon.className = 'bolt-drive-picker__option-icon';
-
-      const image = document.createElement('img');
-      image.className = 'bolt-drive-picker__option-icon-image';
-      image.src = 'images/bearings/bearing.svg';
-      image.alt = '';
-      image.loading = 'lazy';
-      image.decoding = 'async';
-      icon.appendChild(image);
-
       const label = document.createElement('span');
       label.className = 'bolt-drive-picker__option-label';
       label.textContent = `${option.code} — ${option.description}`;
 
-      item.appendChild(icon);
       item.appendChild(label);
 
       bearingTypePickerList.appendChild(item);
