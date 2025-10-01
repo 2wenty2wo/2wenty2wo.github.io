@@ -28,6 +28,7 @@ import {
   filterIcons,
   normalizeIconStyle,
   findIcon,
+  loadIconSvg,
 } from './fontawesome-icons.js';
 import {
   populateThreadSizes,
@@ -158,6 +159,7 @@ const PART_TYPE_PLACEHOLDER_IMAGE =
   'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"%3E%3Crect width="80" height="80" rx="14" fill="%23e2e8f0"/%3E%3Cpath fill="%2394a3b8" d="M24 26h32v8H24zm0 16h32v8H24zm0 16h32v8H24z"/%3E%3C/svg%3E';
 const hardwareTypeOptionRecords = new Map();
 const hardwareTypeFilterButtons = new Map();
+let customIconAssetRequestId = 0;
 const hardwareTypeFilterState = {
   category: HARDWARE_TYPE_ALL_FILTER,
   query: '',
@@ -2527,6 +2529,49 @@ function applyGlyphFont(target, style) {
   }
 }
 
+function resetCustomIconSvgData() {
+  customIconAssetRequestId += 1;
+  state.customIconSvgData = '';
+}
+
+function refreshSelectedCustomIconAsset() {
+  const style = normalizeIconStyle(state.customIconStyle || DEFAULT_ICON_STYLE);
+  const name = typeof state.customIconName === 'string' ? state.customIconName.trim() : '';
+  resetCustomIconSvgData();
+  if (!name) {
+    return;
+  }
+  const requestId = customIconAssetRequestId;
+  loadIconSvg(style, name)
+    .then(result => {
+      if (customIconAssetRequestId !== requestId) {
+        return;
+      }
+      const currentStyle = normalizeIconStyle(state.customIconStyle || DEFAULT_ICON_STYLE);
+      const currentName = typeof state.customIconName === 'string' ? state.customIconName.trim() : '';
+      if (currentStyle !== style || currentName !== name) {
+        return;
+      }
+      state.customIconSvgData = result && result.dataUrl ? result.dataUrl : '';
+      updatePreview();
+      updateDownloadState();
+    })
+    .catch(error => {
+      if (customIconAssetRequestId !== requestId) {
+        return;
+      }
+      const currentStyle = normalizeIconStyle(state.customIconStyle || DEFAULT_ICON_STYLE);
+      const currentName = typeof state.customIconName === 'string' ? state.customIconName.trim() : '';
+      if (currentStyle !== style || currentName !== name) {
+        return;
+      }
+      console.error('Unable to load Font Awesome icon SVG', error);
+      state.customIconSvgData = '';
+      updatePreview();
+      updateDownloadState();
+    });
+}
+
 function syncCustomIconPickerDisplay() {
   if (!customIconPickerButton) {
     return;
@@ -2838,6 +2883,9 @@ export function setCustomGraphicSource(source, options = {}) {
   updateCustomImageUi();
   if (normalized === 'icon' && previous !== 'icon') {
     refreshCustomIconOptions({ preserveSelection: true });
+    if (state.customIconName) {
+      refreshSelectedCustomIconAsset();
+    }
   }
   if (options.triggerUpdate !== false) {
     updateDownloadState();
@@ -2857,6 +2905,9 @@ export function setCustomIconStyle(style, { preserveSelection = true } = {}) {
     state.customIconName = '';
     state.customIconUnicode = '';
     state.customIconLabel = '';
+    resetCustomIconSvgData();
+  } else {
+    refreshSelectedCustomIconAsset();
   }
   refreshCustomIconOptions({ preserveSelection });
   applyCustomGraphicInfoDisplay();
@@ -2874,6 +2925,7 @@ export function setCustomIconSelection(icon = {}) {
   state.customIconName = name;
   state.customIconUnicode = unicode;
   state.customIconLabel = label;
+  refreshSelectedCustomIconAsset();
   applyCustomGraphicInfoDisplay();
   if (!state.customIconUnicode && state.customIconName) {
     findIcon(style, state.customIconName)
@@ -2899,6 +2951,20 @@ export function setCustomIconSelection(icon = {}) {
   updatePreview();
 }
 
+export function ensureCustomIconAsset() {
+  if (state.customGraphicSource !== 'icon') {
+    return;
+  }
+  if (!state.customIconName) {
+    resetCustomIconSvgData();
+    return;
+  }
+  if (state.customIconSvgData) {
+    return;
+  }
+  refreshSelectedCustomIconAsset();
+}
+
 export function updateCustomImageUi() {
   const source = normalizeCustomGraphicSource(state.customGraphicSource);
   state.customGraphicSource = source;
@@ -2917,7 +2983,8 @@ export function updateCustomImageUi() {
     customIconFields.classList.toggle('d-none', source !== 'icon');
   }
   const hasImage = source === 'image' && Boolean(state.customImageData);
-  const hasIcon = source === 'icon' && Boolean(state.customIconUnicode);
+  const hasIcon =
+    source === 'icon' && Boolean(state.customIconUnicode || state.customIconSvgData);
   if (customImageClearButton) {
     const label = source === 'icon' ? 'Remove icon' : 'Remove image';
     customImageClearButton.disabled = !(hasImage || hasIcon);
@@ -2960,6 +3027,7 @@ export function updateCustomImageUi() {
 export function clearCustomImage({ resetInput = true } = {}) {
   const source = normalizeCustomGraphicSource(state.customGraphicSource);
   if (source === 'icon') {
+    resetCustomIconSvgData();
     state.customIconName = '';
     state.customIconUnicode = '';
     state.customIconLabel = '';
@@ -2998,6 +3066,7 @@ export function handleCustomImageFile(file) {
     state.customIconName = '';
     state.customIconUnicode = '';
     state.customIconLabel = '';
+    resetCustomIconSvgData();
     state.customImageData = result;
     state.customImageName = file.name || 'Custom image';
     updateCustomImageUi();
