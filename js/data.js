@@ -403,6 +403,29 @@ export const hardwareTypeImageMap = {
   Diode: 'images/diodes/diode_through_hole.svg',
 };
 
+export const PRE_INSULATED_CRIMP_CATEGORY_ID = 'pre-insulated-crimp';
+
+export const connectorCategoryImageMap = {
+  [PRE_INSULATED_CRIMP_CATEGORY_ID]: 'images/connectors/ring_terminal.svg',
+  'bootlace-ferrule': 'images/connectors/bootlace_ferrule.svg',
+};
+
+export function getConnectorSeriesImage(categoryId, seriesCode) {
+  if (categoryId === PRE_INSULATED_CRIMP_CATEGORY_ID) {
+    const normalized = typeof seriesCode === 'string' ? seriesCode.toLowerCase() : '';
+    if (normalized.includes('ring terminal')) {
+      return 'images/connectors/ring_terminal.svg';
+    }
+    if (normalized.includes('fork terminal')) {
+      return 'images/connectors/fork_terminal.svg';
+    }
+    if (normalized.includes('butt')) {
+      return 'images/connectors/butt_connector.svg';
+    }
+  }
+  return '';
+}
+
 export const connectorCatalog = [
   {
     id: 'pre-insulated-crimp',

@@ -12,12 +12,17 @@ import {
   syncBearingTypePicker,
   syncWasherTypePicker,
   syncNutTypePicker,
+  syncConnectorCategoryPicker,
+  syncConnectorSeriesPicker,
 } from './forms.js';
 import {
   pxPerMm,
   hardwareImageFolders,
   hardwareImageExtensions,
   findConnectorCategory,
+  connectorCategoryImageMap,
+  getConnectorSeriesImage,
+  hardwareTypeImageMap,
   boltHeadMap,
   boltDriveMap,
   nutTypeMap,
@@ -1137,12 +1142,14 @@ function applyValidationFeedback() {
       messageElement: connectorCategoryMessage,
       valid: categoryValid,
     });
+    syncConnectorCategoryPicker({ isValid: categoryValid });
     updateInputFieldState({
       input: notesInput,
       container: notesField,
       messageElement: connectorNotesMessage,
       valid: true,
     });
+    syncConnectorSeriesPicker({ isValid: true });
   } else {
     updateInputFieldState({
       input: connectorCategorySelect,
@@ -1150,6 +1157,8 @@ function applyValidationFeedback() {
       messageElement: connectorCategoryMessage,
       valid: true,
     });
+    syncConnectorCategoryPicker({ isValid: true });
+    syncConnectorSeriesPicker({ isValid: true });
     updateInputFieldState({
       input: notesInput,
       container: notesField,
@@ -1392,6 +1401,51 @@ function resolveHardwareImageInfo() {
       type: 'photo',
       src: imageSrc,
       alt,
+    };
+  }
+  if (state.hardwareType === 'Connector') {
+    const categoryId = (state.connectorCategory || '').trim();
+    const category = findConnectorCategory(categoryId);
+    const seriesCode = (state.standardCode || '').trim();
+    let imageSrc = '';
+    let altParts = [];
+
+    if (seriesCode) {
+      imageSrc = getConnectorSeriesImage(categoryId, seriesCode) || '';
+      if (seriesCode) {
+        altParts.push(seriesCode);
+      }
+      if (category && Array.isArray(category.series)) {
+        const seriesEntry = category.series.find(entry => entry.code === seriesCode);
+        if (seriesEntry && seriesEntry.name) {
+          altParts.push(seriesEntry.name);
+        }
+      }
+    }
+
+    if (!imageSrc && category) {
+      imageSrc = connectorCategoryImageMap[category.id] || '';
+      if (category.label) {
+        altParts.push(category.label);
+      }
+    }
+
+    if (!imageSrc) {
+      imageSrc = hardwareTypeImageMap.Connector || '';
+    }
+
+    if (!imageSrc) {
+      return null;
+    }
+
+    if (altParts.length === 0) {
+      altParts.push('Connector');
+    }
+
+    return {
+      type: 'photo',
+      src: imageSrc,
+      alt: `${altParts.join(' — ')} illustration`,
     };
   }
   if (state.hardwareType === 'Bolt') {

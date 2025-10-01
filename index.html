@@ -452,11 +452,44 @@
                   <label for="connector-category-select" class="form-label fw-semibold"
                     >Connector Category</label
                   >
-                  <select
-                    id="connector-category-select"
-                    class="form-select"
-                    aria-describedby="connector-category-message"
-                  ></select>
+                  <div class="bolt-drive-picker" id="connector-category-picker">
+                    <select
+                      id="connector-category-select"
+                      class="visually-hidden"
+                      aria-describedby="connector-category-message"
+                    ></select>
+                    <button
+                      type="button"
+                      class="bolt-drive-picker__button"
+                      id="connector-category-picker-button"
+                      aria-haspopup="listbox"
+                      aria-expanded="false"
+                      aria-controls="connector-category-picker-list"
+                    >
+                      <span class="bolt-drive-picker__current">
+                        <span
+                          class="bolt-drive-picker__current-icon is-empty"
+                          aria-hidden="true"
+                        >
+                          <img
+                            class="bolt-drive-picker__current-icon-image"
+                            src=""
+                            alt=""
+                            hidden
+                          />
+                        </span>
+                        <span class="bolt-drive-picker__current-label">&nbsp;</span>
+                      </span>
+                      <span class="bolt-drive-picker__chevron" aria-hidden="true"></span>
+                    </button>
+                    <ul
+                      class="bolt-drive-picker__list"
+                      id="connector-category-picker-list"
+                      role="listbox"
+                      aria-labelledby="connector-category-picker-button"
+                      hidden
+                    ></ul>
+                  </div>
                   <div id="connector-category-help" class="form-text d-none"></div>
                   <div
                     id="connector-category-message"
@@ -1028,6 +1061,43 @@
                     id="standard-field-label"
                     >Hardware Standard</label
                   >
+                  <div
+                    class="bolt-drive-picker d-none"
+                    id="connector-series-picker"
+                    aria-hidden="true"
+                  >
+                    <button
+                      type="button"
+                      class="bolt-drive-picker__button"
+                      id="connector-series-picker-button"
+                      aria-haspopup="listbox"
+                      aria-expanded="false"
+                      aria-controls="connector-series-picker-list"
+                    >
+                      <span class="bolt-drive-picker__current">
+                        <span
+                          class="bolt-drive-picker__current-icon is-empty"
+                          aria-hidden="true"
+                        >
+                          <img
+                            class="bolt-drive-picker__current-icon-image"
+                            src=""
+                            alt=""
+                            hidden
+                          />
+                        </span>
+                        <span class="bolt-drive-picker__current-label">&nbsp;</span>
+                      </span>
+                      <span class="bolt-drive-picker__chevron" aria-hidden="true"></span>
+                    </button>
+                    <ul
+                      class="bolt-drive-picker__list"
+                      id="connector-series-picker-list"
+                      role="listbox"
+                      aria-labelledby="connector-series-picker-button"
+                      hidden
+                    ></ul>
+                  </div>
                   <select id="standard-select" class="form-select"></select>
                   <div id="bolt-standard-group" class="row g-3 d-none" aria-hidden="true">
                     <div id="bolt-drive-field" class="col-12 col-sm-6 thread-length-field">

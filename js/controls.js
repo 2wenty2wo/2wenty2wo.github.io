@@ -23,10 +23,13 @@ import {
   setFuseTypeSelection,
   setThreadSizeSelection,
   setFuseValueSelection,
+  setConnectorCategorySelection,
+  setConnectorSeriesSelection,
   setComponentMountSelection,
   setResistorValueSelection,
   setCapacitorValueSelection,
   setDiodeValueSelection,
+  syncConnectorSeriesPicker,
   updateComponentValueUi,
 } from './forms.js';
 import { updateDownloadState, updateQrContentVisibility, updatePreview } from './render.js';
@@ -51,7 +54,6 @@ function applyStateToControls() {
     widthRange,
     widthValueSpan,
     heightRadios,
-    connectorCategorySelect,
     nutTypeSelect,
     washerTypeSelect,
   } = elements;
@@ -73,9 +75,7 @@ function applyStateToControls() {
     glassFastBlowCheckbox.checked = state.glassSpeed.startsWith('Fast');
   }
 
-  if (connectorCategorySelect) {
-    connectorCategorySelect.value = state.connectorCategory || '';
-  }
+  setConnectorCategorySelection(state.connectorCategory || '', { triggerUpdate: false });
   setThreadSizeSelection(state.threadSize || '', { triggerUpdate: false });
   if (nutTypeSelect) {
     nutTypeSelect.value = state.nutType || '';
@@ -104,6 +104,11 @@ function applyStateToControls() {
   }
   if (standardSelect) {
     standardSelect.value = state.standardCode || '';
+  }
+  if (state.hardwareType === 'Connector') {
+    setConnectorSeriesSelection(state.standardCode || '', { triggerUpdate: false });
+  } else {
+    syncConnectorSeriesPicker({ isValid: true });
   }
   setBoltHeadSelection(state.boltHead || '', { triggerUpdate: false });
   setBoltDriveSelection(state.boltDrive || '', { triggerUpdate: false });
