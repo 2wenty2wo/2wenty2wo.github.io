@@ -1620,5 +1620,5 @@ body.part-type-picker-open {
 }
 
 :root[data-theme='dark'] .part-type-card__thumb {
-  background: rgba(30, 41, 59, 0.85);
+  background: transparent;
 }
