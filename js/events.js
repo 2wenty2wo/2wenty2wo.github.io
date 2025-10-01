@@ -97,6 +97,9 @@ const {
   customIconStyleSelect,
   customIconSearchInput,
   customIconSelect,
+  customIconPicker,
+  customIconPickerButton,
+  customIconPickerList,
   customLine1Input,
   customLine2Input,
   customImageInput,
@@ -152,6 +155,7 @@ let resistorValuePickerOpen = false;
 let capacitorValuePickerOpen = false;
 let diodeValuePickerOpen = false;
 let bearingTypePickerOpen = false;
+let customIconPickerOpen = false;
 
 const HARDWARE_TYPE_SEARCH_DELAY = 120;
 let hardwareTypePickerMode = 'dialog';
@@ -1398,6 +1402,228 @@ function handleComponentMountListFocusOut() {
     const active = document.activeElement;
     if (!active || !componentMountPicker.contains(active)) {
       closeComponentMountPicker();
+    }
+  }, 0);
+}
+
+function getCustomIconOptionElements() {
+  if (!customIconPickerList) {
+    return [];
+  }
+  return Array.from(customIconPickerList.querySelectorAll('[role="option"]'));
+}
+
+function focusCustomIconOption(option) {
+  if (!option) {
+    return;
+  }
+  const options = getCustomIconOptionElements();
+  options.forEach(opt => {
+    opt.tabIndex = opt === option ? 0 : -1;
+  });
+  option.focus({ preventScroll: false });
+  if (typeof option.scrollIntoView === 'function') {
+    option.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function openCustomIconPicker() {
+  if (!customIconPicker || !customIconPickerButton || !customIconPickerList) {
+    return;
+  }
+  if (customIconPickerButton.disabled) {
+    return;
+  }
+  if (customIconPickerOpen) {
+    return;
+  }
+  customIconPickerOpen = true;
+  customIconPicker.classList.add('is-open');
+  customIconPickerList.hidden = false;
+  customIconPickerButton.setAttribute('aria-expanded', 'true');
+
+  const options = getCustomIconOptionElements();
+  const currentName = typeof state.customIconName === 'string' ? state.customIconName : '';
+  const selectedOption = options.find(option => option.dataset.value === currentName);
+  focusCustomIconOption(selectedOption || options[0]);
+}
+
+function closeCustomIconPicker({ focusButton = false } = {}) {
+  if (!customIconPicker || !customIconPickerButton || !customIconPickerList) {
+    return;
+  }
+  if (!customIconPickerOpen) {
+    if (focusButton && !customIconPickerButton.disabled) {
+      customIconPickerButton.focus();
+    }
+    return;
+  }
+  customIconPickerOpen = false;
+  customIconPicker.classList.remove('is-open');
+  customIconPickerList.hidden = true;
+  customIconPickerButton.setAttribute('aria-expanded', 'false');
+  if (focusButton && !customIconPickerButton.disabled) {
+    customIconPickerButton.focus();
+  }
+}
+
+function toggleCustomIconPicker() {
+  if (customIconPickerOpen) {
+    closeCustomIconPicker({ focusButton: false });
+  } else {
+    openCustomIconPicker();
+  }
+}
+
+function moveCustomIconOption(delta) {
+  if (!customIconPickerList) {
+    return;
+  }
+  const options = getCustomIconOptionElements();
+  if (options.length === 0) {
+    return;
+  }
+  const activeElement = document.activeElement;
+  const activeOption =
+    activeElement && customIconPickerList.contains(activeElement)
+      ? activeElement.closest('[role="option"]')
+      : null;
+  let index = activeOption ? options.indexOf(activeOption) : -1;
+  if (index === -1) {
+    const currentName = typeof state.customIconName === 'string' ? state.customIconName : '';
+    index = options.findIndex(option => option.dataset.value === currentName);
+  }
+  let nextIndex = index + delta;
+  if (nextIndex < 0) {
+    nextIndex = options.length - 1;
+  } else if (nextIndex >= options.length) {
+    nextIndex = 0;
+  }
+  const nextOption = options[nextIndex];
+  if (nextOption) {
+    focusCustomIconOption(nextOption);
+  }
+}
+
+function handleCustomIconButtonKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    openCustomIconPicker();
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    openCustomIconPicker();
+    const options = getCustomIconOptionElements();
+    if (options.length > 0) {
+      focusCustomIconOption(options[options.length - 1]);
+    }
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    toggleCustomIconPicker();
+    return;
+  }
+  if (key === 'Escape' && customIconPickerOpen) {
+    event.preventDefault();
+    closeCustomIconPicker({ focusButton: true });
+  }
+}
+
+function handleCustomIconListKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    moveCustomIconOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    moveCustomIconOption(-1);
+    return;
+  }
+  if (key === 'Home') {
+    event.preventDefault();
+    const options = getCustomIconOptionElements();
+    if (options.length > 0) {
+      focusCustomIconOption(options[0]);
+    }
+    return;
+  }
+  if (key === 'End') {
+    event.preventDefault();
+    const options = getCustomIconOptionElements();
+    if (options.length > 0) {
+      focusCustomIconOption(options[options.length - 1]);
+    }
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    const target = event.target;
+    if (target && target instanceof HTMLElement) {
+      const option = target.closest('[role="option"]');
+      if (option) {
+        setCustomIconSelection({
+          name: option.dataset.value || '',
+          unicode: option.dataset.unicode || '',
+          label: option.dataset.label || option.textContent || option.dataset.value || '',
+          style: option.dataset.style || (customIconStyleSelect ? customIconStyleSelect.value : undefined),
+        });
+        closeCustomIconPicker({ focusButton: true });
+      }
+    }
+    return;
+  }
+  if (key === 'Escape') {
+    event.preventDefault();
+    closeCustomIconPicker({ focusButton: true });
+    return;
+  }
+  if (key === 'Tab') {
+    closeCustomIconPicker();
+  }
+}
+
+function handleCustomIconListClick(event) {
+  if (!customIconPickerList) {
+    return;
+  }
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+  const option = target.closest('[role="option"]');
+  if (!option || !customIconPickerList.contains(option)) {
+    return;
+  }
+  event.preventDefault();
+  setCustomIconSelection({
+    name: option.dataset.value || '',
+    unicode: option.dataset.unicode || '',
+    label: option.dataset.label || option.textContent || option.dataset.value || '',
+    style: option.dataset.style || (customIconStyleSelect ? customIconStyleSelect.value : undefined),
+  });
+  closeCustomIconPicker({ focusButton: true });
+}
+
+function handleCustomIconListFocusOut() {
+  if (!customIconPickerOpen) {
+    return;
+  }
+  setTimeout(() => {
+    if (!customIconPickerOpen) {
+      return;
+    }
+    if (!customIconPicker) {
+      closeCustomIconPicker();
+      return;
+    }
+    const active = document.activeElement;
+    if (!active || !customIconPicker.contains(active)) {
+      closeCustomIconPicker();
     }
   }, 0);
 }
@@ -3129,6 +3355,11 @@ function handleDocumentPointer(event) {
       closeBearingTypePicker();
     }
   }
+  if (customIconPickerOpen && customIconPicker) {
+    if (!(target instanceof Node) || !customIconPicker.contains(target)) {
+      closeCustomIconPicker();
+    }
+  }
 }
 
 function handleDocumentFocusIn(event) {
@@ -3186,6 +3417,11 @@ function handleDocumentFocusIn(event) {
   if (bearingTypePickerOpen && bearingTypePicker) {
     if (!(target instanceof Node) || !bearingTypePicker.contains(target)) {
       closeBearingTypePicker();
+    }
+  }
+  if (customIconPickerOpen && customIconPicker) {
+    if (!(target instanceof Node) || !customIconPicker.contains(target)) {
+      closeCustomIconPicker();
     }
   }
 }
@@ -3520,6 +3756,7 @@ export function initEventHandlers() {
       const selected = customIconSelect.selectedOptions[0];
       if (!selected) {
         setCustomIconSelection({ name: '', unicode: '', label: '', style: customIconStyleSelect ? customIconStyleSelect.value : undefined });
+        closeCustomIconPicker();
         return;
       }
       setCustomIconSelection({
@@ -3528,6 +3765,7 @@ export function initEventHandlers() {
         label: selected.dataset.label || selected.textContent || selected.value,
         style: selected.dataset.style || (customIconStyleSelect ? customIconStyleSelect.value : undefined),
       });
+      closeCustomIconPicker();
     });
   }
 
@@ -3626,6 +3864,16 @@ export function initEventHandlers() {
     washerTypePickerList.addEventListener('keydown', handleWasherTypeListKeydown);
     washerTypePickerList.addEventListener('focusout', handleWasherTypeListFocusOut);
   }
+  if (customIconPickerButton && customIconPickerList) {
+    customIconPickerButton.addEventListener('click', event => {
+      event.preventDefault();
+      toggleCustomIconPicker();
+    });
+    customIconPickerButton.addEventListener('keydown', handleCustomIconButtonKeydown);
+    customIconPickerList.addEventListener('click', handleCustomIconListClick);
+    customIconPickerList.addEventListener('keydown', handleCustomIconListKeydown);
+    customIconPickerList.addEventListener('focusout', handleCustomIconListFocusOut);
+  }
   if (
     hardwareTypePicker ||
     fuseTypePicker ||
@@ -3633,10 +3881,14 @@ export function initEventHandlers() {
     boltDrivePicker ||
     boltHeadPicker ||
     nutTypePicker ||
+    washerTypePicker ||
     fuseValuePicker ||
     componentMountPicker ||
     resistorValuePicker ||
-    capacitorValuePicker
+    capacitorValuePicker ||
+    diodeValuePicker ||
+    bearingTypePicker ||
+    customIconPicker
   ) {
     document.addEventListener('pointerdown', handleDocumentPointer);
     document.addEventListener('focusin', handleDocumentFocusIn);
@@ -3651,6 +3903,10 @@ export function initEventHandlers() {
     closeComponentMountPicker();
     closeResistorValuePicker();
     closeCapacitorValuePicker();
+  });
+
+  document.addEventListener('gridfinity:custom-icon-picker-close', () => {
+    closeCustomIconPicker();
   });
 
   if (standardToggle) {

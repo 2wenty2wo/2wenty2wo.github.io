@@ -106,6 +106,9 @@ const {
   customIconStyleSelect,
   customIconSearchInput,
   customIconSelect,
+  customIconPicker,
+  customIconPickerButton,
+  customIconPickerList,
   customIconStatus,
   customIconPreview,
   notesField,
@@ -175,6 +178,7 @@ const validNutTypeIds = new Set(nutTypeOptions.map(option => option.id));
 const CUSTOM_GRAPHIC_SOURCES = new Set(['image', 'icon']);
 const DEFAULT_CUSTOM_GRAPHIC_SOURCE = 'image';
 const DEFAULT_ICON_STYLE = 'solid';
+const CUSTOM_ICON_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const FONT_AWESOME_STYLE_CLASSES = {
   solid: 'fa-solid',
   regular: 'fa-regular',
@@ -2430,10 +2434,24 @@ function getCurrentIconStyle() {
 }
 
 function setIconSelectEnabled(enabled) {
-  if (!customIconSelect) {
-    return;
+  if (customIconSelect) {
+    customIconSelect.disabled = !enabled;
   }
-  customIconSelect.disabled = !enabled;
+  if (customIconPickerButton) {
+    customIconPickerButton.disabled = !enabled;
+    if (!enabled) {
+      customIconPickerButton.setAttribute('aria-expanded', 'false');
+    }
+  }
+  if (customIconPickerList) {
+    customIconPickerList.hidden = true;
+  }
+  if (customIconPicker) {
+    customIconPicker.classList.toggle('is-disabled', !enabled);
+  }
+  if (!enabled && typeof document !== 'undefined') {
+    document.dispatchEvent(new CustomEvent('gridfinity:custom-icon-picker-close'));
+  }
 }
 
 function setIconSearchEnabled(enabled) {
@@ -2444,13 +2462,139 @@ function setIconSearchEnabled(enabled) {
 }
 
 function setIconControlsBusy(isBusy) {
-  if (!customIconSelect) {
+  if (customIconSelect) {
+    if (isBusy) {
+      customIconSelect.setAttribute('aria-busy', 'true');
+    } else {
+      customIconSelect.removeAttribute('aria-busy');
+    }
+  }
+  if (customIconPickerButton) {
+    if (isBusy) {
+      customIconPickerButton.setAttribute('aria-busy', 'true');
+    } else {
+      customIconPickerButton.removeAttribute('aria-busy');
+    }
+  }
+  if (isBusy && typeof document !== 'undefined') {
+    document.dispatchEvent(new CustomEvent('gridfinity:custom-icon-picker-close'));
+  }
+}
+
+function findCustomIconOption(name) {
+  if (!customIconSelect || !name) {
+    return null;
+  }
+  const options = Array.from(customIconSelect.options);
+  return options.find(option => option.value === name) || null;
+}
+
+function getGlyphFromUnicode(unicode) {
+  if (!unicode || typeof unicode !== 'string') {
+    return '';
+  }
+  const segments = unicode.split('-').filter(Boolean);
+  if (segments.length === 0) {
+    return '';
+  }
+  try {
+    const codePoints = segments.map(segment => parseInt(segment, 16)).filter(codePoint => {
+      return Number.isFinite(codePoint) && !Number.isNaN(codePoint);
+    });
+    if (codePoints.length === 0) {
+      return '';
+    }
+    return String.fromCodePoint(...codePoints);
+  } catch {
+    return '';
+  }
+}
+
+function applyGlyphFont(target, style) {
+  if (!target) {
     return;
   }
-  if (isBusy) {
-    customIconSelect.setAttribute('aria-busy', 'true');
+  const normalized = normalizeIconStyle(style || state.customIconStyle || DEFAULT_ICON_STYLE);
+  const isBrands = normalized === 'brands';
+  const fontStack = isBrands
+    ? '"Font Awesome 6 Brands", "Font Awesome 6 Free", "Barlow", "Segoe UI", "Helvetica Neue", Arial, sans-serif'
+    : '"Font Awesome 6 Free", "Font Awesome 6 Brands", "Barlow", "Segoe UI", "Helvetica Neue", Arial, sans-serif';
+  target.style.fontFamily = fontStack;
+  if (isBrands) {
+    target.style.fontWeight = '400';
   } else {
-    customIconSelect.removeAttribute('aria-busy');
+    target.style.fontWeight = normalized === 'solid' ? '900' : '400';
+  }
+}
+
+function syncCustomIconPickerDisplay() {
+  if (!customIconPickerButton) {
+    return;
+  }
+  const name = typeof state.customIconName === 'string' ? state.customIconName : '';
+  const labelFromState = typeof state.customIconLabel === 'string' ? state.customIconLabel : '';
+  const unicodeFromState = typeof state.customIconUnicode === 'string' ? state.customIconUnicode : '';
+  let resolvedLabel = labelFromState;
+  let resolvedUnicode = unicodeFromState;
+  let resolvedStyle = normalizeIconStyle(state.customIconStyle || DEFAULT_ICON_STYLE);
+  let resolvedGlyph = '';
+
+  const option = name ? findCustomIconOption(name) : null;
+  if (option) {
+    if (!resolvedLabel) {
+      resolvedLabel = option.dataset.label || option.textContent || name;
+    }
+    if (!resolvedUnicode) {
+      resolvedUnicode = option.dataset.unicode || '';
+    }
+    if (option.dataset.style) {
+      resolvedStyle = normalizeIconStyle(option.dataset.style);
+    }
+    if (option.dataset.glyph) {
+      resolvedGlyph = option.dataset.glyph;
+    }
+  }
+
+  if (!resolvedGlyph && resolvedUnicode) {
+    resolvedGlyph = getGlyphFromUnicode(resolvedUnicode);
+  }
+
+  const labelElement = customIconPickerButton.querySelector('.bolt-drive-picker__current-label');
+  const iconWrapper = customIconPickerButton.querySelector('.bolt-drive-picker__current-icon');
+  const glyphElement = customIconPickerButton.querySelector('.bolt-drive-picker__current-icon-glyph');
+
+  const styleLabel = resolvedStyle.charAt(0).toUpperCase() + resolvedStyle.slice(1);
+  const buttonLabel = name
+    ? `${(resolvedLabel || name).trim()} (${name}) · ${styleLabel}`
+    : CUSTOM_ICON_PLACEHOLDER_TEXT;
+
+  if (labelElement) {
+    labelElement.textContent = buttonLabel;
+  }
+
+  if (glyphElement) {
+    if (resolvedGlyph) {
+      glyphElement.textContent = resolvedGlyph;
+      applyGlyphFont(glyphElement, resolvedStyle);
+    } else {
+      glyphElement.textContent = '';
+      glyphElement.style.fontFamily = '';
+      glyphElement.style.fontWeight = '';
+    }
+  }
+
+  if (iconWrapper) {
+    iconWrapper.classList.toggle('is-empty', !resolvedGlyph);
+  }
+
+  if (customIconPickerList) {
+    const items = Array.from(customIconPickerList.querySelectorAll('[role="option"]'));
+    items.forEach(item => {
+      const isSelected = item.dataset.value === name;
+      item.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      item.classList.toggle('is-selected', isSelected);
+      item.tabIndex = -1;
+    });
   }
 }
 
@@ -2532,6 +2676,7 @@ function applyCustomGraphicInfoDisplay() {
       customIconSelect.selectedIndex = -1;
     }
   }
+  syncCustomIconPickerDisplay();
 }
 
 export async function refreshCustomIconOptions({ preserveSelection = true } = {}) {
@@ -2549,6 +2694,9 @@ export async function refreshCustomIconOptions({ preserveSelection = true } = {}
   setIconSelectEnabled(false);
   setIconSearchEnabled(false);
   setCustomIconStatus('Loading icons…', { isLoading: true });
+  if (customIconPickerList) {
+    customIconPickerList.innerHTML = '';
+  }
   try {
     const collection = await loadIconsForStyle(style);
     if (requestId !== customIconRequestId) {
@@ -2557,37 +2705,80 @@ export async function refreshCustomIconOptions({ preserveSelection = true } = {}
     lastIconCollection = { style, total: collection.icons.length };
     const filtered = filterIcons(collection.icons, query);
     customIconSelect.innerHTML = '';
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = CUSTOM_ICON_PLACEHOLDER_TEXT;
+    customIconSelect.appendChild(placeholder);
+
+    if (customIconPickerList) {
+      customIconPickerList.innerHTML = '';
+    }
+
     filtered.forEach(icon => {
       const option = document.createElement('option');
       option.value = icon.name;
-      let glyph = '';
-      if (icon.unicode && icon.unicode.length) {
-        const codePoint = parseInt(icon.unicode, 16);
-        if (!Number.isNaN(codePoint)) {
-          try {
-            glyph = String.fromCodePoint(codePoint);
-          } catch {
-            glyph = '';
-          }
-        }
-      }
+      const glyph = getGlyphFromUnicode(icon.unicode);
       const labelText = `${icon.label} (${icon.name})`;
       option.textContent = glyph ? `${glyph}  ${labelText}` : labelText;
       option.dataset.label = icon.label;
       option.dataset.unicode = icon.unicode;
       option.dataset.style = icon.style;
+      option.dataset.glyph = glyph;
       if (glyph) {
         const isBrands = icon.style === 'brands';
         const fontStack = isBrands
           ? '"Font Awesome 6 Brands", "Font Awesome 6 Free", "Barlow", "Segoe UI", "Helvetica Neue", Arial, sans-serif'
           : '"Font Awesome 6 Free", "Font Awesome 6 Brands", "Barlow", "Segoe UI", "Helvetica Neue", Arial, sans-serif';
         option.style.fontFamily = fontStack;
-        if (!isBrands) {
-          option.style.fontWeight = icon.style === 'solid' ? '900' : '400';
-        }
+        option.style.fontWeight = isBrands ? '400' : icon.style === 'solid' ? '900' : '400';
+      } else {
+        option.style.fontFamily = '';
+        option.style.fontWeight = '';
       }
       customIconSelect.appendChild(option);
+
+      if (customIconPickerList) {
+        const item = document.createElement('li');
+        item.className = 'bolt-drive-picker__option';
+        item.dataset.value = icon.name;
+        item.dataset.label = icon.label;
+        item.dataset.unicode = icon.unicode;
+        item.dataset.style = icon.style;
+        item.dataset.glyph = glyph;
+        item.setAttribute('role', 'option');
+        item.setAttribute('aria-selected', 'false');
+        item.tabIndex = -1;
+
+        const iconWrapper = document.createElement('span');
+        iconWrapper.className = glyph
+          ? 'bolt-drive-picker__option-icon'
+          : 'bolt-drive-picker__option-icon is-empty';
+        iconWrapper.setAttribute('aria-hidden', 'true');
+
+        const glyphElement = document.createElement('span');
+        glyphElement.className = 'bolt-drive-picker__option-icon-glyph';
+        glyphElement.textContent = glyph;
+        if (glyph) {
+          applyGlyphFont(glyphElement, icon.style);
+        } else {
+          glyphElement.style.fontFamily = '';
+          glyphElement.style.fontWeight = '';
+        }
+        iconWrapper.appendChild(glyphElement);
+        item.appendChild(iconWrapper);
+
+        const labelElement = document.createElement('span');
+        labelElement.className = 'bolt-drive-picker__option-label';
+        labelElement.textContent = labelText;
+        item.appendChild(labelElement);
+
+        customIconPickerList.appendChild(item);
+      }
     });
+
+    if (customIconPickerList) {
+      customIconPickerList.hidden = true;
+    }
     if (filtered.length === 0) {
       setCustomIconStatus('No icons match your search.');
       customIconSelect.value = '';
@@ -2615,6 +2806,7 @@ export async function refreshCustomIconOptions({ preserveSelection = true } = {}
     }
     setIconControlsBusy(false);
     setIconSearchEnabled(true);
+    syncCustomIconPickerDisplay();
     applyCustomGraphicInfoDisplay();
   } catch (error) {
     if (requestId !== customIconRequestId) {
@@ -2622,12 +2814,17 @@ export async function refreshCustomIconOptions({ preserveSelection = true } = {}
     }
     console.error('Unable to load Font Awesome icons', error);
     customIconSelect.innerHTML = '';
+    if (customIconPickerList) {
+      customIconPickerList.innerHTML = '';
+      customIconPickerList.hidden = true;
+    }
     setIconControlsBusy(false);
     setIconSelectEnabled(false);
     setIconSearchEnabled(true);
     setCustomIconStatus('Unable to load Font Awesome icons. Check your connection and try again.', {
       isError: true,
     });
+    syncCustomIconPickerDisplay();
   }
 }
 
