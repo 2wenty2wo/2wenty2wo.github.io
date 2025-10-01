@@ -4166,7 +4166,11 @@ export function onHardwareTypeChange() {
   if (standardField) {
     standardField.classList.toggle(
       'd-none',
-      showCustomFields || showBearingFields || showComponentFields || showFuseFields || showNutFields,
+      showCustomFields ||
+        showBearingFields ||
+        showComponentFields ||
+        showFuseFields ||
+        showNutFields,
     );
   }
   if (standardLabel) {
