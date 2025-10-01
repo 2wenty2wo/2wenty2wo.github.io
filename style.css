@@ -94,6 +94,7 @@ body {
   text-size-adjust: 100%;
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  font-family: 'Poppins', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
 }
 
 main {
@@ -124,14 +125,25 @@ main {
   background-color: rgba(148, 163, 184, 0.2);
 }
 
-.title-section h1 {
-  font-family: 'Tagesschrift', sans-serif;
-  font-size: clamp(1.35rem, 6vw, 4.5rem);
-  line-height: 1.05;
+
+.title-brand {
+  flex-wrap: wrap;
+}
+
+.title-logo {
+  width: clamp(3rem, 10vw, 4.5rem);
+  height: auto;
+}
+
+.title-heading {
+  font-family: 'Poppins', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  font-size: clamp(1.75rem, 6vw, 3.25rem);
+  line-height: 1.1;
+  font-weight: 600;
 }
 
 .section-heading {
-  font-family: 'Barlow', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Poppins', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   font-size: clamp(1.5rem, 2.5vw, 1.9rem);
 }
 
