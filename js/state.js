@@ -35,6 +35,7 @@ export const state = {
   customIconName: '',
   customIconUnicode: '',
   customIconLabel: '',
+  customIconSvgData: '',
   customImageData: '',
   customImageName: '',
 };

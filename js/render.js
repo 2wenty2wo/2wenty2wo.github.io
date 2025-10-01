@@ -464,7 +464,21 @@ function layoutHardware(imageInfo, options) {
         });
       }
     } else if (imageInfo.type === 'custom-icon') {
-      if (imageInfo.hasIcon && imageInfo.iconUnicode) {
+      const iconLabel = imageInfo.iconLabel || imageInfo.iconName || 'Custom icon';
+      const svgHref = typeof imageInfo.iconSvgData === 'string' ? imageInfo.iconSvgData : '';
+      const hasSvg = svgHref.trim().length > 0;
+      const hasUnicode = Boolean(imageInfo.iconUnicode);
+      if (hasSvg) {
+        elements.push({
+          type: 'image',
+          href: svgHref,
+          x,
+          y: top,
+          width: targetWidth,
+          height,
+          title: iconLabel,
+        });
+      } else if (imageInfo.hasIcon && hasUnicode) {
         elements.push({
           type: 'icon',
           x,
@@ -473,7 +487,7 @@ function layoutHardware(imageInfo, options) {
           height,
           unicode: imageInfo.iconUnicode,
           style: imageInfo.iconStyle || 'solid',
-          label: imageInfo.iconLabel || 'Custom icon',
+          label: iconLabel,
         });
       } else {
         elements.push({
@@ -1316,7 +1330,9 @@ function resolveHardwareImageInfo() {
   if (state.hardwareType === 'Custom') {
     const source = state.customGraphicSource === 'icon' ? 'icon' : 'image';
     if (source === 'icon') {
-      const hasIcon = Boolean(state.customIconUnicode && state.customIconName);
+      const hasIcon = Boolean(
+        state.customIconName && (state.customIconSvgData || state.customIconUnicode),
+      );
       return {
         type: 'custom-icon',
         hasIcon,
@@ -1324,6 +1340,7 @@ function resolveHardwareImageInfo() {
         iconUnicode: state.customIconUnicode || '',
         iconStyle: state.customIconStyle || 'solid',
         iconLabel: state.customIconLabel || state.customIconName || 'Custom icon',
+        iconSvgData: state.customIconSvgData || '',
       };
     }
     const hasImage = Boolean(state.customImageData);

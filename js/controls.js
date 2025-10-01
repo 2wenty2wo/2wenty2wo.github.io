@@ -13,6 +13,7 @@ import {
   populateDiodeValues,
   populateWasherTypeOptions,
   updateCustomImageUi,
+  ensureCustomIconAsset,
   onHardwareTypeChange,
   setBoltDriveSelection,
   setBoltHeadSelection,
@@ -147,6 +148,7 @@ function init() {
   populateDiodeValues();
   populateWasherTypeOptions();
   updateCustomImageUi();
+  ensureCustomIconAsset();
   onHardwareTypeChange();
   applyStateToControls();
   initEventHandlers();

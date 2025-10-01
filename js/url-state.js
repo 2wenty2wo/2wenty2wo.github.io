@@ -473,6 +473,7 @@ function applyExpandedPayload(expanded) {
   if (typeof expanded.customIconLabel === 'string') {
     state.customIconLabel = sanitizeShortText(expanded.customIconLabel);
   }
+  state.customIconSvgData = '';
   if (typeof expanded.customImageData === 'string') {
     state.customImageData = expanded.customImageData;
   }
