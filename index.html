@@ -120,13 +120,31 @@
       </div>
       <div class="row g-4">
         <section class="form-section col-lg-7">
-          <div class="card shadow-sm h-100">
+          <div
+            class="card shadow-sm h-100"
+            data-collapsible="part-details"
+            data-collapsible-label="Part Details"
+          >
             <div class="card-body">
-              <h2 class="h5 mb-3 section-heading">
-                <i class="fa-solid fa-puzzle-piece me-2" aria-hidden="true"></i>
-                <span>Part Details</span>
-              </h2>
-              <div class="vstack gap-3">
+              <div class="collapsible-section-header d-flex align-items-center justify-content-between gap-2 mb-3">
+                <h2 class="h5 mb-0 section-heading d-flex align-items-center">
+                  <i class="fa-solid fa-puzzle-piece me-2" aria-hidden="true"></i>
+                  <span>Part Details</span>
+                </h2>
+                <button
+                  type="button"
+                  class="section-toggle-button"
+                  data-collapsible-toggle
+                  aria-expanded="true"
+                  aria-controls="part-details-content"
+                  aria-label="Collapse Part Details"
+                  title="Collapse Part Details"
+                >
+                  <i class="fa-solid fa-chevron-up section-toggle-icon" aria-hidden="true"></i>
+                </button>
+              </div>
+              <div class="collapsible-content" id="part-details-content" data-collapsible-content>
+                <div class="vstack gap-3">
                 <div>
                   <label
                     class="form-label fw-semibold"
@@ -1209,13 +1227,35 @@
           </div>
         </section>
         <section class="settings-section col-lg-5">
-          <div class="card shadow-sm h-100">
+          <div
+            class="card shadow-sm h-100"
+            data-collapsible="label-settings"
+            data-collapsible-label="Label Settings"
+          >
             <div class="card-body">
-              <h2 class="h5 mb-3 section-heading">
-                <i class="fa-solid fa-gear me-2" aria-hidden="true"></i>
-                <span>Label Settings</span>
-              </h2>
-              <div class="vstack gap-3">
+              <div class="collapsible-section-header d-flex align-items-center justify-content-between gap-2 mb-3">
+                <h2 class="h5 mb-0 section-heading d-flex align-items-center">
+                  <i class="fa-solid fa-gear me-2" aria-hidden="true"></i>
+                  <span>Label Settings</span>
+                </h2>
+                <button
+                  type="button"
+                  class="section-toggle-button"
+                  data-collapsible-toggle
+                  aria-expanded="true"
+                  aria-controls="label-settings-content"
+                  aria-label="Collapse Label Settings"
+                  title="Collapse Label Settings"
+                >
+                  <i class="fa-solid fa-chevron-up section-toggle-icon" aria-hidden="true"></i>
+                </button>
+              </div>
+              <div
+                class="collapsible-content"
+                id="label-settings-content"
+                data-collapsible-content
+              >
+                <div class="vstack gap-3">
                 <div
                   class="d-flex align-items-center justify-content-between p-3 rounded-4 border bg-body-secondary"
                 >
@@ -1381,36 +1421,55 @@
           </div>
         </section>
       </div>
-      <section class="preview-section card shadow-sm mt-4">
+      <section
+        class="preview-section card shadow-sm mt-4"
+        data-collapsible="label-preview"
+        data-collapsible-label="Label Preview"
+      >
         <div class="card-body">
-          <h2 class="h5 mb-3 section-heading">
-            <i class="fa-solid fa-eye me-2" aria-hidden="true"></i>
-            <span>Label Preview</span>
-          </h2>
-          <div class="size-info text-muted small mb-3">
-            <span
-              id="preview-status-text"
-              class="visually-hidden"
-              role="status"
-              aria-live="polite"
-              aria-atomic="true"
-            ></span>
-            <div id="label-size-display">55&nbsp;mm ×&nbsp;12&nbsp;mm (label size)</div>
-            <div id="print-area-display">51&nbsp;mm ×&nbsp;10&nbsp;mm (printable area)</div>
+          <div class="collapsible-section-header d-flex align-items-center justify-content-between gap-2 mb-3">
+            <h2 class="h5 mb-0 section-heading d-flex align-items-center">
+              <i class="fa-solid fa-eye me-2" aria-hidden="true"></i>
+              <span>Label Preview</span>
+            </h2>
+            <button
+              type="button"
+              class="section-toggle-button"
+              data-collapsible-toggle
+              aria-expanded="true"
+              aria-controls="label-preview-content"
+              aria-label="Collapse Label Preview"
+              title="Collapse Label Preview"
+            >
+              <i class="fa-solid fa-chevron-up section-toggle-icon" aria-hidden="true"></i>
+            </button>
           </div>
-          <div class="label-preview-viewport">
-            <div id="preview-container" class="label-preview">
-              <div id="preview-placeholder" class="preview-placeholder">
-                <i class="fa-solid fa-clipboard-list placeholder-icon" aria-hidden="true"></i>
-                <p class="placeholder-text mb-0">Fill out the form to generate a label</p>
+          <div class="collapsible-content" id="label-preview-content" data-collapsible-content>
+            <div class="size-info text-muted small mb-3">
+              <span
+                id="preview-status-text"
+                class="visually-hidden"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+              ></span>
+              <div id="label-size-display">55&nbsp;mm ×&nbsp;12&nbsp;mm (label size)</div>
+              <div id="print-area-display">51&nbsp;mm ×&nbsp;10&nbsp;mm (printable area)</div>
+            </div>
+            <div class="label-preview-viewport">
+              <div id="preview-container" class="label-preview">
+                <div id="preview-placeholder" class="preview-placeholder">
+                  <i class="fa-solid fa-clipboard-list placeholder-icon" aria-hidden="true"></i>
+                  <p class="placeholder-text mb-0">Fill out the form to generate a label</p>
+                </div>
+                <img
+                  id="label-preview-image"
+                  class="label-preview-image"
+                  alt="Gridfinity label preview"
+                  decoding="async"
+                  aria-hidden="true"
+                />
               </div>
-              <img
-                id="label-preview-image"
-                class="label-preview-image"
-                alt="Gridfinity label preview"
-                decoding="async"
-                aria-hidden="true"
-              />
             </div>
           </div>
         </div>
