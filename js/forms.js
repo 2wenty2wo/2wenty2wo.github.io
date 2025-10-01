@@ -24,6 +24,12 @@ import {
 } from './data.js';
 import { updatePreview, updateDownloadState } from './render.js';
 import {
+  loadIconsForStyle,
+  filterIcons,
+  normalizeIconStyle,
+  findIcon,
+} from './fontawesome-icons.js';
+import {
   populateThreadSizes,
   syncThreadSizePicker,
   setThreadSizeSelection,
@@ -91,9 +97,17 @@ const {
   bearingTypePickerList,
   bearingTypeSelect,
   customFieldsContainer,
+  customGraphicSourceRadios,
+  customImageFields,
   customImageInput,
   customImageClearButton,
   customImageNameDisplay,
+  customIconFields,
+  customIconStyleSelect,
+  customIconSearchInput,
+  customIconSelect,
+  customIconStatus,
+  customIconPreview,
   notesField,
   standardField,
   boltStandardGroup,
@@ -158,6 +172,16 @@ const validBoltHeadIds = new Set(
 );
 const NUT_TYPE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const validNutTypeIds = new Set(nutTypeOptions.map(option => option.id));
+const CUSTOM_GRAPHIC_SOURCES = new Set(['image', 'icon']);
+const DEFAULT_CUSTOM_GRAPHIC_SOURCE = 'image';
+const DEFAULT_ICON_STYLE = 'solid';
+const FONT_AWESOME_STYLE_CLASSES = {
+  solid: 'fa-solid',
+  regular: 'fa-regular',
+  brands: 'fa-brands',
+};
+let customIconRequestId = 0;
+let lastIconCollection = { style: '', total: 0 };
 const WASHER_TYPE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const validWasherTypeIds = new Set(washerTypeOptions.map(option => option.id));
 const FUSE_TYPE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
@@ -2391,27 +2415,367 @@ export function updateGlassOptionVisibility({ resetIfHidden = false } = {}) {
   }
 }
 
-export function updateCustomImageUi() {
-  const hasImage = !!state.customImageData;
-  if (customImageClearButton) {
-    customImageClearButton.disabled = !hasImage;
+function normalizeCustomGraphicSource(value) {
+  if (typeof value !== 'string') {
+    return DEFAULT_CUSTOM_GRAPHIC_SOURCE;
+  }
+  const normalized = value.trim().toLowerCase();
+  return CUSTOM_GRAPHIC_SOURCES.has(normalized) ? normalized : DEFAULT_CUSTOM_GRAPHIC_SOURCE;
+}
+
+function getCurrentIconStyle() {
+  const normalized = normalizeIconStyle(state.customIconStyle || DEFAULT_ICON_STYLE);
+  state.customIconStyle = normalized;
+  return normalized;
+}
+
+function setIconSelectEnabled(enabled) {
+  if (!customIconSelect) {
+    return;
+  }
+  customIconSelect.disabled = !enabled;
+}
+
+function setIconSearchEnabled(enabled) {
+  if (!customIconSearchInput) {
+    return;
+  }
+  customIconSearchInput.disabled = !enabled;
+}
+
+function setIconControlsBusy(isBusy) {
+  if (!customIconSelect) {
+    return;
+  }
+  if (isBusy) {
+    customIconSelect.setAttribute('aria-busy', 'true');
+  } else {
+    customIconSelect.removeAttribute('aria-busy');
+  }
+}
+
+function clearCustomIconPreview() {
+  if (!customIconPreview) {
+    return;
+  }
+  const previousIconClass = customIconPreview.dataset.iconClass;
+  if (previousIconClass) {
+    customIconPreview.classList.remove(previousIconClass);
+    delete customIconPreview.dataset.iconClass;
+  }
+  Object.values(FONT_AWESOME_STYLE_CLASSES).forEach(cls => {
+    customIconPreview.classList.remove(cls);
+  });
+  customIconPreview.classList.add('d-none');
+}
+
+function setCustomIconPreview(style, iconName) {
+  if (!customIconPreview) {
+    return;
+  }
+  clearCustomIconPreview();
+  const styleClass = FONT_AWESOME_STYLE_CLASSES[style] || FONT_AWESOME_STYLE_CLASSES.solid;
+  customIconPreview.classList.remove('d-none');
+  customIconPreview.classList.add(styleClass);
+  const iconClass = `fa-${iconName}`;
+  customIconPreview.classList.add(iconClass);
+  customIconPreview.dataset.iconClass = iconClass;
+}
+
+function setCustomIconStatus(message, { isError = false, isLoading = false } = {}) {
+  if (!customIconStatus) {
+    return;
+  }
+  const normalized = typeof message === 'string' ? message : '';
+  customIconStatus.textContent = normalized;
+  customIconStatus.classList.remove('text-danger', 'fw-semibold', 'text-muted');
+  if (isError) {
+    customIconStatus.classList.add('text-danger', 'fw-semibold');
+  } else if (isLoading) {
+    customIconStatus.classList.add('text-muted');
+  }
+}
+
+function applyCustomGraphicInfoDisplay() {
+  const source = normalizeCustomGraphicSource(state.customGraphicSource);
+  const style = getCurrentIconStyle();
+  if (customIconStyleSelect) {
+    customIconStyleSelect.value = style;
   }
   if (customImageNameDisplay) {
-    if (state.customImageName) {
-      customImageNameDisplay.textContent = state.customImageName;
+    let displayText = '';
+    if (source === 'image' && state.customImageName) {
+      displayText = state.customImageName;
+    } else if (source === 'icon' && state.customIconName) {
+      const label = state.customIconLabel || state.customIconName;
+      const styleLabel = style.charAt(0).toUpperCase() + style.slice(1);
+      displayText = `${label} · ${styleLabel}`;
+    }
+    if (displayText) {
+      customImageNameDisplay.textContent = displayText;
       customImageNameDisplay.classList.remove('d-none');
     } else {
       customImageNameDisplay.textContent = '';
       customImageNameDisplay.classList.add('d-none');
     }
   }
+  if (source === 'icon' && state.customIconName && state.customIconUnicode) {
+    setCustomIconPreview(style, state.customIconName);
+  } else {
+    clearCustomIconPreview();
+  }
+  if (customIconSelect) {
+    if (source === 'icon' && state.customIconName && state.customIconStyle === style) {
+      customIconSelect.value = state.customIconName;
+    } else if (source !== 'icon') {
+      customIconSelect.value = '';
+      customIconSelect.selectedIndex = -1;
+    }
+  }
+}
+
+export async function refreshCustomIconOptions({ preserveSelection = true } = {}) {
+  if (!customIconSelect) {
+    return;
+  }
+  const source = normalizeCustomGraphicSource(state.customGraphicSource);
+  if (source !== 'icon') {
+    return;
+  }
+  const style = getCurrentIconStyle();
+  const query = customIconSearchInput ? customIconSearchInput.value : '';
+  const requestId = (customIconRequestId += 1);
+  setIconControlsBusy(true);
+  setIconSelectEnabled(false);
+  setIconSearchEnabled(false);
+  setCustomIconStatus('Loading icons…', { isLoading: true });
+  try {
+    const collection = await loadIconsForStyle(style);
+    if (requestId !== customIconRequestId) {
+      return;
+    }
+    lastIconCollection = { style, total: collection.icons.length };
+    const filtered = filterIcons(collection.icons, query);
+    customIconSelect.innerHTML = '';
+    filtered.forEach(icon => {
+      const option = document.createElement('option');
+      option.value = icon.name;
+      let glyph = '';
+      if (icon.unicode && icon.unicode.length) {
+        const codePoint = parseInt(icon.unicode, 16);
+        if (!Number.isNaN(codePoint)) {
+          try {
+            glyph = String.fromCodePoint(codePoint);
+          } catch {
+            glyph = '';
+          }
+        }
+      }
+      const labelText = `${icon.label} (${icon.name})`;
+      option.textContent = glyph ? `${glyph}  ${labelText}` : labelText;
+      option.dataset.label = icon.label;
+      option.dataset.unicode = icon.unicode;
+      option.dataset.style = icon.style;
+      if (glyph) {
+        const isBrands = icon.style === 'brands';
+        const fontStack = isBrands
+          ? '"Font Awesome 6 Brands", "Font Awesome 6 Free", "Barlow", "Segoe UI", "Helvetica Neue", Arial, sans-serif'
+          : '"Font Awesome 6 Free", "Font Awesome 6 Brands", "Barlow", "Segoe UI", "Helvetica Neue", Arial, sans-serif';
+        option.style.fontFamily = fontStack;
+        if (!isBrands) {
+          option.style.fontWeight = icon.style === 'solid' ? '900' : '400';
+        }
+      }
+      customIconSelect.appendChild(option);
+    });
+    if (filtered.length === 0) {
+      setCustomIconStatus('No icons match your search.');
+      customIconSelect.value = '';
+      customIconSelect.selectedIndex = -1;
+      setIconSelectEnabled(false);
+    } else {
+      const total = collection.icons.length;
+      const message =
+        filtered.length === total
+          ? `Showing ${filtered.length.toLocaleString()} icons.`
+          : `Showing ${filtered.length.toLocaleString()} of ${total.toLocaleString()} icons.`;
+      setCustomIconStatus(message);
+      if (preserveSelection && state.customIconName && state.customIconStyle === style) {
+        customIconSelect.value = state.customIconName;
+        if (customIconSelect.selectedIndex === -1) {
+          state.customIconName = '';
+          state.customIconUnicode = '';
+          state.customIconLabel = '';
+        }
+      } else {
+        customIconSelect.value = '';
+        customIconSelect.selectedIndex = -1;
+      }
+      setIconSelectEnabled(true);
+    }
+    setIconControlsBusy(false);
+    setIconSearchEnabled(true);
+    applyCustomGraphicInfoDisplay();
+  } catch (error) {
+    if (requestId !== customIconRequestId) {
+      return;
+    }
+    console.error('Unable to load Font Awesome icons', error);
+    customIconSelect.innerHTML = '';
+    setIconControlsBusy(false);
+    setIconSelectEnabled(false);
+    setIconSearchEnabled(true);
+    setCustomIconStatus('Unable to load Font Awesome icons. Check your connection and try again.', {
+      isError: true,
+    });
+  }
+}
+
+export function setCustomGraphicSource(source, options = {}) {
+  const normalized = normalizeCustomGraphicSource(source);
+  const previous = normalizeCustomGraphicSource(state.customGraphicSource);
+  state.customGraphicSource = normalized;
+  if (normalized === 'icon' && !state.customIconStyle) {
+    state.customIconStyle = DEFAULT_ICON_STYLE;
+  }
+  updateCustomImageUi();
+  if (normalized === 'icon' && previous !== 'icon') {
+    refreshCustomIconOptions({ preserveSelection: true });
+  }
+  if (options.triggerUpdate !== false) {
+    updateDownloadState();
+    updatePreview();
+  }
+}
+
+export function setCustomIconStyle(style, { preserveSelection = true } = {}) {
+  const normalized = normalizeIconStyle(style || DEFAULT_ICON_STYLE);
+  if (state.customIconStyle === normalized) {
+    refreshCustomIconOptions({ preserveSelection });
+    applyCustomGraphicInfoDisplay();
+    return;
+  }
+  state.customIconStyle = normalized;
+  if (!preserveSelection) {
+    state.customIconName = '';
+    state.customIconUnicode = '';
+    state.customIconLabel = '';
+  }
+  refreshCustomIconOptions({ preserveSelection });
+  applyCustomGraphicInfoDisplay();
+  updateDownloadState();
+  updatePreview();
+}
+
+export function setCustomIconSelection(icon = {}) {
+  const style = normalizeIconStyle(icon.style || state.customIconStyle || DEFAULT_ICON_STYLE);
+  const name = typeof icon.name === 'string' ? icon.name : '';
+  const unicode = typeof icon.unicode === 'string' ? icon.unicode : '';
+  const label = typeof icon.label === 'string' && icon.label.trim().length > 0 ? icon.label : name;
+  state.customGraphicSource = 'icon';
+  state.customIconStyle = style;
+  state.customIconName = name;
+  state.customIconUnicode = unicode;
+  state.customIconLabel = label;
+  applyCustomGraphicInfoDisplay();
+  if (!state.customIconUnicode && state.customIconName) {
+    findIcon(style, state.customIconName)
+      .then(record => {
+        if (!record) {
+          return;
+        }
+        if (state.customIconName !== record.name || state.customIconStyle !== record.style) {
+          return;
+        }
+        state.customIconUnicode = record.unicode;
+        state.customIconLabel = record.label;
+        applyCustomGraphicInfoDisplay();
+        updatePreview();
+        updateDownloadState();
+      })
+      .catch(error => {
+        console.error('Unable to resolve Font Awesome icon', error);
+      });
+  }
+  updateCustomImageUi();
+  updateDownloadState();
+  updatePreview();
+}
+
+export function updateCustomImageUi() {
+  const source = normalizeCustomGraphicSource(state.customGraphicSource);
+  state.customGraphicSource = source;
+  if (Array.isArray(customGraphicSourceRadios)) {
+    customGraphicSourceRadios.forEach(radio => {
+      if (!radio) {
+        return;
+      }
+      radio.checked = radio.value === source;
+    });
+  }
+  if (customImageFields) {
+    customImageFields.classList.toggle('d-none', source !== 'image');
+  }
+  if (customIconFields) {
+    customIconFields.classList.toggle('d-none', source !== 'icon');
+  }
+  const hasImage = source === 'image' && Boolean(state.customImageData);
+  const hasIcon = source === 'icon' && Boolean(state.customIconUnicode);
+  if (customImageClearButton) {
+    const label = source === 'icon' ? 'Remove icon' : 'Remove image';
+    customImageClearButton.disabled = !(hasImage || hasIcon);
+    customImageClearButton.textContent = label;
+    customImageClearButton.setAttribute('aria-label', label);
+  }
+  if (source === 'icon') {
+    const style = getCurrentIconStyle();
+    const needsRefresh =
+      !lastIconCollection ||
+      lastIconCollection.style !== style ||
+      !customIconSelect ||
+      customIconSelect.options.length === 0;
+    if (needsRefresh) {
+      refreshCustomIconOptions({ preserveSelection: true });
+    } else {
+      setIconControlsBusy(false);
+      const enableSelect =
+        !!customIconSelect && !customIconSelect.disabled && customIconSelect.options.length > 0;
+      setIconSelectEnabled(enableSelect);
+      setIconSearchEnabled(true);
+    }
+  } else {
+    setIconControlsBusy(false);
+    setIconSelectEnabled(false);
+    setIconSearchEnabled(false);
+    setCustomIconStatus('');
+  }
+  if (source === 'image' && state.customImageName && customImageNameDisplay) {
+    customImageNameDisplay.textContent = state.customImageName;
+    customImageNameDisplay.classList.remove('d-none');
+  }
+  if (source === 'image' && !state.customImageName && customImageNameDisplay) {
+    customImageNameDisplay.textContent = '';
+    customImageNameDisplay.classList.add('d-none');
+  }
+  applyCustomGraphicInfoDisplay();
 }
 
 export function clearCustomImage({ resetInput = true } = {}) {
-  state.customImageData = '';
-  state.customImageName = '';
-  if (resetInput && customImageInput) {
-    customImageInput.value = '';
+  const source = normalizeCustomGraphicSource(state.customGraphicSource);
+  if (source === 'icon') {
+    state.customIconName = '';
+    state.customIconUnicode = '';
+    state.customIconLabel = '';
+    if (customIconSelect) {
+      customIconSelect.value = '';
+      customIconSelect.selectedIndex = -1;
+    }
+  } else {
+    state.customImageData = '';
+    state.customImageName = '';
+    if (resetInput && customImageInput) {
+      customImageInput.value = '';
+    }
   }
   updateCustomImageUi();
   updatePreview();
@@ -2433,6 +2797,10 @@ export function handleCustomImageFile(file) {
   const reader = new FileReader();
   reader.onload = () => {
     const result = typeof reader.result === 'string' ? reader.result : '';
+    state.customGraphicSource = 'image';
+    state.customIconName = '';
+    state.customIconUnicode = '';
+    state.customIconLabel = '';
     state.customImageData = result;
     state.customImageName = file.name || 'Custom image';
     updateCustomImageUi();

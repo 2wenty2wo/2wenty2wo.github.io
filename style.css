@@ -106,6 +106,24 @@ main {
   margin: 0.5rem auto 0;
 }
 
+.custom-icon-preview {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  border-radius: 0.75rem;
+  background-color: rgba(15, 23, 42, 0.08);
+  font-size: 1.5rem;
+  line-height: 1;
+  padding: 0.25rem 0.5rem;
+  color: inherit;
+}
+
+:root[data-theme='dark'] .custom-icon-preview {
+  background-color: rgba(148, 163, 184, 0.2);
+}
+
 .title-section h1 {
   font-family: 'Tagesschrift', sans-serif;
   font-size: clamp(1.35rem, 6vw, 4.5rem);

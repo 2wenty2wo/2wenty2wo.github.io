@@ -84,9 +84,19 @@ const bearingTypePickerList = document.getElementById('bearing-type-picker-list'
 const bearingTypeSelect = document.getElementById('bearing-type-select');
 const bearingTypeMessage = document.getElementById('bearing-type-message');
 const customFieldsContainer = document.getElementById('custom-fields');
+const customGraphicSourceRadios = Array.from(
+  document.querySelectorAll('input[name="custom-graphic-source"]'),
+);
+const customImageFields = document.getElementById('custom-image-fields');
 const customImageInput = document.getElementById('custom-image-input');
 const customImageClearButton = document.getElementById('custom-image-clear');
 const customImageNameDisplay = document.getElementById('custom-image-name');
+const customIconFields = document.getElementById('custom-icon-fields');
+const customIconStyleSelect = document.getElementById('custom-icon-style');
+const customIconSearchInput = document.getElementById('custom-icon-search');
+const customIconSelect = document.getElementById('custom-icon-select');
+const customIconStatus = document.getElementById('custom-icon-status');
+const customIconPreview = document.getElementById('custom-icon-preview');
 const customLine1Input = document.getElementById('custom-line1-input');
 const customLine2Input = document.getElementById('custom-line2-input');
 const customLine1Field = document.getElementById('custom-line1-field');
@@ -248,9 +258,17 @@ export const elements = {
   bearingTypeSelect,
   bearingTypeMessage,
   customFieldsContainer,
+  customGraphicSourceRadios,
+  customImageFields,
   customImageInput,
   customImageClearButton,
   customImageNameDisplay,
+  customIconFields,
+  customIconStyleSelect,
+  customIconSearchInput,
+  customIconSelect,
+  customIconStatus,
+  customIconPreview,
   customLine1Input,
   customLine2Input,
   customLine1Field,
