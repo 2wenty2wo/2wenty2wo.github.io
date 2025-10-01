@@ -21,6 +21,8 @@ import {
   resistorValueOptions,
   capacitorValueOptions,
   diodeValueOptions,
+  connectorCategoryImageMap,
+  getConnectorSeriesImage,
 } from './data.js';
 import { updatePreview, updateDownloadState } from './render.js';
 import {
@@ -69,6 +71,9 @@ const {
   measurementSystemContainer,
   connectorCategoryContainer,
   connectorCategorySelect,
+  connectorCategoryPicker,
+  connectorCategoryPickerButton,
+  connectorCategoryPickerList,
   connectorCategoryHelp,
   connectorNotesHint,
   componentCategoryContainer,
@@ -115,6 +120,9 @@ const {
   notesField,
   standardField,
   boltStandardGroup,
+  connectorSeriesPicker,
+  connectorSeriesPickerButton,
+  connectorSeriesPickerList,
   boltHeadLabel,
   boltHeadPicker,
   boltHeadPickerButton,
@@ -209,6 +217,9 @@ const DIODE_VALUE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const validDiodeValues = new Set(diodeValueOptions.map(option => option.id));
 const BEARING_TYPE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const validBearingCodes = new Set(bearingOptions.map(option => option.code));
+const CONNECTOR_CATEGORY_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
+const CONNECTOR_SERIES_PLACEHOLDER_TEXT = CONNECTOR_PLACEHOLDER_TEXT;
+const validConnectorCategoryIds = new Set(connectorCatalog.map(category => category.id));
 
 function getFastenerHeadOptions() {
   return state.hardwareType === 'Screw' ? screwTypeOptions : boltHeadOptions;
@@ -2072,24 +2083,283 @@ export function populateWasherTypeOptions() {
   syncWasherTypePicker({ isValid: true });
 }
 
+export function syncConnectorSeriesPicker({ isValid = true } = {}) {
+  if (state.hardwareType !== 'Connector') {
+    return;
+  }
+  const categoryId = typeof state.connectorCategory === 'string' ? state.connectorCategory : '';
+  const category = findConnectorCategory(categoryId);
+  const series = category && Array.isArray(category.series) ? category.series : [];
+  const currentCode = typeof state.standardCode === 'string' ? state.standardCode : '';
+  const selectedEntry = series.find(entry => entry.code === currentCode) || null;
+  const sanitizedCode = selectedEntry ? selectedEntry.code : '';
+
+  if (sanitizedCode !== currentCode) {
+    state.standardCode = sanitizedCode;
+  }
+
+  const displayName = selectedEntry
+    ? selectedEntry.name && selectedEntry.name.trim()
+      ? `${selectedEntry.code} — ${selectedEntry.name}`
+      : selectedEntry.code
+    : '';
+  state.standard = displayName;
+
+  if (standardSelect) {
+    if (sanitizedCode) {
+      standardSelect.value = sanitizedCode;
+    } else {
+      standardSelect.value = '';
+      if (standardSelect.options.length > 0) {
+        standardSelect.selectedIndex = 0;
+      }
+    }
+  }
+
+  if (connectorSeriesPickerButton) {
+    const label = connectorSeriesPickerButton.querySelector('.bolt-drive-picker__current-label');
+    const iconWrapper = connectorSeriesPickerButton.querySelector('.bolt-drive-picker__current-icon');
+    const iconImage = connectorSeriesPickerButton.querySelector('.bolt-drive-picker__current-icon-image');
+
+    if (label) {
+      label.textContent = displayName || CONNECTOR_SERIES_PLACEHOLDER_TEXT;
+    }
+
+    if (iconWrapper && iconImage) {
+      const iconSrc = selectedEntry ? getConnectorSeriesImage(categoryId, selectedEntry.code) : '';
+      if (iconSrc) {
+        iconImage.src = iconSrc;
+        iconImage.hidden = false;
+        iconWrapper.classList.remove('is-empty');
+      } else {
+        iconImage.hidden = true;
+        iconImage.removeAttribute('src');
+        iconWrapper.classList.add('is-empty');
+      }
+    }
+
+    if (isValid) {
+      connectorSeriesPickerButton.classList.remove('is-invalid');
+      connectorSeriesPickerButton.removeAttribute('aria-invalid');
+    } else {
+      connectorSeriesPickerButton.classList.add('is-invalid');
+      connectorSeriesPickerButton.setAttribute('aria-invalid', 'true');
+    }
+  }
+
+  if (connectorSeriesPicker) {
+    connectorSeriesPicker.classList.toggle('is-invalid', !isValid);
+    connectorSeriesPicker.classList.toggle('is-disabled', series.length === 0);
+  }
+
+  if (connectorSeriesPickerList) {
+    const optionElements = Array.from(
+      connectorSeriesPickerList.querySelectorAll('[role="option"]'),
+    );
+    optionElements.forEach(optionElement => {
+      const isSelected = optionElement.dataset.value === sanitizedCode;
+      optionElement.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      optionElement.classList.toggle('is-selected', isSelected);
+      optionElement.tabIndex = -1;
+    });
+  }
+}
+
+export function setConnectorSeriesSelection(nextCode, { triggerUpdate = true } = {}) {
+  if (state.hardwareType !== 'Connector') {
+    return;
+  }
+  const desiredCode = typeof nextCode === 'string' ? nextCode.trim() : '';
+  const categoryId = typeof state.connectorCategory === 'string' ? state.connectorCategory : '';
+  const category = findConnectorCategory(categoryId);
+  const series = category && Array.isArray(category.series) ? category.series : [];
+  const selectedEntry = series.find(entry => entry.code === desiredCode) || null;
+  const sanitizedCode = selectedEntry ? selectedEntry.code : '';
+  const previousCode = typeof state.standardCode === 'string' ? state.standardCode : '';
+
+  state.standardCode = sanitizedCode;
+  if (selectedEntry) {
+    state.standard = selectedEntry.name && selectedEntry.name.trim()
+      ? `${selectedEntry.code} — ${selectedEntry.name}`
+      : selectedEntry.code;
+  } else {
+    state.standard = '';
+  }
+
+  syncConnectorSeriesPicker({ isValid: true });
+
+  if (triggerUpdate && previousCode !== sanitizedCode) {
+    updateDownloadState();
+    updatePreview();
+  }
+}
+
+export function syncConnectorCategoryPicker({ isValid = true } = {}) {
+  const currentValue = typeof state.connectorCategory === 'string' ? state.connectorCategory : '';
+  const sanitizedValue = validConnectorCategoryIds.has(currentValue) ? currentValue : '';
+  if (sanitizedValue !== currentValue) {
+    state.connectorCategory = sanitizedValue;
+  }
+
+  if (connectorCategorySelect) {
+    connectorCategorySelect.value = sanitizedValue || '';
+    if (!sanitizedValue && connectorCategorySelect.options.length > 0) {
+      connectorCategorySelect.selectedIndex = 0;
+    }
+  }
+
+  const category = sanitizedValue ? findConnectorCategory(sanitizedValue) : null;
+  const iconSrc = sanitizedValue ? connectorCategoryImageMap[sanitizedValue] || '' : '';
+
+  if (connectorCategoryPickerButton) {
+    const label = connectorCategoryPickerButton.querySelector('.bolt-drive-picker__current-label');
+    const iconWrapper = connectorCategoryPickerButton.querySelector('.bolt-drive-picker__current-icon');
+    const iconImage = connectorCategoryPickerButton.querySelector('.bolt-drive-picker__current-icon-image');
+
+    if (label) {
+      label.textContent = category ? category.label : CONNECTOR_CATEGORY_PLACEHOLDER_TEXT;
+    }
+
+    if (iconWrapper && iconImage) {
+      if (iconSrc) {
+        iconImage.src = iconSrc;
+        iconImage.hidden = false;
+        iconWrapper.classList.remove('is-empty');
+      } else {
+        iconImage.hidden = true;
+        iconImage.removeAttribute('src');
+        iconWrapper.classList.add('is-empty');
+      }
+    }
+
+    if (isValid) {
+      connectorCategoryPickerButton.classList.remove('is-invalid');
+      connectorCategoryPickerButton.removeAttribute('aria-invalid');
+    } else {
+      connectorCategoryPickerButton.classList.add('is-invalid');
+      connectorCategoryPickerButton.setAttribute('aria-invalid', 'true');
+    }
+  }
+
+  if (connectorCategoryPicker) {
+    connectorCategoryPicker.classList.toggle('is-invalid', !isValid);
+    const isDisabled = connectorCatalog.length === 0;
+    connectorCategoryPicker.classList.toggle('is-disabled', isDisabled);
+  }
+
+  if (connectorCategoryPickerList) {
+    const optionElements = Array.from(
+      connectorCategoryPickerList.querySelectorAll('[role="option"]'),
+    );
+    optionElements.forEach(optionElement => {
+      const isSelected = optionElement.dataset.value === sanitizedValue;
+      optionElement.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      optionElement.classList.toggle('is-selected', isSelected);
+      optionElement.tabIndex = -1;
+    });
+  }
+}
+
+export function setConnectorCategorySelection(nextId, { triggerUpdate = true } = {}) {
+  const desiredValue = typeof nextId === 'string' ? nextId.trim() : '';
+  const sanitizedValue = validConnectorCategoryIds.has(desiredValue) ? desiredValue : '';
+  const previousValue = typeof state.connectorCategory === 'string' ? state.connectorCategory : '';
+
+  state.connectorCategory = sanitizedValue;
+  syncConnectorCategoryPicker({ isValid: true });
+
+  if (triggerUpdate && previousValue !== sanitizedValue) {
+    updateConnectorCategoryUi();
+    populateStandards();
+    updateDownloadState();
+    updatePreview();
+  }
+}
+
 export function populateConnectorCategories() {
   if (!connectorCategorySelect) {
     return;
   }
+
+  const previousValue = typeof state.connectorCategory === 'string' ? state.connectorCategory : '';
+
   connectorCategorySelect.innerHTML = '';
+  if (connectorCategoryPickerList) {
+    connectorCategoryPickerList.innerHTML = '';
+  }
+
   const placeholder = document.createElement('option');
   placeholder.value = '';
   placeholder.textContent = PLACEHOLDER_BLANK;
   placeholder.disabled = true;
-  placeholder.selected = !state.connectorCategory;
+  placeholder.selected = !previousValue;
   connectorCategorySelect.appendChild(placeholder);
+
   connectorCatalog.forEach(category => {
     const opt = document.createElement('option');
     opt.value = category.id;
     opt.textContent = category.label;
     connectorCategorySelect.appendChild(opt);
+
+    if (connectorCategoryPickerList) {
+      const item = document.createElement('li');
+      item.className = 'bolt-drive-picker__option';
+      item.dataset.value = category.id;
+      item.setAttribute('role', 'option');
+      item.tabIndex = -1;
+
+      const icon = document.createElement('span');
+      icon.className = 'bolt-drive-picker__option-icon';
+
+      const categoryIcon = connectorCategoryImageMap[category.id] || '';
+      if (categoryIcon) {
+        const image = document.createElement('img');
+        image.className = 'bolt-drive-picker__option-icon-image is-rotated-90';
+        image.src = categoryIcon;
+        image.alt = '';
+        image.loading = 'lazy';
+        image.decoding = 'async';
+        icon.appendChild(image);
+      } else {
+        icon.classList.add('is-empty');
+      }
+
+      const label = document.createElement('span');
+      label.className = 'bolt-drive-picker__option-label';
+      label.textContent = category.label;
+
+      item.appendChild(icon);
+      item.appendChild(label);
+
+      connectorCategoryPickerList.appendChild(item);
+    }
   });
-  connectorCategorySelect.value = state.connectorCategory || '';
+
+  const sanitizedValue = validConnectorCategoryIds.has(previousValue) ? previousValue : '';
+  state.connectorCategory = sanitizedValue;
+  connectorCategorySelect.value = sanitizedValue;
+  if (!sanitizedValue) {
+    placeholder.selected = true;
+  }
+
+  connectorCategorySelect.disabled = false;
+  connectorCategorySelect.title = 'Select connector category';
+  connectorCategorySelect.setAttribute('aria-required', 'true');
+
+  if (connectorCategoryPickerButton) {
+    const isDisabled = connectorCatalog.length === 0;
+    connectorCategoryPickerButton.disabled = isDisabled;
+    connectorCategoryPickerButton.setAttribute('aria-expanded', 'false');
+  }
+  if (connectorCategoryPickerList) {
+    connectorCategoryPickerList.hidden = true;
+  }
+  if (connectorCategoryPicker) {
+    connectorCategoryPicker.classList.remove('is-open');
+    connectorCategoryPicker.classList.toggle('is-disabled', connectorCatalog.length === 0);
+  }
+
+  syncConnectorCategoryPicker({ isValid: true });
 }
 
 function findBearingOption(code) {
@@ -2267,6 +2537,7 @@ function ensureConnectorCategory() {
   if (connectorCategorySelect) {
     connectorCategorySelect.value = state.connectorCategory || '';
   }
+  syncConnectorCategoryPicker({ isValid: true });
 }
 
 export function updateConnectorCategoryUi() {
@@ -2278,6 +2549,7 @@ export function updateConnectorCategoryUi() {
       connectorCategoryHelp.textContent = '';
       connectorCategoryHelp.classList.add('d-none');
     }
+    syncConnectorCategoryPicker({ isValid: true });
     notesInput.placeholder = defaultNotesPlaceholder;
     return;
   }
@@ -2285,6 +2557,7 @@ export function updateConnectorCategoryUi() {
   if (connectorCategorySelect) {
     connectorCategorySelect.value = state.connectorCategory || '';
   }
+  syncConnectorCategoryPicker({ isValid: true });
   if (connectorCategoryHelp) {
     if (category && category.help) {
       connectorCategoryHelp.textContent = category.help;
@@ -2297,6 +2570,7 @@ export function updateConnectorCategoryUi() {
   const example =
     category && category.example ? category.example : 'e.g., 3-pin JST-PH plug, 26 AWG leads';
   notesInput.placeholder = example;
+  syncConnectorSeriesPicker({ isValid: true });
 }
 
 export { populateThreadSizes, syncThreadSizePicker, setThreadSizeSelection };
@@ -3249,6 +3523,23 @@ function populateBoltOptions() {
 export function populateStandards() {
   const previousCode = typeof state.standardCode === 'string' ? state.standardCode : '';
 
+  if (connectorSeriesPicker) {
+    connectorSeriesPicker.classList.add('d-none');
+    connectorSeriesPicker.classList.remove('is-open');
+    connectorSeriesPicker.setAttribute('aria-hidden', 'true');
+  }
+  if (connectorSeriesPickerButton) {
+    connectorSeriesPickerButton.disabled = true;
+    connectorSeriesPickerButton.setAttribute('aria-expanded', 'false');
+  }
+  if (connectorSeriesPickerList) {
+    connectorSeriesPickerList.hidden = true;
+    connectorSeriesPickerList.innerHTML = '';
+  }
+  if (standardSelect) {
+    standardSelect.classList.remove('d-none');
+  }
+
   if (state.hardwareType === 'Bolt' || state.hardwareType === 'Screw') {
     standardFilterState.query = '';
     if (standardSelect) {
@@ -3355,6 +3646,20 @@ export function populateStandards() {
     placeholderText = CONNECTOR_PLACEHOLDER_TEXT;
     noOptionsText = 'No connector series available';
     titleText = 'Type to filter connector series (Esc clears filter)';
+
+    if (connectorSeriesPicker) {
+      connectorSeriesPicker.classList.remove('d-none');
+      connectorSeriesPicker.setAttribute('aria-hidden', 'false');
+      connectorSeriesPicker.classList.toggle('is-disabled', standards.length === 0);
+    }
+    if (connectorSeriesPickerButton) {
+      connectorSeriesPickerButton.disabled = standards.length === 0;
+      connectorSeriesPickerButton.setAttribute('aria-expanded', 'false');
+      connectorSeriesPickerButton.setAttribute('aria-labelledby', 'standard-field-label');
+    }
+    if (standardSelect) {
+      standardSelect.classList.add('d-none');
+    }
   } else {
     const subset = hardwareCatalog[state.hardwareType];
     standards = Array.isArray(subset) ? subset : [];
@@ -3393,6 +3698,40 @@ export function populateStandards() {
       opt.dataset.name = entry.name;
     }
     standardSelect.appendChild(opt);
+
+    if (state.hardwareType === 'Connector' && connectorSeriesPickerList) {
+      const item = document.createElement('li');
+      item.className = 'bolt-drive-picker__option';
+      item.dataset.value = entry.code;
+      item.dataset.name = entry.name || entry.code;
+      item.setAttribute('role', 'option');
+      item.tabIndex = -1;
+
+      const icon = document.createElement('span');
+      icon.className = 'bolt-drive-picker__option-icon';
+
+      const resolvedIcon = getConnectorSeriesImage(state.connectorCategory, entry.code);
+      if (resolvedIcon) {
+        const image = document.createElement('img');
+        image.className = 'bolt-drive-picker__option-icon-image is-rotated-90';
+        image.src = resolvedIcon;
+        image.alt = '';
+        image.loading = 'lazy';
+        image.decoding = 'async';
+        icon.appendChild(image);
+      } else {
+        icon.classList.add('is-empty');
+      }
+
+      const label = document.createElement('span');
+      label.className = 'bolt-drive-picker__option-label';
+      label.textContent = entry.name ? `${entry.code} — ${entry.name}` : entry.code;
+
+      item.appendChild(icon);
+      item.appendChild(label);
+
+      connectorSeriesPickerList.appendChild(item);
+    }
   });
   standardSelect.disabled = false;
   standardSelect.title = titleText;
@@ -3414,6 +3753,9 @@ export function populateStandards() {
   }
 
   filterStandardOptions('');
+  if (state.hardwareType === 'Connector') {
+    syncConnectorSeriesPicker({ isValid: true });
+  }
   updatePreview();
 }
 
@@ -3424,6 +3766,10 @@ export function filterStandardOptions(query) {
   const normalized = (query || '').trim().toLowerCase();
   let selectionCleared = false;
   let matchesFound = false;
+  const isConnectorType = state.hardwareType === 'Connector';
+  const connectorListOptions = isConnectorType && connectorSeriesPickerList
+    ? Array.from(connectorSeriesPickerList.querySelectorAll('[role="option"]'))
+    : [];
   Array.from(standardSelect.options).forEach(option => {
     if (!option.value) {
       option.hidden = false;
@@ -3440,6 +3786,14 @@ export function filterStandardOptions(query) {
     } else if (option.selected) {
       selectionCleared = true;
     }
+
+    if (connectorListOptions.length > 0) {
+      const listOption = connectorListOptions.find(item => item.dataset.value === option.value);
+      if (listOption) {
+        listOption.hidden = !matches;
+        listOption.style.display = matches ? '' : 'none';
+      }
+    }
   });
 
   if (selectionCleared) {
@@ -3450,6 +3804,10 @@ export function filterStandardOptions(query) {
       updatePreview();
     }
     updateDownloadState();
+  }
+
+  if (isConnectorType) {
+    syncConnectorSeriesPicker({ isValid: true });
   }
 
   const placeholder = standardSelect.querySelector('option[value=""]');

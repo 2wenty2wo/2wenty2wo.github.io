@@ -49,6 +49,9 @@ const notesInput = document.getElementById('notes-input');
 const measurementSystemContainer = document.getElementById('measurement-system-container');
 const connectorCategoryContainer = document.getElementById('connector-category-container');
 const connectorCategorySelect = document.getElementById('connector-category-select');
+const connectorCategoryPicker = document.getElementById('connector-category-picker');
+const connectorCategoryPickerButton = document.getElementById('connector-category-picker-button');
+const connectorCategoryPickerList = document.getElementById('connector-category-picker-list');
 const connectorCategoryHelp = document.getElementById('connector-category-help');
 const connectorNotesHint = document.getElementById('connector-notes-hint');
 const connectorCategoryMessage = document.getElementById('connector-category-message');
@@ -108,6 +111,9 @@ const notesField = document.getElementById('notes-field');
 const standardField = document.getElementById('standard-field');
 const standardFieldLabel = document.getElementById('standard-field-label');
 const boltStandardGroup = document.getElementById('bolt-standard-group');
+const connectorSeriesPicker = document.getElementById('connector-series-picker');
+const connectorSeriesPickerButton = document.getElementById('connector-series-picker-button');
+const connectorSeriesPickerList = document.getElementById('connector-series-picker-list');
 const boltHeadField = document.getElementById('bolt-head-field');
 const boltDriveField = document.getElementById('bolt-drive-field');
 const boltHeadLabel = document.querySelector('label[for="bolt-head-select"]');
@@ -226,6 +232,9 @@ export const elements = {
   measurementSystemContainer,
   connectorCategoryContainer,
   connectorCategorySelect,
+  connectorCategoryPicker,
+  connectorCategoryPickerButton,
+  connectorCategoryPickerList,
   connectorCategoryHelp,
   connectorNotesHint,
   connectorCategoryMessage,
@@ -283,6 +292,9 @@ export const elements = {
   standardField,
   standardFieldLabel,
   boltStandardGroup,
+  connectorSeriesPicker,
+  connectorSeriesPickerButton,
+  connectorSeriesPickerList,
   boltHeadField,
   boltDriveField,
   boltHeadLabel,
