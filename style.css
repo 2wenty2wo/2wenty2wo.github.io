@@ -206,7 +206,13 @@ main {
 }
 
 [data-collapsible-content] {
-  overflow: hidden;
+  /*
+   * Allow validation outlines and other visual affordances to render fully
+   * when sections are expanded. The JavaScript animation logic toggles
+   * `overflow: hidden` inline during transitions, so the default can safely be
+   * visible without affecting the collapse behavior.
+   */
+  overflow: visible;
   transition: max-height 0.25s ease, opacity 0.2s ease;
   will-change: max-height;
 }
