@@ -1,6 +1,7 @@
 import { state } from './state.js';
 import { elements } from './dom-elements.js';
 import { initTheme } from './theme.js';
+import { initCollapsibleSections } from './collapsible-sections.js';
 import {
   populateFuseValues,
   populateFuseTypePicker,
@@ -35,6 +36,7 @@ import {
 import { updateDownloadState, updateQrContentVisibility, updatePreview } from './render.js';
 import { initEventHandlers } from './events.js';
 import { hydrateStateFromUrl } from './url-state.js';
+export { expandAllCollapsibleSections, collapseAllCollapsibleSections } from './collapsible-sections.js';
 
 function applyStateToControls() {
   const {
@@ -141,6 +143,7 @@ function applyStateToControls() {
 
 function init() {
   initTheme();
+  initCollapsibleSections();
   hydrateStateFromUrl();
   populateFuseValues();
   populateFuseTypePicker();

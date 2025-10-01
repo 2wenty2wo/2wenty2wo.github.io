@@ -157,6 +157,70 @@ main {
   font-weight: inherit;
 }
 
+.collapsible-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.is-collapsed .collapsible-section-header {
+  margin-bottom: 0;
+}
+
+.section-toggle-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  border: 1px solid var(--theme-toggle-border);
+  background-color: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.section-toggle-button:hover {
+  background-color: var(--theme-toggle-bg-hover);
+}
+
+.section-toggle-button:focus-visible {
+  outline: var(--focus-outline-width) solid var(--focus-ring-border);
+  outline-offset: var(--focus-outline-offset);
+  box-shadow: 0 0 0 0.2rem var(--theme-toggle-focus-ring);
+}
+
+.section-toggle-icon {
+  transition: transform 0.2s ease;
+}
+
+.section-toggle-button[aria-expanded='false'] .section-toggle-icon {
+  transform: rotate(180deg);
+}
+
+[data-collapsible-content] {
+  overflow: hidden;
+  transition: max-height 0.25s ease, opacity 0.2s ease;
+  will-change: max-height;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-collapsible-content] {
+    transition: none;
+  }
+
+  .section-toggle-icon {
+    transition: none;
+  }
+}
+
 .field-help {
   border-radius: 0.9rem;
   border: 1px solid var(--field-help-border);
