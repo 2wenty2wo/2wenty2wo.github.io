@@ -95,6 +95,9 @@ const customIconFields = document.getElementById('custom-icon-fields');
 const customIconStyleSelect = document.getElementById('custom-icon-style');
 const customIconSearchInput = document.getElementById('custom-icon-search');
 const customIconSelect = document.getElementById('custom-icon-select');
+const customIconPicker = document.getElementById('custom-icon-picker');
+const customIconPickerButton = document.getElementById('custom-icon-picker-button');
+const customIconPickerList = document.getElementById('custom-icon-picker-list');
 const customIconStatus = document.getElementById('custom-icon-status');
 const customIconPreview = document.getElementById('custom-icon-preview');
 const customLine1Input = document.getElementById('custom-line1-input');
@@ -267,6 +270,9 @@ export const elements = {
   customIconStyleSelect,
   customIconSearchInput,
   customIconSelect,
+  customIconPicker,
+  customIconPickerButton,
+  customIconPickerList,
   customIconStatus,
   customIconPreview,
   customLine1Input,

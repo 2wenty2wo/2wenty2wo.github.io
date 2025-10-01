@@ -433,6 +433,14 @@ main {
   transition: filter 0.2s ease;
 }
 
+.bolt-drive-picker__current-icon-glyph {
+  display: inline-block;
+  min-width: 1.5rem;
+  font-size: 1.25rem;
+  line-height: 1;
+  text-align: center;
+}
+
 .bolt-drive-picker__chevron {
   display: inline-flex;
   align-items: center;
@@ -529,6 +537,14 @@ main {
   display: block;
   filter: var(--form-icon-filter);
   transition: filter 0.2s ease;
+}
+
+.bolt-drive-picker__option-icon-glyph {
+  display: inline-block;
+  min-width: 1.5rem;
+  font-size: 1.25rem;
+  line-height: 1;
+  text-align: center;
 }
 
 .bolt-drive-picker__option-label {
