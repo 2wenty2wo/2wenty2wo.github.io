@@ -151,6 +151,8 @@ const {
 const PLACEHOLDER_BLANK = '\u00a0';
 // Non-breaking space keeps custom pickers aligned without displaying placeholder copy.
 const HARDWARE_TYPE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
+const CUSTOM_PART_TYPE_VALUE = 'Custom';
+const CUSTOM_PART_TYPE_ICON_CLASS = 'fa-pen-to-square';
 const HARDWARE_TYPE_ALL_FILTER = 'All';
 const HARDWARE_TYPE_DEFAULT_CATEGORY = 'Uncategorized';
 const HARDWARE_TYPE_RECENT_STORAGE_KEY = 'gridfinity.recentHardwareTypes';
@@ -276,13 +278,22 @@ function createPartTypeCard(record, { variant = 'grid' } = {}) {
   const thumb = document.createElement('span');
   thumb.className = 'part-type-card__thumb';
 
-  const image = document.createElement('img');
-  image.className = 'part-type-card__image';
-  image.alt = '';
-  image.decoding = 'async';
-  image.loading = 'lazy';
-  image.src = record.image;
-  thumb.appendChild(image);
+  if (record.image) {
+    const image = document.createElement('img');
+    image.className = 'part-type-card__image';
+    image.alt = '';
+    image.decoding = 'async';
+    image.loading = 'lazy';
+    image.src = record.image;
+    thumb.appendChild(image);
+  }
+
+  if (record.icon) {
+    const icon = document.createElement('i');
+    icon.className = `part-type-card__icon fa-solid ${record.icon}`;
+    icon.setAttribute('aria-hidden', 'true');
+    thumb.appendChild(icon);
+  }
 
   const label = document.createElement('span');
   label.className = 'part-type-card__label';
@@ -567,13 +578,16 @@ export function populateHardwareTypePicker() {
     const normalizedCategory = normalizeText(category);
     const rawImage = getOptionImage(option);
 
+    const isCustomOption = value === CUSTOM_PART_TYPE_VALUE;
+
     const record = {
       value,
       label,
       normalizedLabel: normalizeText(label),
       category,
       normalizedCategory,
-      image: rawImage || PART_TYPE_PLACEHOLDER_IMAGE,
+      image: rawImage || (isCustomOption ? '' : PART_TYPE_PLACEHOLDER_IMAGE),
+      icon: isCustomOption ? CUSTOM_PART_TYPE_ICON_CLASS : '',
       hasCustomImage: Boolean(rawImage),
       mainElement: null,
       recentElement: null,
@@ -1377,14 +1391,30 @@ export function syncHardwareTypePicker() {
     }
 
     if (fallback instanceof HTMLElement) {
+      const showIconFallback = resolvedValue === CUSTOM_PART_TYPE_VALUE;
+      fallback.classList.toggle('part-type-picker__chip-fallback--icon', showIconFallback);
+
       if (imageSrc) {
         fallback.hidden = true;
+        fallback.innerHTML = '';
+        fallback.style.backgroundImage = '';
+        fallback.style.backgroundSize = '';
+        fallback.style.backgroundPosition = '';
+        fallback.style.backgroundRepeat = '';
+      } else if (showIconFallback) {
+        fallback.hidden = false;
+        fallback.innerHTML = '';
+        const icon = document.createElement('i');
+        icon.className = `fa-solid ${CUSTOM_PART_TYPE_ICON_CLASS}`;
+        icon.setAttribute('aria-hidden', 'true');
+        fallback.appendChild(icon);
         fallback.style.backgroundImage = '';
         fallback.style.backgroundSize = '';
         fallback.style.backgroundPosition = '';
         fallback.style.backgroundRepeat = '';
       } else {
         fallback.hidden = false;
+        fallback.innerHTML = '';
         fallback.style.backgroundImage = `url("${PART_TYPE_PLACEHOLDER_IMAGE}")`;
         fallback.style.backgroundSize = 'cover';
         fallback.style.backgroundPosition = 'center';

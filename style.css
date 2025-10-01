@@ -1264,6 +1264,16 @@ main {
   justify-content: center;
 }
 
+.part-type-picker__chip-fallback--icon {
+  background: transparent;
+}
+
+.part-type-picker__chip-fallback--icon i {
+  font-size: 1.125rem;
+  line-height: 1;
+  color: var(--bs-body-color, #0f172a);
+}
+
 .part-type-picker__chip-label {
   display: inline-flex;
   align-items: center;
@@ -1510,6 +1520,15 @@ main {
   max-height: 100%;
   object-fit: contain;
   filter: var(--form-icon-filter);
+}
+
+.part-type-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.25rem;
+  line-height: 1;
+  color: var(--bs-body-color, #0f172a);
 }
 
 .part-type-card__label {
