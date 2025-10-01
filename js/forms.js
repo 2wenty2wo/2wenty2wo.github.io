@@ -4175,16 +4175,22 @@ export function onHardwareTypeChange() {
     } else {
       standardLabel.textContent = defaultStandardLabel;
     }
-    standardLabel.setAttribute('for', showFastenerFields ? 'bolt-head-select' : 'standard-select');
+    const hideStandardLabel = showFastenerFields || showFuseFields || showNutFields;
+    standardLabel.classList.toggle('d-none', hideStandardLabel);
+    standardLabel.setAttribute('for', hideStandardLabel ? 'bolt-head-select' : 'standard-select');
   }
   if (standardSelect) {
     const hideStandardSelect = showFastenerFields || showFuseFields || showNutFields;
     standardSelect.classList.toggle('d-none', hideStandardSelect);
+    standardSelect.hidden = hideStandardSelect;
     if (hideStandardSelect) {
       standardSelect.disabled = true;
       standardSelect.setAttribute('aria-hidden', 'true');
       standardSelect.setAttribute('aria-required', 'false');
     } else {
+      standardSelect.disabled = false;
+      standardSelect.hidden = false;
+      standardSelect.removeAttribute('hidden');
       standardSelect.setAttribute('aria-hidden', 'false');
       standardSelect.removeAttribute('aria-required');
     }

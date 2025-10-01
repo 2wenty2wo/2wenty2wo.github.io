@@ -145,6 +145,12 @@ main {
 .section-heading {
   font-family: 'Poppins', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   font-size: clamp(1.5rem, 2.5vw, 1.9rem);
+  font-weight: 600;
+}
+
+.section-heading span {
+  font-family: 'Poppins', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  font-weight: inherit;
 }
 
 .field-help {
