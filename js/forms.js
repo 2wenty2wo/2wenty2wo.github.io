@@ -3899,6 +3899,7 @@ export function onHardwareTypeChange() {
   const requiresThreadDetails = type === 'Bolt' || type === 'Screw';
   const showFuseFields = type === 'Fuse';
   const showConnectorFields = type === 'Connector';
+  const showSwitchFields = type === 'Switch';
   const showComponentFields = ELECTRICAL_COMPONENT_TYPES.has(type);
   const showCustomFields = type === 'Custom';
   const showBearingFields = type === 'Bearing';
@@ -4023,6 +4024,7 @@ export function onHardwareTypeChange() {
     const hideMeasurementSystem =
       showFuseFields ||
       showConnectorFields ||
+      showSwitchFields ||
       showCustomFields ||
       showBearingFields ||
       showComponentFields;
@@ -4036,6 +4038,7 @@ export function onHardwareTypeChange() {
     radio.disabled =
       showFuseFields ||
       showConnectorFields ||
+      showSwitchFields ||
       showCustomFields ||
       showBearingFields ||
       showComponentFields;
@@ -4053,6 +4056,7 @@ export function onHardwareTypeChange() {
       !requiresThreadDetails &&
         !showFuseFields &&
         !showConnectorFields &&
+        !showSwitchFields &&
         !showCustomFields &&
         !showBearingFields &&
         !showComponentFields &&
@@ -4065,6 +4069,7 @@ export function onHardwareTypeChange() {
     threadSizeContainer.style.display =
       showFuseFields ||
       showConnectorFields ||
+      showSwitchFields ||
       showCustomFields ||
       showBearingFields ||
       showComponentFields
@@ -4158,6 +4163,7 @@ export function onHardwareTypeChange() {
         showBearingFields ||
         showComponentFields ||
         showFuseFields ||
+        showSwitchFields ||
         showNutFields,
     );
   }
@@ -4167,12 +4173,14 @@ export function onHardwareTypeChange() {
     } else {
       standardLabel.textContent = defaultStandardLabel;
     }
-    const hideStandardLabel = showFastenerFields || showFuseFields || showNutFields;
+    const hideStandardLabel =
+      showFastenerFields || showFuseFields || showSwitchFields || showNutFields;
     standardLabel.classList.toggle('d-none', hideStandardLabel);
     standardLabel.setAttribute('for', hideStandardLabel ? 'bolt-head-select' : 'standard-select');
   }
   if (standardSelect) {
-    const hideStandardSelect = showFastenerFields || showFuseFields || showNutFields;
+    const hideStandardSelect =
+      showFastenerFields || showFuseFields || showSwitchFields || showNutFields;
     standardSelect.classList.toggle('d-none', hideStandardSelect);
     standardSelect.hidden = hideStandardSelect;
     if (hideStandardSelect) {
