@@ -2,7 +2,6 @@ import { state } from './state.js';
 import { findConnectorCategory, boltHeadMap, boltDriveMap, screwTypeMap } from './data.js';
 import { renderLabelPng } from './render.js';
 import { buildShareUrl } from './url-state.js';
-import { recordLabelUsage } from './usage-stats.js';
 
 function captureStateSnapshot() {
   try {
@@ -174,7 +173,6 @@ export function downloadLabel() {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(objectUrl);
-      recordLabelUsage('download', { snapshot: labelSnapshot, svgMarkup });
     })
     .catch(err => {
       console.error('Label download failed', err);
@@ -256,7 +254,6 @@ export function printLabel() {
         { once: true },
       );
       img.src = objectUrl;
-      recordLabelUsage('print', { snapshot: labelSnapshot, svgMarkup });
     })
     .catch(err => {
       console.error('Print preview generation failed', err);

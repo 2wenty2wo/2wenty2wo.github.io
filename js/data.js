@@ -539,7 +539,7 @@ export const connectorCatalog = [
   },
 ];
 
-// Match the 300 DPI artwork emitted by gridfinitylabels.com.
+// Match the 300 DPI artwork emitted by the production artwork pipeline.
 export const pxPerMm = 300 / 25.4;
 
 export const STANDARD_PLACEHOLDER_TEXT = '\u00a0';
