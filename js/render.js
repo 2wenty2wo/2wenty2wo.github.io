@@ -34,7 +34,11 @@ import {
   componentImageMap,
   diodeValueLabelMap,
 } from './data.js';
-import { loadQrCodeLibrary } from './lazy-loaders.js';
+import {
+  renderLabelSVG,
+  loadSvgImage,
+  canvasToBlob,
+} from './label/renderLabelSVG.js';
 
 const {
   labelSizeDisplay,
@@ -107,14 +111,6 @@ const ELECTRICAL_COMPONENT_TYPES = new Set(electricalComponentTypes);
 const HORIZONTAL_SAFE_MARGIN_PER_SIDE_MM = 2;
 const VERTICAL_SAFE_MARGIN_PER_SIDE_MM = 1;
 const MIN_TEXT_WIDTH_MM = 9;
-const SVG_XMLNS = 'http://www.w3.org/2000/svg';
-const LABEL_FONT_FAMILY = "'Barlow', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif";
-const LABEL_BACKGROUND_COLOR = '#ffffff';
-const LABEL_TEXT_COLOR = '#000000';
-const FRAME_STROKE_COLOR = 'rgba(100, 116, 139, 0.6)';
-
-const inlineImageCache = new Map();
-
 const previewDimensions = {
   width: 0,
   height: 0,
@@ -124,14 +120,6 @@ let previewResizeObserver = null;
 let previewReadyState = false;
 let previewStatusFrameId = null;
 let previewRenderRequestId = 0;
-
-const textMeasurementCanvas =
-  typeof document !== 'undefined' ? document.createElement('canvas') : null;
-const textMeasurementContext = textMeasurementCanvas
-  ? textMeasurementCanvas.getContext('2d')
-  : null;
-
-const qrCanvas = typeof document !== 'undefined' ? document.createElement('canvas') : null;
 
 const fuseIllustrations = {
   Glass: {
@@ -148,10 +136,6 @@ const fuseIllustrations = {
   },
 };
 
-function mmToPx(mm) {
-  return Number.isFinite(mm) ? mm * pxPerMm : 0;
-}
-
 function formatMillimeters(value) {
   if (!Number.isFinite(value)) {
     return '0';
@@ -162,606 +146,6 @@ function formatMillimeters(value) {
   }
   return rounded.toFixed(1);
 }
-
-function formatNumber(value) {
-  if (!Number.isFinite(value)) {
-    return '0';
-  }
-  const rounded = Math.round(value * 1000) / 1000;
-  if (Math.abs(rounded - Math.round(rounded)) < 0.0001) {
-    return String(Math.round(rounded));
-  }
-  return rounded.toString();
-}
-
-function escapeXml(str) {
-  return (str || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-function appendUniqueCandidate(list, value) {
-  if (typeof value !== 'string') {
-    return;
-  }
-  const trimmed = value.trim();
-  if (!trimmed || list.includes(trimmed)) {
-    return;
-  }
-  list.push(trimmed);
-}
-
-function resolveToAbsoluteUrl(src) {
-  if (/^(data:|blob:)/i.test(src)) {
-    return src;
-  }
-  if (/^(https?:|file:|\/\/)/i.test(src)) {
-    return src;
-  }
-
-  const candidates = [];
-
-  if (typeof document !== 'undefined') {
-    appendUniqueCandidate(candidates, document.baseURI);
-    if (document.location) {
-      appendUniqueCandidate(candidates, document.location.href);
-      appendUniqueCandidate(candidates, document.location.origin);
-    }
-  }
-  if (typeof window !== 'undefined' && window.location) {
-    appendUniqueCandidate(candidates, window.location.href);
-    appendUniqueCandidate(candidates, window.location.origin);
-  }
-
-  for (const base of candidates) {
-    try {
-      const resolved = new URL(src, base).href;
-      if (resolved) {
-        return resolved;
-      }
-    } catch (error) {
-      console.warn('Unable to resolve SVG image href, trying next base.', error);
-    }
-  }
-
-  if (typeof window !== 'undefined' && window.location && window.location.href) {
-    try {
-      return new URL(src, window.location.href).href;
-    } catch (error) {
-      console.warn('Unable to resolve SVG image href with window href fallback.', error);
-    }
-  }
-
-  return src;
-}
-
-function bufferToBase64(bytes) {
-  if (typeof bytes === 'string') {
-    return bytes;
-  }
-  if (typeof window !== 'undefined' && typeof window.btoa === 'function') {
-    let binary = '';
-    const chunkSize = 0x8000;
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-      const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
-      binary += String.fromCharCode(...chunk);
-    }
-    return window.btoa(binary);
-  }
-  if (typeof globalThis !== 'undefined' && globalThis.Buffer) {
-    return globalThis.Buffer.from(bytes).toString('base64');
-  }
-  throw new Error('Base64 encoding is not supported in this environment.');
-}
-
-async function blobToDataUrl(blob) {
-  const arrayBuffer = await blob.arrayBuffer();
-  const bytes = new Uint8Array(arrayBuffer);
-  const base64 = bufferToBase64(bytes);
-  const mimeType = blob.type || 'application/octet-stream';
-  return `data:${mimeType};base64,${base64}`;
-}
-
-function shouldInlineUrl(url) {
-  if (/^data:/i.test(url)) {
-    return false;
-  }
-  if (typeof window === 'undefined' || !window.location) {
-    return false;
-  }
-  try {
-    const parsed = new URL(url, window.location.href);
-    if (parsed.protocol === 'http:' || parsed.protocol === 'https:' || parsed.protocol === 'file:') {
-      if (parsed.origin === 'null') {
-        return true;
-      }
-      return parsed.origin === window.location.origin;
-    }
-  } catch (error) {
-    console.warn('Unable to inspect URL for inlining.', error);
-  }
-  return false;
-}
-
-async function resolveSvgImageHref(src) {
-  if (!src) {
-    return '';
-  }
-
-  const absolute = resolveToAbsoluteUrl(src);
-  if (!shouldInlineUrl(absolute)) {
-    return absolute;
-  }
-
-  if (inlineImageCache.has(absolute)) {
-    return inlineImageCache.get(absolute);
-  }
-
-  if (typeof fetch !== 'function') {
-    inlineImageCache.set(absolute, absolute);
-    return absolute;
-  }
-
-  try {
-    const response = await fetch(absolute, { cache: 'force-cache' });
-    if (!response.ok) {
-      throw new Error(`Unexpected response status ${response.status}`);
-    }
-    const blob = await response.blob();
-    const dataUrl = await blobToDataUrl(blob);
-    inlineImageCache.set(absolute, dataUrl);
-    return dataUrl;
-  } catch (error) {
-    console.warn('Unable to inline SVG image asset, using absolute URL instead.', error);
-    inlineImageCache.set(absolute, absolute);
-    return absolute;
-  }
-}
-
-function createSvgDataUrl(svgMarkup) {
-  const encoded = encodeURIComponent(svgMarkup)
-    .replace(/'/g, '%27')
-    .replace(/\(/g, '%28')
-    .replace(/\)/g, '%29');
-  return `data:image/svg+xml;charset=utf-8,${encoded}`;
-}
-
-function measureTextWidth(text, fontSize, fontWeight = 400, fontStyle = 'normal') {
-  if (!text) {
-    return 0;
-  }
-  if (textMeasurementContext) {
-    textMeasurementContext.font = `${fontStyle} ${fontWeight} ${fontSize}px ${LABEL_FONT_FAMILY}`;
-    const metrics = textMeasurementContext.measureText(text);
-    return metrics.width || 0;
-  }
-  return text.length * fontSize * 0.6;
-}
-
-function fitTextSize({
-  text,
-  maxWidth,
-  maxHeight,
-  minSize,
-  startSize,
-  fontWeight = 400,
-  fontStyle = 'normal',
-}) {
-  if (!text) {
-    return { fontSize: minSize, width: 0 };
-  }
-  const safeMin = Math.max(1, minSize || 1);
-  let size = Math.max(safeMin, startSize || safeMin);
-  if (Number.isFinite(maxHeight) && maxHeight > 0) {
-    size = Math.min(size, maxHeight);
-  }
-  let width = measureTextWidth(text, size, fontWeight, fontStyle);
-  let iterations = 0;
-  while (iterations < 50 && size > safeMin && width > maxWidth) {
-    size = Math.max(safeMin, size - 0.5);
-    width = measureTextWidth(text, size, fontWeight, fontStyle);
-    iterations += 1;
-  }
-  return { fontSize: size, width };
-}
-
-function layoutTextLines(lines, box, options = {}) {
-  const { x, y, width, height } = box;
-  const { centerAlign = false } = options;
-  const result = [];
-  if (!(width > 0) || !(height > 0)) {
-    return result;
-  }
-  const items = [
-    { text: lines.line1, weight: 800, minSize: 6, startRatio: 0.45 },
-    { text: lines.line2, weight: 600, minSize: 5, startRatio: 0.22 },
-    { text: lines.line3, weight: 600, minSize: 5, startRatio: 0.22 },
-  ];
-  const prepared = [];
-  items.forEach((item, index) => {
-    const value = (item.text || '').trim();
-    if (!value) {
-      return;
-    }
-    const startSize = Math.min(Math.max(height * item.startRatio, item.minSize), width);
-    const fitted = fitTextSize({
-      text: value,
-      maxWidth: width,
-      maxHeight: height,
-      minSize: item.minSize,
-      startSize,
-      fontWeight: item.weight,
-    });
-    prepared.push({
-      text: value,
-      fontSize: fitted.fontSize,
-      fontWeight: item.weight,
-      fontStyle: 'normal',
-      width: fitted.width,
-      index,
-    });
-  });
-  if (prepared.length === 0) {
-    return result;
-  }
-  const gaps = [];
-  for (let i = 0; i < prepared.length - 1; i += 1) {
-    const current = prepared[i];
-    const next = prepared[i + 1];
-    gaps.push(Math.round(Math.min(current.fontSize, next.fontSize) * 0.2));
-  }
-  const totalTextHeight = prepared.reduce((sum, item) => sum + item.fontSize, 0);
-  const totalGapHeight = gaps.reduce((sum, gap) => sum + gap, 0);
-  const availableHeight = Math.max(0, height - totalTextHeight - totalGapHeight);
-  const startY = y + availableHeight / 2;
-  let baseline = startY;
-  prepared.forEach((item, index) => {
-    baseline += item.fontSize;
-    const offset = centerAlign ? Math.max(0, (width - item.width) / 2) : 0;
-    result.push({
-      text: item.text,
-      fontSize: item.fontSize,
-      fontWeight: item.fontWeight,
-      fontStyle: item.fontStyle,
-      x: x + offset,
-      baseline: baseline,
-      width: item.width,
-    });
-    const gap = gaps[index] || 0;
-    baseline += gap;
-  });
-  return result;
-}
-
-function layoutHardware(imageInfo, options) {
-  const { x, y, height, maxWidth, gap } = options;
-  if (!imageInfo || !(height > 0) || !(maxWidth > 0)) {
-    return { width: 0, elements: [] };
-  }
-
-  const elements = [];
-  let usedWidth = 0;
-  const safeGap = Math.max(0, gap || 0);
-
-  if (imageInfo.type === 'custom-image' || imageInfo.type === 'custom-icon') {
-    const targetWidth = Math.min(maxWidth, Math.max(height * 0.75, Math.min(height, maxWidth)));
-    if (!(targetWidth > 0)) {
-      return { width: 0, elements: [] };
-    }
-    const top = y;
-    if (imageInfo.type === 'custom-image') {
-      if (imageInfo.hasImage && imageInfo.src) {
-        elements.push({
-          type: 'image',
-          href: imageInfo.src,
-          x,
-          y: top,
-          width: targetWidth,
-          height,
-          title: imageInfo.alt || 'Custom image',
-        });
-      } else {
-        elements.push({
-          type: 'placeholder',
-          x,
-          y: top,
-          width: targetWidth,
-          height,
-          label: 'Add image',
-        });
-      }
-    } else if (imageInfo.type === 'custom-icon') {
-      const iconLabel = imageInfo.iconLabel || imageInfo.iconName || 'Custom icon';
-      const svgHref = typeof imageInfo.iconSvgData === 'string' ? imageInfo.iconSvgData : '';
-      const hasSvg = svgHref.trim().length > 0;
-      const hasUnicode = Boolean(imageInfo.iconUnicode);
-      if (hasSvg) {
-        elements.push({
-          type: 'image',
-          href: svgHref,
-          x,
-          y: top,
-          width: targetWidth,
-          height,
-          title: iconLabel,
-        });
-      } else if (imageInfo.hasIcon && hasUnicode) {
-        elements.push({
-          type: 'icon',
-          x,
-          y: top,
-          width: targetWidth,
-          height,
-          unicode: imageInfo.iconUnicode,
-          style: imageInfo.iconStyle || 'solid',
-          label: iconLabel,
-        });
-      } else {
-        elements.push({
-          type: 'placeholder',
-          x,
-          y: top,
-          width: targetWidth,
-          height,
-          label: 'Choose icon',
-        });
-      }
-    }
-    usedWidth = targetWidth;
-    return { width: usedWidth, elements };
-  }
-
-  if (imageInfo.type === 'bolt' || imageInfo.type === 'screw') {
-    const images = Array.isArray(imageInfo.images)
-      ? imageInfo.images.filter(img => img && img.src)
-      : [];
-    if (images.length === 0) {
-      return { width: 0, elements: [] };
-    }
-    const minWidth = Math.min(maxWidth, height);
-    const maxWidthEstimate = Math.min(maxWidth, height * 2);
-    const effectiveWidth = Math.max(minWidth, maxWidthEstimate);
-    const groupGap = Math.max(4, Math.round(safeGap * 1.1));
-    const totalGap = groupGap * Math.max(images.length - 1, 0);
-    const slotWidth = Math.max(1, (effectiveWidth - totalGap) / images.length);
-    let cursorX = x;
-    images.forEach(image => {
-      elements.push({
-        type: 'image',
-        href: image.src,
-        x: cursorX,
-        y,
-        width: slotWidth,
-        height,
-        title: image.alt || 'Hardware reference',
-      });
-      cursorX += slotWidth + groupGap;
-    });
-    const calculatedWidth = cursorX - x - groupGap;
-    usedWidth = Math.min(effectiveWidth, Math.min(maxWidth, calculatedWidth));
-    return { width: usedWidth, elements };
-  }
-
-  if (imageInfo.type === 'fuse-illustration') {
-    const width = Math.max(Math.min(maxWidth, height * 1.15), height * 0.85);
-    const limitedWidth = Math.min(width, maxWidth);
-    const top = y + (height - height) / 2;
-    elements.push({
-      type: 'image',
-      href: imageInfo.src,
-      x,
-      y: top,
-      width: limitedWidth,
-      height,
-      title: imageInfo.alt || 'Fuse illustration',
-    });
-    usedWidth = limitedWidth;
-    return { width: usedWidth, elements };
-  }
-
-  if (imageInfo.type === 'photo') {
-    const minWidth = height * 0.8;
-    const maxWidthEstimate = height * 1.2;
-    const chosenWidth = Math.max(minWidth, Math.min(maxWidthEstimate, maxWidth));
-    const top = y + (height - height) / 2;
-    elements.push({
-      type: 'image',
-      href: imageInfo.src,
-      x,
-      y: top,
-      width: chosenWidth,
-      height,
-      title: imageInfo.alt || 'Hardware illustration',
-    });
-    usedWidth = chosenWidth;
-    return { width: usedWidth, elements };
-  }
-
-  return { width: 0, elements: [] };
-}
-
-async function generateQrImage(content, sizePx) {
-  if (!qrCanvas || !(sizePx > 0) || !content) {
-    return null;
-  }
-  const size = Math.max(1, Math.round(sizePx));
-  qrCanvas.width = size;
-  qrCanvas.height = size;
-  const qrLib = await loadQrCodeLibrary();
-  const renderFn = qrLib && typeof qrLib.toCanvas === 'function' ? qrLib.toCanvas : null;
-  if (!renderFn) {
-    throw new Error('QR code renderer unavailable');
-  }
-  await renderFn.call(qrLib, qrCanvas, content, {
-    width: size,
-    margin: 1,
-    color: {
-      dark: '#000000',
-      light: '#00000000',
-    },
-  });
-  return { dataUrl: qrCanvas.toDataURL('image/png'), sizePx: size };
-}
-
-async function buildLabelSvg() {
-  await ensureFontsReady();
-
-  const geometry = getLabelGeometry();
-  const labelWidthPx = Math.max(1, Math.round(geometry.labelWidthMm * pxPerMm));
-  const labelHeightPx = Math.max(1, Math.round(geometry.labelHeightMm * pxPerMm));
-  const printableWidthPx = Math.max(0, Math.round(geometry.printableWidthMm * pxPerMm));
-  const printableHeightPx = Math.max(0, Math.round(geometry.printableHeightMm * pxPerMm));
-  const marginXPx = Math.max(0, Math.round(geometry.marginX * pxPerMm));
-  const marginYPx = Math.max(0, Math.round(geometry.marginY * pxPerMm));
-
-  const paddingBaseX = Math.round(mmToPx(1.2));
-  const paddingBaseY = Math.round(mmToPx(1));
-  const gapBase = Math.round(mmToPx(0.7));
-
-  const paddingLeftPx = paddingBaseX;
-  const paddingRightPx = paddingBaseX;
-  const paddingTopPx = paddingBaseY;
-  const paddingBottomPx = paddingBaseY;
-
-  const contentXStart = marginXPx + paddingLeftPx;
-  const contentYStart = marginYPx + paddingTopPx;
-  const contentWidthPx = Math.max(0, printableWidthPx - paddingLeftPx - paddingRightPx);
-  const contentHeightPx = Math.max(0, printableHeightPx - paddingTopPx - paddingBottomPx);
-  const minTextWidthPx = Math.max(Math.round(mmToPx(MIN_TEXT_WIDTH_MM)), Math.floor(contentHeightPx * 1.1));
-
-  const hardwareInfo = resolveHardwareImageInfo();
-  const hardwareLayout = layoutHardware(hardwareInfo, {
-    x: contentXStart,
-    y: contentYStart,
-    height: contentHeightPx,
-    maxWidth: Math.max(0, contentWidthPx - minTextWidthPx),
-    gap: gapBase,
-  });
-
-  let textStartX = contentXStart;
-  if (hardwareLayout.width > 0) {
-    textStartX += hardwareLayout.width + gapBase;
-  }
-
-  const textAreaRightLimit = marginXPx + printableWidthPx - paddingRightPx;
-  let availableForText = Math.max(0, textAreaRightLimit - textStartX);
-
-  const qrContent = state.showQr && state.qrContent ? state.qrContent.trim() : '';
-  let qrSizePx = 0;
-  if (qrContent && availableForText > minTextWidthPx) {
-    const qrLimitPx = Math.max(0, availableForText - minTextWidthPx);
-    const qrMaxHeight = contentHeightPx;
-    const candidate = Math.min(qrLimitPx, qrMaxHeight);
-    if (candidate >= Math.round(mmToPx(4))) {
-      qrSizePx = Math.max(1, Math.round(candidate));
-      availableForText = Math.max(0, availableForText - qrSizePx - gapBase);
-    }
-  }
-
-  const textWidthPx = Math.max(minTextWidthPx, availableForText);
-  const textBox = {
-    x: textStartX,
-    y: contentYStart,
-    width: textWidthPx,
-    height: contentHeightPx,
-  };
-  const lines = buildTextLines();
-  const textLayout = layoutTextLines(lines, textBox, {
-    centerAlign: hardwareLayout.width > 0 || qrSizePx > 0,
-  });
-
-  let qrLayout = null;
-  if (qrSizePx > 0 && qrContent) {
-    const qrX = textStartX + textWidthPx + gapBase;
-    const qrY = contentYStart + (contentHeightPx - qrSizePx) / 2;
-    const qrImage = await generateQrImage(qrContent, qrSizePx);
-    if (qrImage) {
-      qrLayout = {
-        x: qrX,
-        y: qrY,
-        size: qrImage.sizePx,
-        dataUrl: qrImage.dataUrl,
-      };
-    }
-  }
-
-  const svgParts = [];
-  svgParts.push(
-    `<svg xmlns="${SVG_XMLNS}" xmlns:xlink="http://www.w3.org/1999/xlink" width="${labelWidthPx}" height="${labelHeightPx}" viewBox="0 0 ${labelWidthPx} ${labelHeightPx}">`,
-  );
-  const strokeWidth = formatNumber(mmToPx(0.25));
-  svgParts.push(
-    `<rect x="0" y="0" width="${labelWidthPx}" height="${labelHeightPx}" fill="${LABEL_BACKGROUND_COLOR}" stroke="${FRAME_STROKE_COLOR}" stroke-width="${strokeWidth}" vector-effect="non-scaling-stroke" />`,
-  );
-
-  for (const element of hardwareLayout.elements) {
-    if (element.type === 'image') {
-      const resolvedHref = await resolveSvgImageHref(element.href);
-      const escapedHref = escapeXml(resolvedHref);
-      svgParts.push(
-        `<image x="${formatNumber(element.x)}" y="${formatNumber(element.y)}" width="${formatNumber(element.width)}" height="${formatNumber(element.height)}" href="${escapedHref}" xlink:href="${escapedHref}">` +
-          (element.title ? `<title>${escapeXml(element.title)}</title>` : '') +
-          '</image>',
-      );
-    } else if (element.type === 'placeholder') {
-      const radius = Math.round(element.height * 0.08);
-      svgParts.push(
-        `<rect x="${formatNumber(element.x)}" y="${formatNumber(element.y)}" width="${formatNumber(element.width)}" height="${formatNumber(element.height)}" fill="rgba(255,255,255,0.55)" stroke="rgba(15,23,42,0.25)" stroke-width="1" rx="${radius}" ry="${radius}" />`,
-      );
-      const placeholderFont = Math.max(10, Math.round(element.height * 0.22));
-      const centerX = element.x + element.width / 2;
-      const centerY = element.y + element.height / 2 + placeholderFont * 0.35;
-      svgParts.push(
-        `<text x="${formatNumber(centerX)}" y="${formatNumber(centerY)}" font-size="${placeholderFont}" font-weight="700" text-anchor="middle" fill="${LABEL_TEXT_COLOR}" font-family=${JSON.stringify(
-          LABEL_FONT_FAMILY,
-        )}>${escapeXml(element.label || 'Add image')}</text>`,
-      );
-    } else if (element.type === 'icon') {
-      const fontFamily =
-        element.style === 'brands' ? 'Font Awesome 6 Brands' : 'Font Awesome 6 Free';
-      const fontWeight = element.style === 'regular' ? 400 : element.style === 'solid' ? 900 : 400;
-      const iconSize = Math.max(12, Math.min(element.width, element.height) * 0.8);
-      const centerX = element.x + element.width / 2;
-      const centerY = element.y + element.height / 2;
-      const glyph = element.unicode ? `&#x${element.unicode};` : '';
-      const title = element.label ? `<title>${escapeXml(element.label)}</title>` : '';
-      svgParts.push(
-        `<g>${title}<text x="${formatNumber(centerX)}" y="${formatNumber(centerY)}" font-family=${JSON.stringify(fontFamily)} font-weight="${fontWeight}" font-size="${formatNumber(iconSize)}" text-anchor="middle" dominant-baseline="middle" fill="${LABEL_TEXT_COLOR}">${glyph}</text></g>`,
-      );
-    }
-  }
-
-  textLayout.forEach(line => {
-    svgParts.push(
-      `<text x="${formatNumber(line.x)}" y="${formatNumber(line.baseline)}" font-family=${JSON.stringify(
-        LABEL_FONT_FAMILY,
-      )} font-weight="${line.fontWeight}" font-size="${formatNumber(line.fontSize)}" fill="${LABEL_TEXT_COLOR}">${escapeXml(
-        line.text,
-      )}</text>`,
-    );
-  });
-
-  if (qrLayout) {
-    const escapedQrHref = escapeXml(qrLayout.dataUrl);
-    svgParts.push(
-      `<image x="${formatNumber(qrLayout.x)}" y="${formatNumber(qrLayout.y)}" width="${formatNumber(qrLayout.size)}" height="${formatNumber(qrLayout.size)}" href="${escapedQrHref}" xlink:href="${escapedQrHref}" />`,
-    );
-  }
-
-  svgParts.push('</svg>');
-
-  return {
-    svgMarkup: svgParts.join(''),
-    widthPx: labelWidthPx,
-    heightPx: labelHeightPx,
-    printableWidthMm: geometry.printableWidthMm,
-    printableHeightMm: geometry.printableHeightMm,
-  };
-}
-
 function announcePreviewStatus(message) {
   if (!previewStatusText) {
     return;
@@ -1957,22 +1341,26 @@ export function updatePreview() {
   announcePreviewStatus('Rendering preview…');
   previewReadyState = false;
 
-  buildLabelSvg()
-    .then(result => {
+  (async () => {
+    try {
+      const result = await renderLabelSvgForState(geometry);
       if (previewRenderRequestId !== requestId) {
         return;
       }
-      const { svgMarkup, widthPx, heightPx } = result;
-      const dataUrl = createSvgDataUrl(svgMarkup);
+      const scale = getRasterScale();
+      const canvas = await rasterizeSvgToCanvas(result.svgMarkup, result.widthPx, result.heightPx, scale);
+      if (previewRenderRequestId !== requestId) {
+        return;
+      }
+      const dataUrl = canvas.toDataURL('image/png');
       labelPreviewImage.src = dataUrl;
       labelPreviewImage.style.display = 'block';
-      labelPreviewImage.style.width = `${widthPx}px`;
-      labelPreviewImage.style.height = `${heightPx}px`;
+      labelPreviewImage.style.width = `${result.widthPx}px`;
+      labelPreviewImage.style.height = `${result.heightPx}px`;
       labelPreviewImage.setAttribute('aria-hidden', 'false');
       previewReadyState = true;
       announcePreviewStatus('Preview updated.');
-    })
-    .catch(error => {
+    } catch (error) {
       if (previewRenderRequestId !== requestId) {
         return;
       }
@@ -1980,7 +1368,8 @@ export function updatePreview() {
       hidePreviewContent();
       previewReadyState = false;
       announcePreviewStatus('Preview unavailable.');
-    });
+    }
+  })();
 }
 async function ensureFontsReady() {
   if (typeof document === 'undefined' || !document.fonts || !document.fonts.ready) {
@@ -1993,74 +1382,68 @@ async function ensureFontsReady() {
   }
 }
 
-function canvasToBlob(canvas, type = 'image/png', quality) {
-  if (typeof canvas.toBlob === 'function') {
-    return new Promise((resolve, reject) => {
-      canvas.toBlob(blob => {
-        if (blob) {
-          resolve(blob);
-        } else {
-          reject(new Error('Unable to convert canvas to blob.'));
-        }
-      }, type, quality);
-    });
-  }
-  const dataUrl = canvas.toDataURL(type, quality);
-  const base64 = dataUrl.split(',')[1] || '';
-  const binary = atob(base64);
-  const buffer = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) {
-    buffer[i] = binary.charCodeAt(i);
-  }
-  const mimeType = dataUrl.split(';')[0].split(':')[1] || type;
-  return Promise.resolve(new Blob([buffer], { type: mimeType }));
-}
-
-function loadSvgImage(svgMarkup, widthPx, heightPx) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.decoding = 'async';
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error('Unable to rasterize SVG.'));
-    img.src = createSvgDataUrl(svgMarkup);
-    img.width = widthPx;
-    img.height = heightPx;
+async function renderLabelSvgForState(geometryOverride) {
+  await ensureFontsReady();
+  const geometry = geometryOverride || getLabelGeometry();
+  const textLines = buildTextLines();
+  const hardwareInfo = resolveHardwareImageInfo();
+  const qrContent = state.showQr && state.qrContent ? state.qrContent.trim() : '';
+  return renderLabelSVG({
+    geometry,
+    pxPerMm,
+    textLines,
+    hardwareInfo,
+    qrContent,
+    minTextWidthMm: MIN_TEXT_WIDTH_MM,
   });
 }
 
-export async function renderLabelPng() {
-  const { svgMarkup, widthPx, heightPx, printableWidthMm, printableHeightMm } =
-    await buildLabelSvg();
+function getRasterScale() {
+  if (typeof window !== 'undefined' && window.devicePixelRatio) {
+    const ratio = Number(window.devicePixelRatio);
+    if (Number.isFinite(ratio) && ratio > 0) {
+      return ratio;
+    }
+  }
+  return 1;
+}
+
+async function rasterizeSvgToCanvas(svgMarkup, widthPx, heightPx, scale) {
   const canvas = document.createElement('canvas');
-  const devicePixelRatio = typeof window !== 'undefined' && window.devicePixelRatio
-    ? window.devicePixelRatio
-    : 1;
-  const scaledWidth = Math.max(1, Math.round(widthPx * devicePixelRatio));
-  const scaledHeight = Math.max(1, Math.round(heightPx * devicePixelRatio));
+  const safeScale = Number.isFinite(scale) && scale > 0 ? scale : 1;
+  const scaledWidth = Math.max(1, Math.round(widthPx * safeScale));
+  const scaledHeight = Math.max(1, Math.round(heightPx * safeScale));
   canvas.width = scaledWidth;
   canvas.height = scaledHeight;
   const ctx = canvas.getContext('2d');
   if (!ctx) {
     throw new Error('Unable to obtain a 2D canvas context for export.');
   }
-  if (devicePixelRatio !== 1) {
-    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  if (safeScale !== 1) {
+    ctx.setTransform(safeScale, 0, 0, safeScale, 0, 0);
   }
   const img = await loadSvgImage(svgMarkup, widthPx, heightPx);
   ctx.clearRect(0, 0, widthPx, heightPx);
   ctx.drawImage(img, 0, 0, widthPx, heightPx);
+  return canvas;
+}
+
+export async function renderLabelPng() {
+  const result = await renderLabelSvgForState();
+  const scale = getRasterScale();
+  const canvas = await rasterizeSvgToCanvas(result.svgMarkup, result.widthPx, result.heightPx, scale);
   const blob = await canvasToBlob(canvas, 'image/png');
   return {
     blob,
-    widthPx,
-    heightPx,
-    printableWidthMm,
-    printableHeightMm,
-    svgMarkup,
+    widthPx: result.widthPx,
+    heightPx: result.heightPx,
+    printableWidthMm: result.printableWidthMm,
+    printableHeightMm: result.printableHeightMm,
+    svgMarkup: result.svgMarkup,
   };
 }
 
 export async function renderLabelSvgMarkup() {
-  const { svgMarkup } = await buildLabelSvg();
+  const { svgMarkup } = await renderLabelSvgForState();
   return svgMarkup;
 }
