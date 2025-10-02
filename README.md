@@ -21,6 +21,8 @@ include:
 - Download-and-print flows that use a shared SVG renderer to keep the preview
   and exported artwork in sync.
 - Shareable label URLs with Web Share API support and clipboard fallback.
+- Local usage analytics that surface your most frequently generated labels for
+  the current day, week, month, and year.
 
 The repository is structured as a traditional GitHub Pages site, making it easy
 to host the tool directly from the `main` branch.
@@ -81,6 +83,15 @@ native share sheets on mobile and desktop. Browsers without Web Share support
 fall back to copying the link to the clipboard and display a confirmation
 message. Opening a shared URL pre-populates the form and preview so the label is
 ready to review, print, or export without additional input.
+
+## Usage Stats
+
+Visit [`stats.html`](stats.html) or use the **Open usage dashboard (local only)**
+link in the app header to review activity summaries. The owner-facing dashboard
+counts every label you download or print, aggregates them by design, surfaces
+custom-label wording, and highlights the most popular entries for the current
+day, week, month, and year. All usage data stays in your browser—no information
+leaves your device.
 
 ## Development Workflow and Version Control Safeguards
 
