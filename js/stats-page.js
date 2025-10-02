@@ -31,10 +31,22 @@ const PERIOD_DEFINITIONS = [
 const TOP_LABEL_LIMIT = 5;
 const MAX_CUSTOM_GROUPS = 20;
 
-document.addEventListener('DOMContentLoaded', () => {
+function showLoadingState(summaryContainer, emptyMessage) {
+  if (summaryContainer) {
+    summaryContainer.innerHTML = '';
+    const loadingMessage = document.createElement('p');
+    loadingMessage.className = 'text-muted text-center w-100 my-4';
+    loadingMessage.textContent = 'Loading community activity…';
+    summaryContainer.append(loadingMessage);
+  }
+  if (emptyMessage) {
+    emptyMessage.textContent = 'Loading community activity…';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
   initTheme();
 
-  const entries = getUsageEntries();
   const summaryContainer = document.getElementById('stats-summary-cards');
   const emptyMessage = document.getElementById('stats-empty-message');
   const periodsContainer = document.getElementById('stats-periods');
@@ -44,13 +56,57 @@ document.addEventListener('DOMContentLoaded', () => {
   const customGrid = document.getElementById('stats-custom-grid');
   const customEmptyMessage = document.getElementById('stats-custom-empty');
 
+  showLoadingState(summaryContainer, emptyMessage);
+
+  let usageResult;
+  try {
+    usageResult = await getUsageEntries();
+  } catch (error) {
+    console.error('Unexpected error while resolving usage entries', error);
+    usageResult = { entries: [], source: 'remote', error };
+  }
+
+  const { entries, source, error } = usageResult;
+
+  if (source !== 'remote') {
+    if (error) {
+      console.warn('Community analytics unavailable; ignoring local fallback data.', error);
+    }
+    if (summaryContainer) {
+      summaryContainer.innerHTML = '';
+    }
+    if (emptyMessage) {
+      emptyMessage.textContent =
+        'Unable to load community-wide stats right now. Trending ideas will return once the analytics service is back online.';
+    }
+    if (periodsContainer) {
+      periodsContainer.hidden = true;
+    }
+    if (hardwareSection) {
+      hardwareSection.hidden = true;
+    }
+    if (customSection) {
+      customSection.hidden = true;
+    }
+    return;
+  }
+
   if (!Array.isArray(entries) || entries.length === 0) {
     if (summaryContainer) {
       summaryContainer.innerHTML = '';
     }
     if (emptyMessage) {
       emptyMessage.textContent =
-        'No download or print activity recorded yet. Stats will populate after you export a label from this browser.';
+        'No community activity recorded yet. As makers generate labels, trending hardware and custom ideas will appear here.';
+    }
+    if (periodsContainer) {
+      periodsContainer.hidden = true;
+    }
+    if (hardwareSection) {
+      hardwareSection.hidden = true;
+    }
+    if (customSection) {
+      customSection.hidden = true;
     }
     return;
   }
@@ -66,8 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
       ? ` Last recorded activity: ${formatTimestamp(summary.latestTimestamp)}.`
       : '';
     emptyMessage.textContent =
-      'Stats are stored locally in this browser. Downloading or printing new labels updates the dashboard automatically.' +
-      lastActivity;
+      'Trending Gridfinity label activity from across the community.' + lastActivity;
   }
 
   if (hardwareSection && hardwareTableBody) {
