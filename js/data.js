@@ -371,6 +371,7 @@ export const hardwareCatalog = {
     { code: 'General Purpose', name: 'Rectifier Diode' },
     { code: 'Signal', name: 'Small Signal Diode' },
   ],
+  Switch: [],
   Fuse: [
     { code: 'IEC 60127-2', name: 'Time-Lag Cartridge Fuse' },
     { code: 'IEC 60127-3', name: 'Fast-Acting Cartridge Fuse' },
@@ -397,6 +398,7 @@ export const hardwareTypeImageMap = {
   Nut: 'images/nuts/hex_nut.svg',
   Fuse: 'images/fuses/glass_fuse.svg',
   Connector: 'images/connectors/connector.svg',
+  Switch: 'images/switches/microswitch_roller.svg',
   Resistor: 'images/resistors/resistor_through_hole.svg',
   Capacitor: 'images/capacitors/capacitor_through_hole.svg',
   Bearing: 'images/bearings/bearing.svg',

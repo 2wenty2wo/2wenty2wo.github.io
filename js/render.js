@@ -972,6 +972,9 @@ export function isLabelReady() {
   if (state.hardwareType === 'Threaded Heat Insert') {
     return Boolean(state.threadSize && state.length);
   }
+  if (state.hardwareType === 'Switch') {
+    return true;
+  }
   return Boolean(state.threadSize);
 }
 
