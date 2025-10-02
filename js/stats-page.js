@@ -120,6 +120,8 @@ function computeSummary(entries) {
 
 function renderSummary(summary, container) {
   container.innerHTML = '';
+  container.classList.remove('row', 'g-3');
+  container.classList.add('stats-summary-grid');
   const cards = [
     {
       label: 'Total uses',
@@ -141,9 +143,6 @@ function renderSummary(summary, container) {
   ];
 
   for (const cardData of cards) {
-    const col = document.createElement('div');
-    col.className = 'col-12 col-sm-6 col-lg-3';
-
     const card = document.createElement('article');
     card.className = 'stats-summary-card card shadow-sm h-100';
 
@@ -168,8 +167,7 @@ function renderSummary(summary, container) {
     }
 
     card.append(body);
-    col.append(card);
-    container.append(col);
+    container.append(card);
   }
 }
 

@@ -1771,6 +1771,12 @@ body.part-type-picker-open {
   max-width: 960px;
 }
 
+.stats-summary-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
 .stats-summary-card .card-body {
   padding: 1.5rem;
 }
@@ -1903,6 +1909,11 @@ body.part-type-picker-open {
 @media (max-width: 575.98px) {
   .stats-page {
     padding-inline: 0.75rem;
+  }
+
+  .stats-summary-grid {
+    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .stats-summary-card .card-body {
