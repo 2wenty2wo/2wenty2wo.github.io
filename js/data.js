@@ -87,6 +87,11 @@ export const switchTypeOptions = [
     image: 'images/switches/microswitch_roller.svg',
   },
   {
+    id: 'Arcade Button',
+    label: 'Arcade Button',
+    image: 'images/switches/arcade_button.svg',
+  },
+  {
     id: 'Tactile Switch',
     label: 'Tactile Switch',
     image: 'images/switches/tactile_switch.svg',
