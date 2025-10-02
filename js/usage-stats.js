@@ -23,6 +23,23 @@ function safeParse(json) {
   }
 }
 
+function parseSnapshotString(value) {
+  if (typeof value !== 'string') {
+    return {};
+  }
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (error) {
+    console.warn('Unable to parse snapshot from analytics payload', error);
+    return {};
+  }
+}
+
+const SHARED_ANALYTICS_ENDPOINT =
+  (typeof window !== 'undefined' && window.GRIDFINITY_ANALYTICS_ENDPOINT) ||
+  'https://analytics.gridfinitylabels.com/usage.json';
+
 function loadEntries() {
   if (!supportsLocalStorage()) {
     return [];
@@ -107,8 +124,99 @@ export function recordLabelUsage(eventType, details) {
   saveEntries(entries);
 }
 
-export function getUsageEntries() {
-  return loadEntries();
+function extractRemoteEntries(payload) {
+  if (!payload) {
+    return null;
+  }
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+  if (typeof payload === 'object') {
+    if (Array.isArray(payload.entries)) {
+      return payload.entries;
+    }
+    if (Array.isArray(payload.data)) {
+      return payload.data;
+    }
+  }
+  return null;
+}
+
+function normalizeRemoteEntry(entry) {
+  if (!entry || typeof entry !== 'object') {
+    return null;
+  }
+
+  const key = typeof entry.key === 'string'
+    ? entry.key
+    : typeof entry.labelKey === 'string'
+      ? entry.labelKey
+      : null;
+
+  if (!key) {
+    return null;
+  }
+
+  const timestampValue =
+    entry.timestamp ?? entry.latestTimestamp ?? entry.updatedAt ?? entry.lastSeen ?? entry.lastTimestamp;
+  const timestamp = Number(timestampValue);
+  if (!Number.isFinite(timestamp)) {
+    return null;
+  }
+
+  const snapshot = entry.snapshot && typeof entry.snapshot === 'object'
+    ? cloneSnapshot(entry.snapshot)
+    : typeof entry.snapshot === 'string'
+      ? cloneSnapshot(parseSnapshotString(entry.snapshot))
+      : entry.data && typeof entry.data === 'object'
+        ? cloneSnapshot(entry.data)
+        : {};
+
+  const svgMarkup = typeof entry.svgMarkup === 'string'
+    ? entry.svgMarkup
+    : typeof entry.svg === 'string'
+      ? entry.svg
+      : '';
+
+  const eventType = sanitizeEventType(entry.eventType || entry.lastEventType || entry.type);
+
+  return { key, snapshot, svgMarkup, timestamp, eventType };
+}
+
+export async function getUsageEntries() {
+  let remoteError = null;
+
+  try {
+    const response = await fetch(SHARED_ANALYTICS_ENDPOINT, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      cache: 'no-cache',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Analytics request failed with status ${response.status}`);
+    }
+
+    const payload = await response.json();
+    const rawEntries = extractRemoteEntries(payload);
+    if (!Array.isArray(rawEntries)) {
+      throw new Error('Analytics payload did not contain an entries array');
+    }
+
+    const normalizedEntries = rawEntries.map(normalizeRemoteEntry).filter(Boolean);
+
+    if (normalizedEntries.length === 0 && rawEntries.length > 0) {
+      throw new Error('Analytics payload did not include valid entries');
+    }
+
+    return { entries: normalizedEntries, source: 'remote', error: null };
+  } catch (error) {
+    remoteError = error instanceof Error ? error : new Error('Unknown analytics error');
+    console.error('Unable to load global usage stats', remoteError);
+  }
+
+  const fallbackEntries = loadEntries();
+  return { entries: fallbackEntries, source: 'local', error: remoteError };
 }
 
 export function computeTopLabels(entries, periodStartMs, limit = 5) {
