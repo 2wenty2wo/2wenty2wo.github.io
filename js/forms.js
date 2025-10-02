@@ -42,6 +42,7 @@ const {
   threadSizeContainer,
   threadLengthRow,
   lengthContainer,
+  lengthInput,
   fuseSelectionRow,
   fuseTypeContainer,
   fuseTypeSelect,
@@ -4048,6 +4049,7 @@ export function onHardwareTypeChange() {
     const hideThreadLength =
       showFuseFields ||
       showConnectorFields ||
+      showSwitchFields ||
       showCustomFields ||
       showBearingFields ||
       showComponentFields;
@@ -4064,6 +4066,12 @@ export function onHardwareTypeChange() {
         !showWasherFields,
     );
     threadLengthRow.style.display = hideThreadLength ? 'none' : '';
+    if (hideThreadLength) {
+      state.length = '';
+      if (lengthInput) {
+        lengthInput.value = '';
+      }
+    }
   }
   if (threadSizeContainer) {
     threadSizeContainer.style.display =
