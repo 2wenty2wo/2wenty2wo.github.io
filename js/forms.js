@@ -1381,7 +1381,9 @@ export function syncHardwareTypePicker() {
     const label = hardwareTypePickerButton.querySelector('.part-type-picker__chip-label');
     const iconImage = hardwareTypePickerButton.querySelector('.part-type-picker__chip-image');
     const fallback = hardwareTypePickerButton.querySelector('.part-type-picker__chip-fallback');
-    const imageSrc = resolvedValue ? hardwareTypeImageMap[resolvedValue] : '';
+    const imageSrc = resolvedValue
+      ? hardwareTypeImageMap[resolvedValue] ?? hardwareTypeImageMap.get?.(resolvedValue) ?? ''
+      : '';
 
     let optionLabel = HARDWARE_TYPE_PLACEHOLDER_TEXT;
     if (resolvedValue && hardwareTypeSelect) {
@@ -1403,11 +1405,13 @@ export function syncHardwareTypePicker() {
       if (imageSrc) {
         iconImage.src = imageSrc;
         iconImage.hidden = false;
+        iconImage.removeAttribute('hidden');
         if (resolvedValue === 'Bolt' || resolvedValue === 'Screw') {
           iconImage.classList.add('is-rotated-90');
         }
       } else {
         iconImage.hidden = true;
+        iconImage.setAttribute('hidden', '');
         iconImage.removeAttribute('src');
       }
     }
