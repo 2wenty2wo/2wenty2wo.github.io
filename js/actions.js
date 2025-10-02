@@ -11,6 +11,19 @@ function captureStateSnapshot() {
   }
 }
 
+function isImageElement(element) {
+  if (!element || typeof element !== 'object') {
+    return false;
+  }
+  const tagName =
+    typeof element.tagName === 'string'
+      ? element.tagName.toLowerCase()
+      : element.nodeName && typeof element.nodeName === 'string'
+        ? element.nodeName.toLowerCase()
+        : '';
+  return tagName === 'img';
+}
+
 async function copyLinkToClipboard(link) {
   if (
     typeof navigator !== 'undefined' &&
@@ -217,22 +230,23 @@ export function printLabel() {
   doc.documentElement.style.setProperty('--label-height-mm', heightValue);
   const printBody = doc.body;
   const statusDiv = doc.getElementById('print-status');
-  const img = doc.getElementById('print-image');
-  if (img instanceof HTMLImageElement) {
-    img.style.width = widthValue;
-    img.style.height = heightValue;
-    img.style.maxWidth = 'none';
-    img.style.maxHeight = 'none';
-    img.style.imageRendering = 'pixelated';
+  const rawImage = doc.getElementById('print-image');
+  const imageElement = isImageElement(rawImage) ? rawImage : null;
+  if (imageElement) {
+    imageElement.style.width = widthValue;
+    imageElement.style.height = heightValue;
+    imageElement.style.maxWidth = 'none';
+    imageElement.style.maxHeight = 'none';
+    imageElement.style.imageRendering = 'pixelated';
   }
   renderLabelPng()
     .then(({ blob, widthPx, heightPx }) => {
-      if (!(img instanceof HTMLImageElement)) {
+      if (!imageElement) {
         throw new Error('Print image element was not created.');
       }
       const objectUrl = URL.createObjectURL(blob);
-      img.setAttribute('width', String(widthPx));
-      img.setAttribute('height', String(heightPx));
+      imageElement.setAttribute('width', String(widthPx));
+      imageElement.setAttribute('height', String(heightPx));
       const handleLoad = () => {
         if (printBody) {
           printBody.setAttribute('data-ready', 'true');
@@ -245,15 +259,15 @@ export function printLabel() {
         printWindow.print();
         printWindow.close();
       };
-      img.addEventListener('load', handleLoad, { once: true });
-      img.addEventListener(
+      imageElement.addEventListener('load', handleLoad, { once: true });
+      imageElement.addEventListener(
         'error',
         () => {
           URL.revokeObjectURL(objectUrl);
         },
         { once: true },
       );
-      img.src = objectUrl;
+      imageElement.src = objectUrl;
     })
     .catch(err => {
       console.error('Print preview generation failed', err);
