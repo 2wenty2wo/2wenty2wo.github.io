@@ -6,6 +6,7 @@ import {
   syncThreadSizePicker,
   syncFuseTypePicker,
   syncFuseValuePicker,
+  syncSwitchTypePicker,
   syncComponentMountPicker,
   syncResistorValuePicker,
   syncCapacitorValuePicker,
@@ -23,6 +24,7 @@ import {
   connectorCategoryImageMap,
   getConnectorSeriesImage,
   hardwareTypeImageMap,
+  switchTypeImageMap,
   boltHeadMap,
   boltDriveMap,
   nutTypeMap,
@@ -57,6 +59,9 @@ const {
   washerTypeSelect,
   washerTypeContainer,
   washerTypeMessage,
+  switchTypeSelect,
+  switchTypeContainer,
+  switchTypeMessage,
   fuseTypeSelect,
   fuseTypeContainer,
   fuseTypeMessage,
@@ -973,7 +978,7 @@ export function isLabelReady() {
     return Boolean(state.threadSize && state.length);
   }
   if (state.hardwareType === 'Switch') {
-    return true;
+    return Boolean(state.switchType);
   }
   return Boolean(state.threadSize);
 }
@@ -1044,6 +1049,14 @@ function applyValidationFeedback() {
       valid: valueValid,
     });
     syncFuseValuePicker({ isValid: valueValid });
+    updateInputFieldState({
+      input: switchTypeSelect,
+      container: switchTypeContainer,
+      messageElement: switchTypeMessage,
+      valid: true,
+      message: '',
+    });
+    syncSwitchTypePicker({ isValid: true });
   } else {
     updateInputFieldState({
       input: fuseTypeSelect,
@@ -1060,6 +1073,26 @@ function applyValidationFeedback() {
       valid: true,
     });
     syncFuseValuePicker({ isValid: true });
+    if (hardwareType === 'Switch') {
+      const switchValid = Boolean(state.switchType);
+      updateInputFieldState({
+        input: switchTypeSelect,
+        container: switchTypeContainer,
+        messageElement: switchTypeMessage,
+        valid: switchValid,
+        message: switchValid ? '' : 'Select a switch type',
+      });
+      syncSwitchTypePicker({ isValid: switchValid });
+    } else {
+      updateInputFieldState({
+        input: switchTypeSelect,
+        container: switchTypeContainer,
+        messageElement: switchTypeMessage,
+        valid: true,
+        message: '',
+      });
+      syncSwitchTypePicker({ isValid: true });
+    }
   }
 
   if (
@@ -1406,6 +1439,19 @@ function resolveHardwareImageInfo() {
       alt,
     };
   }
+  if (state.hardwareType === 'Switch') {
+    const switchId = (state.switchType || '').trim();
+    const imageSrc = switchTypeImageMap.get(switchId) || hardwareTypeImageMap.Switch || '';
+    if (!imageSrc) {
+      return null;
+    }
+    const altLabel = switchId || 'Switch';
+    return {
+      type: 'photo',
+      src: imageSrc,
+      alt: `${altLabel} illustration`,
+    };
+  }
   if (state.hardwareType === 'Connector') {
     const categoryId = (state.connectorCategory || '').trim();
     const category = findConnectorCategory(categoryId);
@@ -1692,6 +1738,12 @@ function buildTextLines() {
     const line2 = state.showStandard && state.bearingDetails ? state.bearingDetails : '';
     const line3 = state.notes || '';
     return { line1, line2, line3 };
+  }
+
+  if (state.hardwareType === 'Switch') {
+    const line1 = state.switchType || 'Switch';
+    const line2 = state.notes || '';
+    return { line1, line2, line3: '' };
   }
 
   if (ELECTRICAL_COMPONENT_TYPES.has(state.hardwareType)) {

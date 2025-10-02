@@ -8,6 +8,7 @@ import {
   populateConnectorCategories,
   populateBearingOptions,
   populateHardwareTypePicker,
+  populateSwitchTypePicker,
   populateComponentMountPicker,
   populateResistorValues,
   populateCapacitorValues,
@@ -20,6 +21,7 @@ import {
   setBoltHeadSelection,
   setNutTypeSelection,
   setWasherTypeSelection,
+  setSwitchTypeSelection,
   setBearingTypeSelection,
   setFuseTypeSelection,
   setThreadSizeSelection,
@@ -116,6 +118,7 @@ function applyStateToControls() {
   setBoltDriveSelection(state.boltDrive || '', { triggerUpdate: false });
   setNutTypeSelection(state.nutType || '', { triggerUpdate: false });
   setWasherTypeSelection(state.washerType || '', { triggerUpdate: false });
+  setSwitchTypeSelection(state.switchType || '', { triggerUpdate: false });
   if (standardToggle) {
     standardToggle.checked = state.showStandard;
   }
@@ -155,6 +158,7 @@ function init() {
   populateCapacitorValues();
   populateDiodeValues();
   populateWasherTypeOptions();
+  populateSwitchTypePicker();
   updateCustomImageUi();
   ensureCustomIconAsset();
   onHardwareTypeChange();

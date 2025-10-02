@@ -9,6 +9,7 @@ import {
   boltHeadOptions,
   boltDriveOptions,
   screwTypeOptions,
+  switchTypeOptions,
   electricalComponentTypes,
   componentMountOptions as componentMountOptionList,
   resistorValueOptions,
@@ -22,6 +23,7 @@ const FIELD_MAP = {
   hardwareType: 'ht',
   systemType: 'ms',
   fuseType: 'ft',
+  switchType: 'sw',
   threadSize: 'ts',
   length: 'ln',
   fuseValue: 'fv',
@@ -68,6 +70,7 @@ const fuseTypeOptions = new Set(
     ? Array.from(elements.fuseTypeSelect.options, option => option.value).filter(Boolean)
     : [],
 );
+const switchTypeOptionSet = new Set(switchTypeOptions.map(option => option.id));
 const ELECTRICAL_COMPONENT_TYPES = new Set(electricalComponentTypes);
 const DEFAULT_COMPONENT_TYPE = electricalComponentTypes[0] || 'Resistor';
 const componentCategoryOptions = new Set(electricalComponentTypes);
@@ -405,6 +408,17 @@ function applyExpandedPayload(expanded) {
     state.fuseValue = '';
     state.glassSpeed = '';
     state.glassSize = '';
+  }
+
+  if (state.hardwareType === 'Switch') {
+    if (typeof expanded.switchType === 'string') {
+      const trimmedSwitch = expanded.switchType.trim();
+      state.switchType = switchTypeOptionSet.has(trimmedSwitch) ? trimmedSwitch : '';
+    } else {
+      state.switchType = '';
+    }
+  } else {
+    state.switchType = '';
   }
 
   if (typeof expanded.notes === 'string') {

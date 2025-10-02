@@ -21,6 +21,8 @@ import {
   syncNutTypePicker,
   setWasherTypeSelection,
   syncWasherTypePicker,
+  setSwitchTypeSelection,
+  syncSwitchTypePicker,
   setConnectorCategorySelection,
   syncConnectorCategoryPicker,
   setConnectorSeriesSelection,
@@ -125,6 +127,10 @@ const {
   washerTypePicker,
   washerTypePickerButton,
   washerTypePickerList,
+  switchTypeSelect,
+  switchTypePicker,
+  switchTypePickerButton,
+  switchTypePickerList,
   connectorSeriesPicker,
   connectorSeriesPickerButton,
   connectorSeriesPickerList,
@@ -157,6 +163,7 @@ let boltDrivePickerOpen = false;
 let boltHeadPickerOpen = false;
 let nutTypePickerOpen = false;
 let washerTypePickerOpen = false;
+let switchTypePickerOpen = false;
 let fuseValuePickerOpen = false;
 let componentMountPickerOpen = false;
 let resistorValuePickerOpen = false;
@@ -3114,6 +3121,213 @@ function handleNutTypeListFocusOut() {
   }, 0);
 }
 
+function getSwitchTypeOptionElements() {
+  if (!switchTypePickerList) {
+    return [];
+  }
+  return Array.from(switchTypePickerList.querySelectorAll('[role="option"]'));
+}
+
+function focusSwitchTypeOption(option) {
+  if (!option) {
+    return;
+  }
+  const options = getSwitchTypeOptionElements();
+  options.forEach(opt => {
+    opt.tabIndex = opt === option ? 0 : -1;
+  });
+  option.focus();
+  if (typeof option.scrollIntoView === 'function') {
+    option.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function openSwitchTypePicker() {
+  if (!switchTypePicker || !switchTypePickerButton || !switchTypePickerList) {
+    return;
+  }
+  if (switchTypePickerButton.disabled || switchTypePickerOpen) {
+    return;
+  }
+  switchTypePickerOpen = true;
+  switchTypePicker.classList.add('is-open');
+  switchTypePickerList.hidden = false;
+  switchTypePickerButton.setAttribute('aria-expanded', 'true');
+  syncSwitchTypePicker({ isValid: true });
+
+  const options = getSwitchTypeOptionElements();
+  if (options.length === 0) {
+    return;
+  }
+  const currentValue = typeof state.switchType === 'string' ? state.switchType : '';
+  const selectedOption = options.find(option => option.dataset.value === currentValue);
+  focusSwitchTypeOption(selectedOption || options[0]);
+}
+
+function closeSwitchTypePicker({ focusButton = false } = {}) {
+  if (!switchTypePicker || !switchTypePickerButton || !switchTypePickerList) {
+    return;
+  }
+  if (!switchTypePickerOpen) {
+    if (focusButton && !switchTypePickerButton.disabled) {
+      switchTypePickerButton.focus();
+    }
+    return;
+  }
+  switchTypePickerOpen = false;
+  switchTypePicker.classList.remove('is-open');
+  switchTypePickerList.hidden = true;
+  switchTypePickerButton.setAttribute('aria-expanded', 'false');
+  if (focusButton && !switchTypePickerButton.disabled) {
+    switchTypePickerButton.focus();
+  }
+}
+
+function toggleSwitchTypePicker() {
+  if (switchTypePickerOpen) {
+    closeSwitchTypePicker({ focusButton: false });
+  } else {
+    openSwitchTypePicker();
+  }
+}
+
+function moveSwitchTypeOption(delta) {
+  const options = getSwitchTypeOptionElements();
+  if (options.length === 0) {
+    return;
+  }
+  const active = document.activeElement;
+  const activeIndex = options.findIndex(option => option === active);
+  let nextIndex = activeIndex + delta;
+  if (nextIndex < 0) {
+    nextIndex = options.length - 1;
+  }
+  if (nextIndex >= options.length) {
+    nextIndex = 0;
+  }
+  focusSwitchTypeOption(options[nextIndex]);
+}
+
+function handleSwitchTypeButtonKeydown(event) {
+  if (!switchTypePickerList) {
+    return;
+  }
+  const key = event.key;
+  if (key === 'ArrowDown' || key === 'Down') {
+    event.preventDefault();
+    openSwitchTypePicker();
+    const options = getSwitchTypeOptionElements();
+    if (options.length > 0) {
+      focusSwitchTypeOption(options[0]);
+    }
+    return;
+  }
+  if (key === 'ArrowUp' || key === 'Up') {
+    event.preventDefault();
+    openSwitchTypePicker();
+    const options = getSwitchTypeOptionElements();
+    if (options.length > 0) {
+      focusSwitchTypeOption(options[options.length - 1]);
+    }
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    toggleSwitchTypePicker();
+    return;
+  }
+  if (key === 'Escape') {
+    event.preventDefault();
+    closeSwitchTypePicker({ focusButton: true });
+  }
+}
+
+function handleSwitchTypeListKeydown(event) {
+  const key = event.key;
+  if (key === 'ArrowDown' || key === 'Down') {
+    event.preventDefault();
+    moveSwitchTypeOption(1);
+    return;
+  }
+  if (key === 'ArrowUp' || key === 'Up') {
+    event.preventDefault();
+    moveSwitchTypeOption(-1);
+    return;
+  }
+  if (key === 'Home') {
+    event.preventDefault();
+    const options = getSwitchTypeOptionElements();
+    if (options.length > 0) {
+      focusSwitchTypeOption(options[0]);
+    }
+    return;
+  }
+  if (key === 'End') {
+    event.preventDefault();
+    const options = getSwitchTypeOptionElements();
+    if (options.length > 0) {
+      focusSwitchTypeOption(options[options.length - 1]);
+    }
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    const target = event.target;
+    if (target && target instanceof HTMLElement) {
+      const option = target.closest('[role="option"]');
+      if (option) {
+        setSwitchTypeSelection(option.dataset.value || '');
+        closeSwitchTypePicker({ focusButton: true });
+      }
+    }
+    return;
+  }
+  if (key === 'Escape') {
+    event.preventDefault();
+    closeSwitchTypePicker({ focusButton: true });
+    return;
+  }
+  if (key === 'Tab') {
+    closeSwitchTypePicker();
+  }
+}
+
+function handleSwitchTypeListClick(event) {
+  if (!switchTypePickerList) {
+    return;
+  }
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+  const option = target.closest('[role="option"]');
+  if (!option || !switchTypePickerList.contains(option)) {
+    return;
+  }
+  event.preventDefault();
+  setSwitchTypeSelection(option.dataset.value || '');
+  closeSwitchTypePicker({ focusButton: true });
+}
+
+function handleSwitchTypeListFocusOut() {
+  if (!switchTypePickerOpen) {
+    return;
+  }
+  setTimeout(() => {
+    if (!switchTypePickerOpen) {
+      return;
+    }
+    if (!switchTypePicker) {
+      closeSwitchTypePicker();
+      return;
+    }
+    const active = document.activeElement;
+    if (!active || !switchTypePicker.contains(active)) {
+      closeSwitchTypePicker();
+    }
+  }, 0);
+}
+
 function getWasherTypeOptionElements() {
   if (!washerTypePickerList) {
     return [];
@@ -3783,6 +3997,11 @@ function handleDocumentPointer(event) {
       closeWasherTypePicker();
     }
   }
+  if (switchTypePickerOpen && switchTypePicker) {
+    if (!(target instanceof Node) || !switchTypePicker.contains(target)) {
+      closeSwitchTypePicker();
+    }
+  }
   if (fuseValuePickerOpen && fuseValuePicker) {
     if (!(target instanceof Node) || !fuseValuePicker.contains(target)) {
       closeFuseValuePicker();
@@ -3855,6 +4074,11 @@ function handleDocumentFocusIn(event) {
   if (nutTypePickerOpen && nutTypePicker) {
     if (!(target instanceof Node) || !nutTypePicker.contains(target)) {
       closeNutTypePicker();
+    }
+  }
+  if (switchTypePickerOpen && switchTypePicker) {
+    if (!(target instanceof Node) || !switchTypePicker.contains(target)) {
+      closeSwitchTypePicker();
     }
   }
   if (fuseValuePickerOpen && fuseValuePicker) {
@@ -4289,6 +4513,11 @@ export function initEventHandlers() {
       setWasherTypeSelection(washerTypeSelect.value);
     });
   }
+  if (switchTypeSelect) {
+    switchTypeSelect.addEventListener('change', () => {
+      setSwitchTypeSelection(switchTypeSelect.value);
+    });
+  }
 
   if (boltHeadSelect) {
     boltHeadSelect.addEventListener('change', () => {
@@ -4342,6 +4571,16 @@ export function initEventHandlers() {
     washerTypePickerList.addEventListener('keydown', handleWasherTypeListKeydown);
     washerTypePickerList.addEventListener('focusout', handleWasherTypeListFocusOut);
   }
+  if (switchTypePickerButton && switchTypePickerList) {
+    switchTypePickerButton.addEventListener('click', event => {
+      event.preventDefault();
+      toggleSwitchTypePicker();
+    });
+    switchTypePickerButton.addEventListener('keydown', handleSwitchTypeButtonKeydown);
+    switchTypePickerList.addEventListener('click', handleSwitchTypeListClick);
+    switchTypePickerList.addEventListener('keydown', handleSwitchTypeListKeydown);
+    switchTypePickerList.addEventListener('focusout', handleSwitchTypeListFocusOut);
+  }
   if (connectorCategoryPickerButton && connectorCategoryPickerList) {
     connectorCategoryPickerButton.addEventListener('click', event => {
       event.preventDefault();
@@ -4383,6 +4622,7 @@ export function initEventHandlers() {
     boltHeadPicker ||
     nutTypePicker ||
     washerTypePicker ||
+    switchTypePicker ||
     fuseValuePicker ||
     componentMountPicker ||
     resistorValuePicker ||
@@ -4400,6 +4640,10 @@ export function initEventHandlers() {
   document.addEventListener('gridfinity:fuse-picker-close', () => {
     closeFuseTypePicker();
     closeFuseValuePicker();
+  });
+
+  document.addEventListener('gridfinity:switch-picker-close', () => {
+    closeSwitchTypePicker();
   });
 
   document.addEventListener('gridfinity:component-picker-close', () => {

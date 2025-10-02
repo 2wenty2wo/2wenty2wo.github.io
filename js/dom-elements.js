@@ -28,6 +28,13 @@ const washerTypePickerButton = document.getElementById('washer-type-picker-butto
 const washerTypePickerList = document.getElementById('washer-type-picker-list');
 const washerTypeSelect = document.getElementById('washer-type-select');
 const washerTypeMessage = document.getElementById('washer-type-message');
+const switchSelectionRow = document.getElementById('switch-selection-row');
+const switchTypeContainer = document.getElementById('switch-type-container');
+const switchTypePicker = document.getElementById('switch-type-picker');
+const switchTypePickerButton = document.getElementById('switch-type-picker-button');
+const switchTypePickerList = document.getElementById('switch-type-picker-list');
+const switchTypeSelect = document.getElementById('switch-type-select');
+const switchTypeMessage = document.getElementById('switch-type-message');
 const fuseSelectionRow = document.getElementById('fuse-selection-row');
 const fuseTypeContainer = document.getElementById('fuse-type-container');
 const fuseTypeSelect = document.getElementById('fuse-type-select');
@@ -211,6 +218,13 @@ export const elements = {
   washerTypePickerList,
   washerTypeSelect,
   washerTypeMessage,
+  switchSelectionRow,
+  switchTypeContainer,
+  switchTypePicker,
+  switchTypePickerButton,
+  switchTypePickerList,
+  switchTypeSelect,
+  switchTypeMessage,
   fuseSelectionRow,
   fuseTypeContainer,
   fuseTypeSelect,
