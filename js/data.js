@@ -80,6 +80,23 @@ export const fuseTypeOptions = [
   { id: 'Blade', label: 'Blade Fuse', image: 'images/fuses/blade_fuse.svg' },
 ];
 
+export const switchTypeOptions = [
+  {
+    id: 'Microswitch (Roller)',
+    label: 'Microswitch (Roller)',
+    image: 'images/switches/microswitch_roller.svg',
+  },
+  {
+    id: 'Tactile Switch',
+    label: 'Tactile Switch',
+    image: 'images/switches/tactile_switch.svg',
+  },
+];
+
+export const switchTypeImageMap = new Map(
+  switchTypeOptions.map(option => [option.id, option.image]),
+);
+
 export const electricalComponentTypes = ['Resistor', 'Capacitor', 'Diode'];
 
 export const componentImageMap = {

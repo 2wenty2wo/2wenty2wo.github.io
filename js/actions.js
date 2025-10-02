@@ -69,9 +69,9 @@ function formatTimestamp(date) {
 }
 
 export function downloadLabel() {
-  const labelSnapshot = captureStateSnapshot();
+  captureStateSnapshot();
   renderLabelPng()
-    .then(({ blob, svgMarkup }) => {
+    .then(({ blob }) => {
       const link = document.createElement('a');
       const objectUrl = URL.createObjectURL(blob);
       link.href = objectUrl;
@@ -181,7 +181,7 @@ export function downloadLabel() {
 }
 
 export function printLabel() {
-  const labelSnapshot = captureStateSnapshot();
+  captureStateSnapshot();
   const printWindow = window.open('', '_blank', 'width=800,height=600');
   if (!printWindow) {
     alert('Please allow pop-ups to print the label.');
@@ -226,7 +226,7 @@ export function printLabel() {
     img.style.imageRendering = 'pixelated';
   }
   renderLabelPng()
-    .then(({ blob, widthPx, heightPx, svgMarkup }) => {
+    .then(({ blob, widthPx, heightPx }) => {
       if (!(img instanceof HTMLImageElement)) {
         throw new Error('Print image element was not created.');
       }

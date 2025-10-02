@@ -958,6 +958,55 @@
                     ></div>
                   </div>
                 </div>
+                <div id="switch-selection-row" class="row g-3 d-none">
+                  <div class="col-12 col-sm-6" id="switch-type-container">
+                    <label for="switch-type-select" class="form-label fw-semibold"
+                      >Switch Type</label
+                    >
+                    <div class="bolt-drive-picker" id="switch-type-picker">
+                      <select
+                        id="switch-type-select"
+                        class="visually-hidden"
+                        aria-describedby="switch-type-message"
+                      ></select>
+                      <button
+                        type="button"
+                        class="bolt-drive-picker__button"
+                        id="switch-type-picker-button"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                        aria-controls="switch-type-picker-list"
+                      >
+                        <span class="bolt-drive-picker__current">
+                          <span
+                            class="bolt-drive-picker__current-icon is-empty"
+                            aria-hidden="true"
+                          >
+                            <img
+                              class="bolt-drive-picker__current-icon-image"
+                              src=""
+                              alt=""
+                              hidden
+                            />
+                          </span>
+                          <span class="bolt-drive-picker__current-label">&nbsp;</span>
+                        </span>
+                        <span class="bolt-drive-picker__chevron" aria-hidden="true"></span>
+                      </button>
+                      <ul
+                        class="bolt-drive-picker__list"
+                        id="switch-type-picker-list"
+                        role="listbox"
+                        aria-labelledby="switch-type-picker-button"
+                        hidden
+                      ></ul>
+                    </div>
+                    <div
+                      id="switch-type-message"
+                      class="validation-message text-danger small mt-2 d-none"
+                    ></div>
+                  </div>
+                </div>
                 <div id="fuse-selection-row" class="row g-3 d-none">
                   <div class="col-6" id="fuse-type-container">
                     <label

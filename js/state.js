@@ -2,6 +2,7 @@ export const state = {
   hardwareType: 'Bolt',
   systemType: 'Metric',
   fuseType: 'Glass',
+  switchType: '',
   threadSize: '',
   length: '',
   fuseValue: '',
