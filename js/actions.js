@@ -2,6 +2,15 @@ import { state } from './state.js';
 import { findConnectorCategory, boltHeadMap, boltDriveMap, screwTypeMap } from './data.js';
 import { renderLabelPng } from './render.js';
 import { buildShareUrl } from './url-state.js';
+import { recordLabelUsage } from './usage-stats.js';
+
+function captureStateSnapshot() {
+  try {
+    return structuredClone(state);
+  } catch {
+    return JSON.parse(JSON.stringify(state));
+  }
+}
 
 async function copyLinkToClipboard(link) {
   if (
@@ -61,8 +70,9 @@ function formatTimestamp(date) {
 }
 
 export function downloadLabel() {
+  const labelSnapshot = captureStateSnapshot();
   renderLabelPng()
-    .then(({ blob }) => {
+    .then(({ blob, svgMarkup }) => {
       const link = document.createElement('a');
       const objectUrl = URL.createObjectURL(blob);
       link.href = objectUrl;
@@ -164,6 +174,7 @@ export function downloadLabel() {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(objectUrl);
+      recordLabelUsage('download', { snapshot: labelSnapshot, svgMarkup });
     })
     .catch(err => {
       console.error('Label download failed', err);
@@ -172,6 +183,7 @@ export function downloadLabel() {
 }
 
 export function printLabel() {
+  const labelSnapshot = captureStateSnapshot();
   const printWindow = window.open('', '_blank', 'width=800,height=600');
   if (!printWindow) {
     alert('Please allow pop-ups to print the label.');
@@ -216,7 +228,7 @@ export function printLabel() {
     img.style.imageRendering = 'pixelated';
   }
   renderLabelPng()
-    .then(({ blob, widthPx, heightPx }) => {
+    .then(({ blob, widthPx, heightPx, svgMarkup }) => {
       if (!(img instanceof HTMLImageElement)) {
         throw new Error('Print image element was not created.');
       }
@@ -244,6 +256,7 @@ export function printLabel() {
         { once: true },
       );
       img.src = objectUrl;
+      recordLabelUsage('print', { snapshot: labelSnapshot, svgMarkup });
     })
     .catch(err => {
       console.error('Print preview generation failed', err);
