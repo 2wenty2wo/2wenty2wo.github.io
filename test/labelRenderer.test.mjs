@@ -68,6 +68,34 @@ test('37×24 mm labels stack bolt icons vertically', async () => {
   assert.ok(top.height > 80 && bottom.height > 80, 'stacked icons should scale up');
 });
 
+test('37×18 mm labels stack bolt icons vertically with balanced spacing', async () => {
+  const geometry = {
+    labelWidthMm: 37,
+    labelHeightMm: 18,
+    printableWidthMm: 33,
+    printableHeightMm: 16,
+    marginX: 2,
+    marginY: 1,
+  };
+  const hardwareInfo = {
+    type: 'bolt',
+    images: [
+      { src: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"></svg>', alt: 'drive' },
+      { src: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"></svg>', alt: 'head' },
+    ],
+  };
+  const textLines = { line1: 'M2 × 10', line2: 'Socket Cap', line3: 'Phillips' };
+  const result = await renderLabelSVG({ geometry, pxPerMm, textLines, hardwareInfo, qrContent: '' });
+  const images = extractImages(result.svgMarkup);
+  assert.equal(images.length, 2, 'expected two images in media zone');
+  const [top, bottom] = images;
+  assert.ok(Math.abs(top.x - bottom.x) < 2, 'icons should stay centered when stacked');
+  assert.ok(bottom.y > top.y + top.height - 1, 'stacked icons should not overlap');
+  const textMatches = [...result.svgMarkup.matchAll(/font-weight="800"[^>]*>([^<]+)<\/text>/g)];
+  assert.equal(textMatches.length, 1, 'main line should render once');
+  assert.equal(textMatches[0][1].trim(), 'M2 × 10', 'main line should remain intact');
+});
+
 test('fitTextToBox shrinks long lines and applies ellipsis when needed', () => {
   const minFontSizePx = (8.25 / 72) * 300;
   const result = fitTextToBox({
@@ -112,6 +140,73 @@ test('single icon fills the media zone proportionally', async () => {
   const icon = images[0];
   assert.ok(Math.abs(icon.width - icon.height) < 0.5, 'icon should remain square within zone');
   assert.ok(icon.width > 60, 'icon should scale to fill available space');
+});
+
+test('main line shrinks before ellipsizing', async () => {
+  const geometry = {
+    labelWidthMm: 80,
+    labelHeightMm: 12,
+    printableWidthMm: 76,
+    printableHeightMm: 10,
+    marginX: 2,
+    marginY: 1,
+  };
+  const textLines = {
+    line1: 'M2.5 × 16 Countersunk Socket Cap',
+    line2: 'Stainless Steel',
+    line3: '',
+  };
+  const result = await renderLabelSVG({ geometry, pxPerMm, textLines, hardwareInfo: null, qrContent: '' });
+  const mainMatches = [...result.svgMarkup.matchAll(/font-weight="800"[^>]*>([^<]+)<\/text>/g)];
+  assert.equal(mainMatches.length, 1, 'main line should render exactly once');
+  assert.equal(mainMatches[0][1].trim(), 'M2.5 × 16 Countersunk Socket Cap');
+});
+
+test('main line only ellipsizes when unavoidable', async () => {
+  const geometry = {
+    labelWidthMm: 25,
+    labelHeightMm: 12,
+    printableWidthMm: 21,
+    printableHeightMm: 10,
+    marginX: 2,
+    marginY: 1,
+  };
+  const textLines = {
+    line1: 'M2.5 × 16 Countersunk Socket Cap Phillips Ultra Long',
+    line2: 'Stainless Steel',
+    line3: '',
+  };
+  const result = await renderLabelSVG({ geometry, pxPerMm, textLines, hardwareInfo: null, qrContent: '' });
+  const mainMatches = [...result.svgMarkup.matchAll(/font-weight="800"[^>]*>([^<]+)<\/text>/g)];
+  assert.equal(mainMatches.length, 1, 'main line should still occupy one line');
+  assert.ok(mainMatches[0][1].trim().endsWith('…'), 'ellipsis should appear only when absolutely required');
+});
+
+test('subtitle lines remain distinct with optional ellipsis on the last line', async () => {
+  const geometry = {
+    labelWidthMm: 37,
+    labelHeightMm: 12,
+    printableWidthMm: 33,
+    printableHeightMm: 10,
+    marginX: 2,
+    marginY: 1,
+  };
+  const textLines = {
+    line1: 'M2 × 10',
+    line2: 'Socket Cap Screw With Very Long Descriptor',
+    line3: 'Another Subtitle That Is Also Quite Long',
+  };
+  const result = await renderLabelSVG({ geometry, pxPerMm, textLines, hardwareInfo: null, qrContent: '' });
+  const subtitleMatches = [...result.svgMarkup.matchAll(/font-weight="600"[^>]*>([^<]+)<\/text>/g)];
+  assert.equal(subtitleMatches.length, 2, 'two subtitle lines should render');
+  assert.ok(
+    subtitleMatches[0][1].trim().endsWith('Descriptor'),
+    'first subtitle line should not ellipsize before the second line',
+  );
+  assert.ok(
+    subtitleMatches[1][1].trim().endsWith('…'),
+    'second subtitle line may ellipsize when space runs out',
+  );
 });
 
 test('QR generator hook places QR image alongside text', async () => {
