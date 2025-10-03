@@ -600,6 +600,30 @@ function layoutMediaZone({
   return { width: 0, elements: [] };
 }
 
+function scaleFitToHeight(fit, targetHeight) {
+  if (!fit || !(targetHeight > 0) || !(fit.totalHeightPx > 0)) {
+    return fit;
+  }
+  if (fit.totalHeightPx <= targetHeight + 0.5) {
+    return fit;
+  }
+  const scale = targetHeight / fit.totalHeightPx;
+  if (!(scale > 0)) {
+    return fit;
+  }
+  const scaledLineWidths = Array.isArray(fit.lineWidths)
+    ? fit.lineWidths.map(width => width * scale)
+    : fit.lineWidths;
+  return {
+    ...fit,
+    fontSizePx: fit.fontSizePx * scale,
+    lineHeightPx: fit.lineHeightPx * scale,
+    totalHeightPx: fit.totalHeightPx * scale,
+    lineWidths: scaledLineWidths,
+    letterSpacingPx: (fit.letterSpacingPx || 0) * scale,
+  };
+}
+
 function layoutTextBlocks({
   textLines,
   textRect,
@@ -607,20 +631,68 @@ function layoutTextBlocks({
   minFontSizePx,
 }) {
   const mainLine = (textLines.line1 || '').trim();
-  const subtitleLines = [textLines.line2, textLines.line3].filter(line => (line || '').trim().length > 0);
+  const subtitleLines = [textLines.line2, textLines.line3]
+    .map(line => (line || '').trim())
+    .filter(line => line.length > 0);
   if (!mainLine && subtitleLines.length === 0) {
     return { blocks: [], main: null, subtitles: [] };
   }
-  const minMainShare = 0.44;
-  const maxMainShare = 0.68;
-  let mainShare = subtitleLines.length > 0 ? 0.58 : 0.7;
-  let chosenLayout = null;
+
+  if (!mainLine && subtitleLines.length > 0) {
+    const subtitleText = subtitleLines.join('\n');
+    const subtitleMinSize = Math.max(minFontSizePx * 0.72, 7);
+    const subtitleFit = fitTextToBox({
+      text: subtitleText,
+      fontWeight: 600,
+      maxFontSizePx: Math.max(textRect.height, Math.min(textRect.width, textRect.height * 1.2)),
+      minFontSizePx: subtitleMinSize,
+      boxWidthPx: textRect.width,
+      boxHeightPx: Math.max(textRect.height, subtitleMinSize * LINE_HEIGHT_RATIO),
+      lineClamp: 3,
+    });
+    const adjusted = scaleFitToHeight(subtitleFit, textRect.height);
+    const top = textRect.y + Math.max(0, (textRect.height - adjusted.totalHeightPx) / 2);
+    return { blocks: [{ fit: adjusted, top }], main: null, subtitles: [adjusted] };
+  }
+
+  const subtitleCount = subtitleLines.length;
+  const gapCandidatePx = subtitleCount > 0
+    ? Math.min(
+        Math.max(textRect.height * 0.07, mmToPx(0.6, pxPerMm)),
+        Math.max(textRect.height * 0.1, mmToPx(1.4, pxPerMm)),
+      )
+    : 0;
+  let gapPx = subtitleCount > 0 ? Math.max(textRect.height * 0.05, gapCandidatePx) : 0;
+  if (subtitleCount > 0) {
+    const minCombinedHeight = minFontSizePx * LINE_HEIGHT_RATIO * (1 + subtitleCount);
+    if (textRect.height - gapPx < minCombinedHeight) {
+      gapPx = Math.max(0, textRect.height - minCombinedHeight);
+    }
+  }
+  const usableHeight = Math.max(0, textRect.height - gapPx);
 
   const maxFontSizeEstimate = Math.max(textRect.height, textRect.width);
+  let minMainHeight;
+  let maxMainHeight;
+  if (subtitleCount > 0) {
+    const minMainCandidate = Math.max(minFontSizePx * LINE_HEIGHT_RATIO * 1.05, usableHeight * 0.33);
+    const maxMainCandidate = Math.max(minMainCandidate, usableHeight * 0.6);
+    minMainHeight = Math.min(usableHeight, minMainCandidate);
+    maxMainHeight = Math.min(usableHeight, Math.max(minMainHeight, maxMainCandidate));
+  } else {
+    minMainHeight = usableHeight;
+    maxMainHeight = usableHeight;
+  }
 
-  for (let iteration = 0; iteration < 6; iteration += 1) {
-    const mainHeight = textRect.height * mainShare;
-    const subtitleHeight = Math.max(0, textRect.height - mainHeight);
+  let mainHeight = subtitleCount > 0
+    ? Math.min(maxMainHeight, Math.max(minMainHeight, usableHeight * 0.48))
+    : usableHeight;
+
+  let chosenLayout = null;
+
+  for (let iteration = 0; iteration < 8; iteration += 1) {
+    mainHeight = Math.max(minMainHeight, Math.min(maxMainHeight, mainHeight));
+    const subtitleHeight = subtitleCount > 0 ? Math.max(0, usableHeight - mainHeight) : 0;
 
     const mainFit = fitTextToBox({
       text: mainLine,
@@ -629,88 +701,90 @@ function layoutTextBlocks({
       minFontSizePx: minFontSizePx,
       boxWidthPx: textRect.width,
       boxHeightPx: Math.max(mainHeight, minFontSizePx * LINE_HEIGHT_RATIO),
-      lineClamp: 2,
+      lineClamp: 1,
     });
 
-    const subtitleFits = [];
-    let remainingHeight = subtitleHeight;
-    let overflow = false;
-    if (subtitleLines.length > 0) {
-      subtitleLines.forEach((line, index) => {
-        const linesRemaining = subtitleLines.length - index;
-        const allocation = linesRemaining > 0 ? remainingHeight / linesRemaining : remainingHeight;
-        const fit = fitTextToBox({
-          text: line,
-          fontWeight: 600,
-          maxFontSizePx: Math.min(allocation, textRect.width),
-          minFontSizePx: Math.max(minFontSizePx * 0.85, 10),
-          boxWidthPx: textRect.width,
-          boxHeightPx: Math.max(allocation, minFontSizePx * LINE_HEIGHT_RATIO),
-          lineClamp: 2,
-        });
-        subtitleFits.push(fit);
-        remainingHeight -= fit.totalHeightPx;
-        if (index < subtitleLines.length - 1) {
-          const gap = Math.max(mmToPx(0.4, pxPerMm), Math.min(fit.fontSizePx, 18) * 0.2);
-          subtitleFits[subtitleFits.length - 1].gapAfter = gap;
-          remainingHeight -= gap;
-        }
+    let subtitleFit = null;
+    if (subtitleCount > 0) {
+      const subtitleText = subtitleLines.join('\n');
+      const subtitleMinSize = Math.max(minFontSizePx * 0.72, 7);
+      subtitleFit = fitTextToBox({
+        text: subtitleText,
+        fontWeight: 600,
+        maxFontSizePx: Math.max(subtitleHeight, Math.min(textRect.width, usableHeight)),
+        minFontSizePx: subtitleMinSize,
+        boxWidthPx: textRect.width,
+        boxHeightPx: Math.max(subtitleHeight, subtitleMinSize * LINE_HEIGHT_RATIO),
+        lineClamp: 3,
       });
-      if (remainingHeight < -1) {
-        overflow = true;
-      }
     }
 
-    if (subtitleLines.length > 0 && overflow && mainShare > minMainShare + 0.01) {
-      mainShare = Math.max(minMainShare, mainShare - 0.06);
+    const mainOverflow = mainFit.totalHeightPx > mainHeight + 0.5;
+    const subtitleOverflow = subtitleFit ? subtitleFit.totalHeightPx > subtitleHeight + 0.5 : false;
+    const subtitleEllipsis = subtitleFit ? subtitleFit.ellipsisApplied : false;
+
+    if (subtitleCount > 0 && (subtitleOverflow || subtitleEllipsis) && mainHeight > minMainHeight + 0.5) {
+      mainHeight = Math.max(minMainHeight, mainHeight - Math.max(4, textRect.height * 0.04));
       continue;
     }
-    if (mainFit.ellipsisApplied && mainShare < maxMainShare - 0.01) {
-      mainShare = Math.min(maxMainShare, mainShare + 0.06);
+
+    if ((mainOverflow || mainFit.ellipsisApplied) && mainHeight < maxMainHeight - 0.5) {
+      mainHeight = Math.min(maxMainHeight, mainHeight + Math.max(4, textRect.height * 0.04));
       continue;
     }
-    chosenLayout = { mainFit, subtitleFits, mainHeight, subtitleHeight };
+
+    chosenLayout = { mainFit, subtitleFit, mainHeight, subtitleHeight, gapPx };
     break;
   }
 
   if (!chosenLayout) {
-    const mainFit = fitTextToBox({
+    const fallbackMain = fitTextToBox({
       text: mainLine,
       fontWeight: 800,
-      maxFontSizePx: textRect.height,
+      maxFontSizePx: Math.max(12, Math.min(usableHeight, maxFontSizeEstimate)),
       minFontSizePx: minFontSizePx,
       boxWidthPx: textRect.width,
-      boxHeightPx: textRect.height,
-      lineClamp: 2,
+      boxHeightPx: Math.max(usableHeight, minFontSizePx * LINE_HEIGHT_RATIO),
+      lineClamp: 1,
     });
-    return { blocks: [{ fit: mainFit, top: textRect.y }], main: mainFit, subtitles: [] };
+    const fallbackSubtitle = subtitleCount > 0
+      ? fitTextToBox({
+          text: subtitleLines.join('\n'),
+          fontWeight: 600,
+          maxFontSizePx: Math.max(usableHeight * 0.5, Math.min(textRect.width, usableHeight)),
+          minFontSizePx: Math.max(minFontSizePx * 0.72, 7),
+          boxWidthPx: textRect.width,
+          boxHeightPx: Math.max(usableHeight * 0.5, minFontSizePx * LINE_HEIGHT_RATIO),
+          lineClamp: 3,
+        })
+      : null;
+    chosenLayout = {
+      mainFit: fallbackMain,
+      subtitleFit: fallbackSubtitle,
+      mainHeight: subtitleCount > 0 ? Math.min(usableHeight, Math.max(usableHeight * 0.55, fallbackMain.totalHeightPx)) : usableHeight,
+      subtitleHeight: subtitleCount > 0 ? Math.max(0, usableHeight - Math.min(usableHeight, Math.max(usableHeight * 0.55, fallbackMain.totalHeightPx))) : 0,
+      gapPx,
+    };
   }
 
   const blocks = [];
-  const mainFit = chosenLayout.mainFit;
-  const subtitleFits = chosenLayout.subtitleFits;
+  const adjustedMain = scaleFitToHeight(
+    chosenLayout.mainFit,
+    Math.max(chosenLayout.mainHeight, minFontSizePx * LINE_HEIGHT_RATIO),
+  );
+  const mainTop = textRect.y + Math.max(0, (chosenLayout.mainHeight - adjustedMain.totalHeightPx) / 2);
+  blocks.push({ fit: adjustedMain, top: mainTop });
 
-  const mainContentHeight = mainFit.totalHeightPx;
-  const mainTop = textRect.y + Math.max(0, (chosenLayout.mainHeight - mainContentHeight) / 2);
-  blocks.push({ fit: mainFit, top: mainTop });
-
-  if (subtitleFits.length > 0) {
-    const subtitleContentHeight = subtitleFits.reduce(
-      (sum, fit) => sum + fit.totalHeightPx + (fit.gapAfter || 0),
-      0,
-    );
-    let cursorY = textRect.y + textRect.height - subtitleContentHeight;
-    subtitleFits.forEach((fit, index) => {
-      blocks.push({ fit, top: cursorY });
-      cursorY += fit.totalHeightPx;
-      const gap = fit.gapAfter || 0;
-      if (gap > 0 && index < subtitleFits.length - 1) {
-        cursorY += gap;
-      }
-    });
+  let subtitleFits = [];
+  if (chosenLayout.subtitleFit) {
+    const adjustedSubtitle = scaleFitToHeight(chosenLayout.subtitleFit, chosenLayout.subtitleHeight);
+    const subtitleZoneTop = textRect.y + chosenLayout.mainHeight + gapPx;
+    const subtitleTop = subtitleZoneTop + Math.max(0, (chosenLayout.subtitleHeight - adjustedSubtitle.totalHeightPx) / 2);
+    blocks.push({ fit: adjustedSubtitle, top: subtitleTop });
+    subtitleFits = [adjustedSubtitle];
   }
 
-  return { blocks, main: mainFit, subtitles: subtitleFits };
+  return { blocks, main: adjustedMain, subtitles: subtitleFits };
 }
 
 export async function renderLabelSVG({
