@@ -354,6 +354,264 @@ export function fitTextToBox({
   };
 }
 
+function selectBestFitCandidate(candidates) {
+  if (!Array.isArray(candidates) || candidates.length === 0) {
+    return null;
+  }
+  const sorted = [...candidates].sort((a, b) => {
+    if (Math.abs(b.fontSizePx - a.fontSizePx) > 0.2) {
+      return b.fontSizePx - a.fontSizePx;
+    }
+    if (a.ellipsisApplied !== b.ellipsisApplied) {
+      return a.ellipsisApplied ? 1 : -1;
+    }
+    const aSpacing = Math.abs(a.letterSpacingPx || 0);
+    const bSpacing = Math.abs(b.letterSpacingPx || 0);
+    if (Math.abs(aSpacing - bSpacing) > 0.02) {
+      return aSpacing - bSpacing;
+    }
+    return a.totalHeightPx - b.totalHeightPx;
+  });
+  return sorted[0] || candidates[0];
+}
+
+function fitSingleLineText({
+  text,
+  fontFamily = LABEL_FONT_FAMILY,
+  fontWeight = 400,
+  maxFontSizePx,
+  minFontSizePx,
+  boxWidthPx,
+}) {
+  const normalized = (text || '').replace(/[\r\n\t]+/g, ' ').trim();
+  if (!normalized) {
+    const safeSize = Math.max(1, minFontSizePx || 1);
+    const lineHeightPx = safeSize * LINE_HEIGHT_RATIO;
+    return {
+      fontSizePx: safeSize,
+      lines: [],
+      lineWidths: [],
+      letterSpacingPx: 0,
+      ellipsisApplied: false,
+      totalHeightPx: 0,
+      lineHeightPx,
+    };
+  }
+
+  const safeWidth = Math.max(0, boxWidthPx || 0);
+  const minSize = Math.max(1, minFontSizePx || 1);
+  const sizeUpperBound = Math.max(minSize, maxFontSizePx || minSize);
+  const candidates = [];
+
+  for (const letterSpacingPx of LETTER_SPACING_STEPS) {
+    let low = minSize;
+    let high = sizeUpperBound;
+    let bestSize = null;
+    for (let i = 0; i < MAX_FIT_ITERATIONS && high - low > 0.2; i += 1) {
+      const mid = (low + high) / 2;
+      const width = measureTextWidth(normalized, mid, fontWeight, fontFamily, letterSpacingPx);
+      if (width <= safeWidth + 0.25) {
+        bestSize = mid;
+        low = mid;
+      } else {
+        high = mid;
+      }
+    }
+
+    if (bestSize === null) {
+      const widthAtMin = measureTextWidth(normalized, minSize, fontWeight, fontFamily, letterSpacingPx);
+      if (widthAtMin <= safeWidth + 0.25) {
+        bestSize = minSize;
+      }
+    }
+
+    if (bestSize !== null) {
+      const width = measureTextWidth(normalized, bestSize, fontWeight, fontFamily, letterSpacingPx);
+      const fontSizePx = bestSize;
+      const lineHeightPx = fontSizePx * LINE_HEIGHT_RATIO;
+      candidates.push({
+        fontSizePx,
+        lines: [normalized],
+        lineWidths: [width],
+        letterSpacingPx,
+        ellipsisApplied: false,
+        totalHeightPx: lineHeightPx,
+        lineHeightPx,
+      });
+      continue;
+    }
+
+    const line = applyEllipsis(
+      normalized,
+      minSize,
+      fontWeight,
+      fontFamily,
+      letterSpacingPx,
+      safeWidth,
+    );
+    const width = measureTextWidth(line, minSize, fontWeight, fontFamily, letterSpacingPx);
+    const lineHeightPx = minSize * LINE_HEIGHT_RATIO;
+    candidates.push({
+      fontSizePx: minSize,
+      lines: [line],
+      lineWidths: [width],
+      letterSpacingPx,
+      ellipsisApplied: true,
+      totalHeightPx: lineHeightPx,
+      lineHeightPx,
+    });
+  }
+
+  const chosen =
+    selectBestFitCandidate(candidates) ||
+    {
+      fontSizePx: minSize,
+      lines: [normalized],
+      lineWidths: [measureTextWidth(normalized, minSize, fontWeight, fontFamily, 0)],
+      letterSpacingPx: 0,
+      ellipsisApplied: false,
+      totalHeightPx: minSize * LINE_HEIGHT_RATIO,
+      lineHeightPx: minSize * LINE_HEIGHT_RATIO,
+    };
+
+  return chosen;
+}
+
+function fitSubtitleBlock({
+  lines,
+  fontFamily = LABEL_FONT_FAMILY,
+  fontWeight = 600,
+  maxFontSizePx,
+  minFontSizePx,
+  boxWidthPx,
+  boxHeightPx,
+}) {
+  const normalizedLines = Array.isArray(lines)
+    ? lines
+        .map(line => (line || '').replace(/[\r\n\t]+/g, ' ').trim())
+        .filter(line => line.length > 0)
+    : [];
+  if (normalizedLines.length === 0) {
+    const safeSize = Math.max(1, minFontSizePx || 1);
+    const lineHeightPx = safeSize * LINE_HEIGHT_RATIO;
+    return {
+      fontSizePx: safeSize,
+      lines: [],
+      lineWidths: [],
+      letterSpacingPx: 0,
+      ellipsisApplied: false,
+      totalHeightPx: 0,
+      lineHeightPx,
+    };
+  }
+
+  const safeWidth = Math.max(0, boxWidthPx || 0);
+  const safeHeight = Math.max(0, boxHeightPx || 0);
+  const minSize = Math.max(1, minFontSizePx || 1);
+  const sizeUpperBound = Math.max(minSize, maxFontSizePx || minSize);
+  const lineCount = normalizedLines.length;
+  const candidates = [];
+
+  for (const letterSpacingPx of LETTER_SPACING_STEPS) {
+    let low = minSize;
+    let high = sizeUpperBound;
+    let bestSize = null;
+    let bestWidths = null;
+    for (let i = 0; i < MAX_FIT_ITERATIONS && high - low > 0.2; i += 1) {
+      const mid = (low + high) / 2;
+      const lineHeightPx = mid * LINE_HEIGHT_RATIO;
+      const totalHeightPx = lineHeightPx * lineCount;
+      if (totalHeightPx > safeHeight + 0.25) {
+        high = mid;
+        continue;
+      }
+      const widths = normalizedLines.map(line =>
+        measureTextWidth(line, mid, fontWeight, fontFamily, letterSpacingPx),
+      );
+      const fitsWidth = widths.every(width => width <= safeWidth + 0.25);
+      if (fitsWidth) {
+        bestSize = mid;
+        bestWidths = widths;
+        low = mid;
+      } else {
+        high = mid;
+      }
+    }
+
+    if (bestSize === null) {
+      const lineHeightPx = minSize * LINE_HEIGHT_RATIO;
+      const totalHeightPx = lineHeightPx * lineCount;
+      if (totalHeightPx <= safeHeight + 0.25) {
+        const widths = normalizedLines.map(line =>
+          measureTextWidth(line, minSize, fontWeight, fontFamily, letterSpacingPx),
+        );
+        const fitsWidth = widths.every(width => width <= safeWidth + 0.25);
+        if (fitsWidth) {
+          bestSize = minSize;
+          bestWidths = widths;
+        }
+      }
+    }
+
+    if (bestSize !== null) {
+      const lineHeightPx = bestSize * LINE_HEIGHT_RATIO;
+      candidates.push({
+        fontSizePx: bestSize,
+        lines: normalizedLines.slice(),
+        lineWidths: bestWidths ||
+          normalizedLines.map(line =>
+            measureTextWidth(line, bestSize, fontWeight, fontFamily, letterSpacingPx),
+          ),
+        letterSpacingPx,
+        ellipsisApplied: false,
+        totalHeightPx: lineHeightPx * lineCount,
+        lineHeightPx,
+      });
+      continue;
+    }
+
+    const truncatedLines = normalizedLines.slice();
+    const lastIndex = truncatedLines.length - 1;
+    truncatedLines[lastIndex] = applyEllipsis(
+      truncatedLines[lastIndex],
+      minSize,
+      fontWeight,
+      fontFamily,
+      letterSpacingPx,
+      safeWidth,
+    );
+    const widths = truncatedLines.map(line =>
+      measureTextWidth(line, minSize, fontWeight, fontFamily, letterSpacingPx),
+    );
+    const lineHeightPx = minSize * LINE_HEIGHT_RATIO;
+    candidates.push({
+      fontSizePx: minSize,
+      lines: truncatedLines,
+      lineWidths: widths,
+      letterSpacingPx,
+      ellipsisApplied: true,
+      totalHeightPx: lineHeightPx * lineCount,
+      lineHeightPx,
+    });
+  }
+
+  const chosen =
+    selectBestFitCandidate(candidates) ||
+    {
+      fontSizePx: minSize,
+      lines: normalizedLines,
+      lineWidths: normalizedLines.map(line =>
+        measureTextWidth(line, minSize, fontWeight, fontFamily, 0),
+      ),
+      letterSpacingPx: 0,
+      ellipsisApplied: false,
+      totalHeightPx: minSize * LINE_HEIGHT_RATIO * lineCount,
+      lineHeightPx: minSize * LINE_HEIGHT_RATIO,
+    };
+
+  return chosen;
+}
+
 async function resolveSvgImageHref(href) {
   if (!href) {
     return '';
@@ -600,30 +858,6 @@ function layoutMediaZone({
   return { width: 0, elements: [] };
 }
 
-function scaleFitToHeight(fit, targetHeight) {
-  if (!fit || !(targetHeight > 0) || !(fit.totalHeightPx > 0)) {
-    return fit;
-  }
-  if (fit.totalHeightPx <= targetHeight + 0.5) {
-    return fit;
-  }
-  const scale = targetHeight / fit.totalHeightPx;
-  if (!(scale > 0)) {
-    return fit;
-  }
-  const scaledLineWidths = Array.isArray(fit.lineWidths)
-    ? fit.lineWidths.map(width => width * scale)
-    : fit.lineWidths;
-  return {
-    ...fit,
-    fontSizePx: fit.fontSizePx * scale,
-    lineHeightPx: fit.lineHeightPx * scale,
-    totalHeightPx: fit.totalHeightPx * scale,
-    lineWidths: scaledLineWidths,
-    letterSpacingPx: (fit.letterSpacingPx || 0) * scale,
-  };
-}
-
 function layoutTextBlocks({
   textLines,
   textRect,
@@ -639,96 +873,110 @@ function layoutTextBlocks({
   }
 
   if (!mainLine && subtitleLines.length > 0) {
-    const subtitleText = subtitleLines.join('\n');
-    const subtitleMinSize = Math.max(minFontSizePx * 0.72, 7);
-    const subtitleFit = fitTextToBox({
-      text: subtitleText,
+    const subtitleMinSizePx = Math.max(minFontSizePx * 0.72, toFontPx(7, pxPerMm));
+    const subtitleFit = fitSubtitleBlock({
+      lines: subtitleLines,
+      fontFamily: LABEL_FONT_FAMILY,
       fontWeight: 600,
-      maxFontSizePx: Math.max(textRect.height, Math.min(textRect.width, textRect.height * 1.2)),
-      minFontSizePx: subtitleMinSize,
+      maxFontSizePx: Math.max(textRect.height / (LINE_HEIGHT_RATIO * subtitleLines.length), subtitleMinSizePx),
+      minFontSizePx: subtitleMinSizePx,
       boxWidthPx: textRect.width,
-      boxHeightPx: Math.max(textRect.height, subtitleMinSize * LINE_HEIGHT_RATIO),
-      lineClamp: 3,
+      boxHeightPx: textRect.height,
     });
-    const adjusted = scaleFitToHeight(subtitleFit, textRect.height);
-    const top = textRect.y + Math.max(0, (textRect.height - adjusted.totalHeightPx) / 2);
-    return { blocks: [{ fit: adjusted, top }], main: null, subtitles: [adjusted] };
+    const top = textRect.y + Math.max(0, (textRect.height - subtitleFit.totalHeightPx) / 2);
+    return { blocks: [{ fit: subtitleFit, top }], main: null, subtitles: [subtitleFit] };
   }
 
   const subtitleCount = subtitleLines.length;
-  const gapCandidatePx = subtitleCount > 0
-    ? Math.min(
-        Math.max(textRect.height * 0.07, mmToPx(0.6, pxPerMm)),
-        Math.max(textRect.height * 0.1, mmToPx(1.4, pxPerMm)),
-      )
+  const subtitleMinSizePx = subtitleCount > 0
+    ? Math.max(minFontSizePx * 0.72, toFontPx(7, pxPerMm))
     : 0;
-  let gapPx = subtitleCount > 0 ? Math.max(textRect.height * 0.05, gapCandidatePx) : 0;
+  const subtitleMinHeight = subtitleCount > 0
+    ? subtitleCount * subtitleMinSizePx * LINE_HEIGHT_RATIO
+    : 0;
+
+  let gapPx = subtitleCount > 0
+    ? Math.max(textRect.height * 0.05, mmToPx(0.6, pxPerMm))
+    : 0;
   if (subtitleCount > 0) {
-    const minCombinedHeight = minFontSizePx * LINE_HEIGHT_RATIO * (1 + subtitleCount);
+    const maxGap = Math.max(textRect.height * 0.12, mmToPx(1.6, pxPerMm));
+    gapPx = Math.min(maxGap, gapPx);
+    const minCombinedHeight = minFontSizePx * LINE_HEIGHT_RATIO + subtitleMinHeight;
     if (textRect.height - gapPx < minCombinedHeight) {
       gapPx = Math.max(0, textRect.height - minCombinedHeight);
     }
   }
-  const usableHeight = Math.max(0, textRect.height - gapPx);
 
-  const maxFontSizeEstimate = Math.max(textRect.height, textRect.width);
-  let minMainHeight;
-  let maxMainHeight;
-  if (subtitleCount > 0) {
-    const minMainCandidate = Math.max(minFontSizePx * LINE_HEIGHT_RATIO * 1.05, usableHeight * 0.33);
-    const maxMainCandidate = Math.max(minMainCandidate, usableHeight * 0.6);
-    minMainHeight = Math.min(usableHeight, minMainCandidate);
-    maxMainHeight = Math.min(usableHeight, Math.max(minMainHeight, maxMainCandidate));
-  } else {
-    minMainHeight = usableHeight;
-    maxMainHeight = usableHeight;
-  }
+  const usableHeight = Math.max(0, textRect.height - gapPx);
+  const availableForMain = subtitleCount > 0
+    ? Math.min(
+        usableHeight,
+        Math.max(minFontSizePx * LINE_HEIGHT_RATIO, usableHeight - subtitleMinHeight),
+      )
+    : usableHeight;
+  const minMainHeight = subtitleCount > 0
+    ? Math.min(
+        availableForMain,
+        Math.max(minFontSizePx * LINE_HEIGHT_RATIO * 1.05, usableHeight * 0.35),
+      )
+    : usableHeight;
+  const maxMainHeight = subtitleCount > 0
+    ? Math.max(minMainHeight, availableForMain)
+    : usableHeight;
 
   let mainHeight = subtitleCount > 0
-    ? Math.min(maxMainHeight, Math.max(minMainHeight, usableHeight * 0.48))
+    ? Math.min(maxMainHeight, Math.max(minMainHeight, usableHeight * 0.52))
     : usableHeight;
 
   let chosenLayout = null;
 
   for (let iteration = 0; iteration < 8; iteration += 1) {
     mainHeight = Math.max(minMainHeight, Math.min(maxMainHeight, mainHeight));
+    const mainMaxFont = mainHeight > 0 ? mainHeight / LINE_HEIGHT_RATIO : minFontSizePx;
     const subtitleHeight = subtitleCount > 0 ? Math.max(0, usableHeight - mainHeight) : 0;
+    const subtitleMaxFont = subtitleCount > 0 && subtitleHeight > 0
+      ? subtitleHeight / (LINE_HEIGHT_RATIO * subtitleCount)
+      : subtitleMinSizePx;
 
-    const mainFit = fitTextToBox({
+    const mainFit = fitSingleLineText({
       text: mainLine,
+      fontFamily: LABEL_FONT_FAMILY,
       fontWeight: 800,
-      maxFontSizePx: Math.max(12, Math.min(mainHeight, maxFontSizeEstimate)),
+      maxFontSizePx: Math.max(minFontSizePx, mainMaxFont),
       minFontSizePx: minFontSizePx,
       boxWidthPx: textRect.width,
-      boxHeightPx: Math.max(mainHeight, minFontSizePx * LINE_HEIGHT_RATIO),
-      lineClamp: 1,
     });
 
     let subtitleFit = null;
     if (subtitleCount > 0) {
-      const subtitleText = subtitleLines.join('\n');
-      const subtitleMinSize = Math.max(minFontSizePx * 0.72, 7);
-      subtitleFit = fitTextToBox({
-        text: subtitleText,
+      const safeSubtitleMax = Math.max(subtitleMinSizePx, subtitleMaxFont);
+      subtitleFit = fitSubtitleBlock({
+        lines: subtitleLines,
+        fontFamily: LABEL_FONT_FAMILY,
         fontWeight: 600,
-        maxFontSizePx: Math.max(subtitleHeight, Math.min(textRect.width, usableHeight)),
-        minFontSizePx: subtitleMinSize,
+        maxFontSizePx: safeSubtitleMax,
+        minFontSizePx: subtitleMinSizePx,
         boxWidthPx: textRect.width,
-        boxHeightPx: Math.max(subtitleHeight, subtitleMinSize * LINE_HEIGHT_RATIO),
-        lineClamp: 3,
+        boxHeightPx: Math.max(subtitleHeight, subtitleMinHeight),
       });
     }
 
     const mainOverflow = mainFit.totalHeightPx > mainHeight + 0.5;
-    const subtitleOverflow = subtitleFit ? subtitleFit.totalHeightPx > subtitleHeight + 0.5 : false;
+    const subtitleOverflow = subtitleFit && subtitleCount > 0
+      ? subtitleFit.totalHeightPx > subtitleHeight + 0.5
+      : false;
     const subtitleEllipsis = subtitleFit ? subtitleFit.ellipsisApplied : false;
 
-    if (subtitleCount > 0 && (subtitleOverflow || subtitleEllipsis) && mainHeight > minMainHeight + 0.5) {
+    if (
+      subtitleCount > 0 &&
+      (subtitleOverflow || subtitleEllipsis) &&
+      mainHeight > minMainHeight + 0.5
+    ) {
       mainHeight = Math.max(minMainHeight, mainHeight - Math.max(4, textRect.height * 0.04));
       continue;
     }
 
-    if ((mainOverflow || mainFit.ellipsisApplied) && mainHeight < maxMainHeight - 0.5) {
+    if (mainOverflow && mainHeight < maxMainHeight - 0.5) {
       mainHeight = Math.min(maxMainHeight, mainHeight + Math.max(4, textRect.height * 0.04));
       continue;
     }
@@ -738,53 +986,61 @@ function layoutTextBlocks({
   }
 
   if (!chosenLayout) {
-    const fallbackMain = fitTextToBox({
+    const fallbackMainMax = maxMainHeight > 0 ? maxMainHeight / LINE_HEIGHT_RATIO : minFontSizePx;
+    const fallbackMain = fitSingleLineText({
       text: mainLine,
+      fontFamily: LABEL_FONT_FAMILY,
       fontWeight: 800,
-      maxFontSizePx: Math.max(12, Math.min(usableHeight, maxFontSizeEstimate)),
+      maxFontSizePx: Math.max(minFontSizePx, fallbackMainMax),
       minFontSizePx: minFontSizePx,
       boxWidthPx: textRect.width,
-      boxHeightPx: Math.max(usableHeight, minFontSizePx * LINE_HEIGHT_RATIO),
-      lineClamp: 1,
     });
-    const fallbackSubtitle = subtitleCount > 0
-      ? fitTextToBox({
-          text: subtitleLines.join('\n'),
-          fontWeight: 600,
-          maxFontSizePx: Math.max(usableHeight * 0.5, Math.min(textRect.width, usableHeight)),
-          minFontSizePx: Math.max(minFontSizePx * 0.72, 7),
-          boxWidthPx: textRect.width,
-          boxHeightPx: Math.max(usableHeight * 0.5, minFontSizePx * LINE_HEIGHT_RATIO),
-          lineClamp: 3,
-        })
-      : null;
+    let fallbackSubtitle = null;
+    let subtitleHeight = 0;
+    if (subtitleCount > 0) {
+      subtitleHeight = Math.max(0, usableHeight - Math.min(maxMainHeight, fallbackMain.totalHeightPx));
+      const fallbackSubtitleMaxFont = subtitleHeight > 0
+        ? subtitleHeight / (LINE_HEIGHT_RATIO * subtitleCount)
+        : subtitleMinSizePx;
+      fallbackSubtitle = fitSubtitleBlock({
+        lines: subtitleLines,
+        fontFamily: LABEL_FONT_FAMILY,
+        fontWeight: 600,
+        maxFontSizePx: Math.max(subtitleMinSizePx, fallbackSubtitleMaxFont),
+        minFontSizePx: subtitleMinSizePx,
+        boxWidthPx: textRect.width,
+        boxHeightPx: Math.max(subtitleHeight, subtitleMinHeight),
+      });
+    }
     chosenLayout = {
       mainFit: fallbackMain,
       subtitleFit: fallbackSubtitle,
-      mainHeight: subtitleCount > 0 ? Math.min(usableHeight, Math.max(usableHeight * 0.55, fallbackMain.totalHeightPx)) : usableHeight,
-      subtitleHeight: subtitleCount > 0 ? Math.max(0, usableHeight - Math.min(usableHeight, Math.max(usableHeight * 0.55, fallbackMain.totalHeightPx))) : 0,
+      mainHeight: subtitleCount > 0
+        ? Math.min(maxMainHeight, Math.max(minMainHeight, fallbackMain.totalHeightPx + 1))
+        : usableHeight,
+      subtitleHeight: subtitleCount > 0
+        ? Math.max(0, usableHeight - Math.min(maxMainHeight, Math.max(minMainHeight, fallbackMain.totalHeightPx + 1)))
+        : 0,
       gapPx,
     };
   }
 
   const blocks = [];
-  const adjustedMain = scaleFitToHeight(
-    chosenLayout.mainFit,
-    Math.max(chosenLayout.mainHeight, minFontSizePx * LINE_HEIGHT_RATIO),
-  );
-  const mainTop = textRect.y + Math.max(0, (chosenLayout.mainHeight - adjustedMain.totalHeightPx) / 2);
-  blocks.push({ fit: adjustedMain, top: mainTop });
+  const mainTop = textRect.y + Math.max(0, (chosenLayout.mainHeight - chosenLayout.mainFit.totalHeightPx) / 2);
+  blocks.push({ fit: chosenLayout.mainFit, top: mainTop });
 
   let subtitleFits = [];
-  if (chosenLayout.subtitleFit) {
-    const adjustedSubtitle = scaleFitToHeight(chosenLayout.subtitleFit, chosenLayout.subtitleHeight);
+  if (subtitleCount > 0 && chosenLayout.subtitleFit) {
     const subtitleZoneTop = textRect.y + chosenLayout.mainHeight + gapPx;
-    const subtitleTop = subtitleZoneTop + Math.max(0, (chosenLayout.subtitleHeight - adjustedSubtitle.totalHeightPx) / 2);
-    blocks.push({ fit: adjustedSubtitle, top: subtitleTop });
-    subtitleFits = [adjustedSubtitle];
+    const subtitleTop = subtitleZoneTop + Math.max(
+      0,
+      (chosenLayout.subtitleHeight - chosenLayout.subtitleFit.totalHeightPx) / 2,
+    );
+    blocks.push({ fit: chosenLayout.subtitleFit, top: subtitleTop });
+    subtitleFits = [chosenLayout.subtitleFit];
   }
 
-  return { blocks, main: adjustedMain, subtitles: subtitleFits };
+  return { blocks, main: chosenLayout.mainFit, subtitles: subtitleFits };
 }
 
 export async function renderLabelSVG({
