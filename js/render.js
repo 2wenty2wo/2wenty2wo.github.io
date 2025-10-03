@@ -38,6 +38,7 @@ import {
   renderLabelSVG,
   loadSvgImage,
   canvasToBlob,
+  layoutPresetTools,
 } from './label/renderLabelSVG.js';
 
 const {
@@ -120,6 +121,13 @@ let previewResizeObserver = null;
 let previewReadyState = false;
 let previewStatusFrameId = null;
 let previewRenderRequestId = 0;
+
+layoutPresetTools.subscribePresetChanges(() => {
+  if (!previewContainer) {
+    return;
+  }
+  updatePreview();
+});
 
 const fuseIllustrations = {
   Glass: {

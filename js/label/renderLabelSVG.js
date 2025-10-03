@@ -1,51 +1,55 @@
 import { loadQrCodeLibrary } from '../lazy-loaders.js';
+import {
+  defaultLayoutPresets,
+  getActiveLayoutPreset,
+  getPresetOverride,
+  setPresetOverride,
+  clearPresetOverrides,
+  exportLayoutPresets,
+  importLayoutPresets,
+  subscribePresetChanges,
+  notifyPresetListeners,
+} from './layoutPresets.js';
+import { ensureLayoutEditor } from './layoutEditor.js';
 
 const SVG_XMLNS = 'http://www.w3.org/2000/svg';
-const LABEL_BACKGROUND_COLOR = '#ffffff';
-const LABEL_TEXT_COLOR = '#000000';
-const FRAME_STROKE_COLOR = 'rgba(100, 116, 139, 0.6)';
+const SVG_XLINK = 'http://www.w3.org/1999/xlink';
 const LABEL_FONT_FAMILY = "'Barlow', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif";
-
-const MIN_FONT_SIZE_PT = 8.25;
-const LINE_HEIGHT_RATIO = 1.12;
-const LETTER_SPACING_STEPS = [0, -0.15, -0.3, -0.45, -0.6];
-const MAX_FIT_ITERATIONS = 14;
+const LABEL_BACKGROUND_COLOR = '#ffffff';
+const LABEL_TEXT_COLOR = '#0f172a';
+const FRAME_STROKE_COLOR = 'rgba(100,116,139,0.5)';
+const MAX_FIT_ITERATIONS = 12;
+const LETTER_SPACING_BASE_STEPS = [0, -0.1, -0.2, -0.3, -0.4];
+const QR_SIDE_PX_MIN = 24;
+const ICON_PADDING_MM = 0.4;
+const MEDIA_TEXT_GAP_MM = 0.6;
 
 const inlineImageCache = new Map();
 
-const textMeasurementCanvas =
+const measureCanvas =
   typeof document !== 'undefined' ? document.createElement('canvas') : null;
-const textMeasurementContext = textMeasurementCanvas
-  ? textMeasurementCanvas.getContext('2d')
-  : null;
+const measureContext = measureCanvas ? measureCanvas.getContext('2d') : null;
 
 const qrCanvas = typeof document !== 'undefined' ? document.createElement('canvas') : null;
+
+function clamp(value, min, max) {
+  if (!Number.isFinite(value)) {
+    return Number.isFinite(min) ? min : 0;
+  }
+  if (Number.isFinite(min) && value < min) {
+    return min;
+  }
+  if (Number.isFinite(max) && value > max) {
+    return max;
+  }
+  return value;
+}
 
 export function mmToPx(mm, pxPerMm) {
   if (!Number.isFinite(mm) || !Number.isFinite(pxPerMm)) {
     return 0;
   }
   return mm * pxPerMm;
-}
-
-export function formatNumber(value) {
-  if (!Number.isFinite(value)) {
-    return '0';
-  }
-  const rounded = Math.round(value * 1000) / 1000;
-  if (Math.abs(rounded - Math.round(rounded)) < 0.0001) {
-    return String(Math.round(rounded));
-  }
-  return rounded.toString();
-}
-
-export function escapeXml(str) {
-  return (str || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
 }
 
 function toFontPx(pt, pxPerMm) {
@@ -55,51 +59,162 @@ function toFontPx(pt, pxPerMm) {
   return (pt / pointsPerInch) * dpi;
 }
 
-function measureTextWidth(text, fontSizePx, fontWeight, fontFamily, letterSpacingPx) {
+export function formatNumber(value) {
+  if (!Number.isFinite(value)) {
+    return '0';
+  }
+  const rounded = Math.round(value * 1000) / 1000;
+  if (Math.abs(rounded - Math.round(rounded)) < 1e-6) {
+    return String(Math.round(rounded));
+  }
+  return rounded.toString();
+}
+
+export function escapeXml(value) {
+  return (value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function measureTextWidth(text, fontSizePx, fontWeight, fontFamily, letterSpacingPx = 0) {
   if (!text) {
     return 0;
   }
-  let width = 0;
-  if (textMeasurementContext) {
-    textMeasurementContext.font = `${fontWeight} ${fontSizePx}px ${fontFamily}`;
-    const metrics = textMeasurementContext.measureText(text);
-    width = metrics.width || 0;
-  } else {
-    width = text.length * fontSizePx * 0.6;
+  if (measureContext) {
+    measureContext.font = `${fontWeight} ${fontSizePx}px ${fontFamily}`;
+    const metrics = measureContext.measureText(text);
+    let width = metrics.width || 0;
+    if (letterSpacingPx) {
+      width += Math.max(0, text.replace(/\s+$/g, '').length - 1) * letterSpacingPx;
+    }
+    return width;
   }
-  if (letterSpacingPx) {
-    const normalized = text.replace(/\s+$/g, '');
-    width += Math.max(0, normalized.length - 1) * letterSpacingPx;
-  }
-  return width;
+  const approx = text.length * fontSizePx * 0.6;
+  return approx + Math.max(0, text.length - 1) * letterSpacingPx;
 }
 
-function applyEllipsis(line, fontSizePx, fontWeight, fontFamily, letterSpacingPx, maxWidth) {
-  if (!line) {
+function applyEllipsis(text, fontSizePx, fontWeight, letterSpacingPx, maxWidthPx) {
+  if (!text) {
     return '…';
   }
   const ellipsis = '…';
-  let trimmed = line.trimEnd();
-  while (trimmed.length > 0) {
-    const candidate = `${trimmed}${ellipsis}`;
-    const width = measureTextWidth(candidate, fontSizePx, fontWeight, fontFamily, letterSpacingPx);
-    if (width <= maxWidth + 0.25) {
+  let working = text.trimEnd();
+  while (working.length > 0) {
+    const candidate = `${working}${ellipsis}`;
+    const width = measureTextWidth(candidate, fontSizePx, fontWeight, LABEL_FONT_FAMILY, letterSpacingPx);
+    if (width <= maxWidthPx + 0.25) {
       return candidate;
     }
-    trimmed = trimmed.slice(0, -1).trimEnd();
+    working = working.slice(0, -1).trimEnd();
   }
   return ellipsis;
 }
 
-function wrapSegment({
-  segment,
-  fontSizePx,
-  fontWeight,
-  fontFamily,
-  letterSpacingPx,
-  maxWidth,
-}) {
-  const words = segment.split(/\s+/).filter(Boolean);
+function buildLetterSpacingSteps(minSpacingPx) {
+  const steps = [...LETTER_SPACING_BASE_STEPS];
+  if (Number.isFinite(minSpacingPx) && minSpacingPx < steps[steps.length - 1]) {
+    const target = Math.round(minSpacingPx * 100) / 100;
+    if (!steps.includes(target)) {
+      steps.push(target);
+    }
+  }
+  const unique = Array.from(new Set(steps));
+  unique.sort((a, b) => a - b);
+  return unique.reverse();
+}
+
+function fitSingleLineText({ text, fontWeight = 800, minPt, maxPt, widthPx, pxPerMm, letterSpacingLimit = -0.3 }) {
+  const normalized = (text || '').replace(/[\r\n\t]+/g, ' ').trim();
+  if (!normalized) {
+    return {
+      fontSizePx: toFontPx(minPt, pxPerMm),
+      letterSpacingPx: 0,
+      text: '',
+      ellipsisApplied: false,
+      widthPx: 0,
+    };
+  }
+  const minPx = toFontPx(minPt, pxPerMm);
+  const maxPx = toFontPx(maxPt, pxPerMm);
+  const letterSpacingSteps = buildLetterSpacingSteps(letterSpacingLimit);
+  let best = null;
+
+  letterSpacingSteps.forEach(spacingPx => {
+    let low = minPx;
+    let high = Math.max(minPx, maxPx);
+    let bestSize = null;
+    for (let i = 0; i < MAX_FIT_ITERATIONS && high - low > 0.2; i += 1) {
+      const mid = (low + high) / 2;
+      const width = measureTextWidth(normalized, mid, fontWeight, LABEL_FONT_FAMILY, spacingPx);
+      if (width <= widthPx + 0.25) {
+        bestSize = mid;
+        low = mid;
+      } else {
+        high = mid;
+      }
+    }
+    if (bestSize === null) {
+      const widthAtMin = measureTextWidth(normalized, minPx, fontWeight, LABEL_FONT_FAMILY, spacingPx);
+      if (widthAtMin <= widthPx + 0.25) {
+        bestSize = minPx;
+      }
+    }
+    let candidate = null;
+    if (bestSize !== null) {
+      candidate = {
+        fontSizePx: bestSize,
+        letterSpacingPx: spacingPx,
+        text: normalized,
+        ellipsisApplied: false,
+        widthPx: measureTextWidth(normalized, bestSize, fontWeight, LABEL_FONT_FAMILY, spacingPx),
+      };
+    } else {
+      const ellipsized = applyEllipsis(normalized, minPx, fontWeight, spacingPx, widthPx);
+      candidate = {
+        fontSizePx: minPx,
+        letterSpacingPx: spacingPx,
+        text: ellipsized,
+        ellipsisApplied: true,
+        widthPx: measureTextWidth(ellipsized, minPx, fontWeight, LABEL_FONT_FAMILY, spacingPx),
+      };
+    }
+    if (!best) {
+      best = candidate;
+      return;
+    }
+    if (candidate.fontSizePx > best.fontSizePx + 0.2) {
+      best = candidate;
+      return;
+    }
+    if (Math.abs(candidate.fontSizePx - best.fontSizePx) <= 0.2) {
+      const spacingComparison = Math.abs(candidate.letterSpacingPx) - Math.abs(best.letterSpacingPx);
+      if (spacingComparison < -0.02) {
+        best = candidate;
+        return;
+      }
+      if (Math.abs(spacingComparison) <= 0.02) {
+        if (candidate.ellipsisApplied !== best.ellipsisApplied) {
+          best = candidate.ellipsisApplied ? best : candidate;
+          return;
+        }
+      }
+    }
+  });
+
+  return best || {
+    fontSizePx: minPx,
+    letterSpacingPx: 0,
+    text: normalized,
+    ellipsisApplied: false,
+    widthPx: measureTextWidth(normalized, minPx, fontWeight, LABEL_FONT_FAMILY, 0),
+  };
+}
+
+function wrapWords(text, fontSizePx, fontWeight, letterSpacingPx, widthPx) {
+  const words = text.split(/\s+/).filter(Boolean);
   if (words.length === 0) {
     return [''];
   }
@@ -107,48 +222,12 @@ function wrapSegment({
   let current = words[0];
   for (let i = 1; i < words.length; i += 1) {
     const candidate = `${current} ${words[i]}`;
-    const width = measureTextWidth(candidate, fontSizePx, fontWeight, fontFamily, letterSpacingPx);
-    if (width <= maxWidth + 0.25) {
+    const width = measureTextWidth(candidate, fontSizePx, fontWeight, LABEL_FONT_FAMILY, letterSpacingPx);
+    if (width <= widthPx + 0.25) {
       current = candidate;
-    } else if (measureTextWidth(words[i], fontSizePx, fontWeight, fontFamily, letterSpacingPx) <= maxWidth + 0.25) {
+    } else {
       lines.push(current);
       current = words[i];
-    } else {
-      // Fallback to character wrapping
-      const chars = words[i].split('');
-      let chunk = '';
-      chars.forEach(char => {
-        const candidateChunk = chunk ? `${chunk}${char}` : char;
-        const chunkWidth = measureTextWidth(
-          candidateChunk,
-          fontSizePx,
-          fontWeight,
-          fontFamily,
-          letterSpacingPx,
-        );
-        if (chunkWidth <= maxWidth + 0.25) {
-          chunk = candidateChunk;
-        } else {
-          if (chunk) {
-            lines.push(chunk);
-          }
-          chunk = char;
-        }
-      });
-      if (chunk) {
-        if (measureTextWidth(chunk, fontSizePx, fontWeight, fontFamily, letterSpacingPx) > maxWidth + 0.25) {
-          // Force tiny segments if nothing fits
-          const forcedChars = chunk.split('');
-          forcedChars.forEach(singleChar => {
-            lines.push(singleChar);
-          });
-          chunk = '';
-        }
-        if (chunk) {
-          lines.push(chunk);
-        }
-      }
-      current = '';
     }
   }
   if (current) {
@@ -157,334 +236,16 @@ function wrapSegment({
   return lines;
 }
 
-function layoutText({
-  text,
-  fontSizePx,
-  fontWeight,
-  fontFamily,
-  letterSpacingPx,
-  boxWidthPx,
-  boxHeightPx,
-  lineClamp,
-}) {
-  const normalized = (text || '').replace(/[\r\t]+/g, ' ').replace(/\s+\n/g, '\n').trim();
-  if (!normalized) {
-    return { lines: [], lineWidths: [], totalHeightPx: 0, ellipsisApplied: false };
-  }
-  const segments = normalized.split(/\n/);
-  const lines = [];
-  segments.forEach(segment => {
-    const trimmed = segment.trim();
-    if (!trimmed) {
-      lines.push('');
-      return;
-    }
-    if (measureTextWidth(trimmed, fontSizePx, fontWeight, fontFamily, letterSpacingPx) <= boxWidthPx + 0.25) {
-      lines.push(trimmed);
-      return;
-    }
-    wrapSegment({
-      segment: trimmed,
-      fontSizePx,
-      fontWeight,
-      fontFamily,
-      letterSpacingPx,
-      maxWidth: boxWidthPx,
-    }).forEach(line => {
-      lines.push(line.trimEnd());
-    });
-  });
-
-  let ellipsisApplied = false;
-  const clamp = Number.isFinite(lineClamp) && lineClamp > 0 ? Math.floor(lineClamp) : null;
-  if (clamp && lines.length > clamp) {
-    const retained = lines.slice(0, clamp);
-    const lastIndex = retained.length - 1;
-    retained[lastIndex] = applyEllipsis(
-      retained[lastIndex],
-      fontSizePx,
-      fontWeight,
-      fontFamily,
-      letterSpacingPx,
-      boxWidthPx,
-    );
-    ellipsisApplied = true;
-    const widths = retained.map(line =>
-      measureTextWidth(line, fontSizePx, fontWeight, fontFamily, letterSpacingPx),
-    );
-    return {
-      lines: retained,
-      lineWidths: widths,
-      totalHeightPx: retained.length * fontSizePx * LINE_HEIGHT_RATIO,
-      ellipsisApplied,
-    };
-  }
-
-  const lineHeightPx = fontSizePx * LINE_HEIGHT_RATIO;
-  const totalHeightPx = lines.length * lineHeightPx;
-  const fitsHeight = totalHeightPx <= boxHeightPx + 0.25;
-  const lineWidths = lines.map(line =>
-    measureTextWidth(line, fontSizePx, fontWeight, fontFamily, letterSpacingPx),
-  );
-  return {
-    lines,
-    lineWidths,
-    totalHeightPx,
-    ellipsisApplied,
-    fits: fitsHeight,
-  };
-}
-
-export function fitTextToBox({
-  text,
-  fontFamily = LABEL_FONT_FAMILY,
-  fontWeight = 400,
-  maxFontSizePx,
-  minFontSizePx,
-  boxWidthPx,
-  boxHeightPx,
-  lineClamp,
-}) {
-  const safeWidth = Math.max(0, boxWidthPx || 0);
-  const safeHeight = Math.max(0, boxHeightPx || 0);
-  const minSize = Math.max(minFontSizePx || 0, 1);
-  const sizeUpperBound = Math.max(minSize, maxFontSizePx || minSize);
-  const candidates = [];
-
-  LETTER_SPACING_STEPS.forEach(letterSpacingPx => {
-    let low = minSize;
-    let high = sizeUpperBound;
-    let best = null;
-    for (let i = 0; i < MAX_FIT_ITERATIONS && high - low > 0.2; i += 1) {
-      const mid = (low + high) / 2;
-      const layout = layoutText({
-        text,
-        fontSizePx: mid,
-        fontWeight,
-        fontFamily,
-        letterSpacingPx,
-        boxWidthPx: safeWidth,
-        boxHeightPx: safeHeight,
-        lineClamp,
-      });
-      const fitsWidth = layout.lines.every(line =>
-        measureTextWidth(line, mid, fontWeight, fontFamily, letterSpacingPx) <= safeWidth + 0.25,
-      );
-      if (layout.lines.length === 0) {
-        best = {
-          fontSizePx: minSize,
-          lines: [],
-          lineWidths: [],
-          letterSpacingPx,
-          ellipsisApplied: false,
-          totalHeightPx: 0,
-        };
-        break;
-      }
-      if (fitsWidth && layout.fits !== false && layout.totalHeightPx <= safeHeight + 0.25) {
-        best = {
-          fontSizePx: mid,
-          lines: layout.lines,
-          lineWidths: layout.lineWidths,
-          letterSpacingPx,
-          ellipsisApplied: layout.ellipsisApplied || false,
-          totalHeightPx: layout.totalHeightPx,
-        };
-        low = mid;
-      } else {
-        high = mid;
-      }
-    }
-    if (!best) {
-      const fallbackLayout = layoutText({
-        text,
-        fontSizePx: minSize,
-        fontWeight,
-        fontFamily,
-        letterSpacingPx,
-        boxWidthPx: safeWidth,
-        boxHeightPx: safeHeight,
-        lineClamp,
-      });
-      best = {
-        fontSizePx: minSize,
-        lines: fallbackLayout.lines,
-        lineWidths: fallbackLayout.lineWidths,
-        letterSpacingPx,
-        ellipsisApplied: fallbackLayout.ellipsisApplied || false,
-        totalHeightPx: fallbackLayout.totalHeightPx,
-      };
-    }
-    candidates.push(best);
-  });
-
-  candidates.sort((a, b) => {
-    if (a.lines.length === 0 && b.lines.length > 0) {
-      return 1;
-    }
-    if (b.lines.length === 0 && a.lines.length > 0) {
-      return -1;
-    }
-    if (Math.abs(b.fontSizePx - a.fontSizePx) > 0.25) {
-      return b.fontSizePx - a.fontSizePx;
-    }
-    if (a.ellipsisApplied !== b.ellipsisApplied) {
-      return a.ellipsisApplied ? 1 : -1;
-    }
-    return a.totalHeightPx - b.totalHeightPx;
-  });
-
-  const chosen = candidates[0] || {
-    fontSizePx: minSize,
-    lines: [],
-    lineWidths: [],
-    letterSpacingPx: 0,
-    ellipsisApplied: false,
-    totalHeightPx: 0,
-  };
-  const lineHeightPx = chosen.fontSizePx * LINE_HEIGHT_RATIO;
-  return {
-    fontSizePx: chosen.fontSizePx,
-    lines: chosen.lines,
-    lineWidths: chosen.lineWidths,
-    letterSpacingPx: chosen.letterSpacingPx,
-    ellipsisApplied: chosen.ellipsisApplied,
-    totalHeightPx: chosen.totalHeightPx,
-    lineHeightPx,
-  };
-}
-
-function selectBestFitCandidate(candidates) {
-  if (!Array.isArray(candidates) || candidates.length === 0) {
-    return null;
-  }
-  const sorted = [...candidates].sort((a, b) => {
-    if (Math.abs(b.fontSizePx - a.fontSizePx) > 0.2) {
-      return b.fontSizePx - a.fontSizePx;
-    }
-    if (a.ellipsisApplied !== b.ellipsisApplied) {
-      return a.ellipsisApplied ? 1 : -1;
-    }
-    const aSpacing = Math.abs(a.letterSpacingPx || 0);
-    const bSpacing = Math.abs(b.letterSpacingPx || 0);
-    if (Math.abs(aSpacing - bSpacing) > 0.02) {
-      return aSpacing - bSpacing;
-    }
-    return a.totalHeightPx - b.totalHeightPx;
-  });
-  return sorted[0] || candidates[0];
-}
-
-function fitSingleLineText({
-  text,
-  fontFamily = LABEL_FONT_FAMILY,
-  fontWeight = 400,
-  maxFontSizePx,
-  minFontSizePx,
-  boxWidthPx,
-}) {
-  const normalized = (text || '').replace(/[\r\n\t]+/g, ' ').trim();
-  if (!normalized) {
-    const safeSize = Math.max(1, minFontSizePx || 1);
-    const lineHeightPx = safeSize * LINE_HEIGHT_RATIO;
-    return {
-      fontSizePx: safeSize,
-      lines: [],
-      lineWidths: [],
-      letterSpacingPx: 0,
-      ellipsisApplied: false,
-      totalHeightPx: 0,
-      lineHeightPx,
-    };
-  }
-
-  const safeWidth = Math.max(0, boxWidthPx || 0);
-  const minSize = Math.max(1, minFontSizePx || 1);
-  const sizeUpperBound = Math.max(minSize, maxFontSizePx || minSize);
-  const candidates = [];
-
-  for (const letterSpacingPx of LETTER_SPACING_STEPS) {
-    let low = minSize;
-    let high = sizeUpperBound;
-    let bestSize = null;
-    for (let i = 0; i < MAX_FIT_ITERATIONS && high - low > 0.2; i += 1) {
-      const mid = (low + high) / 2;
-      const width = measureTextWidth(normalized, mid, fontWeight, fontFamily, letterSpacingPx);
-      if (width <= safeWidth + 0.25) {
-        bestSize = mid;
-        low = mid;
-      } else {
-        high = mid;
-      }
-    }
-
-    if (bestSize === null) {
-      const widthAtMin = measureTextWidth(normalized, minSize, fontWeight, fontFamily, letterSpacingPx);
-      if (widthAtMin <= safeWidth + 0.25) {
-        bestSize = minSize;
-      }
-    }
-
-    if (bestSize !== null) {
-      const width = measureTextWidth(normalized, bestSize, fontWeight, fontFamily, letterSpacingPx);
-      const fontSizePx = bestSize;
-      const lineHeightPx = fontSizePx * LINE_HEIGHT_RATIO;
-      candidates.push({
-        fontSizePx,
-        lines: [normalized],
-        lineWidths: [width],
-        letterSpacingPx,
-        ellipsisApplied: false,
-        totalHeightPx: lineHeightPx,
-        lineHeightPx,
-      });
-      continue;
-    }
-
-    const line = applyEllipsis(
-      normalized,
-      minSize,
-      fontWeight,
-      fontFamily,
-      letterSpacingPx,
-      safeWidth,
-    );
-    const width = measureTextWidth(line, minSize, fontWeight, fontFamily, letterSpacingPx);
-    const lineHeightPx = minSize * LINE_HEIGHT_RATIO;
-    candidates.push({
-      fontSizePx: minSize,
-      lines: [line],
-      lineWidths: [width],
-      letterSpacingPx,
-      ellipsisApplied: true,
-      totalHeightPx: lineHeightPx,
-      lineHeightPx,
-    });
-  }
-
-  const chosen =
-    selectBestFitCandidate(candidates) ||
-    {
-      fontSizePx: minSize,
-      lines: [normalized],
-      lineWidths: [measureTextWidth(normalized, minSize, fontWeight, fontFamily, 0)],
-      letterSpacingPx: 0,
-      ellipsisApplied: false,
-      totalHeightPx: minSize * LINE_HEIGHT_RATIO,
-      lineHeightPx: minSize * LINE_HEIGHT_RATIO,
-    };
-
-  return chosen;
-}
-
-function fitSubtitleBlock({
+function fitMultiLineText({
   lines,
-  fontFamily = LABEL_FONT_FAMILY,
   fontWeight = 600,
-  maxFontSizePx,
-  minFontSizePx,
-  boxWidthPx,
-  boxHeightPx,
+  minPt,
+  maxPt,
+  lineHeightPct,
+  widthPx,
+  heightPx,
+  pxPerMm,
+  allowEllipsis = true,
 }) {
   const normalizedLines = Array.isArray(lines)
     ? lines
@@ -492,555 +253,633 @@ function fitSubtitleBlock({
         .filter(line => line.length > 0)
     : [];
   if (normalizedLines.length === 0) {
-    const safeSize = Math.max(1, minFontSizePx || 1);
-    const lineHeightPx = safeSize * LINE_HEIGHT_RATIO;
+    const minPx = toFontPx(minPt, pxPerMm);
     return {
-      fontSizePx: safeSize,
-      lines: [],
-      lineWidths: [],
+      fontSizePx: minPx,
       letterSpacingPx: 0,
+      lines: [],
+      lineHeightPx: minPx * (lineHeightPct / 100),
       ellipsisApplied: false,
-      totalHeightPx: 0,
-      lineHeightPx,
     };
   }
+  const minPx = toFontPx(minPt, pxPerMm);
+  const maxPx = toFontPx(maxPt, pxPerMm);
+  const letterSpacingSteps = buildLetterSpacingSteps(-0.2);
+  let best = null;
 
-  const safeWidth = Math.max(0, boxWidthPx || 0);
-  const safeHeight = Math.max(0, boxHeightPx || 0);
-  const minSize = Math.max(1, minFontSizePx || 1);
-  const sizeUpperBound = Math.max(minSize, maxFontSizePx || minSize);
-  const lineCount = normalizedLines.length;
-  const candidates = [];
-
-  for (const letterSpacingPx of LETTER_SPACING_STEPS) {
-    let low = minSize;
-    let high = sizeUpperBound;
-    let bestSize = null;
-    let bestWidths = null;
+  letterSpacingSteps.forEach(letterSpacingPx => {
+    let low = minPx;
+    let high = Math.max(minPx, maxPx);
+    let candidate = null;
     for (let i = 0; i < MAX_FIT_ITERATIONS && high - low > 0.2; i += 1) {
       const mid = (low + high) / 2;
-      const lineHeightPx = mid * LINE_HEIGHT_RATIO;
-      const totalHeightPx = lineHeightPx * lineCount;
-      if (totalHeightPx > safeHeight + 0.25) {
-        high = mid;
-        continue;
-      }
-      const widths = normalizedLines.map(line =>
-        measureTextWidth(line, mid, fontWeight, fontFamily, letterSpacingPx),
-      );
-      const fitsWidth = widths.every(width => width <= safeWidth + 0.25);
-      if (fitsWidth) {
-        bestSize = mid;
-        bestWidths = widths;
+      const layout = layoutLines(normalizedLines, mid, fontWeight, letterSpacingPx, widthPx, lineHeightPct);
+      const fitsHeight = layout.totalHeightPx <= heightPx + 0.25;
+      if (layout.fitsWidth && fitsHeight) {
+        candidate = { ...layout, fontSizePx: mid, letterSpacingPx };
         low = mid;
       } else {
         high = mid;
       }
     }
-
-    if (bestSize === null) {
-      const lineHeightPx = minSize * LINE_HEIGHT_RATIO;
-      const totalHeightPx = lineHeightPx * lineCount;
-      if (totalHeightPx <= safeHeight + 0.25) {
-        const widths = normalizedLines.map(line =>
-          measureTextWidth(line, minSize, fontWeight, fontFamily, letterSpacingPx),
-        );
-        const fitsWidth = widths.every(width => width <= safeWidth + 0.25);
-        if (fitsWidth) {
-          bestSize = minSize;
-          bestWidths = widths;
+    if (!candidate) {
+      const layout = layoutLines(normalizedLines, minPx, fontWeight, letterSpacingPx, widthPx, lineHeightPct);
+      candidate = { ...layout, fontSizePx: minPx, letterSpacingPx };
+      if (!layout.fitsWidth && allowEllipsis) {
+        const lastIndex = layout.lines.length - 1;
+        if (lastIndex >= 0) {
+          const ellipsized = applyEllipsis(
+            layout.lines[lastIndex],
+            minPx,
+            fontWeight,
+            letterSpacingPx,
+            widthPx,
+          );
+          layout.lines[lastIndex] = ellipsized;
+          layout.ellipsisApplied = true;
+          layout.widths[lastIndex] = measureTextWidth(
+            ellipsized,
+            minPx,
+            fontWeight,
+            LABEL_FONT_FAMILY,
+            letterSpacingPx,
+          );
         }
       }
     }
-
-    if (bestSize !== null) {
-      const lineHeightPx = bestSize * LINE_HEIGHT_RATIO;
-      candidates.push({
-        fontSizePx: bestSize,
-        lines: normalizedLines.slice(),
-        lineWidths: bestWidths ||
-          normalizedLines.map(line =>
-            measureTextWidth(line, bestSize, fontWeight, fontFamily, letterSpacingPx),
-          ),
-        letterSpacingPx,
-        ellipsisApplied: false,
-        totalHeightPx: lineHeightPx * lineCount,
-        lineHeightPx,
-      });
-      continue;
+    if (!best) {
+      best = candidate;
+      return;
     }
+    if (candidate.fontSizePx > best.fontSizePx + 0.2) {
+      best = candidate;
+      return;
+    }
+    if (Math.abs(candidate.fontSizePx - best.fontSizePx) <= 0.2) {
+      const spacingComparison = Math.abs(candidate.letterSpacingPx) - Math.abs(best.letterSpacingPx);
+      if (spacingComparison < -0.02) {
+        best = candidate;
+      }
+    }
+  });
 
-    const truncatedLines = normalizedLines.slice();
-    const lastIndex = truncatedLines.length - 1;
-    truncatedLines[lastIndex] = applyEllipsis(
-      truncatedLines[lastIndex],
-      minSize,
-      fontWeight,
-      fontFamily,
-      letterSpacingPx,
-      safeWidth,
-    );
-    const widths = truncatedLines.map(line =>
-      measureTextWidth(line, minSize, fontWeight, fontFamily, letterSpacingPx),
-    );
-    const lineHeightPx = minSize * LINE_HEIGHT_RATIO;
-    candidates.push({
-      fontSizePx: minSize,
-      lines: truncatedLines,
-      lineWidths: widths,
-      letterSpacingPx,
-      ellipsisApplied: true,
-      totalHeightPx: lineHeightPx * lineCount,
-      lineHeightPx,
+  const lineHeightPx = best.fontSizePx * (lineHeightPct / 100);
+  return { ...best, lineHeightPx };
+}
+
+function layoutLines(lines, fontSizePx, fontWeight, letterSpacingPx, widthPx, lineHeightPct) {
+  const layoutLinesArray = [];
+  const widths = [];
+  const lineHeightPx = fontSizePx * (lineHeightPct / 100);
+  lines.forEach(line => {
+    const measurements = wrapWords(line, fontSizePx, fontWeight, letterSpacingPx, widthPx);
+    measurements.forEach(entry => {
+      layoutLinesArray.push(entry);
+      widths.push(measureTextWidth(entry, fontSizePx, fontWeight, LABEL_FONT_FAMILY, letterSpacingPx));
     });
+  });
+  const totalHeightPx = layoutLinesArray.length * lineHeightPx;
+  const fitsWidth = widths.every(width => width <= widthPx + 0.25);
+  return {
+    lines: layoutLinesArray,
+    widths,
+    totalHeightPx,
+    fitsWidth,
+    ellipsisApplied: false,
+  };
+}
+
+export function fitTextToBox(options) {
+  return fitMultiLineText(options);
+}
+
+function resolveMediaItems(hardwareInfo) {
+  if (!hardwareInfo) {
+    return [];
   }
+  if (hardwareInfo.type === 'custom-image') {
+    if (hardwareInfo.hasImage && hardwareInfo.src) {
+      return [
+        {
+          kind: 'image',
+          href: hardwareInfo.src,
+          alt: hardwareInfo.alt || 'Custom image',
+        },
+      ];
+    }
+    return [];
+  }
+  if (hardwareInfo.type === 'custom-icon') {
+    if (hardwareInfo.iconSvgData) {
+      return [
+        {
+          kind: 'image',
+          href: hardwareInfo.iconSvgData,
+          alt: hardwareInfo.iconLabel || hardwareInfo.iconName || 'Custom icon',
+        },
+      ];
+    }
+    if (hardwareInfo.hasIcon && hardwareInfo.iconUnicode) {
+      return [
+        {
+          kind: 'glyph',
+          unicode: hardwareInfo.iconUnicode,
+          style: hardwareInfo.iconStyle || 'solid',
+          alt: hardwareInfo.iconLabel || 'Custom icon',
+        },
+      ];
+    }
+    return [];
+  }
+  if (hardwareInfo.type === 'photo' || hardwareInfo.type === 'fuse-illustration') {
+    if (!hardwareInfo.src) {
+      return [];
+    }
+    return [
+      {
+        kind: 'image',
+        href: hardwareInfo.src,
+        alt: hardwareInfo.alt || 'Reference illustration',
+      },
+    ];
+  }
+  if (hardwareInfo.images && Array.isArray(hardwareInfo.images)) {
+    return hardwareInfo.images
+      .filter(image => image && image.src)
+      .map((image, index) => ({
+        kind: 'image',
+        href: image.src,
+        alt: image.alt || `Reference ${index + 1}`,
+      }));
+  }
+  if (hardwareInfo.src) {
+    return [
+      {
+        kind: 'image',
+        href: hardwareInfo.src,
+        alt: hardwareInfo.alt || 'Reference illustration',
+      },
+    ];
+  }
+  return [];
+}
 
-  const chosen =
-    selectBestFitCandidate(candidates) ||
-    {
-      fontSizePx: minSize,
-      lines: normalizedLines,
-      lineWidths: normalizedLines.map(line =>
-        measureTextWidth(line, minSize, fontWeight, fontFamily, 0),
-      ),
-      letterSpacingPx: 0,
-      ellipsisApplied: false,
-      totalHeightPx: minSize * LINE_HEIGHT_RATIO * lineCount,
-      lineHeightPx: minSize * LINE_HEIGHT_RATIO,
-    };
-
-  return chosen;
+function computeMediaZoneWidth({
+  contentWidthPx,
+  preset,
+  iconCount,
+  pxPerMm,
+}) {
+  if (!iconCount) {
+    return 0;
+  }
+  const percent = preset.media_zone_width_pct || 0;
+  const minPercent = Number.isFinite(preset.media_zone_width_pct_min)
+    ? preset.media_zone_width_pct_min
+    : percent;
+  const maxPercent = Number.isFinite(preset.media_zone_width_pct_max)
+    ? preset.media_zone_width_pct_max
+    : percent;
+  const minWidthPx = (minPercent / 100) * contentWidthPx;
+  const maxWidthPx = (maxPercent / 100) * contentWidthPx;
+  const baseWidthPx = clamp((percent / 100) * contentWidthPx, minWidthPx, maxWidthPx);
+  const iconPaddingPx = mmToPx(ICON_PADDING_MM, pxPerMm) * 2;
+  const availableHeightRatio = iconCount > 1 && preset.icon_layout === 'row' ? 0.5 : 1;
+  let widthPx = baseWidthPx;
+  const iconMinPx = mmToPx(preset.icon_min_mm || 0, pxPerMm);
+  for (let i = 0; i < 4; i += 1) {
+    const innerWidthPx = Math.max(0, widthPx - iconPaddingPx);
+    let candidateSize = innerWidthPx;
+    if (preset.icon_layout === 'row' && iconCount > 1) {
+      const gapPx = mmToPx(preset.icon_gap_mm || 0, pxPerMm);
+      candidateSize = (innerWidthPx - gapPx * (iconCount - 1)) / iconCount;
+    }
+    if (preset.icon_layout === 'column' && iconCount > 1) {
+      candidateSize = innerWidthPx * availableHeightRatio;
+    }
+    if (candidateSize >= iconMinPx - 0.5) {
+      break;
+    }
+    const expanded = widthPx * 1.08;
+    if (expanded <= maxWidthPx) {
+      widthPx = expanded;
+    } else {
+      widthPx = maxWidthPx;
+      break;
+    }
+  }
+  return clamp(widthPx, minWidthPx, maxWidthPx);
 }
 
 async function resolveSvgImageHref(href) {
   if (!href) {
     return '';
   }
-  const normalized = href.trim();
-  if (!normalized) {
-    return '';
+  if (href.startsWith('data:') || href.startsWith('blob:') || href.startsWith('http')) {
+    return href;
   }
-  if (/^(data:|blob:)/i.test(normalized)) {
-    return normalized;
-  }
-  if (inlineImageCache.has(normalized)) {
-    return inlineImageCache.get(normalized);
+  if (inlineImageCache.has(href)) {
+    return inlineImageCache.get(href);
   }
   if (typeof fetch !== 'function') {
-    inlineImageCache.set(normalized, normalized);
-    return normalized;
+    return href;
   }
   try {
-    const response = await fetch(normalized, { cache: 'force-cache' });
+    const response = await fetch(href);
     if (!response.ok) {
-      throw new Error(`Unexpected response status ${response.status}`);
+      return href;
     }
     const blob = await response.blob();
     const reader = new FileReader();
-    const dataUrlPromise = new Promise((resolve, reject) => {
+    const result = await new Promise((resolve, reject) => {
       reader.onload = () => resolve(reader.result);
-      reader.onerror = () => reject(reader.error || new Error('Unable to convert image.'));
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
     });
-    reader.readAsDataURL(blob);
-    const dataUrl = await dataUrlPromise;
-    inlineImageCache.set(normalized, dataUrl);
-    return dataUrl;
+    inlineImageCache.set(href, result);
+    return result;
   } catch (error) {
-    console.warn('Unable to inline SVG image asset, using absolute URL instead.', error);
-    inlineImageCache.set(normalized, normalized);
-    return normalized;
+    console.warn('Unable to inline media asset.', error);
+    return href;
   }
 }
 
-async function generateQrImage(content, sizePx) {
-  if (!qrCanvas || !(sizePx > 0) || !content) {
+async function generateQrImage(content, sizePx, qrGenerator) {
+  if (!qrCanvas) {
     return null;
   }
-  const size = Math.max(1, Math.round(sizePx));
-  qrCanvas.width = size;
-  qrCanvas.height = size;
-  const qrLib = await loadQrCodeLibrary();
-  const renderFn = qrLib && typeof qrLib.toCanvas === 'function' ? qrLib.toCanvas : null;
-  if (!renderFn) {
-    throw new Error('QR code renderer unavailable');
+  const generator = qrGenerator || (await loadQrCodeLibrary());
+  if (!generator) {
+    return null;
   }
-  await renderFn.call(qrLib, qrCanvas, content, {
-    width: size,
-    margin: 1,
-    color: {
-      dark: '#000000',
-      light: '#00000000',
+  const canvas = qrCanvas;
+  canvas.width = sizePx;
+  canvas.height = sizePx;
+  const context = canvas.getContext('2d');
+  if (!context) {
+    return null;
+  }
+  context.clearRect(0, 0, sizePx, sizePx);
+  await generator.toCanvas(canvas, content, { width: sizePx, margin: 0 });
+  return {
+    dataUrl: canvas.toDataURL('image/png'),
+    sizePx,
+  };
+}
+
+function computeTextZones({ textRect, preset, pxPerMm }) {
+  const textPreset = preset.text_zone || {};
+  const gapPx = mmToPx(textPreset.gap_mm || 0, pxPerMm);
+  const usableHeight = Math.max(0, textRect.height - gapPx);
+  const mainHeight = clamp(
+    ((textPreset.top_pct || 60) / 100) * usableHeight,
+    usableHeight * 0.35,
+    usableHeight,
+  );
+  const subHeight = Math.max(0, usableHeight - mainHeight);
+  return {
+    main: {
+      x: textRect.x,
+      y: textRect.y,
+      width: textRect.width,
+      height: mainHeight,
     },
+    sub: {
+      x: textRect.x,
+      y: textRect.y + mainHeight + gapPx,
+      width: textRect.width,
+      height: subHeight,
+    },
+    gapPx,
+  };
+}
+
+function buildSubtitleCandidates(textLines, preset) {
+  const line2 = (textLines.line2 || '').trim();
+  const line3 = (textLines.line3 || '').trim();
+  const candidates = [];
+  if (line2 || line3) {
+    candidates.push(
+      [line2, line3].filter(line => line && line.length > 0),
+    );
+    const textPreset = preset.text_zone || {};
+    if (textPreset.compact_join_subtitles && line2 && line3) {
+      const separator = textPreset.compact_separator || ' \u00b7 ';
+      candidates.push([`${line2}${separator}${line3}`]);
+    }
+  }
+  return candidates.filter(candidate => candidate.length > 0);
+}
+
+function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
+  const mainText = (textLines.line1 || '').trim();
+  const textPreset = preset.text_zone || {};
+  const zones = computeTextZones({ textRect, preset, pxPerMm });
+  const mainFit = fitSingleLineText({
+    text: mainText,
+    fontWeight: 800,
+    minPt: textPreset.main?.min_pt ?? 8,
+    maxPt: textPreset.main?.max_pt ?? 16,
+    widthPx: Math.max(0, zones.main.width - (qrBounds ? qrBounds.width : 0)),
+    pxPerMm,
+    letterSpacingLimit: textPreset.main?.letter_spacing_adj || -0.3,
   });
-  return { dataUrl: qrCanvas.toDataURL('image/png'), sizePx: size };
+  const mainBaseline = zones.main.y + mainFit.fontSizePx;
+  const mainX = zones.main.x;
+
+  const subtitleCandidates = buildSubtitleCandidates(textLines, preset);
+  let subtitleFit = {
+    lines: [],
+    fontSizePx: toFontPx(textPreset.sub?.min_pt ?? 7, pxPerMm),
+    letterSpacingPx: 0,
+    lineHeightPx:
+      toFontPx(textPreset.sub?.min_pt ?? 7, pxPerMm) * ((textPreset.sub?.line_height_pct ?? 110) / 100),
+    ellipsisApplied: false,
+  };
+  if (subtitleCandidates.length > 0) {
+    const fits = subtitleCandidates.map(candidate =>
+      fitMultiLineText({
+        lines: candidate,
+        fontWeight: 600,
+        minPt: textPreset.sub?.min_pt ?? 7,
+        maxPt: textPreset.sub?.max_pt ?? 11,
+        lineHeightPct: textPreset.sub?.line_height_pct ?? 115,
+        widthPx: zones.sub.width - (qrBounds ? qrBounds.width : 0),
+        heightPx: zones.sub.height,
+        pxPerMm,
+      }),
+    );
+    fits.sort((a, b) => {
+      if (b.fontSizePx - a.fontSizePx > 0.2) {
+        return b.fontSizePx - a.fontSizePx;
+      }
+      if (a.ellipsisApplied !== b.ellipsisApplied) {
+        return a.ellipsisApplied ? 1 : -1;
+      }
+      return a.lines.length - b.lines.length;
+    });
+    subtitleFit = fits[0];
+  }
+
+  return {
+    main: {
+      text: mainFit.text,
+      fontSizePx: mainFit.fontSizePx,
+      letterSpacingPx: mainFit.letterSpacingPx,
+      baseline: mainBaseline,
+      x: mainX,
+    },
+    sub: subtitleFit,
+    zones,
+  };
 }
 
-function computeMediaZoneWidth({
-  printableWidthPx,
-  printableHeightPx,
-  printableWidthMm,
-  contentWidthPx,
-  minTextWidthPx,
-  hasMedia,
-  stackIcons,
-}) {
-  if (!hasMedia) {
-    return 0;
-  }
-  if (!(contentWidthPx > 0) || contentWidthPx <= minTextWidthPx) {
-    return 0;
-  }
-  const aspect = printableHeightPx > 0 ? printableHeightPx / Math.max(printableWidthPx, 1) : 0;
-  const basePercent = 0.28 + aspect * 0.12;
-  const clampedPercent = Math.min(0.36, Math.max(0.24, basePercent));
-  let zoneWidth = contentWidthPx * clampedPercent;
-  if (stackIcons) {
-    zoneWidth = Math.max(zoneWidth, contentWidthPx * 0.32);
-  }
-  if (stackIcons && Number.isFinite(printableWidthMm) && printableWidthMm > 0 && printableWidthMm < 45) {
-    zoneWidth = Math.max(zoneWidth, contentWidthPx * 0.34);
-  }
-  const maxAllowed = contentWidthPx - minTextWidthPx;
-  if (maxAllowed <= 0) {
-    return 0;
-  }
-  return Math.min(zoneWidth, maxAllowed);
-}
-
-function layoutMediaZone({
-  hardwareInfo,
-  rect,
-  stackIcons,
-  paddingPx,
-  gapPx,
-}) {
-  if (!hardwareInfo || rect.width <= 0 || rect.height <= 0) {
-    return { width: 0, elements: [] };
-  }
-  const elements = [];
-  const centerX = rect.x + rect.width / 2;
-  const centerY = rect.y + rect.height / 2;
-  const paddedWidth = Math.max(0, rect.width - paddingPx * 2);
-  const paddedHeight = Math.max(0, rect.height - paddingPx * 2);
-
-  if (hardwareInfo.type === 'custom-image') {
-    if (hardwareInfo.hasImage && hardwareInfo.src) {
-      elements.push({
-        type: 'image',
-        href: hardwareInfo.src,
-        x: rect.x + paddingPx,
-        y: rect.y + paddingPx,
-        width: paddedWidth,
-        height: paddedHeight,
-        title: hardwareInfo.alt || 'Custom image',
-      });
-      return { width: rect.width, elements };
-    }
-    elements.push({
-      type: 'placeholder',
-      x: rect.x + paddingPx / 2,
-      y: rect.y + paddingPx / 2,
-      width: Math.max(0, rect.width - paddingPx),
-      height: Math.max(0, rect.height - paddingPx),
-      label: 'Add image',
-    });
-    return { width: rect.width, elements };
-  }
-
-  if (hardwareInfo.type === 'custom-icon') {
-    const iconLabel = hardwareInfo.iconLabel || hardwareInfo.iconName || 'Custom icon';
-    const hasSvg = typeof hardwareInfo.iconSvgData === 'string' && hardwareInfo.iconSvgData.trim().length > 0;
-    if (hasSvg) {
-      elements.push({
-        type: 'image',
-        href: hardwareInfo.iconSvgData,
-        x: rect.x + paddingPx,
-        y: rect.y + paddingPx,
-        width: paddedWidth,
-        height: paddedHeight,
-        title: iconLabel,
-      });
-      return { width: rect.width, elements };
-    }
-    if (hardwareInfo.hasIcon && hardwareInfo.iconUnicode) {
-      const iconSize = Math.min(paddedWidth, paddedHeight);
-      elements.push({
-        type: 'icon',
-        unicode: hardwareInfo.iconUnicode,
-        style: hardwareInfo.iconStyle || 'solid',
-        label: iconLabel,
-        x: centerX,
-        y: centerY,
-        size: iconSize,
-      });
-      return { width: rect.width, elements };
-    }
-    elements.push({
-      type: 'placeholder',
-      x: rect.x + paddingPx / 2,
-      y: rect.y + paddingPx / 2,
-      width: Math.max(0, rect.width - paddingPx),
-      height: Math.max(0, rect.height - paddingPx),
-      label: 'Choose icon',
-    });
-    return { width: rect.width, elements };
-  }
-
-  const stackedCandidates = new Set(['bolt', 'screw']);
-  if (stackedCandidates.has(hardwareInfo.type)) {
-    const images = Array.isArray(hardwareInfo.images)
-      ? hardwareInfo.images.filter(image => image && image.src)
-      : [];
-    if (images.length === 0) {
-      return { width: 0, elements: [] };
-    }
-    if (stackIcons && images.length >= 2) {
-      const slotHeight = (rect.height - gapPx * (images.length - 1)) / images.length;
-      const iconSize = Math.min(slotHeight - paddingPx * 2, rect.width - paddingPx * 2);
-      let cursorY = rect.y;
-      images.forEach(image => {
-        const size = Math.max(1, iconSize);
-        const offsetX = centerX - size / 2;
-        const offsetY = cursorY + (slotHeight - size) / 2;
-        elements.push({
-          type: 'image',
-          href: image.src,
-          x: offsetX,
-          y: offsetY,
-          width: size,
-          height: size,
-          title: image.alt || 'Hardware reference',
-        });
-        cursorY += slotHeight + gapPx;
-      });
-      return { width: rect.width, elements };
-    }
-    const slotWidth = (rect.width - gapPx * (images.length - 1)) / images.length;
-    const iconSize = Math.min(slotWidth - paddingPx * 2, rect.height - paddingPx * 2);
-    let cursorX = rect.x;
-    images.forEach(image => {
-      const size = Math.max(1, iconSize);
-      const offsetX = cursorX + (slotWidth - size) / 2;
-      const offsetY = centerY - size / 2;
-      elements.push({
-        type: 'image',
-        href: image.src,
-        x: offsetX,
-        y: offsetY,
-        width: size,
-        height: size,
-        title: image.alt || 'Hardware reference',
-      });
-      cursorX += slotWidth + gapPx;
-    });
-    return { width: rect.width, elements };
-  }
-
-  if (hardwareInfo.type === 'photo' || hardwareInfo.type === 'fuse-illustration') {
-    if (!hardwareInfo.src) {
-      return { width: 0, elements: [] };
-    }
-    const width = rect.width - paddingPx * 2;
-    const height = rect.height - paddingPx * 2;
-    const size = Math.max(1, Math.min(width, height));
-    elements.push({
-      type: 'image',
-      href: hardwareInfo.src,
-      x: centerX - size / 2,
-      y: centerY - size / 2,
-      width: size,
-      height: size,
-      title: hardwareInfo.alt || 'Hardware illustration',
-    });
-    return { width: rect.width, elements };
-  }
-
-  return { width: 0, elements: [] };
-}
-
-function layoutTextBlocks({
-  textLines,
+function computeQrLayout({
+  qrContent,
+  preset,
   textRect,
   pxPerMm,
-  minFontSizePx,
+  qrGenerator,
 }) {
-  const mainLine = (textLines.line1 || '').trim();
-  const subtitleLines = [textLines.line2, textLines.line3]
-    .map(line => (line || '').trim())
-    .filter(line => line.length > 0);
-  if (!mainLine && subtitleLines.length === 0) {
-    return { blocks: [], main: null, subtitles: [] };
+  const content = typeof qrContent === 'string' ? qrContent.trim() : '';
+  if (!content) {
+    return null;
   }
+  const qrSideMm = preset.qr.side_mm || 8;
+  const qrMarginMm = preset.qr.margin_mm || 0.6;
+  const qrSidePx = Math.max(QR_SIDE_PX_MIN, Math.round(mmToPx(qrSideMm, pxPerMm)));
+  const qrMarginPx = mmToPx(qrMarginMm, pxPerMm);
+  const pct = Number.isFinite(preset.qr.max_pct_of_text_zone_width)
+    ? preset.qr.max_pct_of_text_zone_width
+    : 100;
+  const maxWidthByPct = (pct / 100) * textRect.width;
+  const finalSidePx = Math.min(qrSidePx, maxWidthByPct);
+  if (finalSidePx < QR_SIDE_PX_MIN * 0.65) {
+    return null;
+  }
+  const layout = {
+    x: textRect.x + textRect.width - finalSidePx - qrMarginPx,
+    y: textRect.y + qrMarginPx,
+    sizePx: finalSidePx,
+    marginPx: qrMarginPx,
+  };
+  return {
+    layout,
+    generator: qrGenerator,
+    content,
+  };
+}
 
-  if (!mainLine && subtitleLines.length > 0) {
-    const subtitleMinSizePx = Math.max(minFontSizePx * 0.72, toFontPx(7, pxPerMm));
-    const subtitleFit = fitSubtitleBlock({
-      lines: subtitleLines,
-      fontFamily: LABEL_FONT_FAMILY,
-      fontWeight: 600,
-      maxFontSizePx: Math.max(textRect.height / (LINE_HEIGHT_RATIO * subtitleLines.length), subtitleMinSizePx),
-      minFontSizePx: subtitleMinSizePx,
-      boxWidthPx: textRect.width,
-      boxHeightPx: textRect.height,
+async function renderQrElement(qrPlan) {
+  if (!qrPlan) {
+    return null;
+  }
+  const qr = await generateQrImage(qrPlan.content, Math.round(qrPlan.layout.sizePx), qrPlan.generator);
+  if (!qr) {
+    return null;
+  }
+  return {
+    x: qrPlan.layout.x,
+    y: qrPlan.layout.y,
+    size: qr.sizePx,
+    href: qr.dataUrl,
+  };
+}
+
+function layoutIcons({
+  mediaItems,
+  rect,
+  preset,
+  pxPerMm,
+}) {
+  if (!mediaItems || mediaItems.length === 0 || rect.width <= 0 || rect.height <= 0) {
+    return [];
+  }
+  const paddingPx = mmToPx(ICON_PADDING_MM, pxPerMm);
+  const gapPx = mmToPx(preset.icon_gap_mm || 0, pxPerMm);
+  const items = [];
+  const count = mediaItems.length;
+  const innerWidth = Math.max(0, rect.width - paddingPx * 2);
+  const innerHeight = Math.max(0, rect.height - paddingPx * 2);
+  if (count === 1 || preset.icon_layout === 'column') {
+    const slotHeight =
+      count <= 1
+        ? innerHeight
+        : (innerHeight - gapPx * (count - 1)) / count;
+    let cursorY = rect.y + paddingPx;
+    mediaItems.forEach(item => {
+      const size = Math.min(innerWidth, slotHeight);
+      const x = rect.x + (rect.width - size) / 2;
+      const y = cursorY + (slotHeight - size) / 2;
+      items.push({ ...item, x, y, width: size, height: size });
+      cursorY += slotHeight + gapPx;
     });
-    const top = textRect.y + Math.max(0, (textRect.height - subtitleFit.totalHeightPx) / 2);
-    return { blocks: [{ fit: subtitleFit, top }], main: null, subtitles: [subtitleFit] };
+    return items;
   }
+  // row layout
+  const slotWidth = (innerWidth - gapPx * (count - 1)) / count;
+  let cursorX = rect.x + paddingPx;
+  mediaItems.forEach(item => {
+    const size = Math.min(slotWidth, innerHeight);
+    const x = cursorX + (slotWidth - size) / 2;
+    const y = rect.y + (rect.height - size) / 2;
+    items.push({ ...item, x, y, width: size, height: size });
+    cursorX += slotWidth + gapPx;
+  });
+  return items;
+}
 
-  const subtitleCount = subtitleLines.length;
-  const subtitleMinSizePx = subtitleCount > 0
-    ? Math.max(minFontSizePx * 0.72, toFontPx(7, pxPerMm))
-    : 0;
-  const subtitleMinHeight = subtitleCount > 0
-    ? subtitleCount * subtitleMinSizePx * LINE_HEIGHT_RATIO
-    : 0;
+function resolvePrintableRect(geometry, pxPerMm) {
+  const labelWidthPx = Math.round(mmToPx(geometry.labelWidthMm, pxPerMm));
+  const labelHeightPx = Math.round(mmToPx(geometry.labelHeightMm, pxPerMm));
+  const printableWidthPx = Math.round(mmToPx(geometry.printableWidthMm, pxPerMm));
+  const printableHeightPx = Math.round(mmToPx(geometry.printableHeightMm, pxPerMm));
+  const offsetX = Math.round(mmToPx(geometry.marginX || 0, pxPerMm));
+  const offsetY = Math.round(mmToPx(geometry.marginY || 0, pxPerMm));
+  return {
+    labelWidthPx,
+    labelHeightPx,
+    printable: {
+      x: offsetX,
+      y: offsetY,
+      width: printableWidthPx,
+      height: printableHeightPx,
+    },
+  };
+}
 
-  let gapPx = subtitleCount > 0
-    ? Math.max(textRect.height * 0.05, mmToPx(0.6, pxPerMm))
-    : 0;
-  if (subtitleCount > 0) {
-    const maxGap = Math.max(textRect.height * 0.12, mmToPx(1.6, pxPerMm));
-    gapPx = Math.min(maxGap, gapPx);
-    const minCombinedHeight = minFontSizePx * LINE_HEIGHT_RATIO + subtitleMinHeight;
-    if (textRect.height - gapPx < minCombinedHeight) {
-      gapPx = Math.max(0, textRect.height - minCombinedHeight);
+function computeContentRect(printableRect, preset, pxPerMm) {
+  const paddingPx = mmToPx(preset.padding_mm || 0, pxPerMm);
+  return {
+    x: printableRect.x + paddingPx,
+    y: printableRect.y + paddingPx,
+    width: Math.max(0, printableRect.width - paddingPx * 2),
+    height: Math.max(0, printableRect.height - paddingPx * 2),
+    paddingPx,
+  };
+}
+
+function ensureTextFits({
+  preset,
+  mediaZoneWidthPx,
+  contentRect,
+  minTextWidthMm,
+  pxPerMm,
+  mediaPresent,
+  textLines,
+}) {
+  const minTextWidthPx = mmToPx(minTextWidthMm || 9, pxPerMm);
+  const textGapPx = mediaPresent ? mmToPx(MEDIA_TEXT_GAP_MM, pxPerMm) : 0;
+  let mediaWidthPx = mediaPresent ? mediaZoneWidthPx : 0;
+  for (let i = 0; i < 4; i += 1) {
+    const textWidth = Math.max(0, contentRect.width - mediaWidthPx - textGapPx);
+    if (textWidth >= minTextWidthPx - 0.5) {
+      break;
     }
+    mediaWidthPx = Math.max(0, mediaWidthPx - (contentRect.width * 0.06));
   }
+  const textRect = {
+    x: mediaWidthPx > 0 ? contentRect.x + mediaWidthPx + textGapPx : contentRect.x,
+    y: contentRect.y,
+    width: Math.max(0, contentRect.width - mediaWidthPx - (mediaWidthPx > 0 ? textGapPx : 0)),
+    height: contentRect.height,
+  };
 
-  const usableHeight = Math.max(0, textRect.height - gapPx);
-  const availableForMain = subtitleCount > 0
-    ? Math.min(
-        usableHeight,
-        Math.max(minFontSizePx * LINE_HEIGHT_RATIO, usableHeight - subtitleMinHeight),
-      )
-    : usableHeight;
-  const minMainHeight = subtitleCount > 0
-    ? Math.min(
-        availableForMain,
-        Math.max(minFontSizePx * LINE_HEIGHT_RATIO * 1.05, usableHeight * 0.35),
-      )
-    : usableHeight;
-  const maxMainHeight = subtitleCount > 0
-    ? Math.max(minMainHeight, availableForMain)
-    : usableHeight;
-
-  let mainHeight = subtitleCount > 0
-    ? Math.min(maxMainHeight, Math.max(minMainHeight, usableHeight * 0.52))
-    : usableHeight;
-
-  let chosenLayout = null;
-
-  for (let iteration = 0; iteration < 8; iteration += 1) {
-    mainHeight = Math.max(minMainHeight, Math.min(maxMainHeight, mainHeight));
-    const mainMaxFont = mainHeight > 0 ? mainHeight / LINE_HEIGHT_RATIO : minFontSizePx;
-    const subtitleHeight = subtitleCount > 0 ? Math.max(0, usableHeight - mainHeight) : 0;
-    const subtitleMaxFont = subtitleCount > 0 && subtitleHeight > 0
-      ? subtitleHeight / (LINE_HEIGHT_RATIO * subtitleCount)
-      : subtitleMinSizePx;
-
-    const mainFit = fitSingleLineText({
-      text: mainLine,
-      fontFamily: LABEL_FONT_FAMILY,
-      fontWeight: 800,
-      maxFontSizePx: Math.max(minFontSizePx, mainMaxFont),
-      minFontSizePx: minFontSizePx,
-      boxWidthPx: textRect.width,
-    });
-
-    let subtitleFit = null;
-    if (subtitleCount > 0) {
-      const safeSubtitleMax = Math.max(subtitleMinSizePx, subtitleMaxFont);
-      subtitleFit = fitSubtitleBlock({
-        lines: subtitleLines,
-        fontFamily: LABEL_FONT_FAMILY,
-        fontWeight: 600,
-        maxFontSizePx: safeSubtitleMax,
-        minFontSizePx: subtitleMinSizePx,
-        boxWidthPx: textRect.width,
-        boxHeightPx: Math.max(subtitleHeight, subtitleMinHeight),
+  let mainFit = fitSingleLineText({
+    text: textLines.line1,
+    fontWeight: 800,
+    minPt: preset.text_zone.main.min_pt,
+    maxPt: preset.text_zone.main.max_pt,
+    widthPx: textRect.width,
+    pxPerMm,
+    letterSpacingLimit: preset.text_zone.main.letter_spacing_adj || -0.3,
+  });
+  if (mainFit.fontSizePx <= toFontPx(preset.text_zone.main.min_pt, pxPerMm) + 0.2) {
+    for (let i = 0; i < 4 && mediaWidthPx > 0; i += 1) {
+      mediaWidthPx = Math.max(0, mediaWidthPx - contentRect.width * 0.04);
+      textRect.x = mediaWidthPx > 0 ? contentRect.x + mediaWidthPx + textGapPx : contentRect.x;
+      textRect.width = Math.max(
+        minTextWidthPx,
+        contentRect.width - mediaWidthPx - (mediaWidthPx > 0 ? textGapPx : 0),
+      );
+      mainFit = fitSingleLineText({
+        text: textLines.line1,
+        fontWeight: 800,
+        minPt: preset.text_zone.main.min_pt,
+        maxPt: preset.text_zone.main.max_pt,
+        widthPx: textRect.width,
+        pxPerMm,
+        letterSpacingLimit: preset.text_zone.main.letter_spacing_adj || -0.3,
       });
+      if (mainFit.fontSizePx > toFontPx(preset.text_zone.main.min_pt, pxPerMm) + 0.2) {
+        break;
+      }
     }
-
-    const mainOverflow = mainFit.totalHeightPx > mainHeight + 0.5;
-    const subtitleOverflow = subtitleFit && subtitleCount > 0
-      ? subtitleFit.totalHeightPx > subtitleHeight + 0.5
-      : false;
-    const subtitleEllipsis = subtitleFit ? subtitleFit.ellipsisApplied : false;
-
-    if (
-      subtitleCount > 0 &&
-      (subtitleOverflow || subtitleEllipsis) &&
-      mainHeight > minMainHeight + 0.5
-    ) {
-      mainHeight = Math.max(minMainHeight, mainHeight - Math.max(4, textRect.height * 0.04));
-      continue;
-    }
-
-    if (mainOverflow && mainHeight < maxMainHeight - 0.5) {
-      mainHeight = Math.min(maxMainHeight, mainHeight + Math.max(4, textRect.height * 0.04));
-      continue;
-    }
-
-    chosenLayout = { mainFit, subtitleFit, mainHeight, subtitleHeight, gapPx };
-    break;
   }
+  return { mediaWidthPx, textRect };
+}
 
-  if (!chosenLayout) {
-    const fallbackMainMax = maxMainHeight > 0 ? maxMainHeight / LINE_HEIGHT_RATIO : minFontSizePx;
-    const fallbackMain = fitSingleLineText({
-      text: mainLine,
-      fontFamily: LABEL_FONT_FAMILY,
-      fontWeight: 800,
-      maxFontSizePx: Math.max(minFontSizePx, fallbackMainMax),
-      minFontSizePx: minFontSizePx,
-      boxWidthPx: textRect.width,
-    });
-    let fallbackSubtitle = null;
-    let subtitleHeight = 0;
-    if (subtitleCount > 0) {
-      subtitleHeight = Math.max(0, usableHeight - Math.min(maxMainHeight, fallbackMain.totalHeightPx));
-      const fallbackSubtitleMaxFont = subtitleHeight > 0
-        ? subtitleHeight / (LINE_HEIGHT_RATIO * subtitleCount)
-        : subtitleMinSizePx;
-      fallbackSubtitle = fitSubtitleBlock({
-        lines: subtitleLines,
-        fontFamily: LABEL_FONT_FAMILY,
-        fontWeight: 600,
-        maxFontSizePx: Math.max(subtitleMinSizePx, fallbackSubtitleMaxFont),
-        minFontSizePx: subtitleMinSizePx,
-        boxWidthPx: textRect.width,
-        boxHeightPx: Math.max(subtitleHeight, subtitleMinHeight),
-      });
-    }
-    chosenLayout = {
-      mainFit: fallbackMain,
-      subtitleFit: fallbackSubtitle,
-      mainHeight: subtitleCount > 0
-        ? Math.min(maxMainHeight, Math.max(minMainHeight, fallbackMain.totalHeightPx + 1))
-        : usableHeight,
-      subtitleHeight: subtitleCount > 0
-        ? Math.max(0, usableHeight - Math.min(maxMainHeight, Math.max(minMainHeight, fallbackMain.totalHeightPx + 1)))
-        : 0,
-      gapPx,
-    };
-  }
-
-  const blocks = [];
-  const mainTop = textRect.y + Math.max(0, (chosenLayout.mainHeight - chosenLayout.mainFit.totalHeightPx) / 2);
-  blocks.push({ fit: chosenLayout.mainFit, top: mainTop });
-
-  let subtitleFits = [];
-  if (subtitleCount > 0 && chosenLayout.subtitleFit) {
-    const subtitleZoneTop = textRect.y + chosenLayout.mainHeight + gapPx;
-    const subtitleTop = subtitleZoneTop + Math.max(
-      0,
-      (chosenLayout.subtitleHeight - chosenLayout.subtitleFit.totalHeightPx) / 2,
+function buildDebugOverlays({
+  printableRect,
+  contentRect,
+  mediaRect,
+  textRect,
+  textZones,
+  qr,
+}) {
+  const overlays = [];
+  overlays.push(
+    `<rect x="${formatNumber(printableRect.x)}" y="${formatNumber(printableRect.y)}" width="${formatNumber(printableRect.width)}" height="${formatNumber(printableRect.height)}" fill="none" stroke="rgba(34,197,94,0.6)" stroke-dasharray="6 4" stroke-width="1" vector-effect="non-scaling-stroke" />`,
+  );
+  overlays.push(
+    `<rect x="${formatNumber(contentRect.x)}" y="${formatNumber(contentRect.y)}" width="${formatNumber(contentRect.width)}" height="${formatNumber(contentRect.height)}" fill="rgba(59,130,246,0.08)" stroke="rgba(59,130,246,0.7)" stroke-width="1" vector-effect="non-scaling-stroke" />`,
+  );
+  if (mediaRect.width > 0 && mediaRect.height > 0) {
+    overlays.push(
+      `<rect x="${formatNumber(mediaRect.x)}" y="${formatNumber(mediaRect.y)}" width="${formatNumber(mediaRect.width)}" height="${formatNumber(mediaRect.height)}" fill="rgba(249,115,22,0.08)" stroke="rgba(249,115,22,0.7)" stroke-width="1" vector-effect="non-scaling-stroke" />`,
     );
-    blocks.push({ fit: chosenLayout.subtitleFit, top: subtitleTop });
-    subtitleFits = [chosenLayout.subtitleFit];
   }
+  overlays.push(
+    `<rect x="${formatNumber(textRect.x)}" y="${formatNumber(textRect.y)}" width="${formatNumber(textRect.width)}" height="${formatNumber(textRect.height)}" fill="rgba(139,92,246,0.08)" stroke="rgba(139,92,246,0.7)" stroke-width="1" vector-effect="non-scaling-stroke" />`,
+  );
+  overlays.push(
+    `<rect x="${formatNumber(textZones.main.x)}" y="${formatNumber(textZones.main.y)}" width="${formatNumber(textZones.main.width)}" height="${formatNumber(textZones.main.height)}" fill="none" stroke="rgba(59,130,246,0.7)" stroke-dasharray="4 3" stroke-width="1" vector-effect="non-scaling-stroke" />`,
+  );
+  overlays.push(
+    `<rect x="${formatNumber(textZones.sub.x)}" y="${formatNumber(textZones.sub.y)}" width="${formatNumber(textZones.sub.width)}" height="${formatNumber(textZones.sub.height)}" fill="none" stroke="rgba(59,130,246,0.5)" stroke-dasharray="4 3" stroke-width="1" vector-effect="non-scaling-stroke" />`,
+  );
+  if (qr) {
+    overlays.push(
+      `<rect x="${formatNumber(qr.x)}" y="${formatNumber(qr.y)}" width="${formatNumber(qr.size)}" height="${formatNumber(qr.size)}" fill="none" stroke="rgba(239,68,68,0.7)" stroke-dasharray="4 3" stroke-width="1" vector-effect="non-scaling-stroke" />`,
+    );
+  }
+  return overlays.join('');
+}
 
-  return { blocks, main: chosenLayout.mainFit, subtitles: subtitleFits };
+async function renderMediaElements(mediaElements) {
+  const parts = [];
+  for (const element of mediaElements) {
+    if (element.kind === 'image') {
+      const href = await resolveSvgImageHref(element.href);
+      const escapedHref = escapeXml(href);
+      const title = element.alt ? `<title>${escapeXml(element.alt)}</title>` : '';
+      parts.push(
+        `<image x="${formatNumber(element.x)}" y="${formatNumber(element.y)}" width="${formatNumber(element.width)}" height="${formatNumber(element.height)}" href="${escapedHref}" ${`xmlns:xlink="${SVG_XLINK}"`} xlink:href="${escapedHref}">${title}</image>`,
+      );
+    } else if (element.kind === 'glyph') {
+      const fontFamily = element.style === 'brands' ? 'Font Awesome 6 Brands' : 'Font Awesome 6 Free';
+      const fontWeight = element.style === 'regular' ? 400 : element.style === 'solid' ? 900 : 400;
+      const glyph = element.unicode ? `&#x${element.unicode};` : '';
+      const title = element.alt ? `<title>${escapeXml(element.alt)}</title>` : '';
+      const centerX = element.x + element.width / 2;
+      const centerY = element.y + element.height / 2;
+      const fontSize = element.height * 0.85;
+      parts.push(
+        `<g>${title}<text x="${formatNumber(centerX)}" y="${formatNumber(centerY)}" font-family=${JSON.stringify(fontFamily)} font-weight="${fontWeight}" font-size="${formatNumber(fontSize)}" text-anchor="middle" dominant-baseline="middle" fill="${LABEL_TEXT_COLOR}">${glyph}</text></g>`,
+      );
+    }
+  }
+  return parts.join('');
 }
 
 export async function renderLabelSVG({
@@ -1052,170 +891,109 @@ export async function renderLabelSVG({
   minTextWidthMm = 9,
   qrGenerator,
 }) {
-  const labelWidthPx = Math.max(1, Math.round(geometry.labelWidthMm * pxPerMm));
-  const labelHeightPx = Math.max(1, Math.round(geometry.labelHeightMm * pxPerMm));
-  const printableWidthPx = Math.max(0, Math.round(geometry.printableWidthMm * pxPerMm));
-  const printableHeightPx = Math.max(0, Math.round(geometry.printableHeightMm * pxPerMm));
-  const marginXPx = Math.max(0, Math.round(geometry.marginX * pxPerMm));
-  const marginYPx = Math.max(0, Math.round(geometry.marginY * pxPerMm));
-
-  const paddingLeftPx = Math.round(mmToPx(1.2, pxPerMm));
-  const paddingRightPx = Math.round(mmToPx(1.2, pxPerMm));
-  const paddingTopPx = Math.round(mmToPx(1, pxPerMm));
-  const paddingBottomPx = Math.round(mmToPx(1, pxPerMm));
-  const gapPx = Math.round(mmToPx(0.8, pxPerMm));
-
-  const contentRect = {
-    x: marginXPx + paddingLeftPx,
-    y: marginYPx + paddingTopPx,
-    width: Math.max(0, printableWidthPx - paddingLeftPx - paddingRightPx),
-    height: Math.max(0, printableHeightPx - paddingTopPx - paddingBottomPx),
-  };
-
-  const minTextWidthPx = Math.max(Math.round(mmToPx(minTextWidthMm, pxPerMm)), Math.round(contentRect.height * 0.75));
-  const labelHeightMm = geometry.labelHeightMm || 0;
-  const stackIcons = Boolean(
-    hardwareInfo &&
-      Array.isArray(hardwareInfo.images) &&
-      hardwareInfo.images.length >= 2 &&
-      (labelHeightMm >= 18 || contentRect.height / Math.max(contentRect.width, 1) > 1.2),
-  );
-
-  const mediaZoneWidthPx = computeMediaZoneWidth({
-    printableWidthPx,
-    printableHeightPx,
-    printableWidthMm: geometry.printableWidthMm,
+  if (!geometry || !Number.isFinite(pxPerMm)) {
+    throw new Error('Invalid geometry or pxPerMm for label rendering.');
+  }
+  const { labelWidthPx, labelHeightPx, printable } = resolvePrintableRect(geometry, pxPerMm);
+  const preset = getActiveLayoutPreset(geometry.printableHeightMm || geometry.labelHeightMm);
+  const contentRect = computeContentRect(printable, preset, pxPerMm);
+  const mediaItems = resolveMediaItems(hardwareInfo);
+  let mediaWidthPx = computeMediaZoneWidth({
     contentWidthPx: contentRect.width,
-    minTextWidthPx,
-    hasMedia: Boolean(hardwareInfo),
-    stackIcons,
+    preset,
+    iconCount: mediaItems.length,
+    pxPerMm,
   });
+  const { mediaWidthPx: adjustedMediaWidth, textRect } = ensureTextFits({
+    preset,
+    mediaZoneWidthPx: mediaWidthPx,
+    contentRect,
+    minTextWidthMm,
+    pxPerMm,
+    mediaPresent: mediaItems.length > 0,
+    textLines,
+  });
+  mediaWidthPx = adjustedMediaWidth;
 
-  const mediaRect = {
-    x: contentRect.x,
-    y: contentRect.y,
-    width: mediaZoneWidthPx,
-    height: contentRect.height,
-  };
-
-  const textRect = {
-    x: mediaZoneWidthPx > 0 ? contentRect.x + mediaZoneWidthPx + gapPx : contentRect.x,
-    y: contentRect.y,
-    width: Math.max(0, contentRect.width - mediaZoneWidthPx - (mediaZoneWidthPx > 0 ? gapPx : 0)),
-    height: contentRect.height,
-  };
-
-  let qrLayout = null;
-  const qrText = typeof qrContent === 'string' ? qrContent.trim() : '';
-  let textWidthForContent = textRect.width;
-  if (qrText) {
-    const qrMaxWidth = Math.max(0, textRect.width * 0.38);
-    const qrMaxHeight = textRect.height;
-    const maxQr = Math.min(qrMaxWidth, qrMaxHeight);
-    const qrMin = mmToPx(4, pxPerMm);
-    const textReserve = Math.max(minTextWidthPx, textRect.width * 0.6);
-    const allowedWidth = Math.max(0, textRect.width - textReserve);
-    const qrCandidate = Math.min(maxQr, allowedWidth);
-    if (qrCandidate >= qrMin) {
-      const qrSize = Math.round(qrCandidate);
-      textWidthForContent = Math.max(minTextWidthPx, textRect.width - qrSize - gapPx);
-      const generator = typeof qrGenerator === 'function' ? qrGenerator : generateQrImage;
-      const qrImage = await generator(qrText, qrSize);
-      if (qrImage) {
-        qrLayout = {
-          x: textRect.x + textWidthForContent + gapPx,
-          y: textRect.y + (textRect.height - qrSize) / 2,
-          size: qrImage.sizePx,
-          dataUrl: qrImage.dataUrl,
-        };
-      }
+  const qrPlan = computeQrLayout({
+    qrContent,
+    preset,
+    textRect,
+    pxPerMm,
+    qrGenerator,
+  });
+  let qrElement = null;
+  if (qrPlan) {
+    qrElement = await renderQrElement(qrPlan);
+    if (qrElement) {
+      textRect.width = Math.max(0, textRect.width - (qrElement.size + mmToPx(preset.qr.margin_mm || 0.5, pxPerMm)));
     }
   }
 
-  const textLayoutRect = {
-    x: textRect.x,
-    y: textRect.y,
-    width: textWidthForContent,
-    height: textRect.height,
+  const textLayout = layoutText({ textLines, textRect, preset, pxPerMm, qrBounds: qrElement });
+  const mediaRect = {
+    x: mediaWidthPx > 0 ? contentRect.x : contentRect.x,
+    y: contentRect.y,
+    width: mediaWidthPx,
+    height: contentRect.height,
   };
-
-  const minFontSizePx = toFontPx(MIN_FONT_SIZE_PT, pxPerMm);
-  const textLayout = layoutTextBlocks({
-    textLines,
-    textRect: textLayoutRect,
-    pxPerMm,
-    minFontSizePx,
-  });
-
-  const mediaLayout = layoutMediaZone({
-    hardwareInfo,
+  const mediaElements = layoutIcons({
+    mediaItems,
     rect: mediaRect,
-    stackIcons,
-    paddingPx: Math.round(mmToPx(0.6, pxPerMm)),
-    gapPx: Math.round(mmToPx(1, pxPerMm)),
+    preset,
+    pxPerMm,
   });
 
   const svgParts = [];
   svgParts.push(
-    `<svg xmlns="${SVG_XMLNS}" xmlns:xlink="http://www.w3.org/1999/xlink" width="${labelWidthPx}" height="${labelHeightPx}" viewBox="0 0 ${labelWidthPx} ${labelHeightPx}">`,
+    `<svg xmlns="${SVG_XMLNS}" xmlns:xlink="${SVG_XLINK}" width="${labelWidthPx}" height="${labelHeightPx}" viewBox="0 0 ${labelWidthPx} ${labelHeightPx}">`,
   );
   const strokeWidth = formatNumber(mmToPx(0.25, pxPerMm));
   svgParts.push(
     `<rect x="0" y="0" width="${labelWidthPx}" height="${labelHeightPx}" fill="${LABEL_BACKGROUND_COLOR}" stroke="${FRAME_STROKE_COLOR}" stroke-width="${strokeWidth}" vector-effect="non-scaling-stroke" />`,
   );
 
-  for (const element of mediaLayout.elements) {
-    if (element.type === 'image') {
-      const href = await resolveSvgImageHref(element.href);
-      const escapedHref = escapeXml(href);
-      const title = element.title ? `<title>${escapeXml(element.title)}</title>` : '';
+  svgParts.push(await renderMediaElements(mediaElements));
+
+  if (textLayout.main.text) {
+    svgParts.push(
+      `<text x="${formatNumber(textLayout.main.x)}" y="${formatNumber(textLayout.main.baseline)}" font-family=${JSON.stringify(LABEL_FONT_FAMILY)} font-weight="800" font-size="${formatNumber(textLayout.main.fontSizePx)}" letter-spacing="${formatNumber(textLayout.main.letterSpacingPx)}" fill="${LABEL_TEXT_COLOR}">${escapeXml(textLayout.main.text)}</text>`,
+    );
+  }
+  if (textLayout.sub && textLayout.sub.lines) {
+    let baseline = textLayout.zones.sub.y + textLayout.sub.fontSizePx;
+    textLayout.sub.lines.forEach(line => {
       svgParts.push(
-        `<image x="${formatNumber(element.x)}" y="${formatNumber(element.y)}" width="${formatNumber(element.width)}" height="${formatNumber(element.height)}" href="${escapedHref}" xlink:href="${escapedHref}">${title}</image>`,
+        `<text x="${formatNumber(textLayout.zones.sub.x)}" y="${formatNumber(baseline)}" font-family=${JSON.stringify(LABEL_FONT_FAMILY)} font-weight="600" font-size="${formatNumber(textLayout.sub.fontSizePx)}" letter-spacing="${formatNumber(textLayout.sub.letterSpacingPx || 0)}" fill="${LABEL_TEXT_COLOR}">${escapeXml(line)}</text>`,
       );
-    } else if (element.type === 'placeholder') {
-      const radius = Math.round(Math.min(element.width, element.height) * 0.12);
-      svgParts.push(
-        `<rect x="${formatNumber(element.x)}" y="${formatNumber(element.y)}" width="${formatNumber(element.width)}" height="${formatNumber(element.height)}" fill="rgba(255,255,255,0.55)" stroke="rgba(15,23,42,0.25)" stroke-width="1" rx="${radius}" ry="${radius}" />`,
-      );
-      const placeholderFont = Math.max(12, Math.round(Math.min(element.width, element.height) * 0.22));
-      const centerX = element.x + element.width / 2;
-      const centerY = element.y + element.height / 2 + placeholderFont * 0.35;
-      svgParts.push(
-        `<text x="${formatNumber(centerX)}" y="${formatNumber(centerY)}" font-size="${placeholderFont}" font-weight="700" text-anchor="middle" fill="${LABEL_TEXT_COLOR}" font-family=${JSON.stringify(LABEL_FONT_FAMILY)}>${escapeXml(element.label || 'Add image')}</text>`,
-      );
-    } else if (element.type === 'icon') {
-      const fontFamily =
-        element.style === 'brands' ? 'Font Awesome 6 Brands' : 'Font Awesome 6 Free';
-      const fontWeight = element.style === 'regular' ? 400 : element.style === 'solid' ? 900 : 400;
-      const glyph = element.unicode ? `&#x${element.unicode};` : '';
-      const title = element.label ? `<title>${escapeXml(element.label)}</title>` : '';
-      svgParts.push(
-        `<g>${title}<text x="${formatNumber(element.x)}" y="${formatNumber(element.y)}" font-family=${JSON.stringify(fontFamily)} font-weight="${fontWeight}" font-size="${formatNumber(element.size)}" text-anchor="middle" dominant-baseline="middle" fill="${LABEL_TEXT_COLOR}">${glyph}</text></g>`,
-      );
-    }
+      baseline += textLayout.sub.lineHeightPx;
+    });
   }
 
-  const centerAlign = mediaRect.width > 0 || Boolean(qrLayout);
-  textLayout.blocks.forEach(block => {
-    const { fit, top } = block;
-    let baseline = top + fit.fontSizePx;
-    fit.lines.forEach((line, index) => {
-      const lineWidth = Array.isArray(fit.lineWidths) ? fit.lineWidths[index] || 0 : 0;
-      const offset = centerAlign ? Math.max(0, (textLayoutRect.width - lineWidth) / 2) : 0;
-      const x = textLayoutRect.x + offset;
-      const letterSpacing = fit.letterSpacingPx || 0;
-      const weight = fit === textLayout.main ? 800 : 600;
-      svgParts.push(
-        `<text x="${formatNumber(x)}" y="${formatNumber(baseline)}" font-family=${JSON.stringify(LABEL_FONT_FAMILY)} font-weight="${weight}" font-size="${formatNumber(fit.fontSizePx)}" letter-spacing="${formatNumber(letterSpacing)}" fill="${LABEL_TEXT_COLOR}">${escapeXml(line)}</text>`,
-      );
-      baseline += fit.lineHeightPx;
-    });
-  });
-
-  if (qrLayout) {
-    const escapedQrHref = escapeXml(qrLayout.dataUrl);
+  if (qrElement) {
+    const qrHref = escapeXml(qrElement.href);
     svgParts.push(
-      `<image x="${formatNumber(qrLayout.x)}" y="${formatNumber(qrLayout.y)}" width="${formatNumber(qrLayout.size)}" height="${formatNumber(qrLayout.size)}" href="${escapedQrHref}" xlink:href="${escapedQrHref}" />`,
+      `<image x="${formatNumber(qrElement.x)}" y="${formatNumber(qrElement.y)}" width="${formatNumber(qrElement.size)}" height="${formatNumber(qrElement.size)}" href="${qrHref}" xlink:href="${qrHref}" />`,
+    );
+  }
+
+  const editorState = ensureLayoutEditor({
+    geometry,
+    preset,
+    textLines,
+    hardwareInfo,
+    qrContent,
+  });
+  if (editorState && editorState.active) {
+    svgParts.push(
+      `<g class="layout-overlays" fill="none">${buildDebugOverlays({
+        printableRect: printable,
+        contentRect,
+        mediaRect,
+        textRect,
+        textZones: textLayout.zones,
+        qr: qrElement,
+      })}</g>`,
     );
   }
 
@@ -1273,3 +1051,13 @@ export function canvasToBlob(canvas, type = 'image/png', quality) {
   return Promise.resolve(new Blob([buffer], { type: mimeType }));
 }
 
+export const layoutPresetTools = {
+  defaultLayoutPresets,
+  getPresetOverride,
+  setPresetOverride,
+  clearPresetOverrides,
+  exportLayoutPresets,
+  importLayoutPresets,
+  subscribePresetChanges,
+  notifyPresetListeners,
+};
