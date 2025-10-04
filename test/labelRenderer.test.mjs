@@ -170,18 +170,31 @@ function setupLayoutEditorTestEnvironment() {
       this._innerHTML = value;
       if (this.tagName === 'DIV' && value.includes('layout-editor-body')) {
         this.children = [];
-        const body = new StubElement('div');
-        body.classList.add('layout-editor-body');
+        const header = new StubElement('div');
+        header.classList.add('layout-editor-header');
+
+        const title = new StubElement('h3');
+        title.classList.add('layout-editor-title');
+        title.textContent = 'Layout Editor';
+
+        const actionsWrapper = new StubElement('div');
+        actionsWrapper.classList.add('layout-editor-actions');
+
         const actions = ['reset', 'export', 'import', 'copy'].map(action => {
           const button = new StubElement('button');
           button.setAttribute('data-editor-action', action);
+          actionsWrapper.appendChild(button);
           return button;
         });
+
+        header.append(title, actionsWrapper);
+
+        const body = new StubElement('div');
+        body.classList.add('layout-editor-body');
+
+        this.append(header, body);
         this._body = body;
         this._actions = actions;
-        this.appendChild(body);
-        this.querySelector = selector => (selector === '.layout-editor-body' ? body : null);
-        this.querySelectorAll = selector => (selector === '[data-editor-action]' ? actions : []);
       }
     }
 
@@ -189,12 +202,38 @@ function setupLayoutEditorTestEnvironment() {
       return this._innerHTML;
     }
 
-    querySelector() {
-      return null;
+    querySelector(selector) {
+      const results = this.querySelectorAll(selector);
+      return results.length > 0 ? results[0] : null;
     }
 
-    querySelectorAll() {
-      return [];
+    querySelectorAll(selector) {
+      const matches = [];
+      const visit = node => {
+        if (node._matchesSelector(selector)) {
+          matches.push(node);
+        }
+        node.children.forEach(child => visit(child));
+      };
+      this.children.forEach(child => visit(child));
+      return matches;
+    }
+
+    _matchesSelector(selector) {
+      if (!selector) {
+        return false;
+      }
+      if (selector.startsWith('.')) {
+        const className = selector.slice(1);
+        return this.classList.contains(className);
+      }
+      if (selector.startsWith('#')) {
+        return this.id === selector.slice(1);
+      }
+      if (selector === '[data-editor-action]') {
+        return Object.hasOwn(this.dataset, 'editorAction');
+      }
+      return this.tagName.toLowerCase() === selector.toLowerCase();
     }
   }
 
