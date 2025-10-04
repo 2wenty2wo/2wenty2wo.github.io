@@ -147,6 +147,31 @@ test('single icon fills the media zone proportionally', async () => {
   assert.ok(icon.width > 60, 'icon should scale to fill available space');
 });
 
+test('single-line labels center the main baseline within the text rect', async () => {
+  const geometry = {
+    labelWidthMm: 37,
+    labelHeightMm: 12,
+    printableWidthMm: 33,
+    printableHeightMm: 10,
+    marginX: 2,
+    marginY: 1,
+  };
+  const textLines = { line1: 'Centered Text', line2: '', line3: '' };
+  const result = await renderLabelSVG({
+    geometry,
+    pxPerMm,
+    textLines,
+    hardwareInfo: null,
+    qrContent: '',
+  });
+  assert.ok(result.textLayout, 'expected layout metadata to be returned');
+  const expectedCenterY = result.textRect.y + result.textRect.height / 2;
+  assert.ok(
+    Math.abs(result.textLayout.main.baseline - expectedCenterY) < 0.51,
+    `main baseline (${result.textLayout.main.baseline.toFixed(2)}) should align with text rect center (${expectedCenterY.toFixed(2)})`,
+  );
+});
+
 test('main line shrinks before ellipsizing', async () => {
   const geometry = {
     labelWidthMm: 80,
