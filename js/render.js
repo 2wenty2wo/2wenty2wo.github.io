@@ -790,7 +790,7 @@ export function updateTextOptionsVisibility(options = {}) {
   textOptionsWrapper.classList.toggle('is-collapsed', !shouldShow);
   textOptionsWrapper.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
   if (shouldShow) {
-    textOptionsWrapper.style.removeProperty('maxHeight');
+    textOptionsWrapper.style.removeProperty('max-height');
   } else {
     textOptionsWrapper.style.maxHeight = '0px';
   }
