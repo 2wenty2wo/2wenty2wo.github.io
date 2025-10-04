@@ -603,8 +603,8 @@ test('middle text alignment centers both main and subtitle anchors', async () =>
     const mainMatch = result.svgMarkup.match(new RegExp(`<text[^>]*font-weight="${mainFontWeight}"[^>]*>`));
     assert.ok(mainMatch, 'expected main text element with configured font weight');
     assert.match(mainMatch[0], /text-anchor="middle"/);
-    const subtitleMatch = result.svgMarkup.match(/<text[^>]*font-weight="600"[^>]*>/);
-    assert.ok(subtitleMatch, 'expected subtitle text element with font-weight 600');
+    const subtitleMatch = result.svgMarkup.match(/<text[^>]*font-weight="300"[^>]*>/);
+    assert.ok(subtitleMatch, 'expected subtitle text element with font-weight 300');
     assert.match(subtitleMatch[0], /text-anchor="middle"/);
   } finally {
     clearPresetOverrides();
