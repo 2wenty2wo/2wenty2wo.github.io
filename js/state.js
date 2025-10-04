@@ -29,6 +29,8 @@ export const state = {
   resistorValue: '',
   capacitorValue: '',
   diodeValue: '',
+  mosfetChannel: '',
+  mosfetPart: '',
   potentiometerValue: '',
   potentiometerTaper: '',
   bearingType: '',

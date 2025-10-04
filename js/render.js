@@ -10,6 +10,8 @@ import {
   syncComponentMountPicker,
   syncResistorValuePicker,
   syncCapacitorValuePicker,
+  syncMosfetChannelPicker,
+  syncMosfetPartPicker,
   syncPotentiometerValuePicker,
   syncPotentiometerTaperPicker,
   syncBearingTypePicker,
@@ -35,6 +37,8 @@ import {
   electricalComponentTypes,
   componentImageMap,
   diodeValueLabelMap,
+  mosfetChannelLabelMap,
+  mosfetPartLabelMap,
 } from './data.js';
 import {
   renderLabelSVG,
@@ -105,6 +109,12 @@ const {
   capacitorValueField,
   capacitorValueSelect,
   capacitorValueMessage,
+  mosfetChannelField,
+  mosfetChannelSelect,
+  mosfetChannelMessage,
+  mosfetPartField,
+  mosfetPartSelect,
+  mosfetPartMessage,
   potentiometerValueField,
   potentiometerValueSelect,
   potentiometerValueMessage,
@@ -356,11 +366,20 @@ export function isLabelReady() {
     const requiresResistorValue = category === 'Resistor';
     const requiresCapacitorValue = category === 'Capacitor';
     const requiresPotentiometerDetails = category === 'Potentiometer';
+    const requiresMosfetDetails = category === 'MOSFET';
     if (requiresResistorValue) {
       return Boolean(state.componentCategory && state.componentMount && state.resistorValue);
     }
     if (requiresCapacitorValue) {
       return Boolean(state.componentCategory && state.componentMount && state.capacitorValue);
+    }
+    if (requiresMosfetDetails) {
+      return Boolean(
+        state.componentCategory &&
+          state.componentMount &&
+          state.mosfetChannel &&
+          state.mosfetPart,
+      );
     }
     if (requiresPotentiometerDetails) {
       return Boolean(
@@ -659,9 +678,12 @@ function applyValidationFeedback() {
     const category = (state.componentCategory || state.hardwareType || '').trim();
     const requiresResistorValue = category === 'Resistor';
     const requiresCapacitorValue = category === 'Capacitor';
+    const requiresMosfetDetails = category === 'MOSFET';
     const requiresPotentiometerValue = category === 'Potentiometer';
     const resistorValid = !requiresResistorValue || Boolean(state.resistorValue);
     const capacitorValid = !requiresCapacitorValue || Boolean(state.capacitorValue);
+    const mosfetChannelValid = !requiresMosfetDetails || Boolean(state.mosfetChannel);
+    const mosfetPartValid = !requiresMosfetDetails || Boolean(state.mosfetPart);
     const potentiometerValueValid =
       !requiresPotentiometerValue || Boolean(state.potentiometerValue);
     const potentiometerTaperValid =
@@ -681,6 +703,20 @@ function applyValidationFeedback() {
       message: '',
     });
     updateInputFieldState({
+      input: mosfetChannelSelect,
+      container: mosfetChannelField,
+      messageElement: mosfetChannelMessage,
+      valid: mosfetChannelValid,
+      message: mosfetChannelValid ? '' : 'Select a channel type',
+    });
+    updateInputFieldState({
+      input: mosfetPartSelect,
+      container: mosfetPartField,
+      messageElement: mosfetPartMessage,
+      valid: mosfetPartValid,
+      message: mosfetPartValid ? '' : 'Choose a MOSFET part number',
+    });
+    updateInputFieldState({
       input: potentiometerValueSelect,
       container: potentiometerValueField,
       messageElement: potentiometerValueMessage,
@@ -696,6 +732,8 @@ function applyValidationFeedback() {
     });
     syncResistorValuePicker({ isValid: resistorValid });
     syncCapacitorValuePicker({ isValid: capacitorValid });
+    syncMosfetChannelPicker({ isValid: mosfetChannelValid });
+    syncMosfetPartPicker({ isValid: mosfetPartValid });
     syncPotentiometerValuePicker({ isValid: potentiometerValueValid });
     syncPotentiometerTaperPicker({ isValid: potentiometerTaperValid });
   } else {
@@ -727,8 +765,24 @@ function applyValidationFeedback() {
       valid: true,
       message: '',
     });
+    updateInputFieldState({
+      input: mosfetChannelSelect,
+      container: mosfetChannelField,
+      messageElement: mosfetChannelMessage,
+      valid: true,
+      message: '',
+    });
+    updateInputFieldState({
+      input: mosfetPartSelect,
+      container: mosfetPartField,
+      messageElement: mosfetPartMessage,
+      valid: true,
+      message: '',
+    });
     syncResistorValuePicker({ isValid: true });
     syncCapacitorValuePicker({ isValid: true });
+    syncMosfetChannelPicker({ isValid: true });
+    syncMosfetPartPicker({ isValid: true });
     updateInputFieldState({
       input: potentiometerValueSelect,
       container: potentiometerValueField,
@@ -1290,6 +1344,33 @@ function buildTextLines() {
         line3Parts.push(state.notes);
       }
       return applyTextVisibility({ line1, line2, line3: line3Parts.join(' — ') });
+    }
+    if (category === 'MOSFET') {
+      const channelId = state.mosfetChannel || '';
+      const partId = state.mosfetPart || '';
+      const channelLabel = channelId ? mosfetChannelLabelMap[channelId] || channelId : '';
+      const partLabel = partId ? mosfetPartLabelMap[partId] || partId : '';
+      const line1 = partLabel || 'MOSFET';
+      const line2Parts = [];
+      if (channelLabel) {
+        line2Parts.push(channelLabel);
+      }
+      const includesMosfet = channelLabel.toLowerCase().includes('mosfet');
+      if (!includesMosfet) {
+        line2Parts.push('MOSFET');
+      }
+      const line3Parts = [];
+      if (state.componentMount) {
+        line3Parts.push(state.componentMount);
+      }
+      if (state.notes) {
+        line3Parts.push(state.notes);
+      }
+      return applyTextVisibility({
+        line1,
+        line2: line2Parts.filter(Boolean).join(' — '),
+        line3: line3Parts.join(' — '),
+      });
     }
     if (category === 'Potentiometer') {
       const line1 = state.potentiometerValue || 'Potentiometer';

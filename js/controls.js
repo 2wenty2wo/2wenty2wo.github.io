@@ -13,6 +13,8 @@ import {
   populateResistorValues,
   populateCapacitorValues,
   populateDiodeValues,
+  populateMosfetChannels,
+  populateMosfetParts,
   populatePotentiometerValues,
   populatePotentiometerTapers,
   populateWasherTypeOptions,
@@ -34,6 +36,8 @@ import {
   setResistorValueSelection,
   setCapacitorValueSelection,
   setDiodeValueSelection,
+  setMosfetChannelSelection,
+  setMosfetPartSelection,
   setPotentiometerValueSelection,
   setPotentiometerTaperSelection,
   syncConnectorSeriesPicker,
@@ -104,6 +108,8 @@ function applyStateToControls() {
   setResistorValueSelection(state.resistorValue || '', { triggerUpdate: false });
   setCapacitorValueSelection(state.capacitorValue || '', { triggerUpdate: false });
   setDiodeValueSelection(state.diodeValue || '', { triggerUpdate: false });
+  setMosfetChannelSelection(state.mosfetChannel || '', { triggerUpdate: false });
+  setMosfetPartSelection(state.mosfetPart || '', { triggerUpdate: false });
   setPotentiometerValueSelection(state.potentiometerValue || '', { triggerUpdate: false });
   setPotentiometerTaperSelection(state.potentiometerTaper || '', { triggerUpdate: false });
   updateComponentValueUi({ resetIfHidden: false });
@@ -179,6 +185,8 @@ function init() {
   populateResistorValues();
   populateCapacitorValues();
   populateDiodeValues();
+  populateMosfetChannels();
+  populateMosfetParts();
   populatePotentiometerValues();
   populatePotentiometerTapers();
   populateWasherTypeOptions();

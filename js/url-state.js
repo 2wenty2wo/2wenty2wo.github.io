@@ -15,6 +15,8 @@ import {
   resistorValueOptions,
   capacitorValueOptions,
   diodeValueOptions,
+  mosfetChannelOptions,
+  mosfetPartOptions,
   potentiometerValueOptions,
   potentiometerTaperOptions,
 } from './data.js';
@@ -50,6 +52,8 @@ const FIELD_MAP = {
   resistorValue: 'rv',
   capacitorValue: 'cv',
   diodeValue: 'dv',
+  mosfetChannel: 'mc',
+  mosfetPart: 'mp',
   potentiometerValue: 'pv',
   potentiometerTaper: 'pt',
   bearingType: 'bt',
@@ -84,6 +88,8 @@ const componentMountOptions = new Set(componentMountOptionList.map(option => opt
 const resistorValueOptionSet = new Set(resistorValueOptions.map(option => option.id));
 const capacitorValueOptionSet = new Set(capacitorValueOptions.map(option => option.id));
 const diodeValueOptionSet = new Set(diodeValueOptions.map(option => option.id));
+const mosfetChannelOptionSet = new Set(mosfetChannelOptions.map(option => option.id));
+const mosfetPartOptionSet = new Set(mosfetPartOptions.map(option => option.id));
 const potentiometerValueOptionSet = new Set(
   potentiometerValueOptions.map(option => option.id),
 );
@@ -356,6 +362,15 @@ function applyExpandedPayload(expanded) {
     state.diodeValue = expanded.diodeValue;
   }
   if (
+    typeof expanded.mosfetChannel === 'string' &&
+    mosfetChannelOptionSet.has(expanded.mosfetChannel)
+  ) {
+    state.mosfetChannel = expanded.mosfetChannel;
+  }
+  if (typeof expanded.mosfetPart === 'string' && mosfetPartOptionSet.has(expanded.mosfetPart)) {
+    state.mosfetPart = expanded.mosfetPart;
+  }
+  if (
     typeof expanded.potentiometerValue === 'string' &&
     potentiometerValueOptionSet.has(expanded.potentiometerValue)
   ) {
@@ -383,6 +398,8 @@ function applyExpandedPayload(expanded) {
     state.resistorValue = '';
     state.capacitorValue = '';
     state.diodeValue = '';
+    state.mosfetChannel = '';
+    state.mosfetPart = '';
     state.potentiometerValue = '';
     state.potentiometerTaper = '';
   }
@@ -396,6 +413,10 @@ function applyExpandedPayload(expanded) {
   }
   if (activeCategory !== 'Diode') {
     state.diodeValue = '';
+  }
+  if (activeCategory !== 'MOSFET') {
+    state.mosfetChannel = '';
+    state.mosfetPart = '';
   }
   if (activeCategory !== 'Potentiometer') {
     state.potentiometerValue = '';
