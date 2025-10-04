@@ -1,17 +1,17 @@
 export const defaultLayoutPresets = {
   9: {
-    padding_mm: 1.2,
-    media_zone_width_pct: 34,
-    media_zone_width_pct_min: 30,
-    media_zone_width_pct_max: 38,
-    media_zone_width_pct_max_user: 38,
+    padding_mm: 0,
+    media_zone_width_pct: 38,
+    media_zone_width_pct_min: 32,
+    media_zone_width_pct_max: 44,
+    media_zone_width_pct_max_user: 44,
     icon_layout: 'row',
     icon_gap_mm: 0.5,
     icon_min_mm: 3.2,
     text_zone: {
       top_pct: 58,
       gap_mm: 0.5,
-      alignment: 'start',
+      alignment: 'middle',
       main: {
         min_pt: 7.5,
         max_pt: 11,
@@ -19,33 +19,33 @@ export const defaultLayoutPresets = {
         font_weight: 700,
       },
       sub: {
-        min_pt: 6.8,
-        max_pt: 8.5,
+        min_pt: 6.2,
+        max_pt: 9,
         line_height_pct: 110,
       },
-      compact_join_subtitles: true,
+      compact_join_subtitles: false,
       compact_separator: ' \u00b7 ',
     },
     qr: {
-      side_mm: 7,
+      side_mm: 6.5,
       margin_mm: 0.5,
       location: 'top-right',
-      max_pct_of_text_zone_width: 35,
+      max_pct_of_text_zone_width: 36,
     },
   },
   12: {
-    padding_mm: 1.4,
-    media_zone_width_pct: 36,
-    media_zone_width_pct_min: 32,
-    media_zone_width_pct_max: 40,
-    media_zone_width_pct_max_user: 40,
+    padding_mm: 0,
+    media_zone_width_pct: 40,
+    media_zone_width_pct_min: 34,
+    media_zone_width_pct_max: 46,
+    media_zone_width_pct_max_user: 46,
     icon_layout: 'row',
     icon_gap_mm: 0.7,
     icon_min_mm: 4.2,
     text_zone: {
       top_pct: 58,
       gap_mm: 0.6,
-      alignment: 'start',
+      alignment: 'middle',
       main: {
         min_pt: 8.5,
         max_pt: 14,
@@ -53,18 +53,18 @@ export const defaultLayoutPresets = {
         font_weight: 700,
       },
       sub: {
-        min_pt: 7.2,
+        min_pt: 6.8,
         max_pt: 10.5,
-        line_height_pct: 115,
+        line_height_pct: 112,
       },
-      compact_join_subtitles: true,
+      compact_join_subtitles: false,
       compact_separator: ' \u00b7 ',
     },
     qr: {
-      side_mm: 9,
+      side_mm: 8.5,
       margin_mm: 0.6,
       location: 'top-right',
-      max_pct_of_text_zone_width: 34,
+      max_pct_of_text_zone_width: 36,
     },
   },
   18: {
@@ -102,18 +102,18 @@ export const defaultLayoutPresets = {
     },
   },
   24: {
-    padding_mm: 1.8,
-    media_zone_width_pct: 32,
-    media_zone_width_pct_min: 26,
-    media_zone_width_pct_max: 36,
-    media_zone_width_pct_max_user: 36,
+    padding_mm: 0,
+    media_zone_width_pct: 34,
+    media_zone_width_pct_min: 30,
+    media_zone_width_pct_max: 40,
+    media_zone_width_pct_max_user: 40,
     icon_layout: 'column',
     icon_gap_mm: 1,
     icon_min_mm: 7.5,
     text_zone: {
       top_pct: 60,
       gap_mm: 1,
-      alignment: 'start',
+      alignment: 'middle',
       main: {
         min_pt: 10,
         max_pt: 24,
@@ -121,23 +121,25 @@ export const defaultLayoutPresets = {
         font_weight: 700,
       },
       sub: {
-        min_pt: 9,
-        max_pt: 15,
-        line_height_pct: 125,
+        min_pt: 8.5,
+        max_pt: 14.5,
+        line_height_pct: 120,
       },
-      compact_join_subtitles: false,
+      compact_join_subtitles: true,
       compact_separator: ' \u00b7 ',
     },
     qr: {
-      side_mm: 14,
-      margin_mm: 1,
+      side_mm: 13,
+      margin_mm: 0.8,
       location: 'top-right',
-      max_pct_of_text_zone_width: 30,
+      max_pct_of_text_zone_width: 32,
     },
   },
 };
 
-const STORAGE_KEY = 'gridfinity-layout-presets';
+const STORAGE_VERSION = 2;
+const STORAGE_KEY = `gridfinity-layout-presets:v${STORAGE_VERSION}`;
+const LEGACY_STORAGE_KEYS = ['gridfinity-layout-presets'];
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -166,6 +168,13 @@ export function loadPresetOverrides() {
     overridesCache = {};
     return overridesCache;
   }
+  LEGACY_STORAGE_KEYS.forEach(key => {
+    try {
+      storage.removeItem(key);
+    } catch (error) {
+      console.warn(`Unable to clear legacy layout preset storage key: ${key}.`, error);
+    }
+  });
   try {
     const raw = storage.getItem(STORAGE_KEY);
     if (!raw) {
@@ -191,6 +200,9 @@ export function savePresetOverrides(overrides) {
     return;
   }
   try {
+    LEGACY_STORAGE_KEYS.forEach(key => {
+      storage.removeItem(key);
+    });
     if (overridesCache && Object.keys(overridesCache).length > 0) {
       storage.setItem(STORAGE_KEY, JSON.stringify(overridesCache));
     } else {
