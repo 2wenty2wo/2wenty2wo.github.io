@@ -431,6 +431,18 @@ function bindPresetInputs(panel, heightKey) {
       onChange: value => setValue('text_zone.gap_mm', value),
     }),
   );
+  body.appendChild(
+    createSelectField({
+      label: 'Text alignment',
+      value: preset.text_zone.alignment || 'start',
+      options: [
+        { label: 'Left', value: 'start' },
+        { label: 'Center', value: 'middle' },
+        { label: 'Right', value: 'end' },
+      ],
+      onChange: value => setValue('text_zone.alignment', value),
+    }),
+  );
 
   addSectionTitle('Main line');
   body.appendChild(

@@ -583,21 +583,55 @@ function buildSubtitleCandidates(textLines, preset) {
   return candidates.filter(candidate => candidate.length > 0);
 }
 
+function resolveTextAlignment(alignment) {
+  const normalized = typeof alignment === 'string' ? alignment.toLowerCase() : '';
+  if (normalized === 'middle' || normalized === 'center') {
+    return 'middle';
+  }
+  if (normalized === 'end' || normalized === 'right') {
+    return 'end';
+  }
+  return 'start';
+}
+
+function computeAlignedX(zoneX, availableWidth, alignment) {
+  if (!(availableWidth > 0)) {
+    return zoneX;
+  }
+  if (alignment === 'end') {
+    return zoneX + availableWidth;
+  }
+  if (alignment === 'middle') {
+    return zoneX + availableWidth / 2;
+  }
+  return zoneX;
+}
+
 export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
   const mainText = (textLines.line1 || '').trim();
   const textPreset = preset.text_zone || {};
   const zones = computeTextZones({ textRect, preset, pxPerMm });
+  const alignment = resolveTextAlignment(textPreset.alignment);
+  const qrSizePx =
+    qrBounds && Number.isFinite(qrBounds.size)
+      ? qrBounds.size
+      : qrBounds && Number.isFinite(qrBounds.width)
+      ? qrBounds.width
+      : 0;
+  const qrMarginPx = qrBounds ? mmToPx(preset.qr?.margin_mm || 0, pxPerMm) : 0;
+  const qrReservedWidthPx = Math.max(0, qrSizePx + qrMarginPx);
+  const mainWidthPx = Math.max(0, zones.main.width - qrReservedWidthPx);
   const mainFit = fitSingleLineText({
     text: mainText,
     fontWeight: 800,
     minPt: textPreset.main?.min_pt ?? 8,
     maxPt: textPreset.main?.max_pt ?? 16,
-    widthPx: Math.max(0, zones.main.width - (qrBounds ? qrBounds.width : 0)),
+    widthPx: mainWidthPx,
     pxPerMm,
     letterSpacingLimit: textPreset.main?.letter_spacing_adj || -0.3,
   });
   const mainHeight = mainFit.text ? mainFit.fontSizePx : 0;
-  const mainX = zones.main.x;
+  const mainX = computeAlignedX(zones.main.x, mainWidthPx, alignment);
 
   const subtitleCandidates = buildSubtitleCandidates(textLines, preset);
   let subtitleFit = {
@@ -616,7 +650,7 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
         minPt: textPreset.sub?.min_pt ?? 7,
         maxPt: textPreset.sub?.max_pt ?? 11,
         lineHeightPct: textPreset.sub?.line_height_pct ?? 115,
-        widthPx: zones.sub.width - (qrBounds ? qrBounds.width : 0),
+        widthPx: Math.max(0, zones.sub.width - qrReservedWidthPx),
         heightPx: zones.sub.height,
         pxPerMm,
       }),
@@ -668,6 +702,8 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
     subtitleLineCount > 0
       ? subtitleFit.fontSizePx + subtitleFit.lineHeightPx * (subtitleLineCount - 1)
       : 0;
+  const subtitleWidthPx = Math.max(0, zones.sub.width - qrReservedWidthPx);
+  const subtitleX = computeAlignedX(zones.sub.x, subtitleWidthPx, alignment);
 
   let blockHeight = 0;
   if (mainHeight > 0) {
@@ -695,6 +731,8 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
     ...subtitleFit,
     height: subtitleHeight,
     lineCount: subtitleLineCount,
+    anchor: alignment,
+    x: subtitleX,
   };
 
   return {
@@ -705,6 +743,7 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
       baseline: mainBaseline,
       height: mainHeight,
       x: mainX,
+      anchor: alignment,
     },
     sub: subtitle,
     zones,
@@ -1059,15 +1098,19 @@ export async function renderLabelSVG({
 
   if (textLayout.main.text) {
     const mainCenterY = textLayout.main.baseline;
+    const mainAnchor = textLayout.main.anchor || 'start';
+    const mainX = textLayout.main.x ?? textLayout.zones.main.x;
     innerParts.push(
-      `<text x="${formatNumber(textLayout.main.x)}" y="${formatNumber(mainCenterY)}" font-family=${JSON.stringify(LABEL_FONT_FAMILY)} font-weight="800" font-size="${formatNumber(textLayout.main.fontSizePx)}" letter-spacing="${formatNumber(textLayout.main.letterSpacingPx)}" dominant-baseline="middle" fill="${LABEL_TEXT_COLOR}">${escapeXml(textLayout.main.text)}</text>`,
+      `<text x="${formatNumber(mainX)}" y="${formatNumber(mainCenterY)}" text-anchor="${mainAnchor}" font-family=${JSON.stringify(LABEL_FONT_FAMILY)} font-weight="800" font-size="${formatNumber(textLayout.main.fontSizePx)}" letter-spacing="${formatNumber(textLayout.main.letterSpacingPx)}" dominant-baseline="middle" fill="${LABEL_TEXT_COLOR}">${escapeXml(textLayout.main.text)}</text>`,
     );
   }
   if (textLayout.sub && textLayout.sub.lineCount > 0) {
     let lineCenter = textLayout.zones.sub.y + textLayout.sub.fontSizePx / 2;
+    const subAnchor = textLayout.sub.anchor || 'start';
+    const subX = textLayout.sub.x ?? textLayout.zones.sub.x;
     textLayout.sub.lines.forEach(line => {
       innerParts.push(
-        `<text x="${formatNumber(textLayout.zones.sub.x)}" y="${formatNumber(lineCenter)}" font-family=${JSON.stringify(LABEL_FONT_FAMILY)} font-weight="600" font-size="${formatNumber(textLayout.sub.fontSizePx)}" letter-spacing="${formatNumber(textLayout.sub.letterSpacingPx || 0)}" dominant-baseline="middle" fill="${LABEL_TEXT_COLOR}">${escapeXml(line)}</text>`,
+        `<text x="${formatNumber(subX)}" y="${formatNumber(lineCenter)}" text-anchor="${subAnchor}" font-family=${JSON.stringify(LABEL_FONT_FAMILY)} font-weight="600" font-size="${formatNumber(textLayout.sub.fontSizePx)}" letter-spacing="${formatNumber(textLayout.sub.letterSpacingPx || 0)}" dominant-baseline="middle" fill="${LABEL_TEXT_COLOR}">${escapeXml(line)}</text>`,
       );
       lineCenter += textLayout.sub.lineHeightPx;
     });

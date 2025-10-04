@@ -11,6 +11,7 @@ export const defaultLayoutPresets = {
     text_zone: {
       top_pct: 58,
       gap_mm: 0.5,
+      alignment: 'start',
       main: {
         min_pt: 7.5,
         max_pt: 11,
@@ -43,6 +44,7 @@ export const defaultLayoutPresets = {
     text_zone: {
       top_pct: 58,
       gap_mm: 0.6,
+      alignment: 'start',
       main: {
         min_pt: 8.5,
         max_pt: 14,
@@ -75,6 +77,7 @@ export const defaultLayoutPresets = {
     text_zone: {
       top_pct: 60,
       gap_mm: 0.8,
+      alignment: 'start',
       main: {
         min_pt: 9.5,
         max_pt: 20,
@@ -107,6 +110,7 @@ export const defaultLayoutPresets = {
     text_zone: {
       top_pct: 60,
       gap_mm: 1,
+      alignment: 'start',
       main: {
         min_pt: 10,
         max_pt: 24,

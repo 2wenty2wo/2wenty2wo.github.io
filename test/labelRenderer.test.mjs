@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { renderLabelSVG, fitTextToBox, mmToPx } from '../js/label/renderLabelSVG.js';
+import { renderLabelSVG, fitTextToBox, mmToPx, layoutText } from '../js/label/renderLabelSVG.js';
 import {
   setPresetOverride,
   clearPresetOverrides,
@@ -172,6 +172,50 @@ test('single-line labels center the main baseline within the text rect', async (
   );
 });
 
+test('middle text alignment centers both main and subtitle anchors', async () => {
+  clearPresetOverrides();
+  try {
+    const geometry = {
+      labelWidthMm: 37,
+      labelHeightMm: 12,
+      printableWidthMm: 33,
+      printableHeightMm: 10,
+      marginX: 2,
+      marginY: 1,
+    };
+    setPresetOverride(geometry.printableHeightMm, {
+      text_zone: { alignment: 'middle' },
+    });
+    const textLines = { line1: 'Centered', line2: 'Subtitle', line3: '' };
+    const result = await renderLabelSVG({
+      geometry,
+      pxPerMm,
+      textLines,
+      hardwareInfo: null,
+      qrContent: '',
+    });
+    const expectedCenterX = result.textRect.x + result.textRect.width / 2;
+    assert.equal(result.textLayout.main.anchor, 'middle');
+    assert.equal(result.textLayout.sub.anchor, 'middle');
+    assert.ok(
+      Math.abs(result.textLayout.main.x - expectedCenterX) < 0.51,
+      `main anchor (${result.textLayout.main.x.toFixed(2)}) should equal text rect midpoint (${expectedCenterX.toFixed(2)})`,
+    );
+    assert.ok(
+      Math.abs(result.textLayout.sub.x - expectedCenterX) < 0.51,
+      `subtitle anchor (${result.textLayout.sub.x.toFixed(2)}) should equal text rect midpoint (${expectedCenterX.toFixed(2)})`,
+    );
+    const mainMatch = result.svgMarkup.match(/<text[^>]*font-weight="800"[^>]*>/);
+    assert.ok(mainMatch, 'expected main text element with font-weight 800');
+    assert.match(mainMatch[0], /text-anchor="middle"/);
+    const subtitleMatch = result.svgMarkup.match(/<text[^>]*font-weight="600"[^>]*>/);
+    assert.ok(subtitleMatch, 'expected subtitle text element with font-weight 600');
+    assert.match(subtitleMatch[0], /text-anchor="middle"/);
+  } finally {
+    clearPresetOverrides();
+  }
+});
+
 test('main line shrinks before ellipsizing', async () => {
   const geometry = {
     labelWidthMm: 80,
@@ -263,6 +307,75 @@ test('QR generator hook places QR image alongside text', async () => {
   const textMatches = [...result.svgMarkup.matchAll(/<text[^>]+x="([^"]+)"[^>]+y="([^"]+)"/g)];
   assert.ok(textMatches.length >= 1, 'text should remain present alongside QR');
   assert.ok(images[0].x > Number(textMatches[0][1]), 'QR should appear to the right of text content');
+});
+
+test('end text alignment anchors text to the right edge when QR is absent', async () => {
+  clearPresetOverrides();
+  try {
+    const geometry = {
+      labelWidthMm: 37,
+      labelHeightMm: 12,
+      printableWidthMm: 33,
+      printableHeightMm: 10,
+      marginX: 2,
+      marginY: 1,
+    };
+    setPresetOverride(geometry.printableHeightMm, {
+      text_zone: { alignment: 'end' },
+    });
+    const result = await renderLabelSVG({
+      geometry,
+      pxPerMm,
+      textLines: { line1: 'Right Edge', line2: 'Subtitle', line3: '' },
+      hardwareInfo: null,
+      qrContent: '',
+    });
+    const expectedRightX = result.textRect.x + result.textRect.width;
+    assert.equal(result.textLayout.main.anchor, 'end');
+    assert.equal(result.textLayout.sub.anchor, 'end');
+    assert.ok(
+      Math.abs(result.textLayout.main.x - expectedRightX) < 0.51,
+      `main anchor (${result.textLayout.main.x.toFixed(2)}) should equal text rect right edge (${expectedRightX.toFixed(2)})`,
+    );
+    assert.ok(
+      Math.abs(result.textLayout.sub.x - expectedRightX) < 0.51,
+      `subtitle anchor (${result.textLayout.sub.x.toFixed(2)}) should equal text rect right edge (${expectedRightX.toFixed(2)})`,
+    );
+    const mainMatch = result.svgMarkup.match(/<text[^>]*font-weight="800"[^>]*>/);
+    assert.ok(mainMatch, 'expected main text element');
+    assert.match(mainMatch[0], /text-anchor="end"/);
+  } finally {
+    clearPresetOverrides();
+  }
+});
+
+test('layoutText keeps end-aligned anchors clear of QR bounds', () => {
+  clearPresetOverrides();
+  try {
+    const preset = getActiveLayoutPreset(12);
+    const override = {
+      ...preset,
+      text_zone: { ...preset.text_zone, alignment: 'end' },
+    };
+    const textRect = { x: 20, y: 10, width: 160, height: 60 };
+    const qrSizePx = 48;
+    const qrMarginPx = mmToPx(override.qr.margin_mm || 0, pxPerMm);
+    const layout = layoutText({
+      textLines: { line1: 'QR Label', line2: '', line3: '' },
+      textRect,
+      preset: override,
+      pxPerMm,
+      qrBounds: { size: qrSizePx },
+    });
+    const expectedAnchor = textRect.x + textRect.width - (qrSizePx + qrMarginPx);
+    assert.equal(layout.main.anchor, 'end');
+    assert.ok(
+      Math.abs(layout.main.x - expectedAnchor) < 0.51,
+      `main anchor (${layout.main.x.toFixed(2)}) should align with QR clearance (${expectedAnchor.toFixed(2)})`,
+    );
+  } finally {
+    clearPresetOverrides();
+  }
 });
 
 test('cropToPrintable output trims exported dimensions to printable area', async () => {
