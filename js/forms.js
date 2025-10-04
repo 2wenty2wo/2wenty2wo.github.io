@@ -5264,7 +5264,8 @@ export function onHardwareTypeChange() {
         showComponentFields ||
         showFuseFields ||
         showSwitchFields ||
-        showNutFields,
+        showNutFields ||
+        showWasherFields,
     );
   }
   if (standardLabel) {
@@ -5274,13 +5275,21 @@ export function onHardwareTypeChange() {
       standardLabel.textContent = defaultStandardLabel;
     }
     const hideStandardLabel =
-      showFastenerFields || showFuseFields || showSwitchFields || showNutFields;
+      showFastenerFields ||
+      showFuseFields ||
+      showSwitchFields ||
+      showNutFields ||
+      showWasherFields;
     standardLabel.classList.toggle('d-none', hideStandardLabel);
     standardLabel.setAttribute('for', hideStandardLabel ? 'bolt-head-select' : 'standard-select');
   }
   if (standardSelect) {
     const hideStandardSelect =
-      showFastenerFields || showFuseFields || showSwitchFields || showNutFields;
+      showFastenerFields ||
+      showFuseFields ||
+      showSwitchFields ||
+      showNutFields ||
+      showWasherFields;
     standardSelect.classList.toggle('d-none', hideStandardSelect);
     standardSelect.hidden = hideStandardSelect;
     if (hideStandardSelect) {
