@@ -207,12 +207,45 @@ function attachPanelStyles() {
       background: rgba(15, 23, 42, 0.6);
       color: #f8fafc;
     }
-    .layout-editor-section-title {
-      margin: 1rem 0 0.25rem;
-      font-size: 0.9rem;
+    .layout-editor-section {
+      background: rgba(15, 23, 42, 0.55);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 10px;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.25);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+    .layout-editor-section__header {
+      position: sticky;
+      top: 0;
+      background: linear-gradient(
+        180deg,
+        rgba(15, 23, 42, 0.95) 0%,
+        rgba(15, 23, 42, 0.8) 100%
+      );
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 1;
+    }
+    .layout-editor-section__title {
+      margin: 0;
+      font-size: 0.75rem;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: rgba(226, 232, 240, 0.7);
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      color: rgba(226, 232, 240, 0.78);
+    }
+    .layout-editor-section__body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      background: rgba(15, 23, 42, 0.4);
     }
   `;
   document.head.appendChild(style);
@@ -246,6 +279,26 @@ function setupPanelActions(panel) {
       }
     });
   });
+}
+
+function createSection({ title }) {
+  const section = document.createElement('div');
+  section.className = 'layout-editor-section';
+
+  const header = document.createElement('div');
+  header.className = 'layout-editor-section__header';
+
+  const heading = document.createElement('h4');
+  heading.className = 'layout-editor-section__title';
+  heading.textContent = title;
+
+  const body = document.createElement('div');
+  body.className = 'layout-editor-section__body';
+
+  header.appendChild(heading);
+  section.append(header, body);
+
+  return { section, body };
 }
 
 function createNumberField({ label, min, max, step, value, onChange }) {
@@ -311,13 +364,6 @@ function bindPresetInputs(panel, heightKey) {
     notifyPresetListeners(heightKey);
   };
 
-  const addSectionTitle = title => {
-    const heading = document.createElement('div');
-    heading.className = 'layout-editor-section-title';
-    heading.textContent = title;
-    body.appendChild(heading);
-  };
-
   const createTextField = ({ label, value, onChange }) => {
     const field = document.createElement('div');
     field.className = 'layout-editor-field';
@@ -333,247 +379,224 @@ function bindPresetInputs(panel, heightKey) {
     return field;
   };
 
-  addSectionTitle('Padding & Zones');
-  body.appendChild(
-    createNumberField({
-      label: 'Padding (mm)',
-      min: 0,
-      max: 4,
-      step: 0.1,
-      value: preset.padding_mm,
-      onChange: value => setValue('padding_mm', value),
-    }),
-  );
-  body.appendChild(
-    createNumberField({
-      label: 'Media width %',
-      min: 10,
-      max: 100,
-      step: 0.5,
-      value: preset.media_zone_width_pct,
-      onChange: value => setValue('media_zone_width_pct', value),
-    }),
-  );
-  body.appendChild(
-    createNumberField({
-      label: 'Media width % min',
-      min: 5,
-      max: 100,
-      step: 0.5,
-      value: preset.media_zone_width_pct_min,
-      onChange: value => setValue('media_zone_width_pct_min', value),
-    }),
-  );
-  body.appendChild(
-    createNumberField({
-      label: 'Media width % max',
-      min: 5,
-      max: 100,
-      step: 0.5,
-      value: preset.media_zone_width_pct_max,
-      onChange: value => setValue('media_zone_width_pct_max', value),
-    }),
-  );
-  body.appendChild(
-    createNumberField({
-      label: 'Media width % max (user override)',
-      min: 5,
-      max: 100,
-      step: 0.5,
-      value: preset.media_zone_width_pct_max_user,
-      onChange: value => setValue('media_zone_width_pct_max_user', value),
-    }),
-  );
+  const addSection = (title, build) => {
+    const { section, body: sectionBody } = createSection({ title });
+    build(sectionBody);
+    body.appendChild(section);
+  };
 
-  addSectionTitle('Icons');
-  body.appendChild(
-    createSelectField({
-      label: 'Icon layout',
-      value: preset.icon_layout,
-      options: [
-        { label: 'Row', value: 'row' },
-        { label: 'Column', value: 'column' },
-      ],
-      onChange: value => setValue('icon_layout', value),
-    }),
-  );
-  body.appendChild(
-    createNumberField({
-      label: 'Icon gap (mm)',
-      min: 0,
-      max: 4,
-      step: 0.1,
-      value: preset.icon_gap_mm,
-      onChange: value => setValue('icon_gap_mm', value),
-    }),
-  );
-  body.appendChild(
-    createNumberField({
-      label: 'Icon min size (mm)',
-      min: 1,
-      max: 12,
-      step: 0.1,
-      value: preset.icon_min_mm,
-      onChange: value => setValue('icon_min_mm', value),
-    }),
-  );
+  addSection('Padding & Zones', sectionBody => {
+    sectionBody.append(
+      createNumberField({
+        label: 'Padding (mm)',
+        min: 0,
+        max: 4,
+        step: 0.1,
+        value: preset.padding_mm,
+        onChange: value => setValue('padding_mm', value),
+      }),
+      createNumberField({
+        label: 'Media width %',
+        min: 10,
+        max: 100,
+        step: 0.5,
+        value: preset.media_zone_width_pct,
+        onChange: value => setValue('media_zone_width_pct', value),
+      }),
+      createNumberField({
+        label: 'Media width % min',
+        min: 5,
+        max: 100,
+        step: 0.5,
+        value: preset.media_zone_width_pct_min,
+        onChange: value => setValue('media_zone_width_pct_min', value),
+      }),
+      createNumberField({
+        label: 'Media width % max',
+        min: 5,
+        max: 100,
+        step: 0.5,
+        value: preset.media_zone_width_pct_max,
+        onChange: value => setValue('media_zone_width_pct_max', value),
+      }),
+      createNumberField({
+        label: 'Media width % max (user override)',
+        min: 5,
+        max: 100,
+        step: 0.5,
+        value: preset.media_zone_width_pct_max_user,
+        onChange: value => setValue('media_zone_width_pct_max_user', value),
+      }),
+    );
+  });
 
-  addSectionTitle('Text Zones');
-  body.appendChild(
-    createNumberField({
-      label: 'Main zone %',
-      min: 20,
-      max: 80,
-      step: 0.5,
-      value: preset.text_zone.top_pct,
-      onChange: value => setValue('text_zone.top_pct', value),
-    }),
-  );
-  body.appendChild(
-    createNumberField({
-      label: 'Zone gap (mm)',
-      min: 0,
-      max: 2,
-      step: 0.05,
-      value: preset.text_zone.gap_mm,
-      onChange: value => setValue('text_zone.gap_mm', value),
-    }),
-  );
-  body.appendChild(
-    createSelectField({
-      label: 'Text alignment',
-      value: preset.text_zone.alignment || 'start',
-      options: [
-        { label: 'Left', value: 'start' },
-        { label: 'Center', value: 'middle' },
-        { label: 'Right', value: 'end' },
-      ],
-      onChange: value => setValue('text_zone.alignment', value),
-    }),
-  );
+  addSection('Icons', sectionBody => {
+    sectionBody.append(
+      createSelectField({
+        label: 'Icon layout',
+        value: preset.icon_layout,
+        options: [
+          { label: 'Row', value: 'row' },
+          { label: 'Column', value: 'column' },
+        ],
+        onChange: value => setValue('icon_layout', value),
+      }),
+      createNumberField({
+        label: 'Icon gap (mm)',
+        min: 0,
+        max: 4,
+        step: 0.1,
+        value: preset.icon_gap_mm,
+        onChange: value => setValue('icon_gap_mm', value),
+      }),
+      createNumberField({
+        label: 'Icon min size (mm)',
+        min: 1,
+        max: 12,
+        step: 0.1,
+        value: preset.icon_min_mm,
+        onChange: value => setValue('icon_min_mm', value),
+      }),
+    );
+  });
 
-  addSectionTitle('Main line');
-  body.appendChild(
-    createNumberField({
-      label: 'Min size (pt)',
-      min: 5,
-      max: 24,
-      step: 0.1,
-      value: preset.text_zone.main.min_pt,
-      onChange: value => setValue('text_zone.main.min_pt', value),
-    }),
-  );
-  body.appendChild(
-    createNumberField({
-      label: 'Max size (pt)',
-      min: 6,
-      max: 40,
-      step: 0.1,
-      value: preset.text_zone.main.max_pt,
-      onChange: value => setValue('text_zone.main.max_pt', value),
-    }),
-  );
-  body.appendChild(
-    createNumberField({
-      label: 'Letter spacing adj (px)',
-      min: -2,
-      max: 1,
-      step: 0.05,
-      value: preset.text_zone.main.letter_spacing_adj || 0,
-      onChange: value => setValue('text_zone.main.letter_spacing_adj', value),
-    }),
-  );
-  body.appendChild(
-    createSelectField({
-      label: 'Font weight',
-      value: String(Math.min(700, preset.text_zone.main.font_weight ?? 700)),
-      options: [{ label: 'Bold (700)', value: '700' }],
-      onChange: value => setValue('text_zone.main.font_weight', Number(value)),
-    }),
-  );
+  addSection('Text Zones', sectionBody => {
+    sectionBody.append(
+      createNumberField({
+        label: 'Main zone %',
+        min: 20,
+        max: 80,
+        step: 0.5,
+        value: preset.text_zone.top_pct,
+        onChange: value => setValue('text_zone.top_pct', value),
+      }),
+      createNumberField({
+        label: 'Zone gap (mm)',
+        min: 0,
+        max: 2,
+        step: 0.05,
+        value: preset.text_zone.gap_mm,
+        onChange: value => setValue('text_zone.gap_mm', value),
+      }),
+      createSelectField({
+        label: 'Text alignment',
+        value: preset.text_zone.alignment || 'start',
+        options: [
+          { label: 'Left', value: 'start' },
+          { label: 'Center', value: 'middle' },
+          { label: 'Right', value: 'end' },
+        ],
+        onChange: value => setValue('text_zone.alignment', value),
+      }),
+    );
+  });
 
-  addSectionTitle('Subtitles');
-  body.appendChild(
-    createNumberField({
-      label: 'Min size (pt)',
-      min: 4,
-      max: 16,
-      step: 0.1,
-      value: preset.text_zone.sub.min_pt,
-      onChange: value => setValue('text_zone.sub.min_pt', value),
-    }),
-  );
-  body.appendChild(
-    createNumberField({
-      label: 'Max size (pt)',
-      min: 4,
-      max: 24,
-      step: 0.1,
-      value: preset.text_zone.sub.max_pt,
-      onChange: value => setValue('text_zone.sub.max_pt', value),
-    }),
-  );
-  body.appendChild(
-    createNumberField({
-      label: 'Line height %',
-      min: 90,
-      max: 160,
-      step: 1,
-      value: preset.text_zone.sub.line_height_pct,
-      onChange: value => setValue('text_zone.sub.line_height_pct', value),
-    }),
-  );
-  body.appendChild(
-    createSelectField({
-      label: 'Compact subtitles',
-      value: preset.text_zone.compact_join_subtitles ? '1' : '0',
-      options: [
-        { label: 'Disabled', value: '0' },
-        { label: 'Enabled', value: '1' },
-      ],
-      onChange: value => setValue('text_zone.compact_join_subtitles', value === '1'),
-    }),
-  );
+  addSection('Main line', sectionBody => {
+    sectionBody.append(
+      createNumberField({
+        label: 'Min size (pt)',
+        min: 5,
+        max: 24,
+        step: 0.1,
+        value: preset.text_zone.main.min_pt,
+        onChange: value => setValue('text_zone.main.min_pt', value),
+      }),
+      createNumberField({
+        label: 'Max size (pt)',
+        min: 6,
+        max: 40,
+        step: 0.1,
+        value: preset.text_zone.main.max_pt,
+        onChange: value => setValue('text_zone.main.max_pt', value),
+      }),
+      createNumberField({
+        label: 'Letter spacing adj (px)',
+        min: -2,
+        max: 1,
+        step: 0.05,
+        value: preset.text_zone.main.letter_spacing_adj || 0,
+        onChange: value => setValue('text_zone.main.letter_spacing_adj', value),
+      }),
+      createSelectField({
+        label: 'Font weight',
+        value: String(Math.min(700, preset.text_zone.main.font_weight ?? 700)),
+        options: [{ label: 'Bold (700)', value: '700' }],
+        onChange: value => setValue('text_zone.main.font_weight', Number(value)),
+      }),
+    );
+  });
 
-  body.appendChild(
-    createTextField({
-      label: 'Compact separator',
-      value: preset.text_zone.compact_separator || ' · ',
-      onChange: value => setValue('text_zone.compact_separator', value),
-    }),
-  );
+  addSection('Subtitles', sectionBody => {
+    sectionBody.append(
+      createNumberField({
+        label: 'Min size (pt)',
+        min: 4,
+        max: 16,
+        step: 0.1,
+        value: preset.text_zone.sub.min_pt,
+        onChange: value => setValue('text_zone.sub.min_pt', value),
+      }),
+      createNumberField({
+        label: 'Max size (pt)',
+        min: 4,
+        max: 24,
+        step: 0.1,
+        value: preset.text_zone.sub.max_pt,
+        onChange: value => setValue('text_zone.sub.max_pt', value),
+      }),
+      createNumberField({
+        label: 'Line height %',
+        min: 90,
+        max: 160,
+        step: 1,
+        value: preset.text_zone.sub.line_height_pct,
+        onChange: value => setValue('text_zone.sub.line_height_pct', value),
+      }),
+      createSelectField({
+        label: 'Compact subtitles',
+        value: preset.text_zone.compact_join_subtitles ? '1' : '0',
+        options: [
+          { label: 'Disabled', value: '0' },
+          { label: 'Enabled', value: '1' },
+        ],
+        onChange: value => setValue('text_zone.compact_join_subtitles', value === '1'),
+      }),
+      createTextField({
+        label: 'Compact separator',
+        value: preset.text_zone.compact_separator || ' · ',
+        onChange: value => setValue('text_zone.compact_separator', value),
+      }),
+    );
+  });
 
-  addSectionTitle('QR');
-  body.appendChild(
-    createNumberField({
-      label: 'QR side (mm)',
-      min: 4,
-      max: 20,
-      step: 0.1,
-      value: preset.qr.side_mm,
-      onChange: value => setValue('qr.side_mm', value),
-    }),
-  );
-  body.appendChild(
-    createNumberField({
-      label: 'QR margin (mm)',
-      min: 0,
-      max: 4,
-      step: 0.1,
-      value: preset.qr.margin_mm,
-      onChange: value => setValue('qr.margin_mm', value),
-    }),
-  );
-  body.appendChild(
-    createNumberField({
-      label: 'QR max % text width',
-      min: 5,
-      max: 80,
-      step: 1,
-      value: preset.qr.max_pct_of_text_zone_width,
-      onChange: value => setValue('qr.max_pct_of_text_zone_width', value),
-    }),
-  );
+  addSection('QR', sectionBody => {
+    sectionBody.append(
+      createNumberField({
+        label: 'QR side (mm)',
+        min: 4,
+        max: 20,
+        step: 0.1,
+        value: preset.qr.side_mm,
+        onChange: value => setValue('qr.side_mm', value),
+      }),
+      createNumberField({
+        label: 'QR margin (mm)',
+        min: 0,
+        max: 4,
+        step: 0.1,
+        value: preset.qr.margin_mm,
+        onChange: value => setValue('qr.margin_mm', value),
+      }),
+      createNumberField({
+        label: 'QR max % text width',
+        min: 5,
+        max: 80,
+        step: 1,
+        value: preset.qr.max_pct_of_text_zone_width,
+        onChange: value => setValue('qr.max_pct_of_text_zone_width', value),
+      }),
+    );
+  });
 }
 
 function resolveHeightKeyFromContext(ctx) {
