@@ -121,6 +121,7 @@ let previewResizeObserver = null;
 let previewReadyState = false;
 let previewStatusFrameId = null;
 let previewRenderRequestId = 0;
+let layoutEditorRenderRequestId = 0;
 
 layoutPresetTools.subscribePresetChanges(() => {
   if (!previewContainer) {
@@ -1351,7 +1352,8 @@ export function updatePreview() {
 
   (async () => {
     try {
-      const result = await renderLabelSvgForState(geometry);
+      const layoutEditorToken = ++layoutEditorRenderRequestId;
+      const result = await renderLabelSvgForState(geometry, { layoutEditorToken });
       if (previewRenderRequestId !== requestId) {
         return;
       }
@@ -1406,7 +1408,7 @@ async function renderLabelSvgForState(geometryOverride, options = {}) {
   const textLines = buildTextLines();
   const hardwareInfo = resolveHardwareImageInfo();
   const qrContent = state.showQr && state.qrContent ? state.qrContent.trim() : '';
-  const { cropToPrintable = false } = options;
+  const { cropToPrintable = false, layoutEditorToken } = options;
   return renderLabelSVG({
     geometry,
     pxPerMm,
@@ -1415,6 +1417,7 @@ async function renderLabelSvgForState(geometryOverride, options = {}) {
     qrContent,
     minTextWidthMm: MIN_TEXT_WIDTH_MM,
     cropToPrintable,
+    layoutEditorToken,
   });
 }
 
@@ -1449,7 +1452,8 @@ async function rasterizeSvgToCanvas(svgMarkup, widthPx, heightPx, scale) {
 }
 
 export async function renderLabelPng() {
-  const result = await renderLabelSvgForState(undefined, { cropToPrintable: true });
+  const layoutEditorToken = ++layoutEditorRenderRequestId;
+  const result = await renderLabelSvgForState(undefined, { cropToPrintable: true, layoutEditorToken });
   const scale = getRasterScale();
   const canvas = await rasterizeSvgToCanvas(result.svgMarkup, result.widthPx, result.heightPx, scale);
   const blob = await canvasToBlob(canvas, 'image/png');
@@ -1464,6 +1468,7 @@ export async function renderLabelPng() {
 }
 
 export async function renderLabelSvgMarkup() {
-  const { svgMarkup } = await renderLabelSvgForState(undefined, { cropToPrintable: true });
+  const layoutEditorToken = ++layoutEditorRenderRequestId;
+  const { svgMarkup } = await renderLabelSvgForState(undefined, { cropToPrintable: true, layoutEditorToken });
   return svgMarkup;
 }
