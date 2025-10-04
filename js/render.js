@@ -1379,12 +1379,22 @@ export function updatePreview() {
     }
   })();
 }
+const LABEL_FONT_WEIGHTS = [600, 700, 800];
+let labelFontLoadPromise = null;
+
 async function ensureFontsReady() {
   if (typeof document === 'undefined' || !document.fonts || !document.fonts.ready) {
     return;
   }
   try {
-    await document.fonts.ready;
+    if (!labelFontLoadPromise && typeof document.fonts.load === 'function') {
+      const fontFamily = "'Oswald'";
+      const loadRequests = LABEL_FONT_WEIGHTS.map(weight =>
+        document.fonts.load(`${weight} 1em ${fontFamily}`),
+      );
+      labelFontLoadPromise = Promise.all(loadRequests);
+    }
+    await Promise.all([document.fonts.ready, labelFontLoadPromise].filter(Boolean));
   } catch (error) {
     console.warn('Unable to verify font readiness before export.', error);
   }
