@@ -39,7 +39,7 @@ export const defaultLayoutPresets = {
   },
   12: {
     padding_mm: 0,
-    media_zone_width_pct: 40,
+    media_zone_width_pct: 39.5,
     media_zone_width_pct_min: 34,
     media_zone_width_pct_max: 46,
     media_zone_width_pct_max_user: 46,
@@ -72,7 +72,7 @@ export const defaultLayoutPresets = {
       side_mm: 8.5,
       margin_mm: 0.9,
       location: 'top-right',
-      max_pct_of_text_zone_width: 36,
+      max_pct_of_text_zone_width: 32,
     },
   },
   18: {
@@ -137,7 +137,7 @@ export const defaultLayoutPresets = {
         font_weight: 700,
       },
       sub: {
-        min_pt: 8.8,
+        min_pt: 8,
         max_pt: 15,
         line_height_pct: 120,
       },
