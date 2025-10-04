@@ -575,6 +575,10 @@ function bindPresetInputs(panel, heightKey) {
   );
 }
 
+function resolveHeightKeyFromContext(ctx) {
+  return ctx?.geometry?.labelHeightMm || ctx?.geometry?.printableHeightMm || 12;
+}
+
 export function ensureLayoutEditor(context) {
   if (!isBrowser()) {
     return { active: false };
@@ -591,7 +595,7 @@ export function ensureLayoutEditor(context) {
         return;
       }
       const ctx = editorState.context;
-      const key = ctx?.geometry?.printableHeightMm || ctx?.geometry?.labelHeightMm || 12;
+      const key = resolveHeightKeyFromContext(ctx);
       bindPresetInputs(panel, key);
     });
     editorState.initialized = true;
@@ -607,7 +611,7 @@ export function ensureLayoutEditor(context) {
   }
   panel.classList.add('layout-editor-panel--active');
   editorState.context = context;
-  const key = context?.geometry?.printableHeightMm || context?.geometry?.labelHeightMm || 12;
+  const key = resolveHeightKeyFromContext(context);
   if (editorState.currentHeightKey !== key) {
     editorState.currentHeightKey = key;
     bindPresetInputs(panel, key);

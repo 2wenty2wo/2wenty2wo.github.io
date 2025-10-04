@@ -1061,7 +1061,7 @@ export async function renderLabelSVG({
   const outputHeightPx = cropToPrintable ? printable.height : labelHeightPx;
   const translationX = cropToPrintable ? -printable.x : 0;
   const translationY = cropToPrintable ? -printable.y : 0;
-  const preset = getActiveLayoutPreset(geometry.printableHeightMm || geometry.labelHeightMm);
+  const preset = getActiveLayoutPreset(geometry.labelHeightMm || geometry.printableHeightMm);
   const contentRect = computeContentRect(printable, preset, pxPerMm);
   const mediaItems = resolveMediaItems(hardwareInfo);
   let mediaWidthPx = computeMediaZoneWidth({

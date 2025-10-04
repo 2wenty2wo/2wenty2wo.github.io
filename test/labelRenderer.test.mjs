@@ -21,8 +21,19 @@ function extractImages(svgMarkup) {
   }));
 }
 
-function getPresetMainFontWeight(heightMm) {
-  const preset = getActiveLayoutPreset(heightMm);
+function resolvePresetHeightKey(geometryOrHeight) {
+  if (typeof geometryOrHeight === 'number') {
+    return geometryOrHeight;
+  }
+  if (!geometryOrHeight || typeof geometryOrHeight !== 'object') {
+    return undefined;
+  }
+  const { labelHeightMm, printableHeightMm } = geometryOrHeight;
+  return labelHeightMm ?? printableHeightMm;
+}
+
+function getPresetMainFontWeight(geometryOrHeight) {
+  const preset = getActiveLayoutPreset(resolvePresetHeightKey(geometryOrHeight));
   const stored = preset.text_zone?.main?.font_weight ?? 800;
   return Math.max(700, stored);
 }
@@ -115,7 +126,7 @@ test('37×18 mm labels stack bolt icons vertically with balanced spacing', async
   const [top, bottom] = images;
   assert.ok(Math.abs(top.x - bottom.x) < 2, 'icons should stay centered when stacked');
   assert.ok(bottom.y > top.y + top.height - 1, 'stacked icons should not overlap');
-  const mainFontWeight = getPresetMainFontWeight(geometry.printableHeightMm);
+  const mainFontWeight = getPresetMainFontWeight(geometry);
   const textMatches = findMainTextElements(result.svgMarkup, mainFontWeight);
   assert.equal(textMatches.length, 1, 'main line should render once');
   assert.equal(textMatches[0][1].trim(), 'M2 × 10', 'main line should remain intact');
@@ -132,7 +143,7 @@ test('main text font weight clamps legacy presets to bold minimum', async () => 
       marginX: 2,
       marginY: 1,
     };
-    setPresetOverride(geometry.printableHeightMm, {
+    setPresetOverride(geometry.labelHeightMm, {
       text_zone: {
         main: {
           font_weight: 600,
@@ -249,7 +260,7 @@ test('middle text alignment centers both main and subtitle anchors', async () =>
       marginX: 2,
       marginY: 1,
     };
-    setPresetOverride(geometry.printableHeightMm, {
+    setPresetOverride(geometry.labelHeightMm, {
       text_zone: { alignment: 'middle' },
     });
     const textLines = { line1: 'Centered', line2: 'Subtitle', line3: '' };
@@ -271,7 +282,7 @@ test('middle text alignment centers both main and subtitle anchors', async () =>
       Math.abs(result.textLayout.sub.x - expectedCenterX) < 0.51,
       `subtitle anchor (${result.textLayout.sub.x.toFixed(2)}) should equal text rect midpoint (${expectedCenterX.toFixed(2)})`,
     );
-    const mainFontWeight = getPresetMainFontWeight(geometry.printableHeightMm);
+    const mainFontWeight = getPresetMainFontWeight(geometry);
     const mainMatch = result.svgMarkup.match(new RegExp(`<text[^>]*font-weight="${mainFontWeight}"[^>]*>`));
     assert.ok(mainMatch, 'expected main text element with configured font weight');
     assert.match(mainMatch[0], /text-anchor="middle"/);
@@ -298,7 +309,7 @@ test('main line shrinks before ellipsizing', async () => {
     line3: '',
   };
   const result = await renderLabelSVG({ geometry, pxPerMm, textLines, hardwareInfo: null, qrContent: '' });
-  const mainFontWeight = getPresetMainFontWeight(geometry.printableHeightMm);
+  const mainFontWeight = getPresetMainFontWeight(geometry);
   const mainMatches = findMainTextElements(result.svgMarkup, mainFontWeight);
   assert.equal(mainMatches.length, 1, 'main line should render exactly once');
   assert.equal(mainMatches[0][1].trim(), 'M2.5 × 16 Countersunk Socket Cap');
@@ -319,7 +330,7 @@ test('main line only ellipsizes when unavoidable', async () => {
     line3: '',
   };
   const result = await renderLabelSVG({ geometry, pxPerMm, textLines, hardwareInfo: null, qrContent: '' });
-  const mainFontWeight = getPresetMainFontWeight(geometry.printableHeightMm);
+  const mainFontWeight = getPresetMainFontWeight(geometry);
   const mainMatches = findMainTextElements(result.svgMarkup, mainFontWeight);
   assert.equal(mainMatches.length, 1, 'main line should still occupy one line');
   assert.ok(mainMatches[0][1].trim().endsWith('…'), 'ellipsis should appear only when absolutely required');
@@ -336,7 +347,7 @@ test('main font weight follows preset overrides', async () => {
       marginX: 2,
       marginY: 1,
     };
-    setPresetOverride(geometry.printableHeightMm, {
+    setPresetOverride(geometry.labelHeightMm, {
       text_zone: { main: { font_weight: 600 } },
     });
     const textLines = { line1: 'Non-Bold', line2: '', line3: '' };
@@ -347,7 +358,7 @@ test('main font weight follows preset overrides', async () => {
       hardwareInfo: null,
       qrContent: '',
     });
-    const mainFontWeight = getPresetMainFontWeight(geometry.printableHeightMm);
+    const mainFontWeight = getPresetMainFontWeight(geometry);
     assert.equal(mainFontWeight, 700, 'override should clamp to bold minimum');
     const mainMatches = findMainTextElements(result.svgMarkup, mainFontWeight);
     assert.equal(mainMatches.length, 1, 'main line should render once with overridden weight');
@@ -422,7 +433,7 @@ test('end text alignment anchors text to the right edge when QR is absent', asyn
       marginX: 2,
       marginY: 1,
     };
-    setPresetOverride(geometry.printableHeightMm, {
+    setPresetOverride(geometry.labelHeightMm, {
       text_zone: { alignment: 'end' },
     });
     const result = await renderLabelSVG({
@@ -443,7 +454,7 @@ test('end text alignment anchors text to the right edge when QR is absent', asyn
       Math.abs(result.textLayout.sub.x - expectedRightX) < 0.51,
       `subtitle anchor (${result.textLayout.sub.x.toFixed(2)}) should equal text rect right edge (${expectedRightX.toFixed(2)})`,
     );
-    const mainFontWeight = getPresetMainFontWeight(geometry.printableHeightMm);
+    const mainFontWeight = getPresetMainFontWeight(geometry);
     const mainMatch = result.svgMarkup.match(new RegExp(`<text[^>]*font-weight="${mainFontWeight}"[^>]*>`));
     assert.ok(mainMatch, 'expected main text element');
     assert.match(mainMatch[0], /text-anchor="end"/);
@@ -529,7 +540,7 @@ test('icon-only labels can expand media zone to full content width with override
       marginX: 2,
       marginY: 0,
     };
-    setPresetOverride(geometry.printableHeightMm, {
+    setPresetOverride(geometry.labelHeightMm, {
       media_zone_width_pct: 100,
       media_zone_width_pct_max: 100,
       media_zone_width_pct_max_user: 100,
@@ -548,7 +559,7 @@ test('icon-only labels can expand media zone to full content width with override
     const images = extractImages(result.svgMarkup);
     assert.equal(images.length, 1, 'expected single media element');
     const icon = images[0];
-    const preset = getActiveLayoutPreset(geometry.printableHeightMm);
+    const preset = getActiveLayoutPreset(resolvePresetHeightKey(geometry));
     const printableWidthPx = mmToPx(geometry.printableWidthMm, pxPerMm);
     const paddingPx = mmToPx(preset.padding_mm || 0, pxPerMm);
     const expectedMediaWidthPx = Math.max(0, printableWidthPx - paddingPx * 2);
