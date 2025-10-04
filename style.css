@@ -136,7 +136,7 @@ main {
 }
 
 :root[data-theme='dark'] .title-logo {
-  filter: brightness(0) invert(1);
+  color: var(--bs-body-color);
 }
 
 .title-heading {
