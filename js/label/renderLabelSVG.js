@@ -383,6 +383,17 @@ export function fitTextToBox(options) {
   return fitMultiLineText(options);
 }
 
+function attachAspectRatio(target, ...ratioCandidates) {
+  for (const candidate of ratioCandidates) {
+    const ratio = Number(candidate);
+    if (Number.isFinite(ratio) && ratio > 0) {
+      target.aspectRatio = ratio;
+      break;
+    }
+  }
+  return target;
+}
+
 function resolveMediaItems(hardwareInfo) {
   if (!hardwareInfo) {
     return [];
@@ -390,11 +401,14 @@ function resolveMediaItems(hardwareInfo) {
   if (hardwareInfo.type === 'custom-image') {
     if (hardwareInfo.hasImage && hardwareInfo.src) {
       return [
-        {
-          kind: 'image',
-          href: hardwareInfo.src,
-          alt: hardwareInfo.alt || 'Custom image',
-        },
+        attachAspectRatio(
+          {
+            kind: 'image',
+            href: hardwareInfo.src,
+            alt: hardwareInfo.alt || 'Custom image',
+          },
+          hardwareInfo.aspectRatio,
+        ),
       ];
     }
     return [];
@@ -402,11 +416,14 @@ function resolveMediaItems(hardwareInfo) {
   if (hardwareInfo.type === 'custom-icon') {
     if (hardwareInfo.iconSvgData) {
       return [
-        {
-          kind: 'image',
-          href: hardwareInfo.iconSvgData,
-          alt: hardwareInfo.iconLabel || hardwareInfo.iconName || 'Custom icon',
-        },
+        attachAspectRatio(
+          {
+            kind: 'image',
+            href: hardwareInfo.iconSvgData,
+            alt: hardwareInfo.iconLabel || hardwareInfo.iconName || 'Custom icon',
+          },
+          hardwareInfo.aspectRatio,
+        ),
       ];
     }
     if (hardwareInfo.hasIcon && hardwareInfo.iconUnicode) {
@@ -426,29 +443,41 @@ function resolveMediaItems(hardwareInfo) {
       return [];
     }
     return [
-      {
-        kind: 'image',
-        href: hardwareInfo.src,
-        alt: hardwareInfo.alt || 'Reference illustration',
-      },
+      attachAspectRatio(
+        {
+          kind: 'image',
+          href: hardwareInfo.src,
+          alt: hardwareInfo.alt || 'Reference illustration',
+        },
+        hardwareInfo.aspectRatio,
+      ),
     ];
   }
   if (hardwareInfo.images && Array.isArray(hardwareInfo.images)) {
     return hardwareInfo.images
       .filter(image => image && image.src)
-      .map((image, index) => ({
-        kind: 'image',
-        href: image.src,
-        alt: image.alt || `Reference ${index + 1}`,
-      }));
+      .map((image, index) =>
+        attachAspectRatio(
+          {
+            kind: 'image',
+            href: image.src,
+            alt: image.alt || `Reference ${index + 1}`,
+          },
+          image.aspectRatio,
+          hardwareInfo.aspectRatio,
+        ),
+      );
   }
   if (hardwareInfo.src) {
     return [
-      {
-        kind: 'image',
-        href: hardwareInfo.src,
-        alt: hardwareInfo.alt || 'Reference illustration',
-      },
+      attachAspectRatio(
+        {
+          kind: 'image',
+          href: hardwareInfo.src,
+          alt: hardwareInfo.alt || 'Reference illustration',
+        },
+        hardwareInfo.aspectRatio,
+      ),
     ];
   }
   return [];
@@ -849,6 +878,23 @@ function layoutIcons({
   const count = mediaItems.length;
   const innerWidth = Math.max(0, rect.width - paddingPx * 2);
   const innerHeight = Math.max(0, rect.height - paddingPx * 2);
+  const resolveDimensions = (item, availableWidth, availableHeight) => {
+    const widthLimit = Math.max(0, availableWidth);
+    const heightLimit = Math.max(0, availableHeight);
+    const ratio = Number(item.aspectRatio);
+    if (Number.isFinite(ratio) && ratio > 0 && widthLimit > 0 && heightLimit > 0) {
+      let width = Math.min(widthLimit, heightLimit * ratio);
+      let height = width / ratio;
+      if (height > heightLimit) {
+        height = heightLimit;
+        width = Math.min(widthLimit, height * ratio);
+        height = width / ratio;
+      }
+      return { width, height };
+    }
+    const size = Math.min(widthLimit, heightLimit);
+    return { width: size, height: size };
+  };
   if (count === 1 || preset.icon_layout === 'column') {
     const slotHeight =
       count <= 1
@@ -856,10 +902,10 @@ function layoutIcons({
         : (innerHeight - gapPx * (count - 1)) / count;
     let cursorY = rect.y + paddingPx;
     mediaItems.forEach(item => {
-      const size = Math.min(innerWidth, slotHeight);
-      const x = rect.x + (rect.width - size) / 2;
-      const y = cursorY + (slotHeight - size) / 2;
-      items.push({ ...item, x, y, width: size, height: size });
+      const { width, height } = resolveDimensions(item, innerWidth, slotHeight);
+      const x = rect.x + (rect.width - width) / 2;
+      const y = cursorY + (slotHeight - height) / 2;
+      items.push({ ...item, x, y, width, height });
       cursorY += slotHeight + gapPx;
     });
     return items;
@@ -868,10 +914,10 @@ function layoutIcons({
   const slotWidth = (innerWidth - gapPx * (count - 1)) / count;
   let cursorX = rect.x + paddingPx;
   mediaItems.forEach(item => {
-    const size = Math.min(slotWidth, innerHeight);
-    const x = cursorX + (slotWidth - size) / 2;
-    const y = rect.y + (rect.height - size) / 2;
-    items.push({ ...item, x, y, width: size, height: size });
+    const { width, height } = resolveDimensions(item, slotWidth, innerHeight);
+    const x = cursorX + (slotWidth - width) / 2;
+    const y = rect.y + (rect.height - height) / 2;
+    items.push({ ...item, x, y, width, height });
     cursorX += slotWidth + gapPx;
   });
   return items;
