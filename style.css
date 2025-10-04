@@ -942,7 +942,7 @@ main {
 
 .text-line.small {
   font-size: 0.7em;
-  font-weight: 600;
+  font-weight: 300;
   letter-spacing: 0.08em;
   color: #000000;
   white-space: nowrap;
