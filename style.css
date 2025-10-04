@@ -260,6 +260,42 @@ main {
   display: none;
 }
 
+
+.label-suboptions {
+  display: grid;
+  gap: 0.75rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--bs-border-color, rgba(148, 163, 184, 0.35));
+  overflow: hidden;
+  max-height: 400px;
+  transition: max-height 0.25s ease, opacity 0.2s ease, margin-top 0.2s ease;
+}
+
+.label-suboptions.is-collapsed {
+  opacity: 0;
+  pointer-events: none;
+  margin-top: 0 !important;
+  border-left-color: transparent;
+}
+
+.label-suboptions.is-collapsed .label-suboption {
+  opacity: 0;
+}
+
+.label-suboption {
+  transition: opacity 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .label-suboptions {
+    transition: none;
+  }
+
+  .label-suboption {
+    transition: none;
+  }
+}
+
 .field-help-summary i {
   color: #2563eb;
 }

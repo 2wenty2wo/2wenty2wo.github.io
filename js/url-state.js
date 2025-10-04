@@ -34,7 +34,9 @@ const FIELD_MAP = {
   standardCode: 'sc',
   boltHead: 'bh',
   boltDrive: 'bv',
-  showStandard: 'ss',
+  showText: 'st',
+  showTextMain: 'stm',
+  showTextInfo: 'sti',
   showImage: 'si',
   showQr: 'sq',
   qrContent: 'qc',
@@ -440,8 +442,14 @@ function applyExpandedPayload(expanded) {
     state.boltDrive = boltDriveIds.has(trimmedDrive) ? trimmedDrive : '';
   }
 
-  if (typeof expanded.showStandard === 'boolean') {
-    state.showStandard = expanded.showStandard;
+  if (typeof expanded.showText === 'boolean') {
+    state.showText = expanded.showText;
+  }
+  if (typeof expanded.showTextMain === 'boolean') {
+    state.showTextMain = expanded.showTextMain;
+  }
+  if (typeof expanded.showTextInfo === 'boolean') {
+    state.showTextInfo = expanded.showTextInfo;
   }
   if (typeof expanded.showImage === 'boolean') {
     state.showImage = expanded.showImage;

@@ -89,88 +89,91 @@ export function downloadLabel() {
       const objectUrl = URL.createObjectURL(blob);
       link.href = objectUrl;
       const fileParts = [];
+      const includeText = Boolean(state.showText);
+      const includeMainText = includeText && state.showTextMain;
+      const includeInfoText = includeText && state.showTextInfo;
       if (state.hardwareType === 'Fuse') {
         fileParts.push('Fuse');
-        if (state.fuseType) {
+        if (includeInfoText && state.fuseType) {
           fileParts.push(state.fuseType);
         }
-        if (state.fuseValue) {
+        if (includeMainText && state.fuseValue) {
           fileParts.push(`${state.fuseValue}A`);
         }
         if (state.fuseType === 'Glass') {
-          if (state.glassSize) {
+          if (includeInfoText && state.glassSize) {
             fileParts.push(state.glassSize);
           }
-          if (state.glassSpeed) {
+          if (includeInfoText && state.glassSpeed) {
             fileParts.push(state.glassSpeed);
           }
         }
       } else if (state.hardwareType === 'Connector') {
         fileParts.push('Connector');
-        if (state.connectorCategory) {
+        if ((includeMainText || includeInfoText) && state.connectorCategory) {
           const category = findConnectorCategory(state.connectorCategory);
           if (category) {
             fileParts.push(category.label);
           }
         }
-        if (state.notes) {
+        if (includeInfoText && state.notes) {
           fileParts.push(state.notes);
         }
       } else if (state.hardwareType === 'Custom') {
         fileParts.push('Custom');
-        if (state.customLine1) {
+        if (includeMainText && state.customLine1) {
           fileParts.push(state.customLine1);
         }
-        if (state.customLine2) {
+        if (includeInfoText && state.customLine2) {
           fileParts.push(state.customLine2);
         }
       } else if (state.hardwareType === 'Bearing') {
-        if (state.bearingType) {
+        if (includeMainText && state.bearingType) {
           fileParts.push(state.bearingType);
         }
-        if (state.showStandard && state.bearingDetails) {
+        if (includeInfoText && state.bearingDetails) {
           fileParts.push(state.bearingDetails);
         }
       } else if (state.hardwareType === 'Bolt') {
-        if (state.threadSize) {
+        if (includeMainText && state.threadSize) {
           fileParts.push(state.threadSize);
         }
-        if (state.length) {
+        if (includeMainText && state.length) {
           fileParts.push(`x${state.length}`);
         }
         const headEntry = boltHeadMap.get((state.boltHead || '').trim());
         const driveEntry = boltDriveMap.get((state.boltDrive || '').trim());
-        if (headEntry && headEntry.label) {
+        if (includeInfoText && headEntry && headEntry.label) {
           fileParts.push(headEntry.label);
         }
-        if (driveEntry && driveEntry.label) {
+        if (includeInfoText && driveEntry && driveEntry.label) {
           fileParts.push(driveEntry.label);
         }
       } else if (state.hardwareType === 'Screw') {
-        if (state.threadSize) {
+        if (includeMainText && state.threadSize) {
           fileParts.push(state.threadSize);
         }
-        if (state.length) {
+        if (includeMainText && state.length) {
           fileParts.push(`x${state.length}`);
         }
         const typeEntry = screwTypeMap.get((state.boltHead || '').trim());
         const driveEntry = boltDriveMap.get((state.boltDrive || '').trim());
-        if (typeEntry && typeEntry.label) {
+        if (includeInfoText && typeEntry && typeEntry.label) {
           fileParts.push(typeEntry.label);
         }
-        if (driveEntry && driveEntry.label) {
+        if (includeInfoText && driveEntry && driveEntry.label) {
           fileParts.push(driveEntry.label);
         }
       } else {
-        if (state.threadSize) {
+        if (includeMainText && state.threadSize) {
           fileParts.push(state.threadSize);
         }
       }
       if (state.hardwareType !== 'Bolt' && state.hardwareType !== 'Screw') {
-        if (state.standardCode) {
+        if (includeInfoText && state.standardCode) {
           fileParts.push(state.standardCode);
         }
-        if (state.standard && state.standard !== state.standardCode) {
+        if (includeInfoText && state.standard && state.standard !== state.standardCode) {
           fileParts.push(state.standard);
         }
       }
