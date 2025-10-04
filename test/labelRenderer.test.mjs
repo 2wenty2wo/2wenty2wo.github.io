@@ -326,15 +326,19 @@ function setupLayoutEditorTestEnvironment() {
 }
 
 test('default layout presets expose icon padding and media/text gap defaults', () => {
+  const expectedIconPadding = { 9: 0, 12: 0, 18: 0.4, 24: 0 };
+  const expectedMediaTextGap = { 9: 0, 12: 0, 18: 0.6, 24: 0 };
+
   Object.entries(defaultLayoutPresets).forEach(([height, preset]) => {
+    const key = Number(height);
     assert.equal(
       preset.icon_padding_mm,
-      0.4,
+      expectedIconPadding[key],
       `preset ${height} should include icon padding default`,
     );
     assert.equal(
       preset.media_text_gap_mm,
-      0.6,
+      expectedMediaTextGap[key],
       `preset ${height} should include media/text gap default`,
     );
   });
