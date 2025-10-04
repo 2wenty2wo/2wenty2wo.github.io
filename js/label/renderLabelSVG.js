@@ -23,6 +23,7 @@ const LETTER_SPACING_BASE_STEPS = [0, -0.1, -0.2, -0.3, -0.4];
 const QR_SIDE_PX_MIN = 24;
 const ICON_PADDING_MM = 0.4;
 const MEDIA_TEXT_GAP_MM = 0.6;
+const MIN_MAIN_FONT_WEIGHT = 700;
 
 const inlineImageCache = new Map();
 
@@ -43,6 +44,18 @@ function clamp(value, min, max) {
     return max;
   }
   return value;
+}
+
+function resolveMainFontWeight(weight, fallback = 800) {
+  const fallbackNumeric = Number(fallback);
+  const fallbackWeight = Number.isFinite(fallbackNumeric)
+    ? Math.max(MIN_MAIN_FONT_WEIGHT, fallbackNumeric)
+    : MIN_MAIN_FONT_WEIGHT;
+  const numericWeight = Number(weight);
+  if (Number.isFinite(numericWeight)) {
+    return Math.max(MIN_MAIN_FONT_WEIGHT, numericWeight);
+  }
+  return fallbackWeight;
 }
 
 export function mmToPx(mm, pxPerMm) {
@@ -610,7 +623,7 @@ function computeAlignedX(zoneX, availableWidth, alignment) {
 export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
   const mainText = (textLines.line1 || '').trim();
   const textPreset = preset.text_zone || {};
-  const mainFontWeight = textPreset.main?.font_weight ?? 800;
+  const mainFontWeight = resolveMainFontWeight(textPreset.main?.font_weight);
   const zones = computeTextZones({ textRect, preset, pxPerMm });
   const alignment = resolveTextAlignment(textPreset.alignment);
   const qrSizePx =
@@ -892,7 +905,7 @@ function ensureTextFits({
   const minTextWidthPx = hasText ? mmToPx(minTextWidthMm || 9, pxPerMm) : 0;
   const textGapPx = mediaPresent && hasText ? mmToPx(MEDIA_TEXT_GAP_MM, pxPerMm) : 0;
   let mediaWidthPx = mediaPresent ? mediaZoneWidthPx : 0;
-  const mainFontWeight = preset.text_zone?.main?.font_weight ?? 800;
+  const mainFontWeight = resolveMainFontWeight(preset.text_zone?.main?.font_weight);
   for (let i = 0; i < 4; i += 1) {
     const textWidth = Math.max(0, contentRect.width - mediaWidthPx - textGapPx);
     if (textWidth >= minTextWidthPx - 0.5) {
@@ -1103,7 +1116,9 @@ export async function renderLabelSVG({
     const mainCenterY = textLayout.main.baseline;
     const mainAnchor = textLayout.main.anchor || 'start';
     const mainX = textLayout.main.x ?? textLayout.zones.main.x;
-    const mainFontWeight = textLayout.main.fontWeight ?? preset.text_zone?.main?.font_weight ?? 800;
+    const mainFontWeight = resolveMainFontWeight(
+      textLayout.main.fontWeight ?? preset.text_zone?.main?.font_weight,
+    );
     innerParts.push(
       `<text x="${formatNumber(mainX)}" y="${formatNumber(mainCenterY)}" text-anchor="${mainAnchor}" font-family=${JSON.stringify(LABEL_FONT_FAMILY)} font-weight="${mainFontWeight}" font-size="${formatNumber(textLayout.main.fontSizePx)}" letter-spacing="${formatNumber(textLayout.main.letterSpacingPx)}" dominant-baseline="middle" fill="${LABEL_TEXT_COLOR}">${escapeXml(textLayout.main.text)}</text>`,
     );

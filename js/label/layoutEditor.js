@@ -485,10 +485,10 @@ function bindPresetInputs(panel, heightKey) {
   body.appendChild(
     createSelectField({
       label: 'Font weight',
-      value: String(preset.text_zone.main.font_weight ?? 800),
+      value: String(Math.max(700, preset.text_zone.main.font_weight ?? 800)),
       options: [
-        { label: 'Regular (600)', value: '600' },
-        { label: 'Bold (800)', value: '800' },
+        { label: 'Bold (700)', value: '700' },
+        { label: 'Extra Bold (800)', value: '800' },
       ],
       onChange: value => setValue('text_zone.main.font_weight', Number(value)),
     }),
