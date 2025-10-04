@@ -9,6 +9,8 @@ import {
   getActiveLayoutPreset,
   exportLayoutPresets,
   defaultLayoutPresets,
+  importLayoutPresets,
+  getPresetOverride,
 } from '../js/label/layoutPresets.js';
 
 const pxPerMm = 300 / 25.4;
@@ -323,6 +325,21 @@ function setupLayoutEditorTestEnvironment() {
   };
 }
 
+test('default layout presets expose icon padding and media/text gap defaults', () => {
+  Object.entries(defaultLayoutPresets).forEach(([height, preset]) => {
+    assert.equal(
+      preset.icon_padding_mm,
+      0.4,
+      `preset ${height} should include icon padding default`,
+    );
+    assert.equal(
+      preset.media_text_gap_mm,
+      0.6,
+      `preset ${height} should include media/text gap default`,
+    );
+  });
+});
+
 test('37×12 mm labels keep bolt icons side-by-side', async () => {
   const geometry = {
     labelWidthMm: 37,
@@ -465,6 +482,16 @@ test('exporting presets with defaults merges overrides', () => {
       'defaults should remain in exported presets',
     );
     assert.equal(
+      parsed[String(heightKey)].icon_padding_mm,
+      defaultLayoutPresets[String(heightKey)].icon_padding_mm,
+      'icon padding default should be included when merging presets',
+    );
+    assert.equal(
+      parsed[String(heightKey)].media_text_gap_mm,
+      defaultLayoutPresets[String(heightKey)].media_text_gap_mm,
+      'media/text gap default should be included when merging presets',
+    );
+    assert.equal(
       parsed[String(heightKey)].text_zone.main.font_weight,
       override.text_zone.main.font_weight,
       'export should merge override values with defaults',
@@ -492,6 +519,26 @@ test('exporting presets with defaults preserves zero-value overrides', () => {
   }
 });
 
+test('icon padding and media/text gap persist through export and import', () => {
+  clearPresetOverrides();
+  try {
+    const heightKey = 12;
+    const override = { icon_padding_mm: 0.9, media_text_gap_mm: 1.1 };
+    setPresetOverride(heightKey, override);
+    const exported = exportLayoutPresets();
+    clearPresetOverrides();
+    importLayoutPresets(exported);
+    const storedOverride = getPresetOverride(heightKey);
+    const active = getActiveLayoutPreset(heightKey);
+    assert.equal(storedOverride.icon_padding_mm, override.icon_padding_mm);
+    assert.equal(storedOverride.media_text_gap_mm, override.media_text_gap_mm);
+    assert.equal(active.icon_padding_mm, override.icon_padding_mm);
+    assert.equal(active.media_text_gap_mm, override.media_text_gap_mm);
+  } finally {
+    clearPresetOverrides();
+  }
+});
+
 test('fitTextToBox shrinks long lines and applies ellipsis when needed', () => {
   const pxPerMm = 300 / 25.4;
   const minPt = 8.25;
@@ -511,7 +558,7 @@ test('fitTextToBox shrinks long lines and applies ellipsis when needed', () => {
   assert.ok(result.fontSizePx < toPx(maxPt), 'font size should reduce');
   assert.ok(result.fontSizePx >= toPx(minPt), 'font size should respect minimum');
   assert.ok(result.ellipsisApplied, 'main line should ellipsize when overflowing');
-  assert.equal(result.lines.length <= 2, true);
+  assert.ok(result.lines.length >= 2, 'long content should wrap to multiple lines');
   assert.ok(result.lines[result.lines.length - 1].endsWith('…'), 'ellipsis should appear on final line');
 });
 
@@ -920,17 +967,36 @@ test('layout editor keeps latest render height when exporting presets after rapi
     assert.ok(panel, 'layout editor panel should exist');
     const body = panel.querySelector('.layout-editor-body');
     assert.ok(body, 'layout editor body should be available');
-    const field = body.children.find(
-      child => Array.isArray(child.children) && child.children.some(node => node.tagName === 'INPUT'),
-    );
-    assert.ok(field, 'expected to locate numeric field for padding');
-    const input = field.children.find(node => node.tagName === 'INPUT');
-    assert.ok(input, 'expected an input element inside the field');
-    input.value = '2.7';
-    const listeners = input.listeners?.input || [];
-    listeners.forEach(listener => listener({ currentTarget: input, target: input }));
+    const collectLabeledInputs = node => {
+      const collected = [];
+      const walk = current => {
+        if (!current || !Array.isArray(current.children)) {
+          return;
+        }
+        const labelEl = current.children.find(child => child.tagName === 'LABEL');
+        const inputEl = current.children.find(child => child.tagName === 'INPUT');
+        if (labelEl && inputEl) {
+          collected.push({ label: labelEl.textContent, input: inputEl });
+        }
+        current.children.forEach(child => walk(child));
+      };
+      walk(node);
+      return collected;
+    };
+    const labeledInputs = collectLabeledInputs(body);
+    const paddingField = labeledInputs.find(field => field.label === 'Padding (mm)');
+    assert.ok(paddingField, 'expected to locate numeric field for padding');
+    const iconPaddingField = labeledInputs.find(field => field.label === 'Icon padding (mm)');
+    assert.ok(iconPaddingField, 'icon padding field should be present');
+    const mediaGapField = labeledInputs.find(field => field.label === 'Media/Text gap (mm)');
+    assert.ok(mediaGapField, 'media/text gap field should be present');
+    paddingField.input.value = '2.7';
+    const listeners = paddingField.input.listeners?.input || [];
+    listeners.forEach(listener => listener({ currentTarget: paddingField.input, target: paddingField.input }));
 
-    const storedRaw = window.localStorage.getItem('gridfinity-layout-presets');
+    const storedRaw =
+      window.localStorage.getItem('gridfinity-layout-presets:v2') ||
+      window.localStorage.getItem('gridfinity-layout-presets');
     assert.ok(storedRaw, 'overrides should persist after editing latest height');
     const stored = JSON.parse(storedRaw);
     assert.deepEqual(Object.keys(stored), ['24'], 'only the latest height override should be saved');

@@ -809,7 +809,8 @@ function computeMediaZoneWidth({
     minWidthPx,
     Math.min(baseMaxWidthPx, absoluteMaxWidthPx),
   );
-  const iconPaddingPx = mmToPx(ICON_PADDING_MM, pxPerMm) * 2;
+  const iconPaddingMm = preset.icon_padding_mm ?? ICON_PADDING_MM;
+  const iconPaddingPx = mmToPx(iconPaddingMm, pxPerMm) * 2;
   const availableHeightRatio = iconCount > 1 && preset.icon_layout === 'row' ? 0.5 : 1;
   const hasUserExpansion = userMaxPercent > maxPercent + 0.001;
   let widthPx = hasUserExpansion ? Math.max(baseWidthPx, absoluteMaxWidthPx) : baseWidthPx;
@@ -1153,7 +1154,24 @@ async function renderQrElement(qrPlan) {
   if (!qrPlan) {
     return null;
   }
-  const qr = await generateQrImage(qrPlan.content, Math.round(qrPlan.layout.sizePx), qrPlan.generator);
+  const targetSize = Math.round(qrPlan.layout.sizePx);
+  if (typeof qrPlan.generator === 'function') {
+    try {
+      const direct = await qrPlan.generator(qrPlan.content, targetSize);
+      if (direct && typeof direct.dataUrl === 'string' && direct.dataUrl.length > 0) {
+        const resolvedSize = Number.isFinite(direct.sizePx) ? Math.round(direct.sizePx) : targetSize;
+        return {
+          x: qrPlan.layout.x,
+          y: qrPlan.layout.y,
+          size: resolvedSize,
+          href: direct.dataUrl,
+        };
+      }
+    } catch (error) {
+      console.warn('Custom QR generator failed.', error);
+    }
+  }
+  const qr = await generateQrImage(qrPlan.content, targetSize, qrPlan.generator);
   if (!qr) {
     return null;
   }
@@ -1174,7 +1192,8 @@ function layoutIcons({
   if (!mediaItems || mediaItems.length === 0 || rect.width <= 0 || rect.height <= 0) {
     return [];
   }
-  const paddingPx = mmToPx(ICON_PADDING_MM, pxPerMm);
+  const iconPaddingMm = preset.icon_padding_mm ?? ICON_PADDING_MM;
+  const paddingPx = mmToPx(iconPaddingMm, pxPerMm);
   const gapPx = mmToPx(preset.icon_gap_mm || 0, pxPerMm);
   const items = [];
   const count = mediaItems.length;
@@ -1268,7 +1287,10 @@ function ensureTextFits({
     .map(value => (value || '').trim())
     .some(value => value.length > 0);
   const minTextWidthPx = hasText ? mmToPx(minTextWidthMm || 9, pxPerMm) : 0;
-  const textGapPx = mediaPresent && hasText ? mmToPx(MEDIA_TEXT_GAP_MM, pxPerMm) : 0;
+  const textGapPx =
+    mediaPresent && hasText
+      ? mmToPx(preset.media_text_gap_mm ?? MEDIA_TEXT_GAP_MM, pxPerMm)
+      : 0;
   let mediaWidthPx = mediaPresent ? mediaZoneWidthPx : 0;
   const mainFontWeight = resolveMainFontWeight(preset.text_zone?.main?.font_weight);
   for (let i = 0; i < 4; i += 1) {

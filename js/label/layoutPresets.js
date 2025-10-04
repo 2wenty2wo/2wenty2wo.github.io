@@ -6,8 +6,10 @@ export const defaultLayoutPresets = {
     media_zone_width_pct_max: 44,
     media_zone_width_pct_max_user: 44,
     icon_layout: 'row',
+    icon_padding_mm: 0.4,
     icon_gap_mm: 0.5,
     icon_min_mm: 3.2,
+    media_text_gap_mm: 0.6,
     text_zone: {
       top_pct: 58,
       gap_mm: 0.5,
@@ -40,8 +42,10 @@ export const defaultLayoutPresets = {
     media_zone_width_pct_max: 46,
     media_zone_width_pct_max_user: 46,
     icon_layout: 'row',
+    icon_padding_mm: 0.4,
     icon_gap_mm: 0.7,
     icon_min_mm: 4.2,
+    media_text_gap_mm: 0.6,
     text_zone: {
       top_pct: 58,
       gap_mm: 0.6,
@@ -74,8 +78,10 @@ export const defaultLayoutPresets = {
     media_zone_width_pct_max: 36,
     media_zone_width_pct_max_user: 36,
     icon_layout: 'column',
+    icon_padding_mm: 0.4,
     icon_gap_mm: 0.9,
     icon_min_mm: 6,
+    media_text_gap_mm: 0.6,
     text_zone: {
       top_pct: 60,
       gap_mm: 0.8,
@@ -108,8 +114,10 @@ export const defaultLayoutPresets = {
     media_zone_width_pct_max: 40,
     media_zone_width_pct_max_user: 40,
     icon_layout: 'column',
+    icon_padding_mm: 0.4,
     icon_gap_mm: 1,
     icon_min_mm: 7.5,
+    media_text_gap_mm: 0.6,
     text_zone: {
       top_pct: 60,
       gap_mm: 1,
