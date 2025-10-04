@@ -597,8 +597,8 @@ function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
     ellipsisApplied: false,
   };
   if (subtitleCandidates.length > 0) {
-    const fits = subtitleCandidates.map(candidate =>
-      fitMultiLineText({
+    const candidateFits = subtitleCandidates.map(candidate => ({
+      fit: fitMultiLineText({
         lines: candidate,
         fontWeight: 600,
         minPt: textPreset.sub?.min_pt ?? 7,
@@ -608,17 +608,47 @@ function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
         heightPx: zones.sub.height,
         pxPerMm,
       }),
+      isCompact: candidate.length === 1,
+    }));
+
+    const multiLineCandidates = candidateFits.filter(candidate => !candidate.isCompact);
+    const multiLineWithoutEllipsis = multiLineCandidates.filter(
+      candidate => !candidate.fit.ellipsisApplied,
     );
-    fits.sort((a, b) => {
+
+    let rankedCandidates;
+    if (multiLineWithoutEllipsis.length > 0) {
+      rankedCandidates = multiLineWithoutEllipsis;
+    } else if (multiLineCandidates.length === 0) {
+      rankedCandidates = candidateFits;
+    } else {
+      const compactCandidates = candidateFits.filter(candidate => candidate.isCompact);
+      rankedCandidates = compactCandidates.length > 0 ? compactCandidates : multiLineCandidates;
+    }
+
+    rankedCandidates.sort((left, right) => {
+      const a = left.fit;
+      const b = right.fit;
       if (b.fontSizePx - a.fontSizePx > 0.2) {
         return b.fontSizePx - a.fontSizePx;
       }
       if (a.ellipsisApplied !== b.ellipsisApplied) {
         return a.ellipsisApplied ? 1 : -1;
       }
-      return a.lines.length - b.lines.length;
+      if (!a.ellipsisApplied && !b.ellipsisApplied && a.lines.length !== b.lines.length) {
+        return b.lines.length - a.lines.length;
+      }
+      const spacingDelta = Math.abs(a.letterSpacingPx) - Math.abs(b.letterSpacingPx);
+      if (Math.abs(spacingDelta) > 0.02) {
+        return spacingDelta > 0 ? 1 : -1;
+      }
+      if (b.fontSizePx !== a.fontSizePx) {
+        return b.fontSizePx - a.fontSizePx;
+      }
+      return left.isCompact === right.isCompact ? 0 : left.isCompact ? 1 : -1;
     });
-    subtitleFit = fits[0];
+
+    subtitleFit = rankedCandidates[0]?.fit || subtitleFit;
   }
 
   return {
