@@ -603,9 +603,15 @@ test('middle text alignment centers both main and subtitle anchors', async () =>
     const mainMatch = result.svgMarkup.match(new RegExp(`<text[^>]*font-weight="${mainFontWeight}"[^>]*>`));
     assert.ok(mainMatch, 'expected main text element with configured font weight');
     assert.match(mainMatch[0], /text-anchor="middle"/);
+    assert.match(mainMatch[0], /font-family="'Oswald'/);
     const subtitleMatch = result.svgMarkup.match(/<text[^>]*font-weight="300"[^>]*>/);
     assert.ok(subtitleMatch, 'expected subtitle text element with font-weight 300');
     assert.match(subtitleMatch[0], /text-anchor="middle"/);
+    assert.match(subtitleMatch[0], /font-family="'Roboto'/);
+    assert.ok(
+      (result.textLayout.sub.fontFamily || '').startsWith("'Roboto'"),
+      'subtitle layout should report the Roboto font stack',
+    );
   } finally {
     clearPresetOverrides();
   }
