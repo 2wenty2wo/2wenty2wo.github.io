@@ -283,6 +283,7 @@ function fitMultiLineText({
   heightPx,
   pxPerMm,
   allowEllipsis = true,
+  noWrap = false,
 }) {
   const normalizedLines = Array.isArray(lines)
     ? lines
@@ -310,7 +311,15 @@ function fitMultiLineText({
     let candidate = null;
     for (let i = 0; i < MAX_FIT_ITERATIONS && high - low > 0.2; i += 1) {
       const mid = (low + high) / 2;
-      const layout = layoutLines(normalizedLines, mid, fontWeight, letterSpacingPx, widthPx, lineHeightPct);
+      const layout = layoutLines(
+        normalizedLines,
+        mid,
+        fontWeight,
+        letterSpacingPx,
+        widthPx,
+        lineHeightPct,
+        { noWrap },
+      );
       const fitsHeight = layout.totalHeightPx <= heightPx + 0.25;
       if (layout.fitsWidth && fitsHeight) {
         candidate = { ...layout, fontSizePx: mid, letterSpacingPx };
@@ -320,7 +329,15 @@ function fitMultiLineText({
       }
     }
     if (!candidate) {
-      const layout = layoutLines(normalizedLines, minPx, fontWeight, letterSpacingPx, widthPx, lineHeightPct);
+      const layout = layoutLines(
+        normalizedLines,
+        minPx,
+        fontWeight,
+        letterSpacingPx,
+        widthPx,
+        lineHeightPct,
+        { noWrap },
+      );
       candidate = { ...layout, fontSizePx: minPx, letterSpacingPx };
       if (!layout.fitsWidth && allowEllipsis) {
         const lastIndex = layout.lines.length - 1;
@@ -364,12 +381,22 @@ function fitMultiLineText({
   return { ...best, lineHeightPx };
 }
 
-function layoutLines(lines, fontSizePx, fontWeight, letterSpacingPx, widthPx, lineHeightPct) {
+function layoutLines(
+  lines,
+  fontSizePx,
+  fontWeight,
+  letterSpacingPx,
+  widthPx,
+  lineHeightPct,
+  { noWrap = false } = {},
+) {
   const layoutLinesArray = [];
   const widths = [];
   const lineHeightPx = fontSizePx * (lineHeightPct / 100);
   lines.forEach(line => {
-    const measurements = wrapWords(line, fontSizePx, fontWeight, letterSpacingPx, widthPx);
+    const measurements = noWrap
+      ? [line]
+      : wrapWords(line, fontSizePx, fontWeight, letterSpacingPx, widthPx);
     measurements.forEach(entry => {
       layoutLinesArray.push(entry);
       widths.push(measureTextWidth(entry, fontSizePx, fontWeight, LABEL_FONT_FAMILY, letterSpacingPx));
@@ -710,19 +737,23 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
     ellipsisApplied: false,
   };
   if (subtitleCandidates.length > 0) {
-    const candidateFits = subtitleCandidates.map(candidate => ({
-      fit: fitMultiLineText({
-        lines: candidate,
-        fontWeight: 300,
-        minPt: textPreset.sub?.min_pt ?? 7,
-        maxPt: textPreset.sub?.max_pt ?? 11,
-        lineHeightPct: textPreset.sub?.line_height_pct ?? 115,
-        widthPx: Math.max(0, zones.sub.width - qrReservedWidthPx),
-        heightPx: zones.sub.height,
-        pxPerMm,
-      }),
-      isCompact: candidate.length === 1,
-    }));
+    const candidateFits = subtitleCandidates.map(candidate => {
+      const isCompact = candidate.length === 1;
+      return {
+        fit: fitMultiLineText({
+          lines: candidate,
+          fontWeight: 300,
+          minPt: textPreset.sub?.min_pt ?? 7,
+          maxPt: textPreset.sub?.max_pt ?? 11,
+          lineHeightPct: textPreset.sub?.line_height_pct ?? 115,
+          widthPx: Math.max(0, zones.sub.width - qrReservedWidthPx),
+          heightPx: zones.sub.height,
+          pxPerMm,
+          noWrap: isCompact,
+        }),
+        isCompact,
+      };
+    });
 
     const multiLineCandidates = candidateFits.filter(candidate => !candidate.isCompact);
     const multiLineWithoutEllipsis = multiLineCandidates.filter(

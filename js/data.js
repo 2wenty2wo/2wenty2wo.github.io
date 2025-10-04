@@ -289,9 +289,9 @@ export const boltDriveOptions = [
 ];
 
 export const screwTypeOptions = [
-  { id: 'countersunk_wood_screw', label: 'Countersunk Wood Screw', image: 'countersunk_wood_screw' },
-  { id: 'pan_head_wood_screw', label: 'Pan Head Wood Screw', image: 'pan_head_wood_screw' },
-  { id: 'self_drilling_hex_screw', label: 'Self-drilling Hex Screw', image: 'self_drilling_hex_screw' },
+  { id: 'countersunk_wood_screw', label: 'Countersunk', image: 'countersunk_wood_screw' },
+  { id: 'pan_head_wood_screw', label: 'Pan head', image: 'pan_head_wood_screw' },
+  { id: 'self_drilling_hex_screw', label: 'Self-drilling', image: 'self_drilling_hex_screw' },
 ];
 
 export const boltHeadMap = new Map(boltHeadOptions.map(option => [option.id, option]));

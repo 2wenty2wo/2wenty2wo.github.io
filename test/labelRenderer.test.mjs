@@ -707,9 +707,40 @@ test('subtitle lines remain distinct with optional ellipsis on the last line', a
   nonFinalLines.forEach(line => {
     assert.ok(!line.trim().endsWith('…'), 'only final subtitle line should ellipsize when needed');
   });
+  const finalLine = subtitleLines[subtitleLines.length - 1]?.trim() ?? '';
+  const ellipsisCount = subtitleLines.filter(line => line.includes('…')).length;
+  if (ellipsisCount > 0) {
+    assert.equal(ellipsisCount, 1, 'ellipsis should appear on at most one subtitle line');
+    assert.ok(finalLine.endsWith('…'), 'ellipsis should only appear on the final subtitle line');
+  } else {
+    assert.ok(finalLine.length > 0, 'final subtitle line should contain text when ellipsis is unnecessary');
+  }
+
+  const compactGeometry = {
+    labelWidthMm: 20,
+    labelHeightMm: 12,
+    printableWidthMm: 16,
+    printableHeightMm: 10,
+    marginX: 2,
+    marginY: 1,
+  };
+  const compactResult = await renderLabelSVG({
+    geometry: compactGeometry,
+    pxPerMm,
+    textLines: { line1: 'M4 × 12', line2: 'Pan head', line3: '' },
+    hardwareInfo: null,
+    qrContent: '',
+  });
+  const compactSubtitleLines = compactResult.textLayout.sub?.lines || [];
+  assert.equal(
+    compactSubtitleLines.length,
+    1,
+    'compact screw subtitle should stay on a single line without wrapping',
+  );
+  const compactText = compactSubtitleLines[0]?.trim() ?? '';
   assert.ok(
-    subtitleLines[subtitleLines.length - 1].trim().endsWith('…'),
-    'second subtitle line may ellipsize when space runs out',
+    compactText === 'Pan head' || compactText.startsWith('Pan hea'),
+    'compact subtitle should surface the updated Pan head screw label',
   );
 });
 
