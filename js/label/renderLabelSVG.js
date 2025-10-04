@@ -583,7 +583,7 @@ function buildSubtitleCandidates(textLines, preset) {
   return candidates.filter(candidate => candidate.length > 0);
 }
 
-function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
+export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
   const mainText = (textLines.line1 || '').trim();
   const textPreset = preset.text_zone || {};
   const zones = computeTextZones({ textRect, preset, pxPerMm });
@@ -596,7 +596,7 @@ function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
     pxPerMm,
     letterSpacingLimit: textPreset.main?.letter_spacing_adj || -0.3,
   });
-  const mainBaseline = zones.main.y + mainFit.fontSizePx;
+  const mainHeight = mainFit.text ? mainFit.fontSizePx : 0;
   const mainX = zones.main.x;
 
   const subtitleCandidates = buildSubtitleCandidates(textLines, preset);
@@ -663,15 +663,50 @@ function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
     subtitleFit = rankedCandidates[0]?.fit || subtitleFit;
   }
 
+  const subtitleLineCount = subtitleFit.lines.length;
+  const subtitleHeight =
+    subtitleLineCount > 0
+      ? subtitleFit.fontSizePx + subtitleFit.lineHeightPx * (subtitleLineCount - 1)
+      : 0;
+
+  let blockHeight = 0;
+  if (mainHeight > 0) {
+    blockHeight += mainHeight;
+  }
+  if (subtitleHeight > 0) {
+    if (blockHeight > 0) {
+      blockHeight += zones.gapPx;
+    }
+    blockHeight += subtitleHeight;
+  }
+
+  const rawBlockTop = blockHeight > 0 ? textRect.y + (textRect.height - blockHeight) / 2 : textRect.y;
+  const blockTop = Math.max(textRect.y, rawBlockTop);
+
+  zones.main.y = blockTop;
+  zones.main.height = mainHeight;
+  zones.sub.y = mainHeight > 0 ? zones.main.y + mainHeight + zones.gapPx : blockTop;
+  zones.sub.height = subtitleHeight;
+  zones.block = { y: blockTop, height: blockHeight };
+
+  const mainBaseline = mainHeight > 0 ? zones.main.y + mainHeight / 2 : zones.main.y;
+
+  const subtitle = {
+    ...subtitleFit,
+    height: subtitleHeight,
+    lineCount: subtitleLineCount,
+  };
+
   return {
     main: {
       text: mainFit.text,
       fontSizePx: mainFit.fontSizePx,
       letterSpacingPx: mainFit.letterSpacingPx,
       baseline: mainBaseline,
+      height: mainHeight,
       x: mainX,
     },
-    sub: subtitleFit,
+    sub: subtitle,
     zones,
   };
 }
@@ -896,6 +931,12 @@ function buildDebugOverlays({
   overlays.push(
     `<rect x="${formatNumber(textZones.sub.x)}" y="${formatNumber(textZones.sub.y)}" width="${formatNumber(textZones.sub.width)}" height="${formatNumber(textZones.sub.height)}" fill="none" stroke="rgba(59,130,246,0.5)" stroke-dasharray="4 3" stroke-width="1" vector-effect="non-scaling-stroke" />`,
   );
+  if (textZones.block && textZones.block.height > 0) {
+    const blockCenter = textZones.block.y + textZones.block.height / 2;
+    overlays.push(
+      `<line x1="${formatNumber(textRect.x)}" y1="${formatNumber(blockCenter)}" x2="${formatNumber(textRect.x + textRect.width)}" y2="${formatNumber(blockCenter)}" stroke="rgba(244,114,182,0.8)" stroke-width="1" stroke-dasharray="5 3" vector-effect="non-scaling-stroke" />`,
+    );
+  }
   if (qr) {
     overlays.push(
       `<rect x="${formatNumber(qr.x)}" y="${formatNumber(qr.y)}" width="${formatNumber(qr.size)}" height="${formatNumber(qr.size)}" fill="none" stroke="rgba(239,68,68,0.7)" stroke-dasharray="4 3" stroke-width="1" vector-effect="non-scaling-stroke" />`,
@@ -1017,17 +1058,18 @@ export async function renderLabelSVG({
   innerParts.push(await renderMediaElements(mediaElements));
 
   if (textLayout.main.text) {
+    const mainCenterY = textLayout.main.baseline;
     innerParts.push(
-      `<text x="${formatNumber(textLayout.main.x)}" y="${formatNumber(textLayout.main.baseline)}" font-family=${JSON.stringify(LABEL_FONT_FAMILY)} font-weight="800" font-size="${formatNumber(textLayout.main.fontSizePx)}" letter-spacing="${formatNumber(textLayout.main.letterSpacingPx)}" fill="${LABEL_TEXT_COLOR}">${escapeXml(textLayout.main.text)}</text>`,
+      `<text x="${formatNumber(textLayout.main.x)}" y="${formatNumber(mainCenterY)}" font-family=${JSON.stringify(LABEL_FONT_FAMILY)} font-weight="800" font-size="${formatNumber(textLayout.main.fontSizePx)}" letter-spacing="${formatNumber(textLayout.main.letterSpacingPx)}" dominant-baseline="middle" fill="${LABEL_TEXT_COLOR}">${escapeXml(textLayout.main.text)}</text>`,
     );
   }
-  if (textLayout.sub && textLayout.sub.lines) {
-    let baseline = textLayout.zones.sub.y + textLayout.sub.fontSizePx;
+  if (textLayout.sub && textLayout.sub.lineCount > 0) {
+    let lineCenter = textLayout.zones.sub.y + textLayout.sub.fontSizePx / 2;
     textLayout.sub.lines.forEach(line => {
       innerParts.push(
-        `<text x="${formatNumber(textLayout.zones.sub.x)}" y="${formatNumber(baseline)}" font-family=${JSON.stringify(LABEL_FONT_FAMILY)} font-weight="600" font-size="${formatNumber(textLayout.sub.fontSizePx)}" letter-spacing="${formatNumber(textLayout.sub.letterSpacingPx || 0)}" fill="${LABEL_TEXT_COLOR}">${escapeXml(line)}</text>`,
+        `<text x="${formatNumber(textLayout.zones.sub.x)}" y="${formatNumber(lineCenter)}" font-family=${JSON.stringify(LABEL_FONT_FAMILY)} font-weight="600" font-size="${formatNumber(textLayout.sub.fontSizePx)}" letter-spacing="${formatNumber(textLayout.sub.letterSpacingPx || 0)}" dominant-baseline="middle" fill="${LABEL_TEXT_COLOR}">${escapeXml(line)}</text>`,
       );
-      baseline += textLayout.sub.lineHeightPx;
+      lineCenter += textLayout.sub.lineHeightPx;
     });
   }
 
@@ -1073,6 +1115,8 @@ export async function renderLabelSVG({
     heightPx: outputHeightPx,
     printableWidthMm: geometry.printableWidthMm,
     printableHeightMm: geometry.printableHeightMm,
+    textLayout,
+    textRect: { ...textRect },
   };
 }
 
