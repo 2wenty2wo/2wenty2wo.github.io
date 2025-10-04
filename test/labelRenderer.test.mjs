@@ -204,6 +204,24 @@ test('exporting presets with defaults merges overrides', () => {
   }
 });
 
+test('exporting presets with defaults preserves zero-value overrides', () => {
+  clearPresetOverrides();
+  try {
+    const heightKey = 12;
+    const override = { padding_mm: 0 };
+    setPresetOverride(heightKey, override);
+    const exported = exportLayoutPresets(true);
+    const parsed = JSON.parse(exported);
+    assert.equal(
+      parsed[String(heightKey)].padding_mm,
+      override.padding_mm,
+      'export should include explicit zero overrides when merging defaults',
+    );
+  } finally {
+    clearPresetOverrides();
+  }
+});
+
 test('fitTextToBox shrinks long lines and applies ellipsis when needed', () => {
   const pxPerMm = 300 / 25.4;
   const minPt = 8.25;

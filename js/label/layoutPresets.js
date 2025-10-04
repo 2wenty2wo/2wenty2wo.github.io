@@ -274,13 +274,15 @@ export function exportLayoutPresets(includeDefaults = false) {
   const overrides = loadPresetOverrides();
   if (includeDefaults) {
     const merged = {};
-    Object.keys(defaultLayoutPresets).forEach(key => {
-      const base = clone(defaultLayoutPresets[key]);
-      const override = overrides[key];
-      merged[key] = override ? deepMerge(base, override) : base;
-    });
-    Object.keys(overrides).forEach(key => {
-      if (!(key in merged)) {
+    const overrideKeys = overrides ? Object.keys(overrides) : [];
+    const mergedKeys = new Set([...Object.keys(defaultLayoutPresets), ...overrideKeys]);
+    mergedKeys.forEach(key => {
+      const hasDefault = Object.hasOwn(defaultLayoutPresets, key);
+      const hasOverride = overrides ? Object.hasOwn(overrides, key) : false;
+      if (hasDefault) {
+        const base = clone(defaultLayoutPresets[key]);
+        merged[key] = hasOverride ? deepMerge(base, overrides[key]) : base;
+      } else if (hasOverride) {
         merged[key] = clone(overrides[key]);
       }
     });
