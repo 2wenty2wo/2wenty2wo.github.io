@@ -134,14 +134,17 @@ const fuseIllustrations = {
   Glass: {
     src: 'images/fuses/glass_fuse.svg',
     alt: 'Glass fuse illustration',
+    aspectRatio: 926 / 307,
   },
   Ceramic: {
     src: 'images/fuses/ceramic_fuse.svg',
     alt: 'Ceramic fuse illustration',
+    aspectRatio: 926 / 307,
   },
   Blade: {
     src: 'images/fuses/blade_fuse.svg',
     alt: 'Blade fuse illustration',
+    aspectRatio: 854 / 797,
   },
 };
 
@@ -960,6 +963,7 @@ function resolveHardwareImageInfo() {
       type: 'fuse-illustration',
       src: illustration.src,
       alt: illustration.alt,
+      aspectRatio: illustration.aspectRatio,
     };
   }
   if (state.hardwareType === 'Threaded Heat Insert') {

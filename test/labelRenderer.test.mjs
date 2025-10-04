@@ -504,6 +504,43 @@ test('single icon fills the media zone proportionally', async () => {
   assert.ok(icon.width > 60, 'icon should scale to fill available space');
 });
 
+test('fuse illustrations honor provided aspect ratio hints', async () => {
+  const geometry = {
+    labelWidthMm: 37,
+    labelHeightMm: 12,
+    printableWidthMm: 33,
+    printableHeightMm: 10,
+    marginX: 2,
+    marginY: 1,
+  };
+  const hardwareInfo = {
+    type: 'fuse-illustration',
+    src: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+    alt: 'Glass fuse illustration',
+    aspectRatio: 926 / 307,
+  };
+  const result = await renderLabelSVG({
+    geometry,
+    pxPerMm,
+    textLines: { line1: 'Fuse', line2: 'Glass', line3: '' },
+    hardwareInfo,
+    qrContent: '',
+  });
+  const images = extractImages(result.svgMarkup);
+  assert.equal(images.length, 1, 'expected fuse illustration to render once');
+  const [illustration] = images;
+  assert.ok(illustration.height > 0, 'fuse illustration should have non-zero height');
+  assert.ok(
+    illustration.width > illustration.height,
+    `expected wide fuse illustration (width ${illustration.width} > height ${illustration.height})`,
+  );
+  const measuredRatio = illustration.width / illustration.height;
+  assert.ok(
+    measuredRatio > 2,
+    `expected fuse illustration ratio to exceed 2:1, received ${measuredRatio.toFixed(2)}`,
+  );
+});
+
 test('single-line labels center the main baseline within the text rect', async () => {
   const geometry = {
     labelWidthMm: 37,
