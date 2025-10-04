@@ -16,6 +16,9 @@ let editorState = {
   active: false,
   initialized: false,
   currentHeightKey: null,
+  currentPartKey: null,
+  contextPartKey: null,
+  contextPartLabel: '',
   context: null,
   latestToken: 0,
 };
@@ -108,7 +111,7 @@ function watchKeyCombo() {
       editorState.active = !editorState.active;
       persistActiveFlag(editorState.active);
       lastKeySequence = [];
-      notifyPresetListeners();
+      notifyPresetListeners(null, {});
     }
   });
   window.addEventListener('keyup', () => {
@@ -137,11 +140,19 @@ function createEditorPanel() {
         <button type="button" class="btn btn-sm btn-outline-secondary" data-editor-action="copy">Copy</button>
       </div>
     </div>
+    <div class="layout-editor-scope" data-editor-scope-container hidden>
+      <label class="layout-editor-scope__label" data-editor-scope-label for="layout-editor-scope-select">Preset scope</label>
+      <div class="layout-editor-scope__controls">
+        <select id="layout-editor-scope-select" class="layout-editor-scope__select" data-editor-scope></select>
+        <button type="button" class="btn btn-sm btn-outline-secondary layout-editor-scope__clear" data-editor-clear-part>Clear part override</button>
+      </div>
+    </div>
     <div class="layout-editor-body"></div>
   `;
   document.body.appendChild(panel);
   attachPanelStyles();
   setupPanelActions(panel);
+  setupScopeControls(panel);
   return panel;
 }
 
@@ -183,6 +194,43 @@ function attachPanelStyles() {
       gap: 0.5rem;
       flex-wrap: wrap;
       margin-bottom: 1rem;
+    }
+    .layout-editor-scope {
+      display: grid;
+      gap: 0.3rem;
+      margin-bottom: 1rem;
+    }
+    .layout-editor-scope[hidden] {
+      display: none;
+    }
+    .layout-editor-scope__label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(226, 232, 240, 0.78);
+    }
+    .layout-editor-scope__controls {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .layout-editor-scope__select {
+      flex: 1;
+      min-width: 0;
+      background: rgba(15, 23, 42, 0.7);
+      color: #f8fafc;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      border-radius: 6px;
+      padding: 0.35rem 0.5rem;
+      font-size: 0.82rem;
+    }
+    .layout-editor-scope__select:focus {
+      outline: none;
+      border-color: rgba(148, 163, 184, 0.75);
+      box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.25);
+    }
+    .layout-editor-scope__clear[hidden] {
+      display: none;
     }
     .layout-editor-body {
       display: grid;
@@ -257,7 +305,7 @@ function setupPanelActions(panel) {
       const action = event.currentTarget.getAttribute('data-editor-action');
       if (action === 'reset') {
         clearPresetOverrides();
-        notifyPresetListeners();
+        notifyPresetListeners(null, {});
       } else if (action === 'export') {
         const json = exportLayoutPresets(true);
         prompt('Layout presets JSON', json);
@@ -266,7 +314,7 @@ function setupPanelActions(panel) {
         if (json) {
           try {
             importLayoutPresets(json, false);
-            notifyPresetListeners();
+            notifyPresetListeners(null, {});
           } catch (error) {
             window.alert(`Invalid preset JSON: ${error.message}`);
           }
@@ -279,6 +327,96 @@ function setupPanelActions(panel) {
       }
     });
   });
+}
+
+function getScopeControlElements(panel) {
+  if (!panel) {
+    return null;
+  }
+  const container = panel.querySelector('[data-editor-scope-container]');
+  if (!container) {
+    return null;
+  }
+  const select = container.querySelector('[data-editor-scope]');
+  const clearButton = container.querySelector('[data-editor-clear-part]');
+  return { container, select, clearButton };
+}
+
+function updateScopeControls(panel, { contextPartKey, partLabel, selectedPartKey, heightKey }) {
+  const controls = getScopeControlElements(panel);
+  if (!controls) {
+    return;
+  }
+  const { container, select, clearButton } = controls;
+  if (!contextPartKey) {
+    container.hidden = true;
+    if (select) {
+      select.value = '';
+    }
+    if (clearButton) {
+      clearButton.hidden = true;
+    }
+    return;
+  }
+  container.hidden = false;
+  const displayLabel = partLabel || contextPartKey;
+  if (select) {
+    select.textContent = '';
+    const allOption = document.createElement('option');
+    allOption.value = '';
+    allOption.textContent = 'All parts';
+    const partOption = document.createElement('option');
+    partOption.value = contextPartKey;
+    partOption.textContent = displayLabel;
+    select.append(allOption, partOption);
+    const value = selectedPartKey === contextPartKey ? contextPartKey : '';
+    select.value = value;
+  }
+  if (clearButton) {
+    clearButton.textContent = `Clear ${displayLabel} override`;
+    const hasOverride = Boolean(heightKey && getPresetOverride(heightKey, { partType: contextPartKey }));
+    clearButton.hidden = false;
+    clearButton.disabled = !hasOverride;
+  }
+}
+
+function setupScopeControls(panel) {
+  const controls = getScopeControlElements(panel);
+  if (!controls) {
+    return;
+  }
+  const { select, clearButton } = controls;
+  if (select) {
+    select.addEventListener('change', () => {
+      const selectedValue = select.value;
+      const contextPartKey = editorState.contextPartKey;
+      editorState.currentPartKey = selectedValue && selectedValue === contextPartKey ? contextPartKey : null;
+      const heightKey = editorState.currentHeightKey || resolveHeightKeyFromContext(editorState.context);
+      if (!heightKey) {
+        return;
+      }
+      bindPresetInputs(panel, heightKey, {
+        partType: editorState.currentPartKey,
+        contextPartType: editorState.contextPartKey,
+        partLabel: editorState.contextPartLabel,
+      });
+    });
+  }
+  if (clearButton) {
+    clearButton.addEventListener('click', () => {
+      const heightKey = editorState.currentHeightKey || resolveHeightKeyFromContext(editorState.context);
+      const partKey = editorState.contextPartKey;
+      if (!heightKey || !partKey) {
+        return;
+      }
+      setPresetOverride(heightKey, null, { partType: partKey });
+      bindPresetInputs(panel, heightKey, {
+        partType: editorState.currentPartKey,
+        contextPartType: editorState.contextPartKey,
+        partLabel: editorState.contextPartLabel,
+      });
+    });
+  }
 }
 
 function createSection({ title }) {
@@ -344,11 +482,18 @@ function createSelectField({ label, options, value, onChange }) {
   return field;
 }
 
-function bindPresetInputs(panel, heightKey) {
+function bindPresetInputs(panel, heightKey, options = {}) {
   const body = panel.querySelector('.layout-editor-body');
   body.textContent = '';
-  const preset = getActiveLayoutPreset(heightKey);
-  const override = getPresetOverride(heightKey) || {};
+  const { partType: selectedPartType = null, contextPartType = null, partLabel = '' } = options || {};
+  updateScopeControls(panel, {
+    contextPartKey: contextPartType,
+    partLabel,
+    selectedPartKey: selectedPartType,
+    heightKey,
+  });
+  const preset = getActiveLayoutPreset(heightKey, selectedPartType ? { partType: selectedPartType } : undefined);
+  const override = getPresetOverride(heightKey, selectedPartType ? { partType: selectedPartType } : undefined) || {};
 
   const setValue = (path, value) => {
     let target = override;
@@ -360,8 +505,8 @@ function bindPresetInputs(panel, heightKey) {
       target = target[keys[i]];
     }
     target[keys[keys.length - 1]] = value;
-    setPresetOverride(heightKey, override);
-    notifyPresetListeners(heightKey);
+    setPresetOverride(heightKey, override, selectedPartType ? { partType: selectedPartType } : undefined);
+    notifyPresetListeners(heightKey, { partType: selectedPartType || null });
   };
 
   const createTextField = ({ label, value, onChange }) => {
@@ -646,13 +791,20 @@ export function ensureLayoutEditor(context) {
       if (!editorState.active) {
         return;
       }
+      if (!isBrowser()) {
+        return;
+      }
       const panel = document.getElementById('layout-editor-panel');
       if (!panel) {
         return;
       }
       const ctx = editorState.context;
       const key = resolveHeightKeyFromContext(ctx);
-      bindPresetInputs(panel, key);
+      bindPresetInputs(panel, key, {
+        partType: editorState.currentPartKey,
+        contextPartType: editorState.contextPartKey,
+        partLabel: editorState.contextPartLabel,
+      });
     });
     editorState.initialized = true;
   }
@@ -675,9 +827,39 @@ export function ensureLayoutEditor(context) {
   }
   editorState.context = context;
   const key = resolveHeightKeyFromContext(context);
+  const contextPartKey =
+    typeof context?.partType === 'string' && context.partType ? context.partType : null;
+  const contextPartLabel =
+    typeof context?.partLabel === 'string' && context.partLabel
+      ? context.partLabel
+      : contextPartKey || '';
+  let shouldRebind = false;
+  if (editorState.contextPartKey !== contextPartKey) {
+    editorState.contextPartKey = contextPartKey;
+    editorState.contextPartLabel = contextPartLabel;
+    editorState.currentPartKey = contextPartKey;
+    shouldRebind = true;
+  } else if (editorState.contextPartLabel !== contextPartLabel) {
+    editorState.contextPartLabel = contextPartLabel;
+    shouldRebind = true;
+  }
   if (editorState.currentHeightKey !== key) {
     editorState.currentHeightKey = key;
-    bindPresetInputs(panel, key);
+    shouldRebind = true;
+  }
+  if (shouldRebind) {
+    bindPresetInputs(panel, key, {
+      partType: editorState.currentPartKey,
+      contextPartType: editorState.contextPartKey,
+      partLabel: editorState.contextPartLabel,
+    });
+  } else {
+    updateScopeControls(panel, {
+      contextPartKey: editorState.contextPartKey,
+      partLabel: editorState.contextPartLabel,
+      selectedPartKey: editorState.currentPartKey,
+      heightKey: key,
+    });
   }
   return { active: true };
 }

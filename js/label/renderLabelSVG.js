@@ -1496,6 +1496,8 @@ export async function renderLabelSVG({
   textLines,
   hardwareInfo,
   qrContent,
+  partType = null,
+  partLabel = '',
   minTextWidthMm = 9,
   qrGenerator,
   cropToPrintable = false,
@@ -1509,7 +1511,9 @@ export async function renderLabelSVG({
   const outputHeightPx = cropToPrintable ? printable.height : labelHeightPx;
   const translationX = cropToPrintable ? -printable.x : 0;
   const translationY = cropToPrintable ? -printable.y : 0;
-  const preset = getActiveLayoutPreset(geometry.labelHeightMm || geometry.printableHeightMm);
+  const preset = getActiveLayoutPreset(geometry.labelHeightMm || geometry.printableHeightMm, {
+    partType,
+  });
   const contentRect = computeContentRect(printable, preset, pxPerMm);
   const mediaItems = resolveMediaItems(hardwareInfo);
   let mediaWidthPx = computeMediaZoneWidth({
@@ -1625,6 +1629,8 @@ export async function renderLabelSVG({
     textLines,
     hardwareInfo,
     qrContent,
+    partType,
+    partLabel,
     layoutEditorToken,
   });
   if (editorState && editorState.active) {
