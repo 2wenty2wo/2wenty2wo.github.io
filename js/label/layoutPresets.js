@@ -16,6 +16,7 @@ export const defaultLayoutPresets = {
         min_pt: 7.5,
         max_pt: 11,
         letter_spacing_adj: -0.3,
+        font_weight: 800,
       },
       sub: {
         min_pt: 6.8,
@@ -49,6 +50,7 @@ export const defaultLayoutPresets = {
         min_pt: 8.5,
         max_pt: 14,
         letter_spacing_adj: -0.3,
+        font_weight: 800,
       },
       sub: {
         min_pt: 7.2,
@@ -82,6 +84,7 @@ export const defaultLayoutPresets = {
         min_pt: 9.5,
         max_pt: 20,
         letter_spacing_adj: -0.35,
+        font_weight: 800,
       },
       sub: {
         min_pt: 8,
@@ -115,6 +118,7 @@ export const defaultLayoutPresets = {
         min_pt: 10,
         max_pt: 24,
         letter_spacing_adj: -0.35,
+        font_weight: 800,
       },
       sub: {
         min_pt: 9,

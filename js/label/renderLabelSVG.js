@@ -610,6 +610,7 @@ function computeAlignedX(zoneX, availableWidth, alignment) {
 export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
   const mainText = (textLines.line1 || '').trim();
   const textPreset = preset.text_zone || {};
+  const mainFontWeight = textPreset.main?.font_weight ?? 800;
   const zones = computeTextZones({ textRect, preset, pxPerMm });
   const alignment = resolveTextAlignment(textPreset.alignment);
   const qrSizePx =
@@ -623,7 +624,7 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
   const mainWidthPx = Math.max(0, zones.main.width - qrReservedWidthPx);
   const mainFit = fitSingleLineText({
     text: mainText,
-    fontWeight: 800,
+    fontWeight: mainFontWeight,
     minPt: textPreset.main?.min_pt ?? 8,
     maxPt: textPreset.main?.max_pt ?? 16,
     widthPx: mainWidthPx,
@@ -744,6 +745,7 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
       height: mainHeight,
       x: mainX,
       anchor: alignment,
+      fontWeight: mainFontWeight,
     },
     sub: subtitle,
     zones,
@@ -890,6 +892,7 @@ function ensureTextFits({
   const minTextWidthPx = hasText ? mmToPx(minTextWidthMm || 9, pxPerMm) : 0;
   const textGapPx = mediaPresent && hasText ? mmToPx(MEDIA_TEXT_GAP_MM, pxPerMm) : 0;
   let mediaWidthPx = mediaPresent ? mediaZoneWidthPx : 0;
+  const mainFontWeight = preset.text_zone?.main?.font_weight ?? 800;
   for (let i = 0; i < 4; i += 1) {
     const textWidth = Math.max(0, contentRect.width - mediaWidthPx - textGapPx);
     if (textWidth >= minTextWidthPx - 0.5) {
@@ -906,7 +909,7 @@ function ensureTextFits({
 
   let mainFit = fitSingleLineText({
     text: textLines.line1,
-    fontWeight: 800,
+    fontWeight: mainFontWeight,
     minPt: preset.text_zone.main.min_pt,
     maxPt: preset.text_zone.main.max_pt,
     widthPx: textRect.width,
@@ -926,7 +929,7 @@ function ensureTextFits({
       );
       mainFit = fitSingleLineText({
         text: textLines.line1,
-        fontWeight: 800,
+        fontWeight: mainFontWeight,
         minPt: preset.text_zone.main.min_pt,
         maxPt: preset.text_zone.main.max_pt,
         widthPx: textRect.width,
@@ -1100,8 +1103,9 @@ export async function renderLabelSVG({
     const mainCenterY = textLayout.main.baseline;
     const mainAnchor = textLayout.main.anchor || 'start';
     const mainX = textLayout.main.x ?? textLayout.zones.main.x;
+    const mainFontWeight = textLayout.main.fontWeight ?? preset.text_zone?.main?.font_weight ?? 800;
     innerParts.push(
-      `<text x="${formatNumber(mainX)}" y="${formatNumber(mainCenterY)}" text-anchor="${mainAnchor}" font-family=${JSON.stringify(LABEL_FONT_FAMILY)} font-weight="800" font-size="${formatNumber(textLayout.main.fontSizePx)}" letter-spacing="${formatNumber(textLayout.main.letterSpacingPx)}" dominant-baseline="middle" fill="${LABEL_TEXT_COLOR}">${escapeXml(textLayout.main.text)}</text>`,
+      `<text x="${formatNumber(mainX)}" y="${formatNumber(mainCenterY)}" text-anchor="${mainAnchor}" font-family=${JSON.stringify(LABEL_FONT_FAMILY)} font-weight="${mainFontWeight}" font-size="${formatNumber(textLayout.main.fontSizePx)}" letter-spacing="${formatNumber(textLayout.main.letterSpacingPx)}" dominant-baseline="middle" fill="${LABEL_TEXT_COLOR}">${escapeXml(textLayout.main.text)}</text>`,
     );
   }
   if (textLayout.sub && textLayout.sub.lineCount > 0) {
