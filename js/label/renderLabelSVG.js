@@ -358,9 +358,13 @@ export function escapeXml(value) {
     .replace(/'/g, '&#39;');
 }
 
-function measureTextWidth(text, fontSizePx, fontWeight, fontFamily, letterSpacingPx = 0) {
+function measureTextMetrics(text, fontSizePx, fontWeight, fontFamily, letterSpacingPx = 0) {
   if (!text) {
-    return 0;
+    return {
+      width: 0,
+      actualBoundingBoxAscent: null,
+      actualBoundingBoxDescent: null,
+    };
   }
   if (measureContext) {
     measureContext.font = `${fontWeight} ${fontSizePx}px ${fontFamily}`;
@@ -369,10 +373,27 @@ function measureTextWidth(text, fontSizePx, fontWeight, fontFamily, letterSpacin
     if (letterSpacingPx) {
       width += Math.max(0, text.replace(/\s+$/g, '').length - 1) * letterSpacingPx;
     }
-    return width;
+    return {
+      width,
+      actualBoundingBoxAscent: Number.isFinite(metrics.actualBoundingBoxAscent)
+        ? metrics.actualBoundingBoxAscent
+        : null,
+      actualBoundingBoxDescent: Number.isFinite(metrics.actualBoundingBoxDescent)
+        ? metrics.actualBoundingBoxDescent
+        : null,
+    };
   }
   const approx = text.length * fontSizePx * 0.6;
-  return approx + Math.max(0, text.length - 1) * letterSpacingPx;
+  const width = approx + Math.max(0, text.length - 1) * letterSpacingPx;
+  return {
+    width,
+    actualBoundingBoxAscent: null,
+    actualBoundingBoxDescent: null,
+  };
+}
+
+function measureTextWidth(text, fontSizePx, fontWeight, fontFamily, letterSpacingPx = 0) {
+  return measureTextMetrics(text, fontSizePx, fontWeight, fontFamily, letterSpacingPx).width;
 }
 
 function applyEllipsis(
@@ -421,6 +442,8 @@ function fitSingleLineText({ text, fontWeight = 800, minPt, maxPt, widthPx, pxPe
       text: '',
       ellipsisApplied: false,
       widthPx: 0,
+      actualBoundingBoxAscent: null,
+      actualBoundingBoxDescent: null,
     };
   }
   const minPx = toFontPx(minPt, pxPerMm);
@@ -450,21 +473,39 @@ function fitSingleLineText({ text, fontWeight = 800, minPt, maxPt, widthPx, pxPe
     }
     let candidate = null;
     if (bestSize !== null) {
+      const measurement = measureTextMetrics(
+        normalized,
+        bestSize,
+        fontWeight,
+        LABEL_FONT_FAMILY,
+        spacingPx,
+      );
       candidate = {
         fontSizePx: bestSize,
         letterSpacingPx: spacingPx,
         text: normalized,
         ellipsisApplied: false,
-        widthPx: measureTextWidth(normalized, bestSize, fontWeight, LABEL_FONT_FAMILY, spacingPx),
+        widthPx: measurement.width,
+        actualBoundingBoxAscent: measurement.actualBoundingBoxAscent,
+        actualBoundingBoxDescent: measurement.actualBoundingBoxDescent,
       };
     } else {
       const ellipsized = applyEllipsis(normalized, minPx, fontWeight, spacingPx, widthPx);
+      const measurement = measureTextMetrics(
+        ellipsized,
+        minPx,
+        fontWeight,
+        LABEL_FONT_FAMILY,
+        spacingPx,
+      );
       candidate = {
         fontSizePx: minPx,
         letterSpacingPx: spacingPx,
         text: ellipsized,
         ellipsisApplied: true,
-        widthPx: measureTextWidth(ellipsized, minPx, fontWeight, LABEL_FONT_FAMILY, spacingPx),
+        widthPx: measurement.width,
+        actualBoundingBoxAscent: measurement.actualBoundingBoxAscent,
+        actualBoundingBoxDescent: measurement.actualBoundingBoxDescent,
       };
     }
     if (!best) {
@@ -490,12 +531,19 @@ function fitSingleLineText({ text, fontWeight = 800, minPt, maxPt, widthPx, pxPe
     }
   });
 
-  return best || {
+  if (best) {
+    return best;
+  }
+
+  const measurement = measureTextMetrics(normalized, minPx, fontWeight, LABEL_FONT_FAMILY, 0);
+  return {
     fontSizePx: minPx,
     letterSpacingPx: 0,
     text: normalized,
     ellipsisApplied: false,
-    widthPx: measureTextWidth(normalized, minPx, fontWeight, LABEL_FONT_FAMILY, 0),
+    widthPx: measurement.width,
+    actualBoundingBoxAscent: measurement.actualBoundingBoxAscent,
+    actualBoundingBoxDescent: measurement.actualBoundingBoxDescent,
   };
 }
 
@@ -1004,7 +1052,18 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
     pxPerMm,
     letterSpacingLimit: textPreset.main?.letter_spacing_adj || -0.3,
   });
-  const mainHeight = mainFit.text ? mainFit.fontSizePx : 0;
+  const mainAscent = Number.isFinite(mainFit.actualBoundingBoxAscent)
+    ? mainFit.actualBoundingBoxAscent
+    : null;
+  const mainDescent = Number.isFinite(mainFit.actualBoundingBoxDescent)
+    ? mainFit.actualBoundingBoxDescent
+    : null;
+  const hasMainMetrics = mainAscent !== null && mainDescent !== null;
+  const mainHeight = mainFit.text
+    ? hasMainMetrics
+      ? mainAscent + mainDescent
+      : mainFit.fontSizePx
+    : 0;
   const mainX = computeAlignedX(zones.main.x, baseMainWidthPx, alignment) + horizontalOffsetPx;
 
   const subtitleCandidates = buildSubtitleCandidates(textLines, preset);
@@ -1116,7 +1175,10 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
   zones.main.effectiveWidth = mainWidthForFitPx;
   zones.sub.effectiveWidth = Math.max(0, subtitleWidthPx - horizontalInsetPx);
 
-  const mainBaseline = mainHeight > 0 ? zones.main.y + mainHeight / 2 : zones.main.y;
+  let mainBaseline = mainHeight > 0 ? zones.main.y + mainHeight / 2 : zones.main.y;
+  if (mainHeight > 0 && hasMainMetrics) {
+    mainBaseline += (mainAscent - mainDescent) / 2;
+  }
 
   const subtitle = {
     ...subtitleFit,
@@ -1136,6 +1198,8 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
       x: mainX,
       anchor: alignment,
       fontWeight: mainFontWeight,
+      actualBoundingBoxAscent: mainAscent,
+      actualBoundingBoxDescent: mainDescent,
     },
     sub: subtitle,
     zones,
