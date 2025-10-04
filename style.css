@@ -973,7 +973,7 @@ main {
   border: 0;
   box-shadow: none;
   color: #000000;
-  font-family: 'Barlow', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Oswald', 'Poppins', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   overflow: hidden;
   z-index: 1;
   --label-gap: 12px;

@@ -14,7 +14,7 @@ import { ensureLayoutEditor } from './layoutEditor.js';
 
 const SVG_XMLNS = 'http://www.w3.org/2000/svg';
 const SVG_XLINK = 'http://www.w3.org/1999/xlink';
-const LABEL_FONT_FAMILY = "'Barlow', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif";
+const LABEL_FONT_FAMILY = "'Oswald', 'Poppins', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif";
 const LABEL_BACKGROUND_COLOR = '#ffffff';
 const LABEL_TEXT_COLOR = '#0f172a';
 const FRAME_STROKE_COLOR = 'rgba(100,116,139,0.5)';
