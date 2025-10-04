@@ -15,6 +15,22 @@ import { ensureLayoutEditor } from './layoutEditor.js';
 const SVG_XMLNS = 'http://www.w3.org/2000/svg';
 const SVG_XLINK = 'http://www.w3.org/1999/xlink';
 const LABEL_FONT_FAMILY = "'Oswald', 'Poppins', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif";
+const OSWALD_FONT_FACE_STYLE = `
+@font-face {
+  font-family: 'Oswald';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/oswald/v57/TK3_WkUHHAIjg75cFRf3bXL8LICs1y9osUZiZQ.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Oswald';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/oswald/v57/TK3_WkUHHAIjg75cFRf3bXL8LICs1xZosUZiZQ.woff2) format('woff2');
+}
+`.trim();
 const LABEL_BACKGROUND_COLOR = '#ffffff';
 const LABEL_TEXT_COLOR = '#0f172a';
 const FRAME_STROKE_COLOR = 'rgba(100,116,139,0.5)';
@@ -1098,6 +1114,7 @@ export async function renderLabelSVG({
   svgParts.push(
     `<svg xmlns="${SVG_XMLNS}" xmlns:xlink="${SVG_XLINK}" width="${outputWidthPx}" height="${outputHeightPx}" viewBox="0 0 ${outputWidthPx} ${outputHeightPx}">`,
   );
+  svgParts.push(`<defs><style type="text/css">${OSWALD_FONT_FACE_STYLE}</style></defs>`);
   if (cropToPrintable) {
     svgParts.push(
       `<rect x="0" y="0" width="${outputWidthPx}" height="${outputHeightPx}" fill="${LABEL_BACKGROUND_COLOR}" />`,
