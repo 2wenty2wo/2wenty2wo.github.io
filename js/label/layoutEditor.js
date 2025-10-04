@@ -427,6 +427,14 @@ function bindPresetInputs(panel, heightKey) {
         value: preset.media_zone_width_pct_max_user,
         onChange: value => setValue('media_zone_width_pct_max_user', value),
       }),
+      createNumberField({
+        label: 'Media/Text gap (mm)',
+        min: 0,
+        max: 4,
+        step: 0.1,
+        value: preset.media_text_gap_mm,
+        onChange: value => setValue('media_text_gap_mm', value),
+      }),
     );
   });
 
@@ -440,6 +448,14 @@ function bindPresetInputs(panel, heightKey) {
           { label: 'Column', value: 'column' },
         ],
         onChange: value => setValue('icon_layout', value),
+      }),
+      createNumberField({
+        label: 'Icon padding (mm)',
+        min: 0,
+        max: 4,
+        step: 0.1,
+        value: preset.icon_padding_mm,
+        onChange: value => setValue('icon_padding_mm', value),
       }),
       createNumberField({
         label: 'Icon gap (mm)',
