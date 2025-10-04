@@ -191,12 +191,32 @@ function setupLayoutEditorTestEnvironment() {
 
         header.append(title, actionsWrapper);
 
+        const scopeContainer = new StubElement('div');
+        scopeContainer.classList.add('layout-editor-scope');
+        scopeContainer.setAttribute('data-editor-scope-container', '');
+        const scopeLabel = new StubElement('label');
+        scopeLabel.classList.add('layout-editor-scope__label');
+        scopeLabel.setAttribute('data-editor-scope-label', '');
+        scopeLabel.textContent = 'Preset scope';
+        const scopeControls = new StubElement('div');
+        scopeControls.classList.add('layout-editor-scope__controls');
+        const scopeSelect = new StubElement('select');
+        scopeSelect.classList.add('layout-editor-scope__select');
+        scopeSelect.setAttribute('data-editor-scope', '');
+        const clearButton = new StubElement('button');
+        clearButton.classList.add('layout-editor-scope__clear');
+        clearButton.setAttribute('data-editor-clear-part', '');
+        clearButton.textContent = 'Clear part override';
+        scopeControls.append(scopeSelect, clearButton);
+        scopeContainer.append(scopeLabel, scopeControls);
+
         const body = new StubElement('div');
         body.classList.add('layout-editor-body');
 
-        this.append(header, body);
+        this.append(header, scopeContainer, body);
         this._body = body;
         this._actions = actions;
+        this._scope = { container: scopeContainer, select: scopeSelect, clearButton };
       }
     }
 
@@ -234,6 +254,15 @@ function setupLayoutEditorTestEnvironment() {
       }
       if (selector === '[data-editor-action]') {
         return Object.hasOwn(this.dataset, 'editorAction');
+      }
+      if (selector === '[data-editor-scope-container]') {
+        return Object.hasOwn(this.dataset, 'editorScopeContainer');
+      }
+      if (selector === '[data-editor-scope]') {
+        return Object.hasOwn(this.dataset, 'editorScope');
+      }
+      if (selector === '[data-editor-clear-part]') {
+        return Object.hasOwn(this.dataset, 'editorClearPart');
       }
       return this.tagName.toLowerCase() === selector.toLowerCase();
     }
@@ -326,7 +355,7 @@ function setupLayoutEditorTestEnvironment() {
 }
 
 test('default layout presets expose icon padding and media/text gap defaults', () => {
-  const expectedIconPadding = { 9: 0, 12: 0, 18: 0.4, 24: 0 };
+  const expectedIconPadding = { 9: 0, 12: 0, 18: 0.4, 24: 2.2 };
   const expectedMediaTextGap = { 9: 0, 12: 0, 18: 0.6, 24: 0 };
 
   Object.entries(defaultLayoutPresets).forEach(([height, preset]) => {
@@ -531,6 +560,48 @@ test('getActiveLayoutPreset resolves heights expressed with units', () => {
     assert.ok(expected, 'expected a default preset for 18 mm labels');
     assert.equal(preset.icon_layout, expected.icon_layout);
     assert.deepEqual(preset.text_zone.main, expected.text_zone.main);
+  } finally {
+    clearPresetOverrides();
+  }
+});
+
+test('part-specific overrides take precedence over shared height overrides', () => {
+  clearPresetOverrides();
+  try {
+    const heightKey = 12;
+    const partType = 'Bolt';
+    const baseOverride = { media_zone_width_pct: 44 };
+    const partOverride = {
+      media_zone_width_pct: 58,
+      text_zone: { main: { max_pt: 15 } },
+    };
+    setPresetOverride(heightKey, baseOverride);
+    setPresetOverride(heightKey, partOverride, { partType });
+    const globalPreset = getActiveLayoutPreset(heightKey);
+    const partPreset = getActiveLayoutPreset(heightKey, { partType });
+    assert.equal(
+      globalPreset.media_zone_width_pct,
+      baseOverride.media_zone_width_pct,
+      'global overrides should apply when editing all parts',
+    );
+    assert.equal(
+      partPreset.media_zone_width_pct,
+      partOverride.media_zone_width_pct,
+      'part overrides should override media width for that part type',
+    );
+    assert.equal(
+      partPreset.text_zone.main.max_pt,
+      partOverride.text_zone.main.max_pt,
+      'part overrides should override nested properties for that part type',
+    );
+    const storedGlobal = getPresetOverride(heightKey);
+    const storedPart = getPresetOverride(heightKey, { partType });
+    assert.deepEqual(storedGlobal, baseOverride, 'base override should remain stored separately');
+    assert.deepEqual(
+      storedPart,
+      partOverride,
+      'part override should persist separately from the shared override',
+    );
   } finally {
     clearPresetOverrides();
   }

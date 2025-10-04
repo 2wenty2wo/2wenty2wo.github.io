@@ -156,6 +156,7 @@ export const defaultLayoutPresets = {
 const STORAGE_VERSION = 2;
 const STORAGE_KEY = `gridfinity-layout-presets:v${STORAGE_VERSION}`;
 const LEGACY_STORAGE_KEYS = ['gridfinity-layout-presets'];
+const PARTS_KEY = '__parts';
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -231,7 +232,7 @@ export function savePresetOverrides(overrides) {
 
 export function clearPresetOverrides() {
   savePresetOverrides({});
-  notifyPresetListeners();
+  notifyPresetListeners(null, {});
 }
 
 function parseHeightValue(heightMm) {
@@ -269,16 +270,55 @@ function resolveKey(heightMm) {
   return String(closest);
 }
 
-export function getPresetOverride(heightMm) {
+function getOverrideEntry(overrides, key) {
+  const entry = overrides?.[key];
+  if (!entry || typeof entry !== 'object') {
+    return null;
+  }
+  return entry;
+}
+
+function extractBaseOverride(entry) {
+  if (!entry || typeof entry !== 'object') {
+    return null;
+  }
+  const { [PARTS_KEY]: _, ...base } = entry;
+  return Object.keys(base).length > 0 ? base : null;
+}
+
+function extractPartOverride(entry, partType) {
+  if (!entry || typeof entry !== 'object' || !partType) {
+    return null;
+  }
+  const map = entry[PARTS_KEY];
+  if (!map || typeof map !== 'object') {
+    return null;
+  }
+  const partOverride = map[partType];
+  if (!partOverride || typeof partOverride !== 'object') {
+    return null;
+  }
+  return partOverride;
+}
+
+export function getPresetOverride(heightMm, options = {}) {
   const overrides = loadPresetOverrides();
   const key = resolveKey(heightMm);
-  const override = overrides[key];
+  const entry = getOverrideEntry(overrides, key);
+  const { partType = null } = options || {};
+  const override = partType ? extractPartOverride(entry, partType) : extractBaseOverride(entry);
   return override ? clone(override) : null;
 }
 
 function deepMerge(base, override) {
   const merged = Array.isArray(base) ? [...base] : { ...base };
   Object.keys(override || {}).forEach(key => {
+    if (key === PARTS_KEY) {
+      if (override[key] && typeof override[key] === 'object') {
+        merged[key] = deepMerge(base[key] || {}, override[key]);
+      }
+      return;
+    }
     const value = override[key];
     if (value && typeof value === 'object' && !Array.isArray(value)) {
       merged[key] = deepMerge(base[key] || {}, value);
@@ -289,26 +329,88 @@ function deepMerge(base, override) {
   return merged;
 }
 
-export function getActiveLayoutPreset(heightMm) {
+export function getActiveLayoutPreset(heightMm, options = {}) {
   const key = resolveKey(heightMm);
   const base = defaultLayoutPresets[key] || defaultLayoutPresets['12'];
-  const override = getPresetOverride(heightMm);
-  if (!override) {
-    return clone(base);
+  const overrides = loadPresetOverrides();
+  const entry = getOverrideEntry(overrides, key);
+  let result = clone(base);
+  const baseOverride = extractBaseOverride(entry);
+  if (baseOverride) {
+    result = deepMerge(result, baseOverride);
   }
-  return deepMerge(clone(base), override);
+  const { partType = null } = options || {};
+  if (partType) {
+    const partOverride = extractPartOverride(entry, partType);
+    if (partOverride) {
+      result = deepMerge(result, partOverride);
+    }
+  }
+  return result;
 }
 
-export function setPresetOverride(heightMm, preset) {
+function hasNonPartKeys(entry) {
+  if (!entry || typeof entry !== 'object') {
+    return false;
+  }
+  return Object.keys(entry).some(key => key !== PARTS_KEY);
+}
+
+function clonePartsMap(parts) {
+  if (!parts || typeof parts !== 'object') {
+    return null;
+  }
+  const cloned = {};
+  Object.keys(parts).forEach(key => {
+    const value = parts[key];
+    if (value !== undefined) {
+      cloned[key] = clone(value);
+    }
+  });
+  return Object.keys(cloned).length > 0 ? cloned : null;
+}
+
+export function setPresetOverride(heightMm, preset, options = {}) {
   const overrides = loadPresetOverrides();
   const key = resolveKey(heightMm);
-  if (preset) {
-    overrides[key] = clone(preset);
+  const entry = getOverrideEntry(overrides, key) ? clone(overrides[key]) : {};
+  const { partType = null } = options || {};
+  if (partType) {
+    const parts = entry[PARTS_KEY] && typeof entry[PARTS_KEY] === 'object' ? { ...entry[PARTS_KEY] } : {};
+    if (preset && Object.keys(preset).length > 0) {
+      parts[partType] = clone(preset);
+    } else {
+      delete parts[partType];
+    }
+    const cleanedParts = clonePartsMap(parts);
+    if (cleanedParts) {
+      entry[PARTS_KEY] = cleanedParts;
+    } else {
+      delete entry[PARTS_KEY];
+    }
+    if (!hasNonPartKeys(entry) && !entry[PARTS_KEY]) {
+      delete overrides[key];
+    } else {
+      overrides[key] = entry;
+    }
+  } else if (preset && Object.keys(preset).length > 0) {
+    const sanitized = clone(preset);
+    delete sanitized[PARTS_KEY];
+    const parts = entry[PARTS_KEY] && typeof entry[PARTS_KEY] === 'object' ? entry[PARTS_KEY] : null;
+    const nextEntry = clone(sanitized);
+    if (parts && Object.keys(parts).length > 0) {
+      nextEntry[PARTS_KEY] = parts;
+    }
+    overrides[key] = nextEntry;
   } else {
-    delete overrides[key];
+    if (entry[PARTS_KEY]) {
+      overrides[key] = { [PARTS_KEY]: entry[PARTS_KEY] };
+    } else {
+      delete overrides[key];
+    }
   }
   savePresetOverrides(overrides);
-  notifyPresetListeners(key);
+  notifyPresetListeners(key, { partType });
 }
 
 export function exportLayoutPresets(includeDefaults = false) {
@@ -322,7 +424,18 @@ export function exportLayoutPresets(includeDefaults = false) {
       const hasOverride = overrides ? Object.hasOwn(overrides, key) : false;
       if (hasDefault) {
         const base = clone(defaultLayoutPresets[key]);
-        merged[key] = hasOverride ? deepMerge(base, overrides[key]) : base;
+        if (hasOverride) {
+          const overrideEntry = overrides[key];
+          const baseOverride = extractBaseOverride(overrideEntry);
+          const parts = clonePartsMap(overrideEntry?.[PARTS_KEY]);
+          const mergedEntry = baseOverride ? deepMerge(base, baseOverride) : base;
+          if (parts) {
+            mergedEntry[PARTS_KEY] = parts;
+          }
+          merged[key] = mergedEntry;
+        } else {
+          merged[key] = base;
+        }
       } else if (hasOverride) {
         merged[key] = clone(overrides[key]);
       }
@@ -361,10 +474,10 @@ export function subscribePresetChanges(listener) {
   return () => listeners.delete(listener);
 }
 
-export function notifyPresetListeners(heightKey = null) {
+export function notifyPresetListeners(heightKey = null, options = {}) {
   listeners.forEach(listener => {
     try {
-      listener(heightKey);
+      listener(heightKey, options);
     } catch (error) {
       console.error('Layout preset listener error.', error);
     }

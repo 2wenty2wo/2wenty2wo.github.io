@@ -1472,6 +1472,27 @@ async function ensureFontsReady() {
   }
 }
 
+function resolveLayoutPartContext() {
+  const hardwareType = typeof state.hardwareType === 'string' ? state.hardwareType.trim() : '';
+  if (!hardwareType) {
+    return { partType: null, partLabel: '' };
+  }
+  if (ELECTRICAL_COMPONENT_TYPES.has(hardwareType)) {
+    const category = (state.componentCategory || hardwareType || '').trim();
+    const label = category || hardwareType;
+    const slug = label
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    const partType = `component:${slug || hardwareType.toLowerCase()}`;
+    return {
+      partType,
+      partLabel: label,
+    };
+  }
+  return { partType: hardwareType, partLabel: hardwareType };
+}
+
 async function renderLabelSvgForState(geometryOverride, options = {}) {
   await ensureFontsReady();
   const geometry = geometryOverride || getLabelGeometry();
@@ -1479,6 +1500,7 @@ async function renderLabelSvgForState(geometryOverride, options = {}) {
   const hardwareInfo = resolveHardwareImageInfo();
   const qrContent = state.showQr && state.qrContent ? state.qrContent.trim() : '';
   const { cropToPrintable = false, layoutEditorToken } = options;
+  const partContext = resolveLayoutPartContext();
   return renderLabelSVG({
     geometry,
     pxPerMm,
@@ -1488,6 +1510,8 @@ async function renderLabelSvgForState(geometryOverride, options = {}) {
     minTextWidthMm: MIN_TEXT_WIDTH_MM,
     cropToPrintable,
     layoutEditorToken,
+    partType: partContext.partType,
+    partLabel: partContext.partLabel,
   });
 }
 
