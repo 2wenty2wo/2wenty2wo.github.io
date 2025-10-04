@@ -13,6 +13,8 @@ import {
   populateResistorValues,
   populateCapacitorValues,
   populateDiodeValues,
+  populatePotentiometerValues,
+  populatePotentiometerTapers,
   populateWasherTypeOptions,
   updateCustomImageUi,
   ensureCustomIconAsset,
@@ -32,6 +34,8 @@ import {
   setResistorValueSelection,
   setCapacitorValueSelection,
   setDiodeValueSelection,
+  setPotentiometerValueSelection,
+  setPotentiometerTaperSelection,
   syncConnectorSeriesPicker,
   updateComponentValueUi,
 } from './forms.js';
@@ -100,6 +104,8 @@ function applyStateToControls() {
   setResistorValueSelection(state.resistorValue || '', { triggerUpdate: false });
   setCapacitorValueSelection(state.capacitorValue || '', { triggerUpdate: false });
   setDiodeValueSelection(state.diodeValue || '', { triggerUpdate: false });
+  setPotentiometerValueSelection(state.potentiometerValue || '', { triggerUpdate: false });
+  setPotentiometerTaperSelection(state.potentiometerTaper || '', { triggerUpdate: false });
   updateComponentValueUi({ resetIfHidden: false });
 
   if (lengthInput) {
@@ -173,6 +179,8 @@ function init() {
   populateResistorValues();
   populateCapacitorValues();
   populateDiodeValues();
+  populatePotentiometerValues();
+  populatePotentiometerTapers();
   populateWasherTypeOptions();
   populateSwitchTypePicker();
   updateCustomImageUi();

@@ -10,6 +10,8 @@ import {
   syncComponentMountPicker,
   syncResistorValuePicker,
   syncCapacitorValuePicker,
+  syncPotentiometerValuePicker,
+  syncPotentiometerTaperPicker,
   syncBearingTypePicker,
   syncWasherTypePicker,
   syncNutTypePicker,
@@ -103,6 +105,12 @@ const {
   capacitorValueField,
   capacitorValueSelect,
   capacitorValueMessage,
+  potentiometerValueField,
+  potentiometerValueSelect,
+  potentiometerValueMessage,
+  potentiometerTaperField,
+  potentiometerTaperSelect,
+  potentiometerTaperMessage,
   customLine1Input,
   customLine1Field,
   customLine1Message,
@@ -347,11 +355,20 @@ export function isLabelReady() {
     const category = state.componentCategory || state.hardwareType;
     const requiresResistorValue = category === 'Resistor';
     const requiresCapacitorValue = category === 'Capacitor';
+    const requiresPotentiometerDetails = category === 'Potentiometer';
     if (requiresResistorValue) {
       return Boolean(state.componentCategory && state.componentMount && state.resistorValue);
     }
     if (requiresCapacitorValue) {
       return Boolean(state.componentCategory && state.componentMount && state.capacitorValue);
+    }
+    if (requiresPotentiometerDetails) {
+      return Boolean(
+        state.componentCategory &&
+          state.componentMount &&
+          state.potentiometerValue &&
+          state.potentiometerTaper,
+      );
     }
     return Boolean(state.componentCategory && state.componentMount);
   }
@@ -642,8 +659,13 @@ function applyValidationFeedback() {
     const category = (state.componentCategory || state.hardwareType || '').trim();
     const requiresResistorValue = category === 'Resistor';
     const requiresCapacitorValue = category === 'Capacitor';
+    const requiresPotentiometerValue = category === 'Potentiometer';
     const resistorValid = !requiresResistorValue || Boolean(state.resistorValue);
     const capacitorValid = !requiresCapacitorValue || Boolean(state.capacitorValue);
+    const potentiometerValueValid =
+      !requiresPotentiometerValue || Boolean(state.potentiometerValue);
+    const potentiometerTaperValid =
+      !requiresPotentiometerValue || Boolean(state.potentiometerTaper);
     updateInputFieldState({
       input: resistorValueSelect,
       container: resistorValueField,
@@ -658,8 +680,24 @@ function applyValidationFeedback() {
       valid: capacitorValid,
       message: '',
     });
+    updateInputFieldState({
+      input: potentiometerValueSelect,
+      container: potentiometerValueField,
+      messageElement: potentiometerValueMessage,
+      valid: potentiometerValueValid,
+      message: potentiometerValueValid ? '' : 'Select a potentiometer value',
+    });
+    updateInputFieldState({
+      input: potentiometerTaperSelect,
+      container: potentiometerTaperField,
+      messageElement: potentiometerTaperMessage,
+      valid: potentiometerTaperValid,
+      message: potentiometerTaperValid ? '' : 'Select a taper',
+    });
     syncResistorValuePicker({ isValid: resistorValid });
     syncCapacitorValuePicker({ isValid: capacitorValid });
+    syncPotentiometerValuePicker({ isValid: potentiometerValueValid });
+    syncPotentiometerTaperPicker({ isValid: potentiometerTaperValid });
   } else {
     updateRadioGroupFeedback({
       radios: componentCategoryRadios,
@@ -691,6 +729,22 @@ function applyValidationFeedback() {
     });
     syncResistorValuePicker({ isValid: true });
     syncCapacitorValuePicker({ isValid: true });
+    updateInputFieldState({
+      input: potentiometerValueSelect,
+      container: potentiometerValueField,
+      messageElement: potentiometerValueMessage,
+      valid: true,
+      message: '',
+    });
+    updateInputFieldState({
+      input: potentiometerTaperSelect,
+      container: potentiometerTaperField,
+      messageElement: potentiometerTaperMessage,
+      valid: true,
+      message: '',
+    });
+    syncPotentiometerValuePicker({ isValid: true });
+    syncPotentiometerTaperPicker({ isValid: true });
   }
 
   if (hardwareType === 'Custom') {
@@ -1228,6 +1282,19 @@ function buildTextLines() {
     if (category === 'Capacitor') {
       const line1 = state.capacitorValue || 'Capacitor';
       const line2 = 'Capacitor';
+      const line3Parts = [];
+      if (state.componentMount) {
+        line3Parts.push(state.componentMount);
+      }
+      if (state.notes) {
+        line3Parts.push(state.notes);
+      }
+      return applyTextVisibility({ line1, line2, line3: line3Parts.join(' — ') });
+    }
+    if (category === 'Potentiometer') {
+      const line1 = state.potentiometerValue || 'Potentiometer';
+      const taperLabel = state.potentiometerTaper ? state.potentiometerTaper : '';
+      const line2 = taperLabel ? `${taperLabel} Potentiometer` : 'Potentiometer';
       const line3Parts = [];
       if (state.componentMount) {
         line3Parts.push(state.componentMount);

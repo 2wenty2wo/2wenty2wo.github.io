@@ -15,6 +15,8 @@ import {
   resistorValueOptions,
   capacitorValueOptions,
   diodeValueOptions,
+  potentiometerValueOptions,
+  potentiometerTaperOptions,
 } from './data.js';
 
 export const SHARE_QUERY_PARAM = 'label';
@@ -48,6 +50,8 @@ const FIELD_MAP = {
   resistorValue: 'rv',
   capacitorValue: 'cv',
   diodeValue: 'dv',
+  potentiometerValue: 'pv',
+  potentiometerTaper: 'pt',
   bearingType: 'bt',
   bearingDetails: 'bd',
   customLine1: 'c1',
@@ -80,6 +84,12 @@ const componentMountOptions = new Set(componentMountOptionList.map(option => opt
 const resistorValueOptionSet = new Set(resistorValueOptions.map(option => option.id));
 const capacitorValueOptionSet = new Set(capacitorValueOptions.map(option => option.id));
 const diodeValueOptionSet = new Set(diodeValueOptions.map(option => option.id));
+const potentiometerValueOptionSet = new Set(
+  potentiometerValueOptions.map(option => option.id),
+);
+const potentiometerTaperOptionSet = new Set(
+  potentiometerTaperOptions.map(option => option.id),
+);
 const heightOptions = new Set(
   Array.isArray(elements.heightRadios)
     ? elements.heightRadios
@@ -345,6 +355,18 @@ function applyExpandedPayload(expanded) {
   if (typeof expanded.diodeValue === 'string' && diodeValueOptionSet.has(expanded.diodeValue)) {
     state.diodeValue = expanded.diodeValue;
   }
+  if (
+    typeof expanded.potentiometerValue === 'string' &&
+    potentiometerValueOptionSet.has(expanded.potentiometerValue)
+  ) {
+    state.potentiometerValue = expanded.potentiometerValue;
+  }
+  if (
+    typeof expanded.potentiometerTaper === 'string' &&
+    potentiometerTaperOptionSet.has(expanded.potentiometerTaper)
+  ) {
+    state.potentiometerTaper = expanded.potentiometerTaper;
+  }
   if (typeof expanded.bearingType === 'string') {
     const trimmed = expanded.bearingType.trim();
     if (!trimmed) {
@@ -361,6 +383,8 @@ function applyExpandedPayload(expanded) {
     state.resistorValue = '';
     state.capacitorValue = '';
     state.diodeValue = '';
+    state.potentiometerValue = '';
+    state.potentiometerTaper = '';
   }
 
   const activeCategory = state.componentCategory || state.hardwareType || '';
@@ -372,6 +396,10 @@ function applyExpandedPayload(expanded) {
   }
   if (activeCategory !== 'Diode') {
     state.diodeValue = '';
+  }
+  if (activeCategory !== 'Potentiometer') {
+    state.potentiometerValue = '';
+    state.potentiometerTaper = '';
   }
 
   const sanitizedThread = sanitizeThreadSize(expanded.threadSize, state.hardwareType);
