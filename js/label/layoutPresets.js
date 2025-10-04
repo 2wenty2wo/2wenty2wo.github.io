@@ -1,6 +1,6 @@
 export const defaultLayoutPresets = {
   9: {
-    padding_mm: 0,
+    padding_mm: 0.2,
     media_zone_width_pct: 38,
     media_zone_width_pct_min: 32,
     media_zone_width_pct_max: 44,
@@ -38,11 +38,11 @@ export const defaultLayoutPresets = {
     },
   },
   12: {
-    padding_mm: 0,
-    media_zone_width_pct: 39.5,
+    padding_mm: 0.3,
+    media_zone_width_pct: 48,
     media_zone_width_pct_min: 34,
-    media_zone_width_pct_max: 46,
-    media_zone_width_pct_max_user: 46,
+    media_zone_width_pct_max: 48,
+    media_zone_width_pct_max_user: 46.5,
     icon_layout: 'row',
     icon_padding_mm: 0,
     icon_gap_mm: 0,
@@ -61,7 +61,7 @@ export const defaultLayoutPresets = {
         font_weight: 700,
       },
       sub: {
-        min_pt: 6.8,
+        min_pt: 6.1,
         max_pt: 10.5,
         line_height_pct: 112,
       },
@@ -76,7 +76,7 @@ export const defaultLayoutPresets = {
     },
   },
   18: {
-    padding_mm: 1.6,
+    padding_mm: 0,
     media_zone_width_pct: 32,
     media_zone_width_pct_min: 28,
     media_zone_width_pct_max: 36,
@@ -89,7 +89,7 @@ export const defaultLayoutPresets = {
     text_zone: {
       top_pct: 60,
       gap_mm: 0.8,
-      alignment: 'start',
+      alignment: 'middle',
       block_offset_mm: 0,
       horizontal_offset_mm: 0,
       main: {
@@ -114,14 +114,14 @@ export const defaultLayoutPresets = {
     },
   },
   24: {
-    padding_mm: 0,
-    media_zone_width_pct: 31,
+    padding_mm: 0.3,
+    media_zone_width_pct: 37.5,
     media_zone_width_pct_min: 25,
-    media_zone_width_pct_max: 40,
-    media_zone_width_pct_max_user: 44,
+    media_zone_width_pct_max: 38,
+    media_zone_width_pct_max_user: 35.5,
     icon_layout: 'column',
-    icon_padding_mm: 0,
-    icon_gap_mm: 0.6,
+    icon_padding_mm: 2.2,
+    icon_gap_mm: 0,
     icon_min_mm: 7.5,
     media_text_gap_mm: 0,
     text_zone: {
@@ -131,13 +131,13 @@ export const defaultLayoutPresets = {
       block_offset_mm: 0,
       horizontal_offset_mm: 0,
       main: {
-        min_pt: 10,
+        min_pt: 9.1,
         max_pt: 24,
         letter_spacing_adj: -0.35,
         font_weight: 700,
       },
       sub: {
-        min_pt: 8,
+        min_pt: 7,
         max_pt: 15,
         line_height_pct: 120,
       },
