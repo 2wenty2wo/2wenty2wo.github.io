@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { renderLabelSVG, fitTextToBox } from '../js/label/renderLabelSVG.js';
+import { renderLabelSVG, fitTextToBox, mmToPx } from '../js/label/renderLabelSVG.js';
 
 const pxPerMm = 300 / 25.4;
 
@@ -233,4 +233,41 @@ test('QR generator hook places QR image alongside text', async () => {
   const textMatches = [...result.svgMarkup.matchAll(/<text[^>]+x="([^"]+)"[^>]+y="([^"]+)"/g)];
   assert.ok(textMatches.length >= 1, 'text should remain present alongside QR');
   assert.ok(images[0].x > Number(textMatches[0][1]), 'QR should appear to the right of text content');
+});
+
+test('cropToPrintable output trims exported dimensions to printable area', async () => {
+  const geometry = {
+    labelWidthMm: 37,
+    labelHeightMm: 12,
+    printableWidthMm: 33,
+    printableHeightMm: 10,
+    marginX: 2,
+    marginY: 1,
+  };
+  const result = await renderLabelSVG({
+    geometry,
+    pxPerMm,
+    textLines: { line1: 'Label', line2: '', line3: '' },
+    hardwareInfo: null,
+    qrContent: '',
+    cropToPrintable: true,
+  });
+  const expectedWidthPx = Math.round(mmToPx(geometry.printableWidthMm, pxPerMm));
+  const expectedHeightPx = Math.round(mmToPx(geometry.printableHeightMm, pxPerMm));
+  assert.equal(result.widthPx, expectedWidthPx);
+  assert.equal(result.heightPx, expectedHeightPx);
+  assert.match(
+    result.svgMarkup,
+    new RegExp(`<svg[^>]+width="${expectedWidthPx}"[^>]+height="${expectedHeightPx}"`),
+    'cropped SVG should use printable dimensions',
+  );
+  assert.match(
+    result.svgMarkup,
+    /transform="translate\(-?\d+(?:\.\d+)? -?\d+(?:\.\d+)?\)"/,
+    'cropped export should translate content into printable viewBox',
+  );
+  assert.ok(
+    !/stroke="rgba\(100,116,139,0.5\)"/.test(result.svgMarkup),
+    'cropped export should omit outer frame stroke',
+  );
 });

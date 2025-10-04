@@ -1390,12 +1390,13 @@ async function ensureFontsReady() {
   }
 }
 
-async function renderLabelSvgForState(geometryOverride) {
+async function renderLabelSvgForState(geometryOverride, options = {}) {
   await ensureFontsReady();
   const geometry = geometryOverride || getLabelGeometry();
   const textLines = buildTextLines();
   const hardwareInfo = resolveHardwareImageInfo();
   const qrContent = state.showQr && state.qrContent ? state.qrContent.trim() : '';
+  const { cropToPrintable = false } = options;
   return renderLabelSVG({
     geometry,
     pxPerMm,
@@ -1403,6 +1404,7 @@ async function renderLabelSvgForState(geometryOverride) {
     hardwareInfo,
     qrContent,
     minTextWidthMm: MIN_TEXT_WIDTH_MM,
+    cropToPrintable,
   });
 }
 
@@ -1437,7 +1439,7 @@ async function rasterizeSvgToCanvas(svgMarkup, widthPx, heightPx, scale) {
 }
 
 export async function renderLabelPng() {
-  const result = await renderLabelSvgForState();
+  const result = await renderLabelSvgForState(undefined, { cropToPrintable: true });
   const scale = getRasterScale();
   const canvas = await rasterizeSvgToCanvas(result.svgMarkup, result.widthPx, result.heightPx, scale);
   const blob = await canvasToBlob(canvas, 'image/png');
@@ -1452,6 +1454,6 @@ export async function renderLabelPng() {
 }
 
 export async function renderLabelSvgMarkup() {
-  const { svgMarkup } = await renderLabelSvgForState();
+  const { svgMarkup } = await renderLabelSvgForState(undefined, { cropToPrintable: true });
   return svgMarkup;
 }

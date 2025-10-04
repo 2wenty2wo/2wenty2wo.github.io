@@ -920,11 +920,16 @@ export async function renderLabelSVG({
   qrContent,
   minTextWidthMm = 9,
   qrGenerator,
+  cropToPrintable = false,
 }) {
   if (!geometry || !Number.isFinite(pxPerMm)) {
     throw new Error('Invalid geometry or pxPerMm for label rendering.');
   }
   const { labelWidthPx, labelHeightPx, printable } = resolvePrintableRect(geometry, pxPerMm);
+  const outputWidthPx = cropToPrintable ? printable.width : labelWidthPx;
+  const outputHeightPx = cropToPrintable ? printable.height : labelHeightPx;
+  const translationX = cropToPrintable ? -printable.x : 0;
+  const translationY = cropToPrintable ? -printable.y : 0;
   const preset = getActiveLayoutPreset(geometry.printableHeightMm || geometry.labelHeightMm);
   const contentRect = computeContentRect(printable, preset, pxPerMm);
   const mediaItems = resolveMediaItems(hardwareInfo);
@@ -976,24 +981,32 @@ export async function renderLabelSVG({
 
   const svgParts = [];
   svgParts.push(
-    `<svg xmlns="${SVG_XMLNS}" xmlns:xlink="${SVG_XLINK}" width="${labelWidthPx}" height="${labelHeightPx}" viewBox="0 0 ${labelWidthPx} ${labelHeightPx}">`,
+    `<svg xmlns="${SVG_XMLNS}" xmlns:xlink="${SVG_XLINK}" width="${outputWidthPx}" height="${outputHeightPx}" viewBox="0 0 ${outputWidthPx} ${outputHeightPx}">`,
   );
-  const strokeWidth = formatNumber(mmToPx(0.25, pxPerMm));
-  svgParts.push(
-    `<rect x="0" y="0" width="${labelWidthPx}" height="${labelHeightPx}" fill="${LABEL_BACKGROUND_COLOR}" stroke="${FRAME_STROKE_COLOR}" stroke-width="${strokeWidth}" vector-effect="non-scaling-stroke" />`,
-  );
+  if (cropToPrintable) {
+    svgParts.push(
+      `<rect x="0" y="0" width="${outputWidthPx}" height="${outputHeightPx}" fill="${LABEL_BACKGROUND_COLOR}" />`,
+    );
+  } else {
+    const strokeWidth = formatNumber(mmToPx(0.25, pxPerMm));
+    svgParts.push(
+      `<rect x="0" y="0" width="${labelWidthPx}" height="${labelHeightPx}" fill="${LABEL_BACKGROUND_COLOR}" stroke="${FRAME_STROKE_COLOR}" stroke-width="${strokeWidth}" vector-effect="non-scaling-stroke" />`,
+    );
+  }
 
-  svgParts.push(await renderMediaElements(mediaElements));
+  const innerParts = [];
+
+  innerParts.push(await renderMediaElements(mediaElements));
 
   if (textLayout.main.text) {
-    svgParts.push(
+    innerParts.push(
       `<text x="${formatNumber(textLayout.main.x)}" y="${formatNumber(textLayout.main.baseline)}" font-family=${JSON.stringify(LABEL_FONT_FAMILY)} font-weight="800" font-size="${formatNumber(textLayout.main.fontSizePx)}" letter-spacing="${formatNumber(textLayout.main.letterSpacingPx)}" fill="${LABEL_TEXT_COLOR}">${escapeXml(textLayout.main.text)}</text>`,
     );
   }
   if (textLayout.sub && textLayout.sub.lines) {
     let baseline = textLayout.zones.sub.y + textLayout.sub.fontSizePx;
     textLayout.sub.lines.forEach(line => {
-      svgParts.push(
+      innerParts.push(
         `<text x="${formatNumber(textLayout.zones.sub.x)}" y="${formatNumber(baseline)}" font-family=${JSON.stringify(LABEL_FONT_FAMILY)} font-weight="600" font-size="${formatNumber(textLayout.sub.fontSizePx)}" letter-spacing="${formatNumber(textLayout.sub.letterSpacingPx || 0)}" fill="${LABEL_TEXT_COLOR}">${escapeXml(line)}</text>`,
       );
       baseline += textLayout.sub.lineHeightPx;
@@ -1002,7 +1015,7 @@ export async function renderLabelSVG({
 
   if (qrElement) {
     const qrHref = escapeXml(qrElement.href);
-    svgParts.push(
+    innerParts.push(
       `<image x="${formatNumber(qrElement.x)}" y="${formatNumber(qrElement.y)}" width="${formatNumber(qrElement.size)}" height="${formatNumber(qrElement.size)}" href="${qrHref}" xlink:href="${qrHref}" />`,
     );
   }
@@ -1015,7 +1028,7 @@ export async function renderLabelSVG({
     qrContent,
   });
   if (editorState && editorState.active) {
-    svgParts.push(
+    innerParts.push(
       `<g class="layout-overlays" fill="none">${buildDebugOverlays({
         printableRect: printable,
         contentRect,
@@ -1027,12 +1040,19 @@ export async function renderLabelSVG({
     );
   }
 
+  if (cropToPrintable) {
+    const translateAttr = `translate(${formatNumber(translationX)} ${formatNumber(translationY)})`;
+    svgParts.push(`<g transform="${translateAttr}">${innerParts.join('')}</g>`);
+  } else {
+    svgParts.push(innerParts.join(''));
+  }
+
   svgParts.push('</svg>');
 
   return {
     svgMarkup: svgParts.join(''),
-    widthPx: labelWidthPx,
-    heightPx: labelHeightPx,
+    widthPx: outputWidthPx,
+    heightPx: outputHeightPx,
     printableWidthMm: geometry.printableWidthMm,
     printableHeightMm: geometry.printableHeightMm,
   };
