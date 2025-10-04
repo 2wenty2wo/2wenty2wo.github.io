@@ -1052,6 +1052,7 @@ export async function renderLabelSVG({
   minTextWidthMm = 9,
   qrGenerator,
   cropToPrintable = false,
+  layoutEditorToken,
 }) {
   if (!geometry || !Number.isFinite(pxPerMm)) {
     throw new Error('Invalid geometry or pxPerMm for label rendering.');
@@ -1166,6 +1167,7 @@ export async function renderLabelSVG({
     textLines,
     hardwareInfo,
     qrContent,
+    layoutEditorToken,
   });
   if (editorState && editorState.active) {
     innerParts.push(

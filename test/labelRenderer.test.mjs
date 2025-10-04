@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { renderLabelSVG, fitTextToBox, mmToPx, layoutText } from '../js/label/renderLabelSVG.js';
+import { ensureLayoutEditor } from '../js/label/layoutEditor.js';
 import {
   setPresetOverride,
   clearPresetOverrides,
@@ -51,6 +52,236 @@ function extractTextElements(svgMarkup) {
     fontWeight: Number(weight),
     text,
   }));
+}
+
+function setupLayoutEditorTestEnvironment() {
+  const originals = {
+    window: global.window,
+    document: global.document,
+    navigator: global.navigator,
+    localStorage: global.localStorage,
+    prompt: global.prompt,
+  };
+
+  const elementsById = new Map();
+
+  class StubElement {
+    constructor(tag) {
+      this.tagName = tag.toUpperCase();
+      this.children = [];
+      this.attributes = new Map();
+      this.style = {};
+      this.dataset = {};
+      this.listeners = {};
+      this._textContent = '';
+      this._innerHTML = '';
+      this._id = null;
+      this._classSet = new Set();
+      const updateClassName = () => {
+        this.className = Array.from(this._classSet).join(' ');
+      };
+      this.classList = {
+        add: (...tokens) => {
+          tokens.forEach(token => this._classSet.add(token));
+          updateClassName();
+        },
+        remove: (...tokens) => {
+          tokens.forEach(token => this._classSet.delete(token));
+          updateClassName();
+        },
+        contains: token => this._classSet.has(token),
+      };
+    }
+
+    set id(value) {
+      this._id = value;
+      if (value) {
+        elementsById.set(value, this);
+      }
+    }
+
+    get id() {
+      return this._id;
+    }
+
+    appendChild(child) {
+      child.parentNode = this;
+      this.children.push(child);
+      return child;
+    }
+
+    append(...children) {
+      children.forEach(child => this.appendChild(child));
+    }
+
+    addEventListener(type, handler) {
+      if (!this.listeners[type]) {
+        this.listeners[type] = [];
+      }
+      this.listeners[type].push(handler);
+    }
+
+    setAttribute(name, value) {
+      this.attributes.set(name, value);
+      if (name === 'id') {
+        this.id = value;
+      } else if (name === 'class') {
+        value
+          .split(/\s+/)
+          .filter(Boolean)
+          .forEach(token => this._classSet.add(token));
+        this.className = value;
+      } else if (name.startsWith('data-')) {
+        const key = name
+          .slice(5)
+          .replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+        this.dataset[key] = value;
+      }
+    }
+
+    getAttribute(name) {
+      if (name === 'id') {
+        return this.id;
+      }
+      if (name === 'class') {
+        return this.className || '';
+      }
+      if (name.startsWith('data-')) {
+        const key = name
+          .slice(5)
+          .replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+        return Object.hasOwn(this.dataset, key) ? this.dataset[key] : null;
+      }
+      return this.attributes.get(name) ?? null;
+    }
+
+    set textContent(value) {
+      this._textContent = value;
+      if (value === '') {
+        this.children = [];
+      }
+    }
+
+    get textContent() {
+      return this._textContent;
+    }
+
+    set innerHTML(value) {
+      this._innerHTML = value;
+      if (this.tagName === 'DIV' && value.includes('layout-editor-body')) {
+        this.children = [];
+        const body = new StubElement('div');
+        body.classList.add('layout-editor-body');
+        const actions = ['reset', 'export', 'import', 'copy'].map(action => {
+          const button = new StubElement('button');
+          button.setAttribute('data-editor-action', action);
+          return button;
+        });
+        this._body = body;
+        this._actions = actions;
+        this.appendChild(body);
+        this.querySelector = selector => (selector === '.layout-editor-body' ? body : null);
+        this.querySelectorAll = selector => (selector === '[data-editor-action]' ? actions : []);
+      }
+    }
+
+    get innerHTML() {
+      return this._innerHTML;
+    }
+
+    querySelector() {
+      return null;
+    }
+
+    querySelectorAll() {
+      return [];
+    }
+  }
+
+  class StubCanvas extends StubElement {
+    constructor() {
+      super('canvas');
+      this.width = 0;
+      this.height = 0;
+      this._context = {
+        clearRect() {},
+        drawImage() {},
+        setTransform() {},
+        beginPath() {},
+        moveTo() {},
+        lineTo() {},
+        closePath() {},
+        stroke() {},
+        fillRect() {},
+      };
+    }
+
+    getContext(type) {
+      if (type === '2d') {
+        return this._context;
+      }
+      return null;
+    }
+
+    toDataURL() {
+      return 'data:image/png;base64,';
+    }
+  }
+
+  const documentStub = {
+    createElement: tag => (tag === 'canvas' ? new StubCanvas() : new StubElement(tag)),
+    getElementById: id => elementsById.get(id) || null,
+    body: new StubElement('body'),
+    head: new StubElement('head'),
+  };
+
+  documentStub.body.appendChild = StubElement.prototype.appendChild.bind(documentStub.body);
+  documentStub.head.appendChild = StubElement.prototype.appendChild.bind(documentStub.head);
+
+  const storageMap = new Map();
+  const localStorageStub = {
+    getItem: key => (storageMap.has(key) ? storageMap.get(key) : null),
+    setItem: (key, value) => {
+      storageMap.set(key, String(value));
+    },
+    removeItem: key => {
+      storageMap.delete(key);
+    },
+  };
+
+  const windowStub = {
+    location: { search: '?layoutEditor=1' },
+    addEventListener() {},
+    removeEventListener() {},
+    requestAnimationFrame: cb => setTimeout(cb, 0),
+    cancelAnimationFrame: id => clearTimeout(id),
+    setTimeout,
+    clearTimeout,
+    prompt: () => '',
+    alert() {},
+    localStorage: localStorageStub,
+  };
+
+  const navigatorStub = {
+    clipboard: {
+      writeText: () => Promise.resolve(),
+    },
+  };
+
+  global.window = windowStub;
+  global.document = documentStub;
+  global.navigator = navigatorStub;
+  global.localStorage = localStorageStub;
+  global.prompt = () => '';
+  windowStub.prompt = () => '';
+
+  return () => {
+    global.window = originals.window;
+    global.document = originals.document;
+    global.navigator = originals.navigator;
+    global.localStorage = originals.localStorage;
+    global.prompt = originals.prompt;
+  };
 }
 
 test('37×12 mm labels keep bolt icons side-by-side', async () => {
@@ -538,6 +769,74 @@ test('layoutText keeps end-aligned anchors clear of QR bounds', () => {
     );
   } finally {
     clearPresetOverrides();
+  }
+});
+
+test('layout editor keeps latest render height when exporting presets after rapid updates', () => {
+  clearPresetOverrides();
+  const cleanup = setupLayoutEditorTestEnvironment();
+  const geometryShort = {
+    labelWidthMm: 37,
+    labelHeightMm: 12,
+    printableWidthMm: 33,
+    printableHeightMm: 10,
+    marginX: 2,
+    marginY: 1,
+  };
+  const geometryTall = {
+    labelWidthMm: 37,
+    labelHeightMm: 24,
+    printableWidthMm: 33,
+    printableHeightMm: 22,
+    marginX: 2,
+    marginY: 1,
+  };
+  const baseContext = {
+    textLines: { line1: 'Line 1', line2: 'Line 2', line3: 'Line 3' },
+    hardwareInfo: null,
+    qrContent: '',
+  };
+  const shortPreset = getActiveLayoutPreset(geometryShort.labelHeightMm);
+  const tallPreset = getActiveLayoutPreset(geometryTall.labelHeightMm);
+  try {
+    ensureLayoutEditor({ ...baseContext, geometry: geometryShort, preset: shortPreset, layoutEditorToken: 1 });
+    ensureLayoutEditor({ ...baseContext, geometry: geometryTall, preset: tallPreset, layoutEditorToken: 2 });
+    ensureLayoutEditor({ ...baseContext, geometry: geometryShort, preset: shortPreset, layoutEditorToken: 1 });
+
+    const panel = document.getElementById('layout-editor-panel');
+    assert.ok(panel, 'layout editor panel should exist');
+    const body = panel.querySelector('.layout-editor-body');
+    assert.ok(body, 'layout editor body should be available');
+    const field = body.children.find(
+      child => Array.isArray(child.children) && child.children.some(node => node.tagName === 'INPUT'),
+    );
+    assert.ok(field, 'expected to locate numeric field for padding');
+    const input = field.children.find(node => node.tagName === 'INPUT');
+    assert.ok(input, 'expected an input element inside the field');
+    input.value = '2.7';
+    const listeners = input.listeners?.input || [];
+    listeners.forEach(listener => listener({ currentTarget: input, target: input }));
+
+    const storedRaw = window.localStorage.getItem('gridfinity-layout-presets');
+    assert.ok(storedRaw, 'overrides should persist after editing latest height');
+    const stored = JSON.parse(storedRaw);
+    assert.deepEqual(Object.keys(stored), ['24'], 'only the latest height override should be saved');
+    assert.equal(stored['24'].padding_mm, 2.7, 'latest height override should reflect edited value');
+
+    const exported = JSON.parse(exportLayoutPresets(true));
+    assert.equal(exported['24'].padding_mm, 2.7, 'export should include override for latest height');
+    assert.equal(
+      exported['12'].padding_mm,
+      defaultLayoutPresets['12'].padding_mm,
+      'export should retain defaults for stale render height',
+    );
+  } finally {
+    if (typeof window !== 'undefined' && window && window.location) {
+      window.location.search = '?layoutEditor=0';
+      ensureLayoutEditor({ ...baseContext, geometry: geometryShort, preset: shortPreset, layoutEditorToken: 1 });
+    }
+    clearPresetOverrides();
+    cleanup();
   }
 });
 

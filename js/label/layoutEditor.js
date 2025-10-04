@@ -17,6 +17,7 @@ let editorState = {
   initialized: false,
   currentHeightKey: null,
   context: null,
+  latestToken: 0,
 };
 
 let lastKeySequence = [];
@@ -610,6 +611,13 @@ export function ensureLayoutEditor(context) {
     return { active: false };
   }
   panel.classList.add('layout-editor-panel--active');
+  const token = Number.isFinite(context?.layoutEditorToken) ? context.layoutEditorToken : null;
+  if (token !== null && token < editorState.latestToken) {
+    return { active: true };
+  }
+  if (token !== null && token >= editorState.latestToken) {
+    editorState.latestToken = token;
+  }
   editorState.context = context;
   const key = resolveHeightKeyFromContext(context);
   if (editorState.currentHeightKey !== key) {
