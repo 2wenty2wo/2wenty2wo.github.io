@@ -779,9 +779,21 @@ export function updateTextOptionsVisibility(options = {}) {
   const { animate = true } = options;
   const shouldShow = Boolean(state.showText);
   const restoreTransition = animate ? null : temporarilyDisableTransition(textOptionsWrapper);
+  if (!shouldShow) {
+    const measuredHeight = textOptionsWrapper.scrollHeight;
+    if (measuredHeight > 0) {
+      textOptionsWrapper.style.maxHeight = `${measuredHeight}px`;
+      void textOptionsWrapper.offsetHeight;
+    }
+  }
   textToggle.setAttribute('aria-expanded', shouldShow ? 'true' : 'false');
   textOptionsWrapper.classList.toggle('is-collapsed', !shouldShow);
   textOptionsWrapper.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+  if (shouldShow) {
+    textOptionsWrapper.style.removeProperty('maxHeight');
+  } else {
+    textOptionsWrapper.style.maxHeight = '0px';
+  }
   textMainToggle.disabled = !shouldShow;
   textInfoToggle.disabled = !shouldShow;
   textOptionsWrapper.querySelectorAll('.label-suboption').forEach(suboption => {

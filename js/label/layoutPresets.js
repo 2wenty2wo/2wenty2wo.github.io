@@ -234,8 +234,21 @@ export function clearPresetOverrides() {
   notifyPresetListeners();
 }
 
+function parseHeightValue(heightMm) {
+  if (typeof heightMm === 'string') {
+    const match = heightMm.match(/-?\d+(?:\.\d+)?/);
+    if (match) {
+      const parsed = Number.parseFloat(match[0]);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+  }
+  return Number(heightMm);
+}
+
 function resolveKey(heightMm) {
-  const numeric = Number(heightMm);
+  const numeric = parseHeightValue(heightMm);
   if (!Number.isFinite(numeric) || numeric <= 0) {
     return '12';
   }
@@ -279,7 +292,7 @@ function deepMerge(base, override) {
 export function getActiveLayoutPreset(heightMm) {
   const key = resolveKey(heightMm);
   const base = defaultLayoutPresets[key] || defaultLayoutPresets['12'];
-  const override = getPresetOverride(key);
+  const override = getPresetOverride(heightMm);
   if (!override) {
     return clone(base);
   }

@@ -523,6 +523,19 @@ test('exporting presets with defaults preserves zero-value overrides', () => {
   }
 });
 
+test('getActiveLayoutPreset resolves heights expressed with units', () => {
+  clearPresetOverrides();
+  try {
+    const preset = getActiveLayoutPreset('18mm');
+    const expected = defaultLayoutPresets['18'];
+    assert.ok(expected, 'expected a default preset for 18 mm labels');
+    assert.equal(preset.icon_layout, expected.icon_layout);
+    assert.deepEqual(preset.text_zone.main, expected.text_zone.main);
+  } finally {
+    clearPresetOverrides();
+  }
+});
+
 test('icon padding and media/text gap persist through export and import', () => {
   clearPresetOverrides();
   try {
