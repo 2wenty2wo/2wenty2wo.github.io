@@ -440,12 +440,24 @@ function computeMediaZoneWidth({
   const maxPercent = Number.isFinite(preset.media_zone_width_pct_max)
     ? preset.media_zone_width_pct_max
     : percent;
+  const userMaxPercent = Number.isFinite(preset.media_zone_width_pct_max_user)
+    ? clamp(preset.media_zone_width_pct_max_user, minPercent, 100)
+    : maxPercent;
   const minWidthPx = (minPercent / 100) * contentWidthPx;
-  const maxWidthPx = (maxPercent / 100) * contentWidthPx;
-  const baseWidthPx = clamp((percent / 100) * contentWidthPx, minWidthPx, maxWidthPx);
+  const baseMaxWidthPx = (maxPercent / 100) * contentWidthPx;
+  const absoluteMaxWidthPx = Math.max(
+    minWidthPx,
+    Math.min(contentWidthPx, (userMaxPercent / 100) * contentWidthPx),
+  );
+  const baseWidthPx = clamp(
+    (percent / 100) * contentWidthPx,
+    minWidthPx,
+    Math.min(baseMaxWidthPx, absoluteMaxWidthPx),
+  );
   const iconPaddingPx = mmToPx(ICON_PADDING_MM, pxPerMm) * 2;
   const availableHeightRatio = iconCount > 1 && preset.icon_layout === 'row' ? 0.5 : 1;
-  let widthPx = baseWidthPx;
+  const hasUserExpansion = userMaxPercent > maxPercent + 0.001;
+  let widthPx = hasUserExpansion ? Math.max(baseWidthPx, absoluteMaxWidthPx) : baseWidthPx;
   const iconMinPx = mmToPx(preset.icon_min_mm || 0, pxPerMm);
   for (let i = 0; i < 4; i += 1) {
     const innerWidthPx = Math.max(0, widthPx - iconPaddingPx);
@@ -461,14 +473,14 @@ function computeMediaZoneWidth({
       break;
     }
     const expanded = widthPx * 1.08;
-    if (expanded <= maxWidthPx) {
+    if (expanded <= absoluteMaxWidthPx) {
       widthPx = expanded;
     } else {
-      widthPx = maxWidthPx;
+      widthPx = absoluteMaxWidthPx;
       break;
     }
   }
-  return clamp(widthPx, minWidthPx, maxWidthPx);
+  return clamp(widthPx, minWidthPx, absoluteMaxWidthPx);
 }
 
 async function resolveSvgImageHref(href) {
@@ -798,8 +810,11 @@ function ensureTextFits({
   mediaPresent,
   textLines,
 }) {
-  const minTextWidthPx = mmToPx(minTextWidthMm || 9, pxPerMm);
-  const textGapPx = mediaPresent ? mmToPx(MEDIA_TEXT_GAP_MM, pxPerMm) : 0;
+  const hasText = [textLines.line1, textLines.line2, textLines.line3]
+    .map(value => (value || '').trim())
+    .some(value => value.length > 0);
+  const minTextWidthPx = hasText ? mmToPx(minTextWidthMm || 9, pxPerMm) : 0;
+  const textGapPx = mediaPresent && hasText ? mmToPx(MEDIA_TEXT_GAP_MM, pxPerMm) : 0;
   let mediaWidthPx = mediaPresent ? mediaZoneWidthPx : 0;
   for (let i = 0; i < 4; i += 1) {
     const textWidth = Math.max(0, contentRect.width - mediaWidthPx - textGapPx);
@@ -824,7 +839,10 @@ function ensureTextFits({
     pxPerMm,
     letterSpacingLimit: preset.text_zone.main.letter_spacing_adj || -0.3,
   });
-  if (mainFit.fontSizePx <= toFontPx(preset.text_zone.main.min_pt, pxPerMm) + 0.2) {
+  if (
+    hasText &&
+    mainFit.fontSizePx <= toFontPx(preset.text_zone.main.min_pt, pxPerMm) + 0.2
+  ) {
     for (let i = 0; i < 4 && mediaWidthPx > 0; i += 1) {
       mediaWidthPx = Math.max(0, mediaWidthPx - contentRect.width * 0.04);
       textRect.x = mediaWidthPx > 0 ? contentRect.x + mediaWidthPx + textGapPx : contentRect.x;

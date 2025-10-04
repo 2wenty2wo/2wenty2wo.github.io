@@ -2,6 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { renderLabelSVG, fitTextToBox, mmToPx } from '../js/label/renderLabelSVG.js';
+import {
+  setPresetOverride,
+  clearPresetOverrides,
+  getActiveLayoutPreset,
+} from '../js/label/layoutPresets.js';
 
 const pxPerMm = 300 / 25.4;
 
@@ -270,4 +275,49 @@ test('cropToPrintable output trims exported dimensions to printable area', async
     !/stroke="rgba\(100,116,139,0.5\)"/.test(result.svgMarkup),
     'cropped export should omit outer frame stroke',
   );
+});
+
+test('icon-only labels can expand media zone to full content width with override', async () => {
+  clearPresetOverrides();
+  try {
+    const geometry = {
+      labelWidthMm: 37,
+      labelHeightMm: 12,
+      printableWidthMm: 33,
+      printableHeightMm: 12,
+      marginX: 2,
+      marginY: 0,
+    };
+    setPresetOverride(geometry.printableHeightMm, {
+      media_zone_width_pct: 100,
+      media_zone_width_pct_max: 100,
+      media_zone_width_pct_max_user: 100,
+    });
+    const result = await renderLabelSVG({
+      geometry,
+      pxPerMm,
+      textLines: { line1: '', line2: '', line3: '' },
+      hardwareInfo: {
+        type: 'photo',
+        src: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+        alt: 'icon',
+      },
+      qrContent: '',
+    });
+    const images = extractImages(result.svgMarkup);
+    assert.equal(images.length, 1, 'expected single media element');
+    const icon = images[0];
+    const preset = getActiveLayoutPreset(geometry.printableHeightMm);
+    const printableWidthPx = mmToPx(geometry.printableWidthMm, pxPerMm);
+    const paddingPx = mmToPx(preset.padding_mm || 0, pxPerMm);
+    const expectedMediaWidthPx = Math.max(0, printableWidthPx - paddingPx * 2);
+    const contentStartPx = mmToPx(geometry.marginX || 0, pxPerMm) + paddingPx;
+    const computedZoneWidth = (icon.x - contentStartPx) * 2 + icon.width;
+    assert.ok(
+      Math.abs(computedZoneWidth - expectedMediaWidthPx) < 1.5,
+      `media zone width (${computedZoneWidth.toFixed(2)}) should fill content width (${expectedMediaWidthPx.toFixed(2)})`,
+    );
+  } finally {
+    clearPresetOverrides();
+  }
 });

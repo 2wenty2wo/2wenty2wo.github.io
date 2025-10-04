@@ -340,7 +340,7 @@ function bindPresetInputs(panel, heightKey) {
     createNumberField({
       label: 'Media width %',
       min: 10,
-      max: 90,
+      max: 100,
       step: 0.5,
       value: preset.media_zone_width_pct,
       onChange: value => setValue('media_zone_width_pct', value),
@@ -350,7 +350,7 @@ function bindPresetInputs(panel, heightKey) {
     createNumberField({
       label: 'Media width % min',
       min: 5,
-      max: 90,
+      max: 100,
       step: 0.5,
       value: preset.media_zone_width_pct_min,
       onChange: value => setValue('media_zone_width_pct_min', value),
@@ -360,10 +360,20 @@ function bindPresetInputs(panel, heightKey) {
     createNumberField({
       label: 'Media width % max',
       min: 5,
-      max: 90,
+      max: 100,
       step: 0.5,
       value: preset.media_zone_width_pct_max,
       onChange: value => setValue('media_zone_width_pct_max', value),
+    }),
+  );
+  body.appendChild(
+    createNumberField({
+      label: 'Media width % max (user override)',
+      min: 5,
+      max: 100,
+      step: 0.5,
+      value: preset.media_zone_width_pct_max_user,
+      onChange: value => setValue('media_zone_width_pct_max_user', value),
     }),
   );
 
