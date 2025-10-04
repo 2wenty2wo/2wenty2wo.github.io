@@ -24,6 +24,7 @@ const QR_SIDE_PX_MIN = 24;
 const ICON_PADDING_MM = 0.4;
 const MEDIA_TEXT_GAP_MM = 0.6;
 const MIN_MAIN_FONT_WEIGHT = 700;
+const MAX_MAIN_FONT_WEIGHT = 700;
 
 const inlineImageCache = new Map();
 
@@ -49,11 +50,11 @@ function clamp(value, min, max) {
 function resolveMainFontWeight(weight, fallback = 800) {
   const fallbackNumeric = Number(fallback);
   const fallbackWeight = Number.isFinite(fallbackNumeric)
-    ? Math.max(MIN_MAIN_FONT_WEIGHT, fallbackNumeric)
+    ? clamp(fallbackNumeric, MIN_MAIN_FONT_WEIGHT, MAX_MAIN_FONT_WEIGHT)
     : MIN_MAIN_FONT_WEIGHT;
   const numericWeight = Number(weight);
   if (Number.isFinite(numericWeight)) {
-    return Math.max(MIN_MAIN_FONT_WEIGHT, numericWeight);
+    return clamp(numericWeight, MIN_MAIN_FONT_WEIGHT, MAX_MAIN_FONT_WEIGHT);
   }
   return fallbackWeight;
 }

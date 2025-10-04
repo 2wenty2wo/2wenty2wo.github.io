@@ -1379,7 +1379,7 @@ export function updatePreview() {
     }
   })();
 }
-const LABEL_FONT_WEIGHTS = [600, 700, 800];
+const LABEL_FONT_WEIGHTS = [600, 700];
 let labelFontLoadPromise = null;
 
 async function ensureFontsReady() {
