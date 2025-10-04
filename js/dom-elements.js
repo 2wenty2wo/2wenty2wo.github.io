@@ -1,3 +1,4 @@
+const developmentWarningMessage = document.getElementById('development-warning');
 const themeToggleButton = document.getElementById('theme-toggle');
 const themeToggleIcon = themeToggleButton
   ? themeToggleButton.querySelector('.theme-toggle-icon')
@@ -196,6 +197,7 @@ const componentCategoryMessage = document.getElementById('component-category-mes
 const componentMountMessage = document.getElementById('component-mount-message');
 
 export const elements = {
+  developmentWarningMessage,
   themeToggleButton,
   themeToggleIcon,
   themeToggleText,

@@ -43,6 +43,7 @@ import {
 } from './render.js';
 import { initEventHandlers } from './events.js';
 import { hydrateStateFromUrl } from './url-state.js';
+import { setRandomDevelopmentWarning } from './warning-message.js';
 export { expandAllCollapsibleSections, collapseAllCollapsibleSections } from './collapsible-sections.js';
 
 function applyStateToControls() {
@@ -161,6 +162,7 @@ function applyStateToControls() {
 function init() {
   initTheme();
   initCollapsibleSections();
+  setRandomDevelopmentWarning(elements.developmentWarningMessage);
   hydrateStateFromUrl();
   populateFuseValues();
   populateFuseTypePicker();
