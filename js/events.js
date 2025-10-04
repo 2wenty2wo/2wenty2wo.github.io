@@ -39,6 +39,8 @@ import {
   setResistorValueSelection,
   setCapacitorValueSelection,
   setDiodeValueSelection,
+  setPotentiometerValueSelection,
+  setPotentiometerTaperSelection,
   updateComponentValueUi,
   setBearingTypeSelection,
   syncBearingTypePicker,
@@ -83,6 +85,14 @@ const {
   diodeValuePicker,
   diodeValuePickerButton,
   diodeValuePickerList,
+  potentiometerValueSelect,
+  potentiometerValuePicker,
+  potentiometerValuePickerButton,
+  potentiometerValuePickerList,
+  potentiometerTaperSelect,
+  potentiometerTaperPicker,
+  potentiometerTaperPickerButton,
+  potentiometerTaperPickerList,
   bearingTypeSelect,
   bearingTypePicker,
   bearingTypePickerButton,
@@ -176,6 +186,8 @@ let componentMountPickerOpen = false;
 let resistorValuePickerOpen = false;
 let capacitorValuePickerOpen = false;
 let diodeValuePickerOpen = false;
+let potentiometerValuePickerOpen = false;
+let potentiometerTaperPickerOpen = false;
 let bearingTypePickerOpen = false;
 let customIconPickerOpen = false;
 let connectorCategoryPickerOpen = false;
@@ -2279,6 +2291,432 @@ function handleDiodeValueListFocusOut() {
   }, 0);
 }
 
+function getPotentiometerValueOptionElements() {
+  if (!potentiometerValuePickerList) {
+    return [];
+  }
+  return Array.from(potentiometerValuePickerList.querySelectorAll('[role="option"]'));
+}
+
+function focusPotentiometerValueOption(option) {
+  if (!option) {
+    return;
+  }
+  const options = getPotentiometerValueOptionElements();
+  options.forEach(opt => {
+    opt.tabIndex = opt === option ? 0 : -1;
+  });
+  option.focus();
+  if (typeof option.scrollIntoView === 'function') {
+    option.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function openPotentiometerValuePicker() {
+  if (
+    !potentiometerValuePicker ||
+    !potentiometerValuePickerButton ||
+    !potentiometerValuePickerList
+  ) {
+    return;
+  }
+  if (potentiometerValuePickerButton.disabled || potentiometerValuePickerOpen) {
+    return;
+  }
+  potentiometerValuePickerOpen = true;
+  potentiometerValuePicker.classList.add('is-open');
+  potentiometerValuePickerList.hidden = false;
+  potentiometerValuePickerButton.setAttribute('aria-expanded', 'true');
+
+  const options = getPotentiometerValueOptionElements();
+  const currentValue =
+    typeof state.potentiometerValue === 'string' ? state.potentiometerValue : '';
+  const selectedOption = options.find(option => option.dataset.value === currentValue);
+  focusPotentiometerValueOption(selectedOption || options[0]);
+}
+
+function closePotentiometerValuePicker({ focusButton = false } = {}) {
+  if (
+    !potentiometerValuePicker ||
+    !potentiometerValuePickerButton ||
+    !potentiometerValuePickerList
+  ) {
+    return;
+  }
+  if (!potentiometerValuePickerOpen) {
+    if (focusButton && !potentiometerValuePickerButton.disabled) {
+      potentiometerValuePickerButton.focus();
+    }
+    return;
+  }
+  potentiometerValuePickerOpen = false;
+  potentiometerValuePicker.classList.remove('is-open');
+  potentiometerValuePickerList.hidden = true;
+  potentiometerValuePickerButton.setAttribute('aria-expanded', 'false');
+  if (focusButton && !potentiometerValuePickerButton.disabled) {
+    potentiometerValuePickerButton.focus();
+  }
+}
+
+function togglePotentiometerValuePicker() {
+  if (potentiometerValuePickerOpen) {
+    closePotentiometerValuePicker({ focusButton: false });
+  } else {
+    openPotentiometerValuePicker();
+  }
+}
+
+function movePotentiometerValueOption(delta) {
+  const options = getPotentiometerValueOptionElements();
+  if (options.length === 0) {
+    return;
+  }
+  const active = document.activeElement;
+  const activeOption = active && potentiometerValuePickerList && potentiometerValuePickerList.contains(active)
+    ? active.closest('[role="option"]')
+    : null;
+  let index = activeOption ? options.indexOf(activeOption) : -1;
+  if (index === -1) {
+    const currentValue =
+      typeof state.potentiometerValue === 'string' ? state.potentiometerValue : '';
+    index = options.findIndex(option => option.dataset.value === currentValue);
+  }
+  let nextIndex = index + delta;
+  if (nextIndex < 0) {
+    nextIndex = options.length - 1;
+  } else if (nextIndex >= options.length) {
+    nextIndex = 0;
+  }
+  const nextOption = options[nextIndex];
+  if (nextOption) {
+    focusPotentiometerValueOption(nextOption);
+  }
+}
+
+function handlePotentiometerValueButtonKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    openPotentiometerValuePicker();
+    movePotentiometerValueOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    openPotentiometerValuePicker();
+    movePotentiometerValueOption(-1);
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    togglePotentiometerValuePicker();
+    return;
+  }
+  if (key === 'Escape' && potentiometerValuePickerOpen) {
+    event.preventDefault();
+    closePotentiometerValuePicker({ focusButton: true });
+  }
+}
+
+function handlePotentiometerValueListKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    movePotentiometerValueOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    movePotentiometerValueOption(-1);
+    return;
+  }
+  if (key === 'Home') {
+    event.preventDefault();
+    const options = getPotentiometerValueOptionElements();
+    if (options.length > 0) {
+      focusPotentiometerValueOption(options[0]);
+    }
+    return;
+  }
+  if (key === 'End') {
+    event.preventDefault();
+    const options = getPotentiometerValueOptionElements();
+    if (options.length > 0) {
+      focusPotentiometerValueOption(options[options.length - 1]);
+    }
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    const target = event.target;
+    if (target && target instanceof HTMLElement) {
+      const option = target.closest('[role="option"]');
+      if (option) {
+        setPotentiometerValueSelection(option.dataset.value || '');
+        closePotentiometerValuePicker({ focusButton: true });
+      }
+    }
+    return;
+  }
+  if (key === 'Escape') {
+    event.preventDefault();
+    closePotentiometerValuePicker({ focusButton: true });
+    return;
+  }
+  if (key === 'Tab') {
+    closePotentiometerValuePicker();
+  }
+}
+
+function handlePotentiometerValueListClick(event) {
+  if (!potentiometerValuePickerList) {
+    return;
+  }
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+  const option = target.closest('[role="option"]');
+  if (!option || !potentiometerValuePickerList.contains(option)) {
+    return;
+  }
+  event.preventDefault();
+  setPotentiometerValueSelection(option.dataset.value || '');
+  closePotentiometerValuePicker({ focusButton: true });
+}
+
+function handlePotentiometerValueListFocusOut() {
+  if (!potentiometerValuePickerOpen) {
+    return;
+  }
+  setTimeout(() => {
+    if (!potentiometerValuePickerOpen) {
+      return;
+    }
+    if (!potentiometerValuePicker) {
+      closePotentiometerValuePicker();
+      return;
+    }
+    const active = document.activeElement;
+    if (!active || !potentiometerValuePicker.contains(active)) {
+      closePotentiometerValuePicker();
+    }
+  }, 0);
+}
+
+function getPotentiometerTaperOptionElements() {
+  if (!potentiometerTaperPickerList) {
+    return [];
+  }
+  return Array.from(potentiometerTaperPickerList.querySelectorAll('[role="option"]'));
+}
+
+function focusPotentiometerTaperOption(option) {
+  if (!option) {
+    return;
+  }
+  const options = getPotentiometerTaperOptionElements();
+  options.forEach(opt => {
+    opt.tabIndex = opt === option ? 0 : -1;
+  });
+  option.focus();
+  if (typeof option.scrollIntoView === 'function') {
+    option.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function openPotentiometerTaperPicker() {
+  if (
+    !potentiometerTaperPicker ||
+    !potentiometerTaperPickerButton ||
+    !potentiometerTaperPickerList
+  ) {
+    return;
+  }
+  if (potentiometerTaperPickerButton.disabled || potentiometerTaperPickerOpen) {
+    return;
+  }
+  potentiometerTaperPickerOpen = true;
+  potentiometerTaperPicker.classList.add('is-open');
+  potentiometerTaperPickerList.hidden = false;
+  potentiometerTaperPickerButton.setAttribute('aria-expanded', 'true');
+
+  const options = getPotentiometerTaperOptionElements();
+  const currentValue =
+    typeof state.potentiometerTaper === 'string' ? state.potentiometerTaper : '';
+  const selectedOption = options.find(option => option.dataset.value === currentValue);
+  focusPotentiometerTaperOption(selectedOption || options[0]);
+}
+
+function closePotentiometerTaperPicker({ focusButton = false } = {}) {
+  if (
+    !potentiometerTaperPicker ||
+    !potentiometerTaperPickerButton ||
+    !potentiometerTaperPickerList
+  ) {
+    return;
+  }
+  if (!potentiometerTaperPickerOpen) {
+    if (focusButton && !potentiometerTaperPickerButton.disabled) {
+      potentiometerTaperPickerButton.focus();
+    }
+    return;
+  }
+  potentiometerTaperPickerOpen = false;
+  potentiometerTaperPicker.classList.remove('is-open');
+  potentiometerTaperPickerList.hidden = true;
+  potentiometerTaperPickerButton.setAttribute('aria-expanded', 'false');
+  if (focusButton && !potentiometerTaperPickerButton.disabled) {
+    potentiometerTaperPickerButton.focus();
+  }
+}
+
+function togglePotentiometerTaperPicker() {
+  if (potentiometerTaperPickerOpen) {
+    closePotentiometerTaperPicker({ focusButton: false });
+  } else {
+    openPotentiometerTaperPicker();
+  }
+}
+
+function movePotentiometerTaperOption(delta) {
+  const options = getPotentiometerTaperOptionElements();
+  if (options.length === 0) {
+    return;
+  }
+  const active = document.activeElement;
+  const activeOption = active && potentiometerTaperPickerList && potentiometerTaperPickerList.contains(active)
+    ? active.closest('[role="option"]')
+    : null;
+  let index = activeOption ? options.indexOf(activeOption) : -1;
+  if (index === -1) {
+    const currentValue =
+      typeof state.potentiometerTaper === 'string' ? state.potentiometerTaper : '';
+    index = options.findIndex(option => option.dataset.value === currentValue);
+  }
+  let nextIndex = index + delta;
+  if (nextIndex < 0) {
+    nextIndex = options.length - 1;
+  } else if (nextIndex >= options.length) {
+    nextIndex = 0;
+  }
+  const nextOption = options[nextIndex];
+  if (nextOption) {
+    focusPotentiometerTaperOption(nextOption);
+  }
+}
+
+function handlePotentiometerTaperButtonKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    openPotentiometerTaperPicker();
+    movePotentiometerTaperOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    openPotentiometerTaperPicker();
+    movePotentiometerTaperOption(-1);
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    togglePotentiometerTaperPicker();
+    return;
+  }
+  if (key === 'Escape' && potentiometerTaperPickerOpen) {
+    event.preventDefault();
+    closePotentiometerTaperPicker({ focusButton: true });
+  }
+}
+
+function handlePotentiometerTaperListKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    movePotentiometerTaperOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    movePotentiometerTaperOption(-1);
+    return;
+  }
+  if (key === 'Home') {
+    event.preventDefault();
+    const options = getPotentiometerTaperOptionElements();
+    if (options.length > 0) {
+      focusPotentiometerTaperOption(options[0]);
+    }
+    return;
+  }
+  if (key === 'End') {
+    event.preventDefault();
+    const options = getPotentiometerTaperOptionElements();
+    if (options.length > 0) {
+      focusPotentiometerTaperOption(options[options.length - 1]);
+    }
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    const target = event.target;
+    if (target && target instanceof HTMLElement) {
+      const option = target.closest('[role="option"]');
+      if (option) {
+        setPotentiometerTaperSelection(option.dataset.value || '');
+        closePotentiometerTaperPicker({ focusButton: true });
+      }
+    }
+    return;
+  }
+  if (key === 'Escape') {
+    event.preventDefault();
+    closePotentiometerTaperPicker({ focusButton: true });
+    return;
+  }
+  if (key === 'Tab') {
+    closePotentiometerTaperPicker();
+  }
+}
+
+function handlePotentiometerTaperListClick(event) {
+  if (!potentiometerTaperPickerList) {
+    return;
+  }
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+  const option = target.closest('[role="option"]');
+  if (!option || !potentiometerTaperPickerList.contains(option)) {
+    return;
+  }
+  event.preventDefault();
+  setPotentiometerTaperSelection(option.dataset.value || '');
+  closePotentiometerTaperPicker({ focusButton: true });
+}
+
+function handlePotentiometerTaperListFocusOut() {
+  if (!potentiometerTaperPickerOpen) {
+    return;
+  }
+  setTimeout(() => {
+    if (!potentiometerTaperPickerOpen) {
+      return;
+    }
+    if (!potentiometerTaperPicker) {
+      closePotentiometerTaperPicker();
+      return;
+    }
+    const active = document.activeElement;
+    if (!active || !potentiometerTaperPicker.contains(active)) {
+      closePotentiometerTaperPicker();
+    }
+  }, 0);
+}
+
 function getBearingTypeOptionElements() {
   if (!bearingTypePickerList) {
     return [];
@@ -4305,6 +4743,46 @@ export function initEventHandlers() {
     capacitorValuePickerList.addEventListener('focusout', handleCapacitorValueListFocusOut);
   }
 
+  if (potentiometerValueSelect) {
+    potentiometerValueSelect.addEventListener('change', () => {
+      setPotentiometerValueSelection(potentiometerValueSelect.value);
+    });
+  }
+
+  if (potentiometerValuePickerButton && potentiometerValuePickerList) {
+    potentiometerValuePickerButton.addEventListener('click', event => {
+      event.preventDefault();
+      togglePotentiometerValuePicker();
+    });
+    potentiometerValuePickerButton.addEventListener(
+      'keydown',
+      handlePotentiometerValueButtonKeydown,
+    );
+    potentiometerValuePickerList.addEventListener('click', handlePotentiometerValueListClick);
+    potentiometerValuePickerList.addEventListener('keydown', handlePotentiometerValueListKeydown);
+    potentiometerValuePickerList.addEventListener('focusout', handlePotentiometerValueListFocusOut);
+  }
+
+  if (potentiometerTaperSelect) {
+    potentiometerTaperSelect.addEventListener('change', () => {
+      setPotentiometerTaperSelection(potentiometerTaperSelect.value);
+    });
+  }
+
+  if (potentiometerTaperPickerButton && potentiometerTaperPickerList) {
+    potentiometerTaperPickerButton.addEventListener('click', event => {
+      event.preventDefault();
+      togglePotentiometerTaperPicker();
+    });
+    potentiometerTaperPickerButton.addEventListener(
+      'keydown',
+      handlePotentiometerTaperButtonKeydown,
+    );
+    potentiometerTaperPickerList.addEventListener('click', handlePotentiometerTaperListClick);
+    potentiometerTaperPickerList.addEventListener('keydown', handlePotentiometerTaperListKeydown);
+    potentiometerTaperPickerList.addEventListener('focusout', handlePotentiometerTaperListFocusOut);
+  }
+
   if (bearingTypeSelect) {
     bearingTypeSelect.addEventListener('change', () => {
       setBearingTypeSelection(bearingTypeSelect.value);
@@ -4635,6 +5113,8 @@ export function initEventHandlers() {
     resistorValuePicker ||
     capacitorValuePicker ||
     diodeValuePicker ||
+    potentiometerValuePicker ||
+    potentiometerTaperPicker ||
     bearingTypePicker ||
     connectorCategoryPicker ||
     connectorSeriesPicker ||
@@ -4657,6 +5137,9 @@ export function initEventHandlers() {
     closeComponentMountPicker();
     closeResistorValuePicker();
     closeCapacitorValuePicker();
+    closeDiodeValuePicker();
+    closePotentiometerValuePicker();
+    closePotentiometerTaperPicker();
   });
 
   document.addEventListener('gridfinity:custom-icon-picker-close', () => {

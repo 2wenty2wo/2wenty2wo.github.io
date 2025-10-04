@@ -88,6 +88,18 @@ const diodeValuePickerButton = document.getElementById('diode-value-picker-butto
 const diodeValuePickerList = document.getElementById('diode-value-picker-list');
 const diodeValueSelect = document.getElementById('diode-value-select');
 const diodeValueMessage = document.getElementById('diode-value-message');
+const potentiometerValueField = document.getElementById('potentiometer-value-field');
+const potentiometerValuePicker = document.getElementById('potentiometer-value-picker');
+const potentiometerValuePickerButton = document.getElementById('potentiometer-value-picker-button');
+const potentiometerValuePickerList = document.getElementById('potentiometer-value-picker-list');
+const potentiometerValueSelect = document.getElementById('potentiometer-value-select');
+const potentiometerValueMessage = document.getElementById('potentiometer-value-message');
+const potentiometerTaperField = document.getElementById('potentiometer-taper-field');
+const potentiometerTaperPicker = document.getElementById('potentiometer-taper-picker');
+const potentiometerTaperPickerButton = document.getElementById('potentiometer-taper-picker-button');
+const potentiometerTaperPickerList = document.getElementById('potentiometer-taper-picker-list');
+const potentiometerTaperSelect = document.getElementById('potentiometer-taper-select');
+const potentiometerTaperMessage = document.getElementById('potentiometer-taper-message');
 const bearingOptionsContainer = document.getElementById('bearing-options-container');
 const bearingTypePicker = document.getElementById('bearing-type-picker');
 const bearingTypePickerButton = document.getElementById('bearing-type-picker-button');
@@ -282,6 +294,18 @@ export const elements = {
   diodeValuePickerList,
   diodeValueSelect,
   diodeValueMessage,
+  potentiometerValueField,
+  potentiometerValuePicker,
+  potentiometerValuePickerButton,
+  potentiometerValuePickerList,
+  potentiometerValueSelect,
+  potentiometerValueMessage,
+  potentiometerTaperField,
+  potentiometerTaperPicker,
+  potentiometerTaperPickerButton,
+  potentiometerTaperPickerList,
+  potentiometerTaperSelect,
+  potentiometerTaperMessage,
   bearingOptionsContainer,
   bearingTypePicker,
   bearingTypePickerButton,

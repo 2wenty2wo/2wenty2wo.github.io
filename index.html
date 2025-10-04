@@ -227,6 +227,13 @@
                         <option value="Diode" data-img="images/diodes/diode_through_hole.svg" data-cat="Electrical">
                           Diode
                         </option>
+                        <option
+                          value="Potentiometer"
+                          data-img="images/potentiometer/potentiometer.svg"
+                          data-cat="Electrical"
+                        >
+                          Potentiometer
+                        </option>
                       </optgroup>
                       <optgroup label="Mechanical">
                         <option value="Bearing" data-img="images/bearings/bearing.svg" data-cat="Mechanical">
@@ -716,6 +723,100 @@
                       </div>
                       <div
                         id="diode-value-message"
+                        class="validation-message text-danger small mt-2 d-none"
+                      ></div>
+                    </div>
+                    <div class="col-12 col-lg-6 d-none" id="potentiometer-value-field" aria-hidden="true">
+                      <label class="form-label fw-semibold" for="potentiometer-value-picker-button"
+                        >Potentiometer Value</label
+                      >
+                      <div class="bolt-drive-picker" id="potentiometer-value-picker">
+                        <select
+                          id="potentiometer-value-select"
+                          class="visually-hidden"
+                          aria-labelledby="potentiometer-value-picker-button"
+                        >
+                          <option value="">&nbsp;</option>
+                        </select>
+                        <button
+                          type="button"
+                          class="bolt-drive-picker__button"
+                          id="potentiometer-value-picker-button"
+                          aria-haspopup="listbox"
+                          aria-expanded="false"
+                          aria-controls="potentiometer-value-picker-list"
+                          disabled
+                        >
+                          <span class="bolt-drive-picker__current">
+                            <span class="bolt-drive-picker__current-icon is-empty" aria-hidden="true">
+                              <img
+                                class="bolt-drive-picker__current-icon-image"
+                                src=""
+                                alt=""
+                                hidden
+                              />
+                            </span>
+                            <span class="bolt-drive-picker__current-label">&nbsp;</span>
+                          </span>
+                          <span class="bolt-drive-picker__chevron" aria-hidden="true"></span>
+                        </button>
+                        <ul
+                          class="bolt-drive-picker__list"
+                          id="potentiometer-value-picker-list"
+                          role="listbox"
+                          aria-labelledby="potentiometer-value-picker-button"
+                          hidden
+                        ></ul>
+                      </div>
+                      <div
+                        id="potentiometer-value-message"
+                        class="validation-message text-danger small mt-2 d-none"
+                      ></div>
+                    </div>
+                    <div class="col-12 col-lg-6 d-none" id="potentiometer-taper-field" aria-hidden="true">
+                      <label class="form-label fw-semibold" for="potentiometer-taper-picker-button"
+                        >Potentiometer Taper</label
+                      >
+                      <div class="bolt-drive-picker" id="potentiometer-taper-picker">
+                        <select
+                          id="potentiometer-taper-select"
+                          class="visually-hidden"
+                          aria-labelledby="potentiometer-taper-picker-button"
+                        >
+                          <option value="">&nbsp;</option>
+                        </select>
+                        <button
+                          type="button"
+                          class="bolt-drive-picker__button"
+                          id="potentiometer-taper-picker-button"
+                          aria-haspopup="listbox"
+                          aria-expanded="false"
+                          aria-controls="potentiometer-taper-picker-list"
+                          disabled
+                        >
+                          <span class="bolt-drive-picker__current">
+                            <span class="bolt-drive-picker__current-icon is-empty" aria-hidden="true">
+                              <img
+                                class="bolt-drive-picker__current-icon-image"
+                                src=""
+                                alt=""
+                                hidden
+                              />
+                            </span>
+                            <span class="bolt-drive-picker__current-label">&nbsp;</span>
+                          </span>
+                          <span class="bolt-drive-picker__chevron" aria-hidden="true"></span>
+                        </button>
+                        <ul
+                          class="bolt-drive-picker__list"
+                          id="potentiometer-taper-picker-list"
+                          role="listbox"
+                          aria-labelledby="potentiometer-taper-picker-button"
+                          hidden
+                        ></ul>
+                      </div>
+                      <div
+                        id="potentiometer-taper-message"
                         class="validation-message text-danger small mt-2 d-none"
                       ></div>
                     </div>

@@ -102,7 +102,7 @@ export const switchTypeImageMap = new Map(
   switchTypeOptions.map(option => [option.id, option.image]),
 );
 
-export const electricalComponentTypes = ['Resistor', 'Capacitor', 'Diode'];
+export const electricalComponentTypes = ['Resistor', 'Capacitor', 'Diode', 'Potentiometer'];
 
 export const componentImageMap = {
   Resistor: {
@@ -119,6 +119,11 @@ export const componentImageMap = {
     'Through-Hole': 'images/diodes/diode_through_hole.svg',
     SMD: 'images/diodes/diode_smd.svg',
     default: 'images/diodes/diode_through_hole.svg',
+  },
+  Potentiometer: {
+    'Through-Hole': 'images/potentiometer/potentiometer.svg',
+    SMD: 'images/potentiometer/potentiometer.svg',
+    default: 'images/potentiometer/potentiometer.svg',
   },
 };
 
@@ -232,6 +237,36 @@ export const capacitorValueOptions = Array.from(capacitorValueSet)
     const label = formatCapacitorValue(value);
     return { id: label, label };
   });
+
+export const potentiometerValueOptions = [
+  { id: '1 kΩ', label: '1 kΩ', image: 'images/potentiometer/potentiometer.svg' },
+  { id: '10 kΩ', label: '10 kΩ', image: 'images/potentiometer/potentiometer.svg' },
+  { id: '100 kΩ', label: '100 kΩ', image: 'images/potentiometer/potentiometer.svg' },
+  { id: '1 MΩ', label: '1 MΩ', image: 'images/potentiometer/potentiometer.svg' },
+];
+
+export const potentiometerTaperOptions = [
+  {
+    id: 'Linear (B)',
+    label: 'Linear (B)',
+    image: 'images/potentiometer/potentiometer.svg',
+  },
+  {
+    id: 'Logarithmic (A)',
+    label: 'Logarithmic (A)',
+    image: 'images/potentiometer/potentiometer.svg',
+  },
+  {
+    id: 'Reverse Log (C)',
+    label: 'Reverse Log (C)',
+    image: 'images/potentiometer/potentiometer.svg',
+  },
+  {
+    id: 'Multi-turn Trimmer',
+    label: 'Multi-turn Trimmer',
+    image: 'images/potentiometer/potentiometer.svg',
+  },
+];
 
 export const diodeValueOptions = [
   { id: '1N4148', label: '1N4148 Signal Diode' },
@@ -393,6 +428,11 @@ export const hardwareCatalog = {
     { code: 'General Purpose', name: 'Rectifier Diode' },
     { code: 'Signal', name: 'Small Signal Diode' },
   ],
+  Potentiometer: [
+    { code: 'Panel-Mount Linear', name: 'Panel-Mount Linear Potentiometer' },
+    { code: 'Panel-Mount Log', name: 'Panel-Mount Logarithmic Potentiometer' },
+    { code: 'Trimmer', name: 'Multi-turn Trimmer Potentiometer' },
+  ],
   Switch: [],
   Fuse: [
     { code: 'IEC 60127-2', name: 'Time-Lag Cartridge Fuse' },
@@ -426,6 +466,7 @@ export const hardwareTypeImageMap = {
   Bearing: 'images/bearings/bearing.svg',
   Washer: 'images/washers/plain_washer.svg',
   Diode: 'images/diodes/diode_through_hole.svg',
+  Potentiometer: 'images/potentiometer/potentiometer.svg',
 };
 
 export const PRE_INSULATED_CRIMP_CATEGORY_ID = 'pre-insulated-crimp';

@@ -22,6 +22,8 @@ import {
   resistorValueOptions,
   capacitorValueOptions,
   diodeValueOptions,
+  potentiometerValueOptions,
+  potentiometerTaperOptions,
   connectorCategoryImageMap,
   getConnectorSeriesImage,
 } from './data.js';
@@ -105,6 +107,16 @@ const {
   diodeValuePickerButton,
   diodeValuePickerList,
   diodeValueSelect,
+  potentiometerValueField,
+  potentiometerValuePicker,
+  potentiometerValuePickerButton,
+  potentiometerValuePickerList,
+  potentiometerValueSelect,
+  potentiometerTaperField,
+  potentiometerTaperPicker,
+  potentiometerTaperPickerButton,
+  potentiometerTaperPickerList,
+  potentiometerTaperSelect,
   bearingOptionsContainer,
   bearingTypePicker,
   bearingTypePickerButton,
@@ -226,6 +238,14 @@ const CAPACITOR_VALUE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const validCapacitorValues = new Set(capacitorValueOptions.map(option => option.id));
 const DIODE_VALUE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const validDiodeValues = new Set(diodeValueOptions.map(option => option.id));
+const POTENTIOMETER_VALUE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
+const validPotentiometerValues = new Set(
+  potentiometerValueOptions.map(option => option.id),
+);
+const POTENTIOMETER_TAPER_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
+const validPotentiometerTapers = new Set(
+  potentiometerTaperOptions.map(option => option.id),
+);
 const BEARING_TYPE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const validBearingCodes = new Set(bearingOptions.map(option => option.code));
 const CONNECTOR_CATEGORY_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
@@ -935,6 +955,8 @@ export function updateComponentValueUi({ resetIfHidden = true } = {}) {
   const showResistorValues = showComponentFields && category === 'Resistor';
   const showCapacitorValues = showComponentFields && category === 'Capacitor';
   const showDiodeValues = showComponentFields && category === 'Diode';
+  const showPotentiometerValues = showComponentFields && category === 'Potentiometer';
+  const showPotentiometerTaper = showPotentiometerValues;
 
   if (resistorValueField) {
     resistorValueField.classList.toggle('d-none', !showResistorValues);
@@ -1049,11 +1071,91 @@ export function updateComponentValueUi({ resetIfHidden = true } = {}) {
     state.diodeValue = '';
   }
 
+  if (potentiometerValueField) {
+    potentiometerValueField.classList.toggle('d-none', !showPotentiometerValues);
+    potentiometerValueField.setAttribute('aria-hidden', showPotentiometerValues ? 'false' : 'true');
+  }
+
+  if (potentiometerValueSelect) {
+    potentiometerValueSelect.disabled = !showPotentiometerValues;
+  }
+
+  if (potentiometerValuePickerButton) {
+    potentiometerValuePickerButton.disabled = !showPotentiometerValues;
+    const isOpen = Boolean(
+      showPotentiometerValues &&
+        potentiometerValuePicker &&
+        potentiometerValuePicker.classList.contains('is-open'),
+    );
+    potentiometerValuePickerButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  }
+
+  if (potentiometerValuePickerList) {
+    const shouldHideList =
+      !showPotentiometerValues ||
+      !potentiometerValuePicker ||
+      !potentiometerValuePicker.classList.contains('is-open');
+    potentiometerValuePickerList.hidden = shouldHideList;
+  }
+
+  if (potentiometerValuePicker) {
+    if (!showPotentiometerValues) {
+      potentiometerValuePicker.classList.remove('is-open');
+      document.dispatchEvent(new CustomEvent('gridfinity:component-picker-close'));
+    }
+    potentiometerValuePicker.classList.toggle('is-disabled', !showPotentiometerValues);
+  }
+
+  if (!showPotentiometerValues && resetIfHidden) {
+    state.potentiometerValue = '';
+  }
+
+  if (potentiometerTaperField) {
+    potentiometerTaperField.classList.toggle('d-none', !showPotentiometerTaper);
+    potentiometerTaperField.setAttribute('aria-hidden', showPotentiometerTaper ? 'false' : 'true');
+  }
+
+  if (potentiometerTaperSelect) {
+    potentiometerTaperSelect.disabled = !showPotentiometerTaper;
+  }
+
+  if (potentiometerTaperPickerButton) {
+    potentiometerTaperPickerButton.disabled = !showPotentiometerTaper;
+    const isOpen = Boolean(
+      showPotentiometerTaper &&
+        potentiometerTaperPicker &&
+        potentiometerTaperPicker.classList.contains('is-open'),
+    );
+    potentiometerTaperPickerButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  }
+
+  if (potentiometerTaperPickerList) {
+    const shouldHideList =
+      !showPotentiometerTaper ||
+      !potentiometerTaperPicker ||
+      !potentiometerTaperPicker.classList.contains('is-open');
+    potentiometerTaperPickerList.hidden = shouldHideList;
+  }
+
+  if (potentiometerTaperPicker) {
+    if (!showPotentiometerTaper) {
+      potentiometerTaperPicker.classList.remove('is-open');
+      document.dispatchEvent(new CustomEvent('gridfinity:component-picker-close'));
+    }
+    potentiometerTaperPicker.classList.toggle('is-disabled', !showPotentiometerTaper);
+  }
+
+  if (!showPotentiometerTaper && resetIfHidden) {
+    state.potentiometerTaper = '';
+  }
+
   refreshComponentMountPickerIcons();
   syncComponentMountPicker({ isValid: true });
   syncResistorValuePicker({ isValid: true });
   syncCapacitorValuePicker({ isValid: true });
   syncDiodeValuePicker({ isValid: true });
+  syncPotentiometerValuePicker({ isValid: true });
+  syncPotentiometerTaperPicker({ isValid: true });
 }
 
 export function syncResistorValuePicker({ isValid = true } = {}) {
@@ -1349,6 +1451,340 @@ export function setDiodeValueSelection(nextValue, { triggerUpdate = true } = {})
 
   state.diodeValue = sanitizedValue;
   syncDiodeValuePicker({ isValid: true });
+
+  if (triggerUpdate && previousValue !== sanitizedValue) {
+    updateDownloadState();
+    updatePreview();
+  }
+}
+
+export function populatePotentiometerValues() {
+  if (!potentiometerValueSelect) {
+    return;
+  }
+
+  const previousValue =
+    typeof state.potentiometerValue === 'string' ? state.potentiometerValue : '';
+
+  potentiometerValueSelect.innerHTML = '';
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = POTENTIOMETER_VALUE_PLACEHOLDER_TEXT;
+  potentiometerValueSelect.appendChild(placeholder);
+
+  potentiometerValueOptions.forEach(option => {
+    const opt = document.createElement('option');
+    opt.value = option.id;
+    opt.textContent = option.label;
+    potentiometerValueSelect.appendChild(opt);
+  });
+
+  const sanitizedValue = validPotentiometerValues.has(previousValue) ? previousValue : '';
+  state.potentiometerValue = sanitizedValue;
+  potentiometerValueSelect.value = sanitizedValue;
+
+  if (potentiometerValuePickerList) {
+    potentiometerValuePickerList.innerHTML = '';
+    potentiometerValueOptions.forEach(option => {
+      const item = document.createElement('li');
+      item.className = 'bolt-drive-picker__option';
+      item.dataset.value = option.id;
+      item.setAttribute('role', 'option');
+      item.setAttribute('aria-selected', 'false');
+      item.tabIndex = -1;
+
+      const icon = document.createElement('span');
+      icon.className = 'bolt-drive-picker__option-icon';
+      icon.setAttribute('aria-hidden', 'true');
+      const imageSrc = option.image || '';
+      if (imageSrc) {
+        const image = document.createElement('img');
+        image.className = 'bolt-drive-picker__option-icon-image';
+        image.src = imageSrc;
+        image.alt = '';
+        image.loading = 'lazy';
+        image.decoding = 'async';
+        icon.appendChild(image);
+      } else {
+        icon.classList.add('is-empty');
+      }
+      item.appendChild(icon);
+
+      const label = document.createElement('span');
+      label.className = 'bolt-drive-picker__option-label';
+      label.textContent = option.label;
+      item.appendChild(label);
+
+      potentiometerValuePickerList.appendChild(item);
+    });
+    potentiometerValuePickerList.hidden = true;
+  }
+
+  if (potentiometerValuePickerButton) {
+    potentiometerValuePickerButton.setAttribute('aria-expanded', 'false');
+  }
+
+  syncPotentiometerValuePicker({ isValid: true });
+  updateComponentValueUi({ resetIfHidden: false });
+}
+
+export function populatePotentiometerTapers() {
+  if (!potentiometerTaperSelect) {
+    return;
+  }
+
+  const previousValue =
+    typeof state.potentiometerTaper === 'string' ? state.potentiometerTaper : '';
+
+  potentiometerTaperSelect.innerHTML = '';
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = POTENTIOMETER_TAPER_PLACEHOLDER_TEXT;
+  potentiometerTaperSelect.appendChild(placeholder);
+
+  potentiometerTaperOptions.forEach(option => {
+    const opt = document.createElement('option');
+    opt.value = option.id;
+    opt.textContent = option.label;
+    potentiometerTaperSelect.appendChild(opt);
+  });
+
+  const sanitizedValue = validPotentiometerTapers.has(previousValue) ? previousValue : '';
+  state.potentiometerTaper = sanitizedValue;
+  potentiometerTaperSelect.value = sanitizedValue;
+
+  if (potentiometerTaperPickerList) {
+    potentiometerTaperPickerList.innerHTML = '';
+    potentiometerTaperOptions.forEach(option => {
+      const item = document.createElement('li');
+      item.className = 'bolt-drive-picker__option';
+      item.dataset.value = option.id;
+      item.setAttribute('role', 'option');
+      item.setAttribute('aria-selected', 'false');
+      item.tabIndex = -1;
+
+      const icon = document.createElement('span');
+      icon.className = 'bolt-drive-picker__option-icon';
+      icon.setAttribute('aria-hidden', 'true');
+      const imageSrc = option.image || '';
+      if (imageSrc) {
+        const image = document.createElement('img');
+        image.className = 'bolt-drive-picker__option-icon-image';
+        image.src = imageSrc;
+        image.alt = '';
+        image.loading = 'lazy';
+        image.decoding = 'async';
+        icon.appendChild(image);
+      } else {
+        icon.classList.add('is-empty');
+      }
+      item.appendChild(icon);
+
+      const label = document.createElement('span');
+      label.className = 'bolt-drive-picker__option-label';
+      label.textContent = option.label;
+      item.appendChild(label);
+
+      potentiometerTaperPickerList.appendChild(item);
+    });
+    potentiometerTaperPickerList.hidden = true;
+  }
+
+  if (potentiometerTaperPickerButton) {
+    potentiometerTaperPickerButton.setAttribute('aria-expanded', 'false');
+  }
+
+  syncPotentiometerTaperPicker({ isValid: true });
+  updateComponentValueUi({ resetIfHidden: false });
+}
+
+export function syncPotentiometerValuePicker({ isValid = true } = {}) {
+  if (!potentiometerValueSelect) {
+    return;
+  }
+
+  const currentValue =
+    typeof state.potentiometerValue === 'string' ? state.potentiometerValue : '';
+  const sanitizedValue = validPotentiometerValues.has(currentValue) ? currentValue : '';
+  if (sanitizedValue !== currentValue) {
+    state.potentiometerValue = sanitizedValue;
+  }
+
+  potentiometerValueSelect.value = sanitizedValue;
+  if (!sanitizedValue && potentiometerValueSelect.options.length > 0) {
+    potentiometerValueSelect.selectedIndex = 0;
+  }
+
+  const imageSrc = sanitizedValue ? 'images/potentiometer/potentiometer.svg' : '';
+
+  if (potentiometerValuePickerButton) {
+    const label =
+      potentiometerValuePickerButton.querySelector('.bolt-drive-picker__current-label');
+    const iconWrapper =
+      potentiometerValuePickerButton.querySelector('.bolt-drive-picker__current-icon');
+    let iconImage = iconWrapper
+      ? iconWrapper.querySelector('.bolt-drive-picker__current-icon-image')
+      : null;
+
+    if (label) {
+      label.textContent = sanitizedValue
+        ? sanitizedValue
+        : POTENTIOMETER_VALUE_PLACEHOLDER_TEXT;
+    }
+
+    if (iconWrapper) {
+      if (imageSrc) {
+        if (!iconImage) {
+          iconImage = document.createElement('img');
+          iconImage.className = 'bolt-drive-picker__current-icon-image';
+          iconImage.alt = '';
+          iconImage.loading = 'lazy';
+          iconImage.decoding = 'async';
+          iconWrapper.appendChild(iconImage);
+        }
+        iconWrapper.classList.remove('is-empty');
+        iconImage.src = imageSrc;
+        iconImage.hidden = false;
+      } else {
+        if (iconImage) {
+          iconImage.hidden = true;
+          iconImage.removeAttribute('src');
+        }
+        iconWrapper.classList.add('is-empty');
+      }
+    }
+
+    if (isValid) {
+      potentiometerValuePickerButton.classList.remove('is-invalid');
+      potentiometerValuePickerButton.removeAttribute('aria-invalid');
+    } else {
+      potentiometerValuePickerButton.classList.add('is-invalid');
+      potentiometerValuePickerButton.setAttribute('aria-invalid', 'true');
+    }
+  }
+
+  if (potentiometerValuePicker) {
+    potentiometerValuePicker.classList.toggle('is-invalid', !isValid);
+  }
+
+  if (potentiometerValuePickerList) {
+    const optionElements = Array.from(
+      potentiometerValuePickerList.querySelectorAll('[role="option"]'),
+    );
+    optionElements.forEach(optionElement => {
+      const isSelected = optionElement.dataset.value === sanitizedValue;
+      optionElement.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      optionElement.classList.toggle('is-selected', isSelected);
+      optionElement.tabIndex = -1;
+    });
+  }
+}
+
+export function syncPotentiometerTaperPicker({ isValid = true } = {}) {
+  if (!potentiometerTaperSelect) {
+    return;
+  }
+
+  const currentValue =
+    typeof state.potentiometerTaper === 'string' ? state.potentiometerTaper : '';
+  const sanitizedValue = validPotentiometerTapers.has(currentValue) ? currentValue : '';
+  if (sanitizedValue !== currentValue) {
+    state.potentiometerTaper = sanitizedValue;
+  }
+
+  potentiometerTaperSelect.value = sanitizedValue;
+  if (!sanitizedValue && potentiometerTaperSelect.options.length > 0) {
+    potentiometerTaperSelect.selectedIndex = 0;
+  }
+
+  const imageSrc = sanitizedValue ? 'images/potentiometer/potentiometer.svg' : '';
+
+  if (potentiometerTaperPickerButton) {
+    const label =
+      potentiometerTaperPickerButton.querySelector('.bolt-drive-picker__current-label');
+    const iconWrapper =
+      potentiometerTaperPickerButton.querySelector('.bolt-drive-picker__current-icon');
+    let iconImage = iconWrapper
+      ? iconWrapper.querySelector('.bolt-drive-picker__current-icon-image')
+      : null;
+
+    if (label) {
+      label.textContent = sanitizedValue
+        ? sanitizedValue
+        : POTENTIOMETER_TAPER_PLACEHOLDER_TEXT;
+    }
+
+    if (iconWrapper) {
+      if (imageSrc) {
+        if (!iconImage) {
+          iconImage = document.createElement('img');
+          iconImage.className = 'bolt-drive-picker__current-icon-image';
+          iconImage.alt = '';
+          iconImage.loading = 'lazy';
+          iconImage.decoding = 'async';
+          iconWrapper.appendChild(iconImage);
+        }
+        iconWrapper.classList.remove('is-empty');
+        iconImage.src = imageSrc;
+        iconImage.hidden = false;
+      } else {
+        if (iconImage) {
+          iconImage.hidden = true;
+          iconImage.removeAttribute('src');
+        }
+        iconWrapper.classList.add('is-empty');
+      }
+    }
+
+    if (isValid) {
+      potentiometerTaperPickerButton.classList.remove('is-invalid');
+      potentiometerTaperPickerButton.removeAttribute('aria-invalid');
+    } else {
+      potentiometerTaperPickerButton.classList.add('is-invalid');
+      potentiometerTaperPickerButton.setAttribute('aria-invalid', 'true');
+    }
+  }
+
+  if (potentiometerTaperPicker) {
+    potentiometerTaperPicker.classList.toggle('is-invalid', !isValid);
+  }
+
+  if (potentiometerTaperPickerList) {
+    const optionElements = Array.from(
+      potentiometerTaperPickerList.querySelectorAll('[role="option"]'),
+    );
+    optionElements.forEach(optionElement => {
+      const isSelected = optionElement.dataset.value === sanitizedValue;
+      optionElement.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      optionElement.classList.toggle('is-selected', isSelected);
+      optionElement.tabIndex = -1;
+    });
+  }
+}
+
+export function setPotentiometerValueSelection(nextValue, { triggerUpdate = true } = {}) {
+  const desiredValue = typeof nextValue === 'string' ? nextValue.trim() : '';
+  const sanitizedValue = validPotentiometerValues.has(desiredValue) ? desiredValue : '';
+  const previousValue =
+    typeof state.potentiometerValue === 'string' ? state.potentiometerValue : '';
+
+  state.potentiometerValue = sanitizedValue;
+  syncPotentiometerValuePicker({ isValid: true });
+
+  if (triggerUpdate && previousValue !== sanitizedValue) {
+    updateDownloadState();
+    updatePreview();
+  }
+}
+
+export function setPotentiometerTaperSelection(nextValue, { triggerUpdate = true } = {}) {
+  const desiredValue = typeof nextValue === 'string' ? nextValue.trim() : '';
+  const sanitizedValue = validPotentiometerTapers.has(desiredValue) ? desiredValue : '';
+  const previousValue =
+    typeof state.potentiometerTaper === 'string' ? state.potentiometerTaper : '';
+
+  state.potentiometerTaper = sanitizedValue;
+  syncPotentiometerTaperPicker({ isValid: true });
 
   if (triggerUpdate && previousValue !== sanitizedValue) {
     updateDownloadState();

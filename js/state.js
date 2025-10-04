@@ -29,6 +29,8 @@ export const state = {
   resistorValue: '',
   capacitorValue: '',
   diodeValue: '',
+  potentiometerValue: '',
+  potentiometerTaper: '',
   bearingType: '',
   bearingDetails: '',
   customLine1: '',
