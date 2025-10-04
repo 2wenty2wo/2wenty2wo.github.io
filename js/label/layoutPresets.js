@@ -271,10 +271,21 @@ export function setPresetOverride(heightMm, preset) {
 }
 
 export function exportLayoutPresets(includeDefaults = false) {
-  if (includeDefaults) {
-    return JSON.stringify(defaultLayoutPresets, null, 2);
-  }
   const overrides = loadPresetOverrides();
+  if (includeDefaults) {
+    const merged = {};
+    Object.keys(defaultLayoutPresets).forEach(key => {
+      const base = clone(defaultLayoutPresets[key]);
+      const override = overrides[key];
+      merged[key] = override ? deepMerge(base, override) : base;
+    });
+    Object.keys(overrides).forEach(key => {
+      if (!(key in merged)) {
+        merged[key] = clone(overrides[key]);
+      }
+    });
+    return JSON.stringify(merged, null, 2);
+  }
   if (!overrides || Object.keys(overrides).length === 0) {
     return JSON.stringify({}, null, 2);
   }

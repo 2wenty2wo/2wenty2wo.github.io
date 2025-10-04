@@ -6,6 +6,8 @@ import {
   setPresetOverride,
   clearPresetOverrides,
   getActiveLayoutPreset,
+  exportLayoutPresets,
+  defaultLayoutPresets,
 } from '../js/label/layoutPresets.js';
 
 const pxPerMm = 300 / 25.4;
@@ -168,6 +170,35 @@ test('main text font weight clamps legacy presets to bold minimum', async () => 
         `subtitle weight ${element.fontWeight} should remain lighter than main ${mainText.fontWeight}`,
       );
     });
+  } finally {
+    clearPresetOverrides();
+  }
+});
+
+test('exporting presets with defaults merges overrides', () => {
+  clearPresetOverrides();
+  try {
+    const heightKey = 12;
+    const override = {
+      text_zone: {
+        main: {
+          font_weight: 745,
+        },
+      },
+    };
+    setPresetOverride(heightKey, override);
+    const exported = exportLayoutPresets(true);
+    const parsed = JSON.parse(exported);
+    assert.equal(
+      parsed[String(heightKey)].padding_mm,
+      defaultLayoutPresets[String(heightKey)].padding_mm,
+      'defaults should remain in exported presets',
+    );
+    assert.equal(
+      parsed[String(heightKey)].text_zone.main.font_weight,
+      override.text_zone.main.font_weight,
+      'export should merge override values with defaults',
+    );
   } finally {
     clearPresetOverrides();
   }
