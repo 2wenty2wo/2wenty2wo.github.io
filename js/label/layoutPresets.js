@@ -14,6 +14,8 @@ export const defaultLayoutPresets = {
       top_pct: 58,
       gap_mm: 0.5,
       alignment: 'middle',
+      block_offset_mm: 0,
+      horizontal_offset_mm: 0,
       main: {
         min_pt: 7.5,
         max_pt: 11,
@@ -50,6 +52,8 @@ export const defaultLayoutPresets = {
       top_pct: 58,
       gap_mm: 0.6,
       alignment: 'middle',
+      block_offset_mm: 0,
+      horizontal_offset_mm: 0,
       main: {
         min_pt: 8.5,
         max_pt: 14,
@@ -86,6 +90,8 @@ export const defaultLayoutPresets = {
       top_pct: 60,
       gap_mm: 0.8,
       alignment: 'start',
+      block_offset_mm: 0,
+      horizontal_offset_mm: 0,
       main: {
         min_pt: 9.5,
         max_pt: 20,
@@ -122,6 +128,8 @@ export const defaultLayoutPresets = {
       top_pct: 60,
       gap_mm: 1,
       alignment: 'middle',
+      block_offset_mm: 0,
+      horizontal_offset_mm: 0,
       main: {
         min_pt: 10,
         max_pt: 24,

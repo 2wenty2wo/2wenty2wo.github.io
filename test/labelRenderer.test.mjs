@@ -932,6 +932,75 @@ test('layoutText keeps end-aligned anchors clear of QR bounds', () => {
   }
 });
 
+test('layoutText applies configured horizontal offset to anchors', () => {
+  const preset = getActiveLayoutPreset(12);
+  const horizontalOffsetMm = 1.5;
+  const override = {
+    ...preset,
+    text_zone: {
+      ...preset.text_zone,
+      alignment: 'start',
+      horizontal_offset_mm: horizontalOffsetMm,
+    },
+  };
+  const offsetPx = mmToPx(horizontalOffsetMm, pxPerMm);
+  const textRect = {
+    x: 18,
+    y: 8,
+    width: 160,
+    height: 70,
+    horizontalOffsetPx: offsetPx,
+    horizontalOffsetLimits: { min: -offsetPx, max: offsetPx },
+  };
+  const layout = layoutText({
+    textLines: { line1: 'Offset Demo', line2: 'Subtitle', line3: '' },
+    textRect,
+    preset: override,
+    pxPerMm,
+    qrBounds: null,
+  });
+  assert.ok(
+    Math.abs(layout.main.x - (textRect.x + offsetPx)) < 0.6,
+    `main anchor should shift by offset (${layout.main.x.toFixed(2)} vs ${(textRect.x + offsetPx).toFixed(2)})`,
+  );
+  if (layout.sub && layout.sub.lineCount > 0) {
+    assert.ok(
+      Math.abs(layout.sub.x - (textRect.x + offsetPx)) < 0.6,
+      `subtitle anchor should shift by offset (${layout.sub.x.toFixed(2)} vs ${(textRect.x + offsetPx).toFixed(2)})`,
+    );
+  }
+});
+
+test('layoutText clamps vertical block offsets within the text rectangle', () => {
+  const preset = getActiveLayoutPreset(9);
+  const override = {
+    ...preset,
+    text_zone: {
+      ...preset.text_zone,
+      block_offset_mm: 12,
+    },
+  };
+  const textRect = {
+    x: 12,
+    y: 4,
+    width: 140,
+    height: 48,
+    horizontalOffsetPx: 0,
+    horizontalOffsetLimits: { min: 0, max: 0 },
+  };
+  const layout = layoutText({
+    textLines: { line1: 'Clamped Block', line2: 'Subtitle', line3: '' },
+    textRect,
+    preset: override,
+    pxPerMm,
+    qrBounds: null,
+  });
+  const blockZone = layout.zones.block;
+  const maxTop = Math.max(textRect.y, textRect.y + textRect.height - blockZone.height);
+  assert.ok(blockZone.y <= maxTop + 0.01, 'block top should not extend beyond allowed maximum');
+  assert.ok(blockZone.y >= textRect.y - 0.01, 'block top should remain within textRect top boundary');
+});
+
 test('layout editor keeps latest render height when exporting presets after rapid updates', () => {
   clearPresetOverrides();
   const cleanup = setupLayoutEditorTestEnvironment();

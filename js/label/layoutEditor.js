@@ -504,6 +504,22 @@ function bindPresetInputs(panel, heightKey) {
         ],
         onChange: value => setValue('text_zone.alignment', value),
       }),
+      createNumberField({
+        label: 'Block offset (mm)',
+        min: -10,
+        max: 10,
+        step: 0.1,
+        value: preset.text_zone.block_offset_mm || 0,
+        onChange: value => setValue('text_zone.block_offset_mm', value),
+      }),
+      createNumberField({
+        label: 'Horizontal offset (mm)',
+        min: -15,
+        max: 15,
+        step: 0.1,
+        value: preset.text_zone.horizontal_offset_mm || 0,
+        onChange: value => setValue('text_zone.horizontal_offset_mm', value),
+      }),
     );
   });
 

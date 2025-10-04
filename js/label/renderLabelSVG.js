@@ -969,6 +969,22 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
   const mainFontWeight = resolveMainFontWeight(textPreset.main?.font_weight);
   const zones = computeTextZones({ textRect, preset, pxPerMm });
   const alignment = resolveTextAlignment(textPreset.alignment);
+  const horizontalOffsetRawPx = mmToPx(textPreset.horizontal_offset_mm || 0, pxPerMm);
+  let horizontalOffsetPx = Number.isFinite(horizontalOffsetRawPx) ? horizontalOffsetRawPx : 0;
+  if (Number.isFinite(textRect.horizontalOffsetPx)) {
+    horizontalOffsetPx = textRect.horizontalOffsetPx;
+  } else if (textRect.horizontalOffsetLimits) {
+    const minLimit = Number.isFinite(textRect.horizontalOffsetLimits.min)
+      ? textRect.horizontalOffsetLimits.min
+      : 0;
+    const maxLimit = Number.isFinite(textRect.horizontalOffsetLimits.max)
+      ? textRect.horizontalOffsetLimits.max
+      : 0;
+    horizontalOffsetPx = clamp(horizontalOffsetPx, minLimit, maxLimit);
+  }
+  const horizontalInsetPx = Math.abs(horizontalOffsetPx);
+  const blockOffsetRawPx = mmToPx(textPreset.block_offset_mm || 0, pxPerMm);
+  const blockOffsetPx = Number.isFinite(blockOffsetRawPx) ? blockOffsetRawPx : 0;
   const qrSizePx =
     qrBounds && Number.isFinite(qrBounds.size)
       ? qrBounds.size
@@ -977,18 +993,19 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
       : 0;
   const qrMarginPx = qrBounds ? mmToPx(preset.qr?.margin_mm || 0, pxPerMm) : 0;
   const qrReservedWidthPx = Math.max(0, qrSizePx + qrMarginPx);
-  const mainWidthPx = Math.max(0, zones.main.width - qrReservedWidthPx);
+  const baseMainWidthPx = Math.max(0, zones.main.width - qrReservedWidthPx);
+  const mainWidthForFitPx = Math.max(0, baseMainWidthPx - horizontalInsetPx);
   const mainFit = fitSingleLineText({
     text: mainText,
     fontWeight: mainFontWeight,
     minPt: textPreset.main?.min_pt ?? 8,
     maxPt: textPreset.main?.max_pt ?? 16,
-    widthPx: mainWidthPx,
+    widthPx: mainWidthForFitPx,
     pxPerMm,
     letterSpacingLimit: textPreset.main?.letter_spacing_adj || -0.3,
   });
   const mainHeight = mainFit.text ? mainFit.fontSizePx : 0;
-  const mainX = computeAlignedX(zones.main.x, mainWidthPx, alignment);
+  const mainX = computeAlignedX(zones.main.x, baseMainWidthPx, alignment) + horizontalOffsetPx;
 
   const subtitleCandidates = buildSubtitleCandidates(textLines, preset);
   let subtitleFit = {
@@ -1001,6 +1018,8 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
     fontFamily: SUBTITLE_FONT_FAMILY,
   };
   if (subtitleCandidates.length > 0) {
+    const baseSubWidthPx = Math.max(0, zones.sub.width - qrReservedWidthPx);
+    const subWidthForFitPx = Math.max(0, baseSubWidthPx - horizontalInsetPx);
     const candidateFits = subtitleCandidates.map(candidate => {
       const isCompact = candidate.length === 1;
       return {
@@ -1010,7 +1029,7 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
           minPt: textPreset.sub?.min_pt ?? 7,
           maxPt: textPreset.sub?.max_pt ?? 11,
           lineHeightPct: textPreset.sub?.line_height_pct ?? 115,
-          widthPx: Math.max(0, zones.sub.width - qrReservedWidthPx),
+          widthPx: subWidthForFitPx,
           heightPx: zones.sub.height,
           pxPerMm,
           noWrap: isCompact,
@@ -1066,7 +1085,7 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
       ? subtitleFit.fontSizePx + subtitleFit.lineHeightPx * (subtitleLineCount - 1)
       : 0;
   const subtitleWidthPx = Math.max(0, zones.sub.width - qrReservedWidthPx);
-  const subtitleX = computeAlignedX(zones.sub.x, subtitleWidthPx, alignment);
+  const subtitleX = computeAlignedX(zones.sub.x, subtitleWidthPx, alignment) + horizontalOffsetPx;
 
   let blockHeight = 0;
   if (mainHeight > 0) {
@@ -1080,13 +1099,22 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
   }
 
   const rawBlockTop = blockHeight > 0 ? textRect.y + (textRect.height - blockHeight) / 2 : textRect.y;
-  const blockTop = Math.max(textRect.y, rawBlockTop);
+  const maxBlockTop = Math.max(textRect.y, textRect.y + textRect.height - blockHeight);
+  let blockTop = rawBlockTop;
+  if (blockHeight > 0) {
+    blockTop = clamp(rawBlockTop + blockOffsetPx, textRect.y, maxBlockTop);
+  } else {
+    blockTop = Math.max(textRect.y, rawBlockTop);
+  }
 
   zones.main.y = blockTop;
   zones.main.height = mainHeight;
   zones.sub.y = mainHeight > 0 ? zones.main.y + mainHeight + zones.gapPx : blockTop;
   zones.sub.height = subtitleHeight;
-  zones.block = { y: blockTop, height: blockHeight };
+  zones.block = { y: blockTop, height: blockHeight, offsetPx: blockOffsetPx };
+  zones.horizontalOffsetPx = horizontalOffsetPx;
+  zones.main.effectiveWidth = mainWidthForFitPx;
+  zones.sub.effectiveWidth = Math.max(0, subtitleWidthPx - horizontalInsetPx);
 
   const mainBaseline = mainHeight > 0 ? zones.main.y + mainHeight / 2 : zones.main.y;
 
@@ -1293,26 +1321,65 @@ function ensureTextFits({
       : 0;
   let mediaWidthPx = mediaPresent ? mediaZoneWidthPx : 0;
   const mainFontWeight = resolveMainFontWeight(preset.text_zone?.main?.font_weight);
+  const horizontalOffsetRawPx = mmToPx(preset.text_zone?.horizontal_offset_mm || 0, pxPerMm);
+  const horizontalOffsetTargetPx = Number.isFinite(horizontalOffsetRawPx)
+    ? horizontalOffsetRawPx
+    : 0;
+
+  const textRect = {
+    x: contentRect.x,
+    y: contentRect.y,
+    width: 0,
+    height: contentRect.height,
+    horizontalOffsetPx: 0,
+  };
+
+  const applyHorizontalOffsetConstraints = () => {
+    const baseWidth = Math.max(0, textRect.width);
+    if (!(baseWidth > 0)) {
+      textRect.horizontalOffsetPx = 0;
+      textRect.horizontalOffsetLimits = { min: 0, max: 0 };
+      return 0;
+    }
+    const leftAllowance = Math.max(0, textRect.x - contentRect.x);
+    const rightAllowance = Math.max(
+      0,
+      contentRect.x + contentRect.width - (textRect.x + baseWidth),
+    );
+    const widthLimit = Math.max(0, baseWidth - 1);
+    const positiveLimit = Math.min(rightAllowance, widthLimit);
+    const negativeLimit = Math.min(leftAllowance, widthLimit);
+    const clamped = clamp(horizontalOffsetTargetPx, -negativeLimit, positiveLimit);
+    textRect.horizontalOffsetPx = clamped;
+    textRect.horizontalOffsetLimits = { min: -negativeLimit, max: positiveLimit };
+    return Math.max(0, baseWidth - Math.abs(clamped));
+  };
+
+  const recomputeTextRect = () => {
+    textRect.x = mediaWidthPx > 0 ? contentRect.x + mediaWidthPx + textGapPx : contentRect.x;
+    textRect.width = Math.max(
+      0,
+      contentRect.width - mediaWidthPx - (mediaWidthPx > 0 ? textGapPx : 0),
+    );
+    textRect.height = contentRect.height;
+    return applyHorizontalOffsetConstraints();
+  };
+
+  let effectiveTextWidthPx = recomputeTextRect();
   for (let i = 0; i < 4; i += 1) {
-    const textWidth = Math.max(0, contentRect.width - mediaWidthPx - textGapPx);
-    if (textWidth >= minTextWidthPx - 0.5) {
+    if (effectiveTextWidthPx >= minTextWidthPx - 0.5) {
       break;
     }
-    mediaWidthPx = Math.max(0, mediaWidthPx - (contentRect.width * 0.06));
+    mediaWidthPx = Math.max(0, mediaWidthPx - contentRect.width * 0.06);
+    effectiveTextWidthPx = recomputeTextRect();
   }
-  const textRect = {
-    x: mediaWidthPx > 0 ? contentRect.x + mediaWidthPx + textGapPx : contentRect.x,
-    y: contentRect.y,
-    width: Math.max(0, contentRect.width - mediaWidthPx - (mediaWidthPx > 0 ? textGapPx : 0)),
-    height: contentRect.height,
-  };
 
   let mainFit = fitSingleLineText({
     text: textLines.line1,
     fontWeight: mainFontWeight,
     minPt: preset.text_zone.main.min_pt,
     maxPt: preset.text_zone.main.max_pt,
-    widthPx: textRect.width,
+    widthPx: effectiveTextWidthPx,
     pxPerMm,
     letterSpacingLimit: preset.text_zone.main.letter_spacing_adj || -0.3,
   });
@@ -1322,17 +1389,18 @@ function ensureTextFits({
   ) {
     for (let i = 0; i < 4 && mediaWidthPx > 0; i += 1) {
       mediaWidthPx = Math.max(0, mediaWidthPx - contentRect.width * 0.04);
-      textRect.x = mediaWidthPx > 0 ? contentRect.x + mediaWidthPx + textGapPx : contentRect.x;
       textRect.width = Math.max(
         minTextWidthPx,
         contentRect.width - mediaWidthPx - (mediaWidthPx > 0 ? textGapPx : 0),
       );
+      textRect.x = mediaWidthPx > 0 ? contentRect.x + mediaWidthPx + textGapPx : contentRect.x;
+      effectiveTextWidthPx = applyHorizontalOffsetConstraints();
       mainFit = fitSingleLineText({
         text: textLines.line1,
         fontWeight: mainFontWeight,
         minPt: preset.text_zone.main.min_pt,
         maxPt: preset.text_zone.main.max_pt,
-        widthPx: textRect.width,
+        widthPx: effectiveTextWidthPx,
         pxPerMm,
         letterSpacingLimit: preset.text_zone.main.letter_spacing_adj || -0.3,
       });
@@ -1463,7 +1531,18 @@ export async function renderLabelSVG({
   if (qrPlan) {
     qrElement = await renderQrElement(qrPlan);
     if (qrElement) {
-      textRect.width = Math.max(0, textRect.width - (qrElement.size + mmToPx(preset.qr.margin_mm || 0.5, pxPerMm)));
+      const qrClearancePx = qrElement.size + mmToPx(preset.qr.margin_mm || 0.5, pxPerMm);
+      textRect.width = Math.max(0, textRect.width - qrClearancePx);
+      const widthLimit = Math.max(0, textRect.width - 1);
+      const limits = textRect.horizontalOffsetLimits || {};
+      const prevMin = Number.isFinite(limits.min) ? limits.min : 0;
+      const prevMax = Number.isFinite(limits.max) ? limits.max : 0;
+      const minLimit = Math.max(-widthLimit, prevMin);
+      const maxLimit = Math.min(widthLimit, prevMax);
+      textRect.horizontalOffsetLimits = { min: minLimit, max: maxLimit };
+      if (Number.isFinite(textRect.horizontalOffsetPx)) {
+        textRect.horizontalOffsetPx = clamp(textRect.horizontalOffsetPx, minLimit, maxLimit);
+      }
     }
   }
 
