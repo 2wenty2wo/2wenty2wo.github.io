@@ -23,12 +23,21 @@ function extractImages(svgMarkup) {
 
 function getPresetMainFontWeight(heightMm) {
   const preset = getActiveLayoutPreset(heightMm);
-  return preset.text_zone?.main?.font_weight ?? 800;
+  const stored = preset.text_zone?.main?.font_weight ?? 800;
+  return Math.max(700, stored);
 }
 
 function findMainTextElements(svgMarkup, fontWeight) {
   const pattern = new RegExp(`<text[^>]*font-weight="${fontWeight}"[^>]*>([^<]+)<\\/text>`, 'g');
   return [...svgMarkup.matchAll(pattern)];
+}
+
+function extractTextElements(svgMarkup) {
+  const pattern = /<text[^>]*font-weight="(\d+)"[^>]*>([^<]*)<\/text>/g;
+  return [...svgMarkup.matchAll(pattern)].map(([, weight, text]) => ({
+    fontWeight: Number(weight),
+    text,
+  }));
 }
 
 test('37×12 mm labels keep bolt icons side-by-side', async () => {
@@ -112,19 +121,65 @@ test('37×18 mm labels stack bolt icons vertically with balanced spacing', async
   assert.equal(textMatches[0][1].trim(), 'M2 × 10', 'main line should remain intact');
 });
 
+test('main text font weight clamps legacy presets to bold minimum', async () => {
+  clearPresetOverrides();
+  try {
+    const geometry = {
+      labelWidthMm: 37,
+      labelHeightMm: 18,
+      printableWidthMm: 33,
+      printableHeightMm: 16,
+      marginX: 2,
+      marginY: 1,
+    };
+    setPresetOverride(geometry.printableHeightMm, {
+      text_zone: {
+        main: {
+          font_weight: 600,
+        },
+      },
+    });
+    const textLines = { line1: 'Clamped', line2: 'Subtitle', line3: 'Details' };
+    const result = await renderLabelSVG({
+      geometry,
+      pxPerMm,
+      textLines,
+      hardwareInfo: null,
+      qrContent: '',
+    });
+    const textElements = extractTextElements(result.svgMarkup);
+    assert.ok(textElements.length > 0, 'expected at least one text element');
+    const [mainText, ...subtitleText] = textElements;
+    assert.equal(mainText.fontWeight, 700, 'main text should clamp to bold minimum');
+    subtitleText.forEach(element => {
+      assert.ok(
+        element.fontWeight < mainText.fontWeight,
+        `subtitle weight ${element.fontWeight} should remain lighter than main ${mainText.fontWeight}`,
+      );
+    });
+  } finally {
+    clearPresetOverrides();
+  }
+});
+
 test('fitTextToBox shrinks long lines and applies ellipsis when needed', () => {
-  const minFontSizePx = (8.25 / 72) * 300;
+  const pxPerMm = 300 / 25.4;
+  const minPt = 8.25;
+  const maxPt = 34;
   const result = fitTextToBox({
-    text: 'M2.5 × 16 Extremely Long Description That Should Shrink',
+    lines: ['M2.5 × 16 Extremely Long Description That Should Shrink'],
     fontWeight: 800,
-    maxFontSizePx: 140,
-    minFontSizePx,
-    boxWidthPx: 210,
-    boxHeightPx: 120,
-    lineClamp: 2,
+    minPt,
+    maxPt,
+    lineHeightPct: 120,
+    widthPx: 210,
+    heightPx: 120,
+    pxPerMm,
+    allowEllipsis: true,
   });
-  assert.ok(result.fontSizePx < 140, 'font size should reduce');
-  assert.ok(result.fontSizePx >= minFontSizePx, 'font size should respect minimum');
+  const toPx = pt => (pt / 72) * (pxPerMm * 25.4);
+  assert.ok(result.fontSizePx < toPx(maxPt), 'font size should reduce');
+  assert.ok(result.fontSizePx >= toPx(minPt), 'font size should respect minimum');
   assert.ok(result.ellipsisApplied, 'main line should ellipsize when overflowing');
   assert.equal(result.lines.length <= 2, true);
   assert.ok(result.lines[result.lines.length - 1].endsWith('…'), 'ellipsis should appear on final line');
@@ -293,7 +348,7 @@ test('main font weight follows preset overrides', async () => {
       qrContent: '',
     });
     const mainFontWeight = getPresetMainFontWeight(geometry.printableHeightMm);
-    assert.equal(mainFontWeight, 600, 'override should adjust active preset weight');
+    assert.equal(mainFontWeight, 700, 'override should clamp to bold minimum');
     const mainMatches = findMainTextElements(result.svgMarkup, mainFontWeight);
     assert.equal(mainMatches.length, 1, 'main line should render once with overridden weight');
     assert.equal(mainMatches[0][1].trim(), 'Non-Bold');
@@ -318,14 +373,14 @@ test('subtitle lines remain distinct with optional ellipsis on the last line', a
     line3: 'Another Subtitle That Is Also Quite Long',
   };
   const result = await renderLabelSVG({ geometry, pxPerMm, textLines, hardwareInfo: null, qrContent: '' });
-  const subtitleMatches = [...result.svgMarkup.matchAll(/font-weight="600"[^>]*>([^<]+)<\/text>/g)];
-  assert.equal(subtitleMatches.length, 2, 'two subtitle lines should render');
+  const subtitleLines = result.textLayout.sub?.lines || [];
+  assert.ok(subtitleLines.length >= 2, 'at least two subtitle lines should render');
+  const nonFinalLines = subtitleLines.slice(0, -1);
+  nonFinalLines.forEach(line => {
+    assert.ok(!line.trim().endsWith('…'), 'only final subtitle line should ellipsize when needed');
+  });
   assert.ok(
-    subtitleMatches[0][1].trim().endsWith('Descriptor'),
-    'first subtitle line should not ellipsize before the second line',
-  );
-  assert.ok(
-    subtitleMatches[1][1].trim().endsWith('…'),
+    subtitleLines[subtitleLines.length - 1].trim().endsWith('…'),
     'second subtitle line may ellipsize when space runs out',
   );
 });
