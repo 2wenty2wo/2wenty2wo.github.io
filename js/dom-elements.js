@@ -140,7 +140,10 @@ const defaultNotesPlaceholder = notesInput ? notesInput.getAttribute('placeholde
 const standardSelect = document.getElementById('standard-select');
 const standardLabel = standardFieldLabel;
 const defaultStandardLabel = standardLabel ? standardLabel.textContent : '';
-const standardToggle = document.getElementById('standard-toggle');
+const textToggle = document.getElementById('text-toggle');
+const textOptionsWrapper = document.getElementById('text-options-wrapper');
+const textMainToggle = document.getElementById('text-main-toggle');
+const textInfoToggle = document.getElementById('text-info-toggle');
 const imageToggle = document.getElementById('image-toggle');
 const qrcodeToggle = document.getElementById('qrcode-toggle');
 const widthRange = document.getElementById('width-range');
@@ -328,7 +331,10 @@ export const elements = {
   standardSelect,
   standardLabel,
   defaultStandardLabel,
-  standardToggle,
+  textToggle,
+  textOptionsWrapper,
+  textMainToggle,
+  textInfoToggle,
   imageToggle,
   qrcodeToggle,
   widthRange,

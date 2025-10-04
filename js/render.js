@@ -54,6 +54,10 @@ const {
   downloadButton,
   shareButton,
   printButton,
+  textToggle,
+  textOptionsWrapper,
+  textMainToggle,
+  textInfoToggle,
   threadSizeSelect,
   threadSizeContainer,
   lengthInput,
@@ -354,7 +358,7 @@ export function isLabelReady() {
   if (state.hardwareType === 'Bolt' || state.hardwareType === 'Screw') {
     const hasThread = Boolean(state.threadSize);
     const hasLength = Boolean(state.length);
-    const detailsRequired = Boolean(state.showImage || state.showStandard);
+    const detailsRequired = Boolean(state.showImage || (state.showText && state.showTextInfo));
     const hasHead = Boolean(state.boltHead);
     const hasDrive = Boolean(state.boltDrive);
     const detailsSatisfied = !detailsRequired || (hasHead && hasDrive);
@@ -493,7 +497,7 @@ function applyValidationFeedback() {
 
   if (
     (hardwareType === 'Bolt' || hardwareType === 'Screw') &&
-    (state.showImage || state.showStandard)
+    (state.showImage || (state.showText && state.showTextInfo))
   ) {
     const headValid = Boolean(state.boltHead);
     const driveValid = Boolean(state.boltDrive);
@@ -754,6 +758,39 @@ export function updateQrContentVisibility(options = {}) {
   } else {
     qrContentWrapper.classList.add('d-none');
     qrContentInput.disabled = true;
+  }
+}
+
+function temporarilyDisableTransition(element) {
+  if (!element) {
+    return () => {};
+  }
+  const originalTransition = element.style.transition;
+  element.style.transition = 'none';
+  return () => {
+    element.style.transition = originalTransition;
+  };
+}
+
+export function updateTextOptionsVisibility(options = {}) {
+  if (!textOptionsWrapper || !textToggle || !textMainToggle || !textInfoToggle) {
+    return;
+  }
+  const { animate = true } = options;
+  const shouldShow = Boolean(state.showText);
+  const restoreTransition = animate ? null : temporarilyDisableTransition(textOptionsWrapper);
+  textToggle.setAttribute('aria-expanded', shouldShow ? 'true' : 'false');
+  textOptionsWrapper.classList.toggle('is-collapsed', !shouldShow);
+  textOptionsWrapper.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+  textMainToggle.disabled = !shouldShow;
+  textInfoToggle.disabled = !shouldShow;
+  textOptionsWrapper.querySelectorAll('.label-suboption').forEach(suboption => {
+    suboption.setAttribute('aria-disabled', shouldShow ? 'false' : 'true');
+  });
+  if (restoreTransition) {
+    requestAnimationFrame(() => {
+      restoreTransition();
+    });
   }
 }
 function normalizeStandardCode(code) {
@@ -1062,7 +1099,7 @@ function resolveHardwareImageInfo() {
 function buildConnectorLines() {
   const category = findConnectorCategory(state.connectorCategory);
   const categoryLabel = category ? category.label : '';
-  const seriesLabel = state.showStandard && state.standard ? state.standard : '';
+  const seriesLabel = state.standard ? state.standard : '';
   const standardCode = (state.standardCode || '').trim();
   const noteText = state.notes || '';
   const isPreInsulated = state.connectorCategory === 'pre-insulated-crimp';
@@ -1101,10 +1138,29 @@ function buildConnectorLines() {
 }
 
 function buildTextLines() {
+  const applyTextVisibility = lines => {
+    const normalized = {
+      line1: lines.line1 || '',
+      line2: lines.line2 || '',
+      line3: lines.line3 || '',
+    };
+    if (!state.showText) {
+      return { line1: '', line2: '', line3: '' };
+    }
+    if (!state.showTextMain) {
+      normalized.line1 = '';
+    }
+    if (!state.showTextInfo) {
+      normalized.line2 = '';
+      normalized.line3 = '';
+    }
+    return normalized;
+  };
+
   if (state.hardwareType === 'Custom') {
     const line1 = (state.customLine1 || '').trim() || 'Custom Label';
     const line2 = (state.customLine2 || '').trim();
-    return { line1, line2, line3: '' };
+    return applyTextVisibility({ line1, line2, line3: '' });
   }
 
   if (state.hardwareType === 'Fuse') {
@@ -1123,24 +1179,24 @@ function buildTextLines() {
       line3Parts.push(state.notes);
     }
     const line3 = line3Parts.join(' • ');
-    return { line1: valueLabel, line2, line3 };
+    return applyTextVisibility({ line1: valueLabel, line2, line3 });
   }
 
   if (state.hardwareType === 'Connector') {
-    return buildConnectorLines();
+    return applyTextVisibility(buildConnectorLines());
   }
 
   if (state.hardwareType === 'Bearing') {
     const line1 = state.bearingType || 'Bearing';
-    const line2 = state.showStandard && state.bearingDetails ? state.bearingDetails : '';
+    const line2 = state.bearingDetails || '';
     const line3 = state.notes || '';
-    return { line1, line2, line3 };
+    return applyTextVisibility({ line1, line2, line3 });
   }
 
   if (state.hardwareType === 'Switch') {
     const line1 = state.switchType || 'Switch';
     const line2 = state.notes || '';
-    return { line1, line2, line3: '' };
+    return applyTextVisibility({ line1, line2, line3: '' });
   }
 
   if (ELECTRICAL_COMPONENT_TYPES.has(state.hardwareType)) {
@@ -1155,7 +1211,7 @@ function buildTextLines() {
       if (state.notes) {
         line3Parts.push(state.notes);
       }
-      return { line1, line2, line3: line3Parts.join(' — ') };
+      return applyTextVisibility({ line1, line2, line3: line3Parts.join(' — ') });
     }
     if (category === 'Capacitor') {
       const line1 = state.capacitorValue || 'Capacitor';
@@ -1167,7 +1223,7 @@ function buildTextLines() {
       if (state.notes) {
         line3Parts.push(state.notes);
       }
-      return { line1, line2, line3: line3Parts.join(' — ') };
+      return applyTextVisibility({ line1, line2, line3: line3Parts.join(' — ') });
     }
     if (category === 'Diode') {
       const selectedDiodeId = state.diodeValue || '';
@@ -1189,7 +1245,7 @@ function buildTextLines() {
       if (state.notes) {
         line3Parts.push(state.notes);
       }
-      return { line1, line2, line3: line3Parts.join(' — ') };
+      return applyTextVisibility({ line1, line2, line3: line3Parts.join(' — ') });
     }
     const parts = [];
     if (state.componentCategory) {
@@ -1201,7 +1257,7 @@ function buildTextLines() {
     const fallbackLabel = state.hardwareType || 'Component';
     const line1 = parts.join(' — ') || fallbackLabel;
     const line2 = state.notes || '';
-    return { line1, line2, line3: '' };
+    return applyTextVisibility({ line1, line2, line3: '' });
   }
 
   if (state.hardwareType === 'Bolt') {
@@ -1216,9 +1272,8 @@ function buildTextLines() {
     const driveEntry = boltDriveMap.get((state.boltDrive || '').trim());
     const headLabel = headEntry ? headEntry.label : '';
     const driveLabel = driveEntry ? driveEntry.label : '';
-    const line2 = state.showStandard && headLabel ? headLabel : '';
-    const line3 = state.showStandard && driveLabel ? driveLabel : '';
-    return { line1: pieces.join(' ') || 'Bolt', line2, line3 };
+    const line1 = pieces.join(' ') || 'Bolt';
+    return applyTextVisibility({ line1, line2: headLabel || '', line3: driveLabel || '' });
   }
 
   if (state.hardwareType === 'Nut') {
@@ -1226,10 +1281,9 @@ function buildTextLines() {
     const typeEntry = nutTypeMap.get((state.nutType || '').trim());
     const typeLabel = typeEntry ? typeEntry.label : '';
     const notes = state.notes || '';
-    const showType = Boolean(state.showStandard && typeLabel);
-    const line2 = showType ? typeLabel : notes;
-    const line3 = showType ? notes : '';
-    return { line1, line2, line3 };
+    const line2 = typeLabel || notes;
+    const line3 = typeLabel ? notes : '';
+    return applyTextVisibility({ line1, line2, line3 });
   }
 
   if (state.hardwareType === 'Washer') {
@@ -1239,7 +1293,7 @@ function buildTextLines() {
     const notes = state.notes || '';
     const line2 = typeLabel;
     const line3 = notes;
-    return { line1, line2, line3 };
+    return applyTextVisibility({ line1, line2, line3 });
   }
 
   if (state.hardwareType === 'Screw') {
@@ -1255,32 +1309,32 @@ function buildTextLines() {
     const typeLabel = typeEntry ? typeEntry.label : '';
     const driveLabel = driveEntry ? driveEntry.label : '';
     const notes = state.notes || '';
-    const showDetails = Boolean(state.showStandard);
     let line2 = '';
     let line3 = '';
-    if (showDetails) {
-      if (typeLabel) {
-        line2 = typeLabel;
-      }
-      if (driveLabel) {
+    if (typeLabel) {
+      line2 = typeLabel;
+    }
+    if (driveLabel) {
+      if (!line2) {
+        line2 = driveLabel;
+      } else {
         line3 = driveLabel;
       }
-      if (notes) {
-        if (!line2) {
-          line2 = notes;
-        } else if (!line3) {
-          line3 = notes;
-        }
-      }
-    } else {
-      line2 = notes;
     }
-    return { line1: pieces.join(' ') || 'Screw', line2, line3 };
+    if (notes) {
+      if (!line2) {
+        line2 = notes;
+      } else if (!line3) {
+        line3 = notes;
+      }
+    }
+    const line1 = pieces.join(' ') || 'Screw';
+    return applyTextVisibility({ line1, line2, line3 });
   }
 
   const line1 = state.threadSize || state.hardwareType || 'Label';
   const line2 = state.standard ? state.standard : state.notes || '';
-  return { line1, line2, line3: '' };
+  return applyTextVisibility({ line1, line2, line3: '' });
 }
 function hidePreviewContent() {
   if (!labelPreviewImage) {

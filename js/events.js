@@ -43,7 +43,12 @@ import {
   setBearingTypeSelection,
   syncBearingTypePicker,
 } from './forms.js';
-import { updatePreview, updateDownloadState, updateQrContentVisibility } from './render.js';
+import {
+  updatePreview,
+  updateDownloadState,
+  updateQrContentVisibility,
+  updateTextOptionsVisibility,
+} from './render.js';
 import { downloadLabel, printLabel, shareLabel } from './actions.js';
 
 const {
@@ -135,7 +140,9 @@ const {
   connectorSeriesPickerButton,
   connectorSeriesPickerList,
   standardSelect,
-  standardToggle,
+  textToggle,
+  textMainToggle,
+  textInfoToggle,
   imageToggle,
   qrcodeToggle,
   qrContentInput,
@@ -4656,9 +4663,27 @@ export function initEventHandlers() {
     closeCustomIconPicker();
   });
 
-  if (standardToggle) {
-    standardToggle.addEventListener('change', () => {
-      state.showStandard = standardToggle.checked;
+  if (textToggle) {
+    textToggle.addEventListener('change', () => {
+      state.showText = textToggle.checked;
+      updateTextOptionsVisibility();
+      updateDownloadState();
+      updatePreview();
+    });
+  }
+
+  if (textMainToggle) {
+    textMainToggle.addEventListener('change', () => {
+      state.showTextMain = textMainToggle.checked;
+      updateDownloadState();
+      updatePreview();
+    });
+  }
+
+  if (textInfoToggle) {
+    textInfoToggle.addEventListener('change', () => {
+      state.showTextInfo = textInfoToggle.checked;
+      updateDownloadState();
       updatePreview();
     });
   }

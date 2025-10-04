@@ -35,7 +35,12 @@ import {
   syncConnectorSeriesPicker,
   updateComponentValueUi,
 } from './forms.js';
-import { updateDownloadState, updateQrContentVisibility, updatePreview } from './render.js';
+import {
+  updateDownloadState,
+  updateQrContentVisibility,
+  updateTextOptionsVisibility,
+  updatePreview,
+} from './render.js';
 import { initEventHandlers } from './events.js';
 import { hydrateStateFromUrl } from './url-state.js';
 export { expandAllCollapsibleSections, collapseAllCollapsibleSections } from './collapsible-sections.js';
@@ -51,7 +56,9 @@ function applyStateToControls() {
     customLine1Input,
     customLine2Input,
     standardSelect,
-    standardToggle,
+    textToggle,
+    textMainToggle,
+    textInfoToggle,
     imageToggle,
     qrcodeToggle,
     qrContentInput,
@@ -119,8 +126,15 @@ function applyStateToControls() {
   setNutTypeSelection(state.nutType || '', { triggerUpdate: false });
   setWasherTypeSelection(state.washerType || '', { triggerUpdate: false });
   setSwitchTypeSelection(state.switchType || '', { triggerUpdate: false });
-  if (standardToggle) {
-    standardToggle.checked = state.showStandard;
+  if (textToggle) {
+    textToggle.checked = state.showText;
+    textToggle.setAttribute('aria-expanded', state.showText ? 'true' : 'false');
+  }
+  if (textMainToggle) {
+    textMainToggle.checked = state.showTextMain;
+  }
+  if (textInfoToggle) {
+    textInfoToggle.checked = state.showTextInfo;
   }
   if (imageToggle) {
     imageToggle.checked = state.showImage;
@@ -165,6 +179,7 @@ function init() {
   applyStateToControls();
   initEventHandlers();
   updateDownloadState();
+  updateTextOptionsVisibility({ animate: false });
   updateQrContentVisibility();
   updatePreview();
 }
