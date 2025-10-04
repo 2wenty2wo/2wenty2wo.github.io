@@ -22,6 +22,8 @@ import {
   resistorValueOptions,
   capacitorValueOptions,
   diodeValueOptions,
+  mosfetChannelOptions,
+  mosfetPartOptions,
   potentiometerValueOptions,
   potentiometerTaperOptions,
   connectorCategoryImageMap,
@@ -107,6 +109,16 @@ const {
   diodeValuePickerButton,
   diodeValuePickerList,
   diodeValueSelect,
+  mosfetChannelField,
+  mosfetChannelPicker,
+  mosfetChannelPickerButton,
+  mosfetChannelPickerList,
+  mosfetChannelSelect,
+  mosfetPartField,
+  mosfetPartPicker,
+  mosfetPartPickerButton,
+  mosfetPartPickerList,
+  mosfetPartSelect,
   potentiometerValueField,
   potentiometerValuePicker,
   potentiometerValuePickerButton,
@@ -238,6 +250,10 @@ const CAPACITOR_VALUE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const validCapacitorValues = new Set(capacitorValueOptions.map(option => option.id));
 const DIODE_VALUE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const validDiodeValues = new Set(diodeValueOptions.map(option => option.id));
+const MOSFET_CHANNEL_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
+const validMosfetChannels = new Set(mosfetChannelOptions.map(option => option.id));
+const MOSFET_PART_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
+const validMosfetParts = new Set(mosfetPartOptions.map(option => option.id));
 const POTENTIOMETER_VALUE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const validPotentiometerValues = new Set(
   potentiometerValueOptions.map(option => option.id),
@@ -955,6 +971,8 @@ export function updateComponentValueUi({ resetIfHidden = true } = {}) {
   const showResistorValues = showComponentFields && category === 'Resistor';
   const showCapacitorValues = showComponentFields && category === 'Capacitor';
   const showDiodeValues = showComponentFields && category === 'Diode';
+  const showMosfetChannels = showComponentFields && category === 'MOSFET';
+  const showMosfetParts = showMosfetChannels;
   const showPotentiometerValues = showComponentFields && category === 'Potentiometer';
   const showPotentiometerTaper = showPotentiometerValues;
 
@@ -1069,6 +1087,80 @@ export function updateComponentValueUi({ resetIfHidden = true } = {}) {
 
   if (!showDiodeValues && resetIfHidden) {
     state.diodeValue = '';
+  }
+
+  if (mosfetChannelField) {
+    mosfetChannelField.classList.toggle('d-none', !showMosfetChannels);
+    mosfetChannelField.setAttribute('aria-hidden', showMosfetChannels ? 'false' : 'true');
+  }
+
+  if (mosfetChannelSelect) {
+    mosfetChannelSelect.disabled = !showMosfetChannels;
+  }
+
+  if (mosfetChannelPickerButton) {
+    mosfetChannelPickerButton.disabled = !showMosfetChannels;
+    const isOpen = Boolean(
+      showMosfetChannels &&
+        mosfetChannelPicker &&
+        mosfetChannelPicker.classList.contains('is-open'),
+    );
+    mosfetChannelPickerButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  }
+
+  if (mosfetChannelPickerList) {
+    const shouldHideList =
+      !showMosfetChannels ||
+      !mosfetChannelPicker ||
+      !mosfetChannelPicker.classList.contains('is-open');
+    mosfetChannelPickerList.hidden = shouldHideList;
+  }
+
+  if (mosfetChannelPicker) {
+    if (!showMosfetChannels) {
+      mosfetChannelPicker.classList.remove('is-open');
+      document.dispatchEvent(new CustomEvent('gridfinity:component-picker-close'));
+    }
+    mosfetChannelPicker.classList.toggle('is-disabled', !showMosfetChannels);
+  }
+
+  if (!showMosfetChannels && resetIfHidden) {
+    state.mosfetChannel = '';
+  }
+
+  if (mosfetPartField) {
+    mosfetPartField.classList.toggle('d-none', !showMosfetParts);
+    mosfetPartField.setAttribute('aria-hidden', showMosfetParts ? 'false' : 'true');
+  }
+
+  if (mosfetPartSelect) {
+    mosfetPartSelect.disabled = !showMosfetParts;
+  }
+
+  if (mosfetPartPickerButton) {
+    mosfetPartPickerButton.disabled = !showMosfetParts;
+    const isOpen = Boolean(
+      showMosfetParts && mosfetPartPicker && mosfetPartPicker.classList.contains('is-open'),
+    );
+    mosfetPartPickerButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  }
+
+  if (mosfetPartPickerList) {
+    const shouldHideList =
+      !showMosfetParts || !mosfetPartPicker || !mosfetPartPicker.classList.contains('is-open');
+    mosfetPartPickerList.hidden = shouldHideList;
+  }
+
+  if (mosfetPartPicker) {
+    if (!showMosfetParts) {
+      mosfetPartPicker.classList.remove('is-open');
+      document.dispatchEvent(new CustomEvent('gridfinity:component-picker-close'));
+    }
+    mosfetPartPicker.classList.toggle('is-disabled', !showMosfetParts);
+  }
+
+  if (!showMosfetParts && resetIfHidden) {
+    state.mosfetPart = '';
   }
 
   if (potentiometerValueField) {
@@ -1334,6 +1426,145 @@ export function populateDiodeValues() {
   updateComponentValueUi({ resetIfHidden: false });
 }
 
+export function populateMosfetChannels() {
+  if (!mosfetChannelSelect) {
+    return;
+  }
+
+  const previousValue =
+    typeof state.mosfetChannel === 'string' ? state.mosfetChannel : '';
+
+  mosfetChannelSelect.innerHTML = '';
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = MOSFET_CHANNEL_PLACEHOLDER_TEXT;
+  mosfetChannelSelect.appendChild(placeholder);
+
+  mosfetChannelOptions.forEach(option => {
+    const opt = document.createElement('option');
+    opt.value = option.id;
+    opt.textContent = option.label;
+    mosfetChannelSelect.appendChild(opt);
+  });
+
+  const sanitizedValue = validMosfetChannels.has(previousValue) ? previousValue : '';
+  state.mosfetChannel = sanitizedValue;
+  mosfetChannelSelect.value = sanitizedValue;
+
+  if (mosfetChannelPickerList) {
+    mosfetChannelPickerList.innerHTML = '';
+    mosfetChannelOptions.forEach(option => {
+      const item = document.createElement('li');
+      item.className = 'bolt-drive-picker__option';
+      item.dataset.value = option.id;
+      item.setAttribute('role', 'option');
+      item.setAttribute('aria-selected', 'false');
+      item.tabIndex = -1;
+
+      const icon = document.createElement('span');
+      icon.className = 'bolt-drive-picker__option-icon';
+      icon.setAttribute('aria-hidden', 'true');
+      const imageSrc = option.image || '';
+      if (imageSrc) {
+        const image = document.createElement('img');
+        image.className = 'bolt-drive-picker__option-icon-image';
+        image.src = imageSrc;
+        image.alt = '';
+        image.loading = 'lazy';
+        image.decoding = 'async';
+        icon.appendChild(image);
+      } else {
+        icon.classList.add('is-empty');
+      }
+      item.appendChild(icon);
+
+      const label = document.createElement('span');
+      label.className = 'bolt-drive-picker__option-label';
+      label.textContent = option.label;
+      item.appendChild(label);
+
+      mosfetChannelPickerList.appendChild(item);
+    });
+    mosfetChannelPickerList.hidden = true;
+  }
+
+  if (mosfetChannelPickerButton) {
+    mosfetChannelPickerButton.setAttribute('aria-expanded', 'false');
+  }
+
+  syncMosfetChannelPicker({ isValid: true });
+  updateComponentValueUi({ resetIfHidden: false });
+}
+
+export function populateMosfetParts() {
+  if (!mosfetPartSelect) {
+    return;
+  }
+
+  const previousValue = typeof state.mosfetPart === 'string' ? state.mosfetPart : '';
+
+  mosfetPartSelect.innerHTML = '';
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = MOSFET_PART_PLACEHOLDER_TEXT;
+  mosfetPartSelect.appendChild(placeholder);
+
+  mosfetPartOptions.forEach(option => {
+    const opt = document.createElement('option');
+    opt.value = option.id;
+    opt.textContent = option.label;
+    mosfetPartSelect.appendChild(opt);
+  });
+
+  const sanitizedValue = validMosfetParts.has(previousValue) ? previousValue : '';
+  state.mosfetPart = sanitizedValue;
+  mosfetPartSelect.value = sanitizedValue;
+
+  if (mosfetPartPickerList) {
+    mosfetPartPickerList.innerHTML = '';
+    mosfetPartOptions.forEach(option => {
+      const item = document.createElement('li');
+      item.className = 'bolt-drive-picker__option';
+      item.dataset.value = option.id;
+      item.setAttribute('role', 'option');
+      item.setAttribute('aria-selected', 'false');
+      item.tabIndex = -1;
+
+      const icon = document.createElement('span');
+      icon.className = 'bolt-drive-picker__option-icon';
+      icon.setAttribute('aria-hidden', 'true');
+      const imageSrc = option.image || '';
+      if (imageSrc) {
+        const image = document.createElement('img');
+        image.className = 'bolt-drive-picker__option-icon-image';
+        image.src = imageSrc;
+        image.alt = '';
+        image.loading = 'lazy';
+        image.decoding = 'async';
+        icon.appendChild(image);
+      } else {
+        icon.classList.add('is-empty');
+      }
+      item.appendChild(icon);
+
+      const label = document.createElement('span');
+      label.className = 'bolt-drive-picker__option-label';
+      label.textContent = option.label;
+      item.appendChild(label);
+
+      mosfetPartPickerList.appendChild(item);
+    });
+    mosfetPartPickerList.hidden = true;
+  }
+
+  if (mosfetPartPickerButton) {
+    mosfetPartPickerButton.setAttribute('aria-expanded', 'false');
+  }
+
+  syncMosfetPartPicker({ isValid: true });
+  updateComponentValueUi({ resetIfHidden: false });
+}
+
 export function syncCapacitorValuePicker({ isValid = true } = {}) {
   if (!capacitorValueSelect) {
     return;
@@ -1451,6 +1682,192 @@ export function setDiodeValueSelection(nextValue, { triggerUpdate = true } = {})
 
   state.diodeValue = sanitizedValue;
   syncDiodeValuePicker({ isValid: true });
+
+  if (triggerUpdate && previousValue !== sanitizedValue) {
+    updateDownloadState();
+    updatePreview();
+  }
+}
+
+export function syncMosfetChannelPicker({ isValid = true } = {}) {
+  if (!mosfetChannelSelect) {
+    return;
+  }
+
+  const currentValue = typeof state.mosfetChannel === 'string' ? state.mosfetChannel : '';
+  const sanitizedValue = validMosfetChannels.has(currentValue) ? currentValue : '';
+  if (sanitizedValue !== currentValue) {
+    state.mosfetChannel = sanitizedValue;
+  }
+
+  mosfetChannelSelect.value = sanitizedValue;
+  if (!sanitizedValue && mosfetChannelSelect.options.length > 0) {
+    mosfetChannelSelect.selectedIndex = 0;
+  }
+
+  const selectedOption = mosfetChannelOptions.find(option => option.id === sanitizedValue);
+  const imageSrc = selectedOption && selectedOption.image ? selectedOption.image : '';
+
+  if (mosfetChannelPickerButton) {
+    const label = mosfetChannelPickerButton.querySelector('.bolt-drive-picker__current-label');
+    const iconWrapper = mosfetChannelPickerButton.querySelector('.bolt-drive-picker__current-icon');
+    let iconImage = iconWrapper
+      ? iconWrapper.querySelector('.bolt-drive-picker__current-icon-image')
+      : null;
+
+    if (label) {
+      label.textContent = sanitizedValue
+        ? selectedOption?.label || sanitizedValue
+        : MOSFET_CHANNEL_PLACEHOLDER_TEXT;
+    }
+
+    if (iconWrapper) {
+      if (imageSrc) {
+        if (!iconImage) {
+          iconImage = document.createElement('img');
+          iconImage.className = 'bolt-drive-picker__current-icon-image';
+          iconImage.alt = '';
+          iconImage.loading = 'lazy';
+          iconImage.decoding = 'async';
+          iconWrapper.appendChild(iconImage);
+        }
+        iconWrapper.classList.remove('is-empty');
+        iconImage.src = imageSrc;
+        iconImage.hidden = false;
+      } else {
+        if (iconImage) {
+          iconImage.hidden = true;
+          iconImage.removeAttribute('src');
+        }
+        iconWrapper.classList.add('is-empty');
+      }
+    }
+
+    if (isValid) {
+      mosfetChannelPickerButton.classList.remove('is-invalid');
+      mosfetChannelPickerButton.removeAttribute('aria-invalid');
+    } else {
+      mosfetChannelPickerButton.classList.add('is-invalid');
+      mosfetChannelPickerButton.setAttribute('aria-invalid', 'true');
+    }
+  }
+
+  if (mosfetChannelPicker) {
+    mosfetChannelPicker.classList.toggle('is-invalid', !isValid);
+  }
+
+  if (mosfetChannelPickerList) {
+    const optionElements = Array.from(
+      mosfetChannelPickerList.querySelectorAll('[role="option"]'),
+    );
+    optionElements.forEach(optionElement => {
+      const isSelected = optionElement.dataset.value === sanitizedValue;
+      optionElement.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      optionElement.classList.toggle('is-selected', isSelected);
+      optionElement.tabIndex = -1;
+    });
+  }
+}
+
+export function setMosfetChannelSelection(nextValue, { triggerUpdate = true } = {}) {
+  const desiredValue = typeof nextValue === 'string' ? nextValue.trim() : '';
+  const sanitizedValue = validMosfetChannels.has(desiredValue) ? desiredValue : '';
+  const previousValue = typeof state.mosfetChannel === 'string' ? state.mosfetChannel : '';
+
+  state.mosfetChannel = sanitizedValue;
+  syncMosfetChannelPicker({ isValid: true });
+
+  if (triggerUpdate && previousValue !== sanitizedValue) {
+    updateDownloadState();
+    updatePreview();
+  }
+}
+
+export function syncMosfetPartPicker({ isValid = true } = {}) {
+  if (!mosfetPartSelect) {
+    return;
+  }
+
+  const currentValue = typeof state.mosfetPart === 'string' ? state.mosfetPart : '';
+  const sanitizedValue = validMosfetParts.has(currentValue) ? currentValue : '';
+  if (sanitizedValue !== currentValue) {
+    state.mosfetPart = sanitizedValue;
+  }
+
+  mosfetPartSelect.value = sanitizedValue;
+  if (!sanitizedValue && mosfetPartSelect.options.length > 0) {
+    mosfetPartSelect.selectedIndex = 0;
+  }
+
+  const selectedOption = mosfetPartOptions.find(option => option.id === sanitizedValue);
+  const imageSrc = selectedOption && selectedOption.image ? selectedOption.image : '';
+
+  if (mosfetPartPickerButton) {
+    const label = mosfetPartPickerButton.querySelector('.bolt-drive-picker__current-label');
+    const iconWrapper = mosfetPartPickerButton.querySelector('.bolt-drive-picker__current-icon');
+    let iconImage = iconWrapper
+      ? iconWrapper.querySelector('.bolt-drive-picker__current-icon-image')
+      : null;
+
+    if (label) {
+      label.textContent = sanitizedValue
+        ? selectedOption?.label || sanitizedValue
+        : MOSFET_PART_PLACEHOLDER_TEXT;
+    }
+
+    if (iconWrapper) {
+      if (imageSrc) {
+        if (!iconImage) {
+          iconImage = document.createElement('img');
+          iconImage.className = 'bolt-drive-picker__current-icon-image';
+          iconImage.alt = '';
+          iconImage.loading = 'lazy';
+          iconImage.decoding = 'async';
+          iconWrapper.appendChild(iconImage);
+        }
+        iconWrapper.classList.remove('is-empty');
+        iconImage.src = imageSrc;
+        iconImage.hidden = false;
+      } else {
+        if (iconImage) {
+          iconImage.hidden = true;
+          iconImage.removeAttribute('src');
+        }
+        iconWrapper.classList.add('is-empty');
+      }
+    }
+
+    if (isValid) {
+      mosfetPartPickerButton.classList.remove('is-invalid');
+      mosfetPartPickerButton.removeAttribute('aria-invalid');
+    } else {
+      mosfetPartPickerButton.classList.add('is-invalid');
+      mosfetPartPickerButton.setAttribute('aria-invalid', 'true');
+    }
+  }
+
+  if (mosfetPartPicker) {
+    mosfetPartPicker.classList.toggle('is-invalid', !isValid);
+  }
+
+  if (mosfetPartPickerList) {
+    const optionElements = Array.from(mosfetPartPickerList.querySelectorAll('[role="option"]'));
+    optionElements.forEach(optionElement => {
+      const isSelected = optionElement.dataset.value === sanitizedValue;
+      optionElement.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      optionElement.classList.toggle('is-selected', isSelected);
+      optionElement.tabIndex = -1;
+    });
+  }
+}
+
+export function setMosfetPartSelection(nextValue, { triggerUpdate = true } = {}) {
+  const desiredValue = typeof nextValue === 'string' ? nextValue.trim() : '';
+  const sanitizedValue = validMosfetParts.has(desiredValue) ? desiredValue : '';
+  const previousValue = typeof state.mosfetPart === 'string' ? state.mosfetPart : '';
+
+  state.mosfetPart = sanitizedValue;
+  syncMosfetPartPicker({ isValid: true });
 
   if (triggerUpdate && previousValue !== sanitizedValue) {
     updateDownloadState();

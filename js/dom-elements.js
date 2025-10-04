@@ -88,6 +88,18 @@ const diodeValuePickerButton = document.getElementById('diode-value-picker-butto
 const diodeValuePickerList = document.getElementById('diode-value-picker-list');
 const diodeValueSelect = document.getElementById('diode-value-select');
 const diodeValueMessage = document.getElementById('diode-value-message');
+const mosfetChannelField = document.getElementById('mosfet-channel-field');
+const mosfetChannelPicker = document.getElementById('mosfet-channel-picker');
+const mosfetChannelPickerButton = document.getElementById('mosfet-channel-picker-button');
+const mosfetChannelPickerList = document.getElementById('mosfet-channel-picker-list');
+const mosfetChannelSelect = document.getElementById('mosfet-channel-select');
+const mosfetChannelMessage = document.getElementById('mosfet-channel-message');
+const mosfetPartField = document.getElementById('mosfet-part-field');
+const mosfetPartPicker = document.getElementById('mosfet-part-picker');
+const mosfetPartPickerButton = document.getElementById('mosfet-part-picker-button');
+const mosfetPartPickerList = document.getElementById('mosfet-part-picker-list');
+const mosfetPartSelect = document.getElementById('mosfet-part-select');
+const mosfetPartMessage = document.getElementById('mosfet-part-message');
 const potentiometerValueField = document.getElementById('potentiometer-value-field');
 const potentiometerValuePicker = document.getElementById('potentiometer-value-picker');
 const potentiometerValuePickerButton = document.getElementById('potentiometer-value-picker-button');
@@ -294,6 +306,18 @@ export const elements = {
   diodeValuePickerList,
   diodeValueSelect,
   diodeValueMessage,
+  mosfetChannelField,
+  mosfetChannelPicker,
+  mosfetChannelPickerButton,
+  mosfetChannelPickerList,
+  mosfetChannelSelect,
+  mosfetChannelMessage,
+  mosfetPartField,
+  mosfetPartPicker,
+  mosfetPartPickerButton,
+  mosfetPartPickerList,
+  mosfetPartSelect,
+  mosfetPartMessage,
   potentiometerValueField,
   potentiometerValuePicker,
   potentiometerValuePickerButton,

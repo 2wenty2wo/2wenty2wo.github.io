@@ -227,6 +227,9 @@
                         <option value="Diode" data-img="images/diodes/diode_through_hole.svg" data-cat="Electrical">
                           Diode
                         </option>
+                        <option value="MOSFET" data-img="images/mosfet/mosfet.svg" data-cat="Electrical">
+                          MOSFET
+                        </option>
                         <option
                           value="Potentiometer"
                           data-img="images/potentiometer/potentiometer.svg"
@@ -723,6 +726,100 @@
                       </div>
                       <div
                         id="diode-value-message"
+                        class="validation-message text-danger small mt-2 d-none"
+                      ></div>
+                    </div>
+                    <div class="col-12 col-lg-6 d-none" id="mosfet-channel-field" aria-hidden="true">
+                      <label class="form-label fw-semibold" for="mosfet-channel-picker-button"
+                        >MOSFET Channel Type</label
+                      >
+                      <div class="bolt-drive-picker" id="mosfet-channel-picker">
+                        <select
+                          id="mosfet-channel-select"
+                          class="visually-hidden"
+                          aria-labelledby="mosfet-channel-picker-button"
+                        >
+                          <option value="">&nbsp;</option>
+                        </select>
+                        <button
+                          type="button"
+                          class="bolt-drive-picker__button"
+                          id="mosfet-channel-picker-button"
+                          aria-haspopup="listbox"
+                          aria-expanded="false"
+                          aria-controls="mosfet-channel-picker-list"
+                          disabled
+                        >
+                          <span class="bolt-drive-picker__current">
+                            <span class="bolt-drive-picker__current-icon is-empty" aria-hidden="true">
+                              <img
+                                class="bolt-drive-picker__current-icon-image"
+                                src=""
+                                alt=""
+                                hidden
+                              />
+                            </span>
+                            <span class="bolt-drive-picker__current-label">&nbsp;</span>
+                          </span>
+                          <span class="bolt-drive-picker__chevron" aria-hidden="true"></span>
+                        </button>
+                        <ul
+                          class="bolt-drive-picker__list"
+                          id="mosfet-channel-picker-list"
+                          role="listbox"
+                          aria-labelledby="mosfet-channel-picker-button"
+                          hidden
+                        ></ul>
+                      </div>
+                      <div
+                        id="mosfet-channel-message"
+                        class="validation-message text-danger small mt-2 d-none"
+                      ></div>
+                    </div>
+                    <div class="col-12 col-lg-6 d-none" id="mosfet-part-field" aria-hidden="true">
+                      <label class="form-label fw-semibold" for="mosfet-part-picker-button"
+                        >MOSFET Part Number</label
+                      >
+                      <div class="bolt-drive-picker" id="mosfet-part-picker">
+                        <select
+                          id="mosfet-part-select"
+                          class="visually-hidden"
+                          aria-labelledby="mosfet-part-picker-button"
+                        >
+                          <option value="">&nbsp;</option>
+                        </select>
+                        <button
+                          type="button"
+                          class="bolt-drive-picker__button"
+                          id="mosfet-part-picker-button"
+                          aria-haspopup="listbox"
+                          aria-expanded="false"
+                          aria-controls="mosfet-part-picker-list"
+                          disabled
+                        >
+                          <span class="bolt-drive-picker__current">
+                            <span class="bolt-drive-picker__current-icon is-empty" aria-hidden="true">
+                              <img
+                                class="bolt-drive-picker__current-icon-image"
+                                src=""
+                                alt=""
+                                hidden
+                              />
+                            </span>
+                            <span class="bolt-drive-picker__current-label">&nbsp;</span>
+                          </span>
+                          <span class="bolt-drive-picker__chevron" aria-hidden="true"></span>
+                        </button>
+                        <ul
+                          class="bolt-drive-picker__list"
+                          id="mosfet-part-picker-list"
+                          role="listbox"
+                          aria-labelledby="mosfet-part-picker-button"
+                          hidden
+                        ></ul>
+                      </div>
+                      <div
+                        id="mosfet-part-message"
                         class="validation-message text-danger small mt-2 d-none"
                       ></div>
                     </div>

@@ -282,7 +282,8 @@ function extractBaseOverride(entry) {
   if (!entry || typeof entry !== 'object') {
     return null;
   }
-  const { [PARTS_KEY]: _, ...base } = entry;
+  const base = { ...entry };
+  delete base[PARTS_KEY];
   return Object.keys(base).length > 0 ? base : null;
 }
 

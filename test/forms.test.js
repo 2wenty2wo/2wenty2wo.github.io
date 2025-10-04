@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { fuseValues } from '../js/data.js';
+import { fuseValues, mosfetChannelOptions, mosfetPartOptions } from '../js/data.js';
 
 const createClassListMock = () => ({
   add: jest.fn(),
@@ -179,5 +179,26 @@ describe('populateFuseValues', () => {
     const pickerValues = fuseValuePickerList.items.map(item => item.dataset.value);
     expect(pickerValues).toContain('3.15');
     expect(fuseValuePickerList.hidden).toBe(true);
+  });
+});
+
+describe('MOSFET option data', () => {
+  it('provides shared artwork for each MOSFET channel type option', () => {
+    expect(mosfetChannelOptions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'N-Channel Logic-Level', image: 'images/mosfet/mosfet.svg' }),
+        expect.objectContaining({ id: 'P-Channel', image: 'images/mosfet/mosfet.svg' }),
+      ]),
+    );
+  });
+
+  it('includes popular MOSFET part numbers with matching art', () => {
+    const ids = mosfetPartOptions.map(option => option.id);
+    expect(ids).toEqual(
+      expect.arrayContaining(['IRLZ44N', 'AO3400A', 'BS170', 'IRF520', 'FQP30N06L']),
+    );
+    mosfetPartOptions.forEach(option => {
+      expect(option.image).toBe('images/mosfet/mosfet.svg');
+    });
   });
 });

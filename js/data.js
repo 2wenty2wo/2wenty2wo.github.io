@@ -102,7 +102,13 @@ export const switchTypeImageMap = new Map(
   switchTypeOptions.map(option => [option.id, option.image]),
 );
 
-export const electricalComponentTypes = ['Resistor', 'Capacitor', 'Diode', 'Potentiometer'];
+export const electricalComponentTypes = [
+  'Resistor',
+  'Capacitor',
+  'Diode',
+  'Potentiometer',
+  'MOSFET',
+];
 
 export const componentImageMap = {
   Resistor: {
@@ -124,6 +130,11 @@ export const componentImageMap = {
     'Through-Hole': 'images/potentiometer/potentiometer.svg',
     SMD: 'images/potentiometer/potentiometer.svg',
     default: 'images/potentiometer/potentiometer.svg',
+  },
+  MOSFET: {
+    'Through-Hole': 'images/mosfet/mosfet.svg',
+    SMD: 'images/mosfet/mosfet.svg',
+    default: 'images/mosfet/mosfet.svg',
   },
 };
 
@@ -291,6 +302,51 @@ export const diodeValueLabelMap = diodeValueOptions.reduce((map, option) => {
   return map;
 }, {});
 
+export const mosfetChannelOptions = [
+  {
+    id: 'N-Channel Logic-Level',
+    label: 'N-Channel Logic-Level',
+    image: 'images/mosfet/mosfet.svg',
+  },
+  {
+    id: 'N-Channel Power',
+    label: 'N-Channel Power',
+    image: 'images/mosfet/mosfet.svg',
+  },
+  {
+    id: 'P-Channel',
+    label: 'P-Channel',
+    image: 'images/mosfet/mosfet.svg',
+  },
+  {
+    id: 'Dual MOSFET',
+    label: 'Dual MOSFET',
+    image: 'images/mosfet/mosfet.svg',
+  },
+];
+
+export const mosfetPartOptions = [
+  {
+    id: 'IRLZ44N',
+    label: 'IRLZ44N Logic-Level MOSFET',
+    image: 'images/mosfet/mosfet.svg',
+  },
+  { id: 'AO3400A', label: 'AO3400A MOSFET', image: 'images/mosfet/mosfet.svg' },
+  { id: 'BS170', label: 'BS170 MOSFET', image: 'images/mosfet/mosfet.svg' },
+  { id: 'IRF520', label: 'IRF520 MOSFET', image: 'images/mosfet/mosfet.svg' },
+  { id: 'FQP30N06L', label: 'FQP30N06L MOSFET', image: 'images/mosfet/mosfet.svg' },
+];
+
+export const mosfetChannelLabelMap = mosfetChannelOptions.reduce((map, option) => {
+  map[option.id] = option.label;
+  return map;
+}, {});
+
+export const mosfetPartLabelMap = mosfetPartOptions.reduce((map, option) => {
+  map[option.id] = option.label;
+  return map;
+}, {});
+
 export const boltHeadOptions = [
   { id: 'button_head', label: 'Button Head', image: 'button_head' },
   { id: 'cap_head', label: 'Socket Cap', image: 'cap_head' },
@@ -433,6 +489,11 @@ export const hardwareCatalog = {
     { code: 'Panel-Mount Log', name: 'Panel-Mount Logarithmic Potentiometer' },
     { code: 'Trimmer', name: 'Multi-turn Trimmer Potentiometer' },
   ],
+  MOSFET: [
+    { code: 'Logic-Level N-Channel', name: 'N-Channel Logic-Level MOSFET' },
+    { code: 'Power N-Channel', name: 'N-Channel Power MOSFET' },
+    { code: 'P-Channel', name: 'P-Channel MOSFET' },
+  ],
   Switch: [],
   Fuse: [
     { code: 'IEC 60127-2', name: 'Time-Lag Cartridge Fuse' },
@@ -467,6 +528,7 @@ export const hardwareTypeImageMap = {
   Washer: 'images/washers/plain_washer.svg',
   Diode: 'images/diodes/diode_through_hole.svg',
   Potentiometer: 'images/potentiometer/potentiometer.svg',
+  MOSFET: 'images/mosfet/mosfet.svg',
 };
 
 export const PRE_INSULATED_CRIMP_CATEGORY_ID = 'pre-insulated-crimp';

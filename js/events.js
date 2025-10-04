@@ -39,6 +39,8 @@ import {
   setResistorValueSelection,
   setCapacitorValueSelection,
   setDiodeValueSelection,
+  setMosfetChannelSelection,
+  setMosfetPartSelection,
   setPotentiometerValueSelection,
   setPotentiometerTaperSelection,
   updateComponentValueUi,
@@ -85,6 +87,14 @@ const {
   diodeValuePicker,
   diodeValuePickerButton,
   diodeValuePickerList,
+  mosfetChannelSelect,
+  mosfetChannelPicker,
+  mosfetChannelPickerButton,
+  mosfetChannelPickerList,
+  mosfetPartSelect,
+  mosfetPartPicker,
+  mosfetPartPickerButton,
+  mosfetPartPickerList,
   potentiometerValueSelect,
   potentiometerValuePicker,
   potentiometerValuePickerButton,
@@ -186,6 +196,8 @@ let componentMountPickerOpen = false;
 let resistorValuePickerOpen = false;
 let capacitorValuePickerOpen = false;
 let diodeValuePickerOpen = false;
+let mosfetChannelPickerOpen = false;
+let mosfetPartPickerOpen = false;
 let potentiometerValuePickerOpen = false;
 let potentiometerTaperPickerOpen = false;
 let bearingTypePickerOpen = false;
@@ -2287,6 +2299,424 @@ function handleDiodeValueListFocusOut() {
     const active = document.activeElement;
     if (!active || !diodeValuePicker.contains(active)) {
       closeDiodeValuePicker();
+    }
+  }, 0);
+}
+
+function getMosfetChannelOptionElements() {
+  if (!mosfetChannelPickerList) {
+    return [];
+  }
+  return Array.from(mosfetChannelPickerList.querySelectorAll('[role="option"]'));
+}
+
+function focusMosfetChannelOption(option) {
+  if (!option) {
+    return;
+  }
+  const options = getMosfetChannelOptionElements();
+  options.forEach(opt => {
+    opt.tabIndex = opt === option ? 0 : -1;
+  });
+  option.focus();
+  if (typeof option.scrollIntoView === 'function') {
+    option.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function openMosfetChannelPicker() {
+  if (!mosfetChannelPicker || !mosfetChannelPickerButton || !mosfetChannelPickerList) {
+    return;
+  }
+  if (mosfetChannelPickerButton.disabled) {
+    return;
+  }
+  if (mosfetChannelPickerOpen) {
+    return;
+  }
+  mosfetChannelPickerOpen = true;
+  mosfetChannelPicker.classList.add('is-open');
+  mosfetChannelPickerList.hidden = false;
+  mosfetChannelPickerButton.setAttribute('aria-expanded', 'true');
+
+  const options = getMosfetChannelOptionElements();
+  const currentValue = typeof state.mosfetChannel === 'string' ? state.mosfetChannel : '';
+  const selectedOption = options.find(option => option.dataset.value === currentValue);
+  focusMosfetChannelOption(selectedOption || options[0]);
+}
+
+function closeMosfetChannelPicker({ focusButton = false } = {}) {
+  if (!mosfetChannelPicker || !mosfetChannelPickerButton || !mosfetChannelPickerList) {
+    return;
+  }
+  if (!mosfetChannelPickerOpen) {
+    if (focusButton && !mosfetChannelPickerButton.disabled) {
+      mosfetChannelPickerButton.focus();
+    }
+    return;
+  }
+  mosfetChannelPickerOpen = false;
+  mosfetChannelPicker.classList.remove('is-open');
+  mosfetChannelPickerList.hidden = true;
+  mosfetChannelPickerButton.setAttribute('aria-expanded', 'false');
+  if (focusButton && !mosfetChannelPickerButton.disabled) {
+    mosfetChannelPickerButton.focus();
+  }
+}
+
+function toggleMosfetChannelPicker() {
+  if (mosfetChannelPickerOpen) {
+    closeMosfetChannelPicker({ focusButton: false });
+  } else {
+    openMosfetChannelPicker();
+  }
+}
+
+function moveMosfetChannelOption(delta) {
+  if (!mosfetChannelPickerList) {
+    return;
+  }
+  const options = getMosfetChannelOptionElements();
+  if (options.length === 0) {
+    return;
+  }
+  const active = document.activeElement;
+  const activeOption = active && mosfetChannelPickerList.contains(active)
+    ? active.closest('[role="option"]')
+    : null;
+  let index = activeOption ? options.indexOf(activeOption) : -1;
+  if (index === -1) {
+    const currentValue = typeof state.mosfetChannel === 'string' ? state.mosfetChannel : '';
+    index = options.findIndex(option => option.dataset.value === currentValue);
+  }
+  let nextIndex = index + delta;
+  if (nextIndex < 0) {
+    nextIndex = options.length - 1;
+  } else if (nextIndex >= options.length) {
+    nextIndex = 0;
+  }
+  const nextOption = options[nextIndex];
+  if (nextOption) {
+    focusMosfetChannelOption(nextOption);
+  }
+}
+
+function handleMosfetChannelButtonKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    openMosfetChannelPicker();
+    moveMosfetChannelOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    openMosfetChannelPicker();
+    moveMosfetChannelOption(-1);
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    toggleMosfetChannelPicker();
+    return;
+  }
+  if (key === 'Escape' && mosfetChannelPickerOpen) {
+    event.preventDefault();
+    closeMosfetChannelPicker({ focusButton: true });
+  }
+}
+
+function handleMosfetChannelListKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    moveMosfetChannelOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    moveMosfetChannelOption(-1);
+    return;
+  }
+  if (key === 'Home') {
+    event.preventDefault();
+    const options = getMosfetChannelOptionElements();
+    if (options.length > 0) {
+      focusMosfetChannelOption(options[0]);
+    }
+    return;
+  }
+  if (key === 'End') {
+    event.preventDefault();
+    const options = getMosfetChannelOptionElements();
+    if (options.length > 0) {
+      focusMosfetChannelOption(options[options.length - 1]);
+    }
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    const target = event.target;
+    if (target && target instanceof HTMLElement) {
+      const option = target.closest('[role="option"]');
+      if (option) {
+        setMosfetChannelSelection(option.dataset.value || '');
+        closeMosfetChannelPicker({ focusButton: true });
+      }
+    }
+    return;
+  }
+  if (key === 'Escape') {
+    event.preventDefault();
+    closeMosfetChannelPicker({ focusButton: true });
+    return;
+  }
+  if (key === 'Tab') {
+    closeMosfetChannelPicker();
+  }
+}
+
+function handleMosfetChannelListClick(event) {
+  if (!mosfetChannelPickerList) {
+    return;
+  }
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+  const option = target.closest('[role="option"]');
+  if (!option || !mosfetChannelPickerList.contains(option)) {
+    return;
+  }
+  event.preventDefault();
+  setMosfetChannelSelection(option.dataset.value || '');
+  closeMosfetChannelPicker({ focusButton: true });
+}
+
+function handleMosfetChannelListFocusOut() {
+  if (!mosfetChannelPickerOpen) {
+    return;
+  }
+  setTimeout(() => {
+    if (!mosfetChannelPickerOpen) {
+      return;
+    }
+    if (!mosfetChannelPicker) {
+      closeMosfetChannelPicker();
+      return;
+    }
+    const active = document.activeElement;
+    if (!active || !mosfetChannelPicker.contains(active)) {
+      closeMosfetChannelPicker();
+    }
+  }, 0);
+}
+
+function getMosfetPartOptionElements() {
+  if (!mosfetPartPickerList) {
+    return [];
+  }
+  return Array.from(mosfetPartPickerList.querySelectorAll('[role="option"]'));
+}
+
+function focusMosfetPartOption(option) {
+  if (!option) {
+    return;
+  }
+  const options = getMosfetPartOptionElements();
+  options.forEach(opt => {
+    opt.tabIndex = opt === option ? 0 : -1;
+  });
+  option.focus();
+  if (typeof option.scrollIntoView === 'function') {
+    option.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function openMosfetPartPicker() {
+  if (!mosfetPartPicker || !mosfetPartPickerButton || !mosfetPartPickerList) {
+    return;
+  }
+  if (mosfetPartPickerButton.disabled) {
+    return;
+  }
+  if (mosfetPartPickerOpen) {
+    return;
+  }
+  mosfetPartPickerOpen = true;
+  mosfetPartPicker.classList.add('is-open');
+  mosfetPartPickerList.hidden = false;
+  mosfetPartPickerButton.setAttribute('aria-expanded', 'true');
+
+  const options = getMosfetPartOptionElements();
+  const currentValue = typeof state.mosfetPart === 'string' ? state.mosfetPart : '';
+  const selectedOption = options.find(option => option.dataset.value === currentValue);
+  focusMosfetPartOption(selectedOption || options[0]);
+}
+
+function closeMosfetPartPicker({ focusButton = false } = {}) {
+  if (!mosfetPartPicker || !mosfetPartPickerButton || !mosfetPartPickerList) {
+    return;
+  }
+  if (!mosfetPartPickerOpen) {
+    if (focusButton && !mosfetPartPickerButton.disabled) {
+      mosfetPartPickerButton.focus();
+    }
+    return;
+  }
+  mosfetPartPickerOpen = false;
+  mosfetPartPicker.classList.remove('is-open');
+  mosfetPartPickerList.hidden = true;
+  mosfetPartPickerButton.setAttribute('aria-expanded', 'false');
+  if (focusButton && !mosfetPartPickerButton.disabled) {
+    mosfetPartPickerButton.focus();
+  }
+}
+
+function toggleMosfetPartPicker() {
+  if (mosfetPartPickerOpen) {
+    closeMosfetPartPicker({ focusButton: false });
+  } else {
+    openMosfetPartPicker();
+  }
+}
+
+function moveMosfetPartOption(delta) {
+  if (!mosfetPartPickerList) {
+    return;
+  }
+  const options = getMosfetPartOptionElements();
+  if (options.length === 0) {
+    return;
+  }
+  const active = document.activeElement;
+  const activeOption = active && mosfetPartPickerList.contains(active)
+    ? active.closest('[role="option"]')
+    : null;
+  let index = activeOption ? options.indexOf(activeOption) : -1;
+  if (index === -1) {
+    const currentValue = typeof state.mosfetPart === 'string' ? state.mosfetPart : '';
+    index = options.findIndex(option => option.dataset.value === currentValue);
+  }
+  let nextIndex = index + delta;
+  if (nextIndex < 0) {
+    nextIndex = options.length - 1;
+  } else if (nextIndex >= options.length) {
+    nextIndex = 0;
+  }
+  const nextOption = options[nextIndex];
+  if (nextOption) {
+    focusMosfetPartOption(nextOption);
+  }
+}
+
+function handleMosfetPartButtonKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    openMosfetPartPicker();
+    moveMosfetPartOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    openMosfetPartPicker();
+    moveMosfetPartOption(-1);
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    toggleMosfetPartPicker();
+    return;
+  }
+  if (key === 'Escape' && mosfetPartPickerOpen) {
+    event.preventDefault();
+    closeMosfetPartPicker({ focusButton: true });
+  }
+}
+
+function handleMosfetPartListKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    moveMosfetPartOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    moveMosfetPartOption(-1);
+    return;
+  }
+  if (key === 'Home') {
+    event.preventDefault();
+    const options = getMosfetPartOptionElements();
+    if (options.length > 0) {
+      focusMosfetPartOption(options[0]);
+    }
+    return;
+  }
+  if (key === 'End') {
+    event.preventDefault();
+    const options = getMosfetPartOptionElements();
+    if (options.length > 0) {
+      focusMosfetPartOption(options[options.length - 1]);
+    }
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    const target = event.target;
+    if (target && target instanceof HTMLElement) {
+      const option = target.closest('[role="option"]');
+      if (option) {
+        setMosfetPartSelection(option.dataset.value || '');
+        closeMosfetPartPicker({ focusButton: true });
+      }
+    }
+    return;
+  }
+  if (key === 'Escape') {
+    event.preventDefault();
+    closeMosfetPartPicker({ focusButton: true });
+    return;
+  }
+  if (key === 'Tab') {
+    closeMosfetPartPicker();
+  }
+}
+
+function handleMosfetPartListClick(event) {
+  if (!mosfetPartPickerList) {
+    return;
+  }
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+  const option = target.closest('[role="option"]');
+  if (!option || !mosfetPartPickerList.contains(option)) {
+    return;
+  }
+  event.preventDefault();
+  setMosfetPartSelection(option.dataset.value || '');
+  closeMosfetPartPicker({ focusButton: true });
+}
+
+function handleMosfetPartListFocusOut() {
+  if (!mosfetPartPickerOpen) {
+    return;
+  }
+  setTimeout(() => {
+    if (!mosfetPartPickerOpen) {
+      return;
+    }
+    if (!mosfetPartPicker) {
+      closeMosfetPartPicker();
+      return;
+    }
+    const active = document.activeElement;
+    if (!active || !mosfetPartPicker.contains(active)) {
+      closeMosfetPartPicker();
     }
   }, 0);
 }
@@ -4472,6 +4902,26 @@ function handleDocumentPointer(event) {
       closeDiodeValuePicker();
     }
   }
+  if (mosfetChannelPickerOpen && mosfetChannelPicker) {
+    if (!(target instanceof Node) || !mosfetChannelPicker.contains(target)) {
+      closeMosfetChannelPicker();
+    }
+  }
+  if (mosfetPartPickerOpen && mosfetPartPicker) {
+    if (!(target instanceof Node) || !mosfetPartPicker.contains(target)) {
+      closeMosfetPartPicker();
+    }
+  }
+  if (mosfetChannelPickerOpen && mosfetChannelPicker) {
+    if (!(target instanceof Node) || !mosfetChannelPicker.contains(target)) {
+      closeMosfetChannelPicker();
+    }
+  }
+  if (mosfetPartPickerOpen && mosfetPartPicker) {
+    if (!(target instanceof Node) || !mosfetPartPicker.contains(target)) {
+      closeMosfetPartPicker();
+    }
+  }
   if (bearingTypePickerOpen && bearingTypePicker) {
     if (!(target instanceof Node) || !bearingTypePicker.contains(target)) {
       closeBearingTypePicker();
@@ -4724,6 +5174,40 @@ export function initEventHandlers() {
     diodeValuePickerList.addEventListener('click', handleDiodeValueListClick);
     diodeValuePickerList.addEventListener('keydown', handleDiodeValueListKeydown);
     diodeValuePickerList.addEventListener('focusout', handleDiodeValueListFocusOut);
+  }
+
+  if (mosfetChannelSelect) {
+    mosfetChannelSelect.addEventListener('change', () => {
+      setMosfetChannelSelection(mosfetChannelSelect.value);
+    });
+  }
+
+  if (mosfetChannelPickerButton && mosfetChannelPickerList) {
+    mosfetChannelPickerButton.addEventListener('click', event => {
+      event.preventDefault();
+      toggleMosfetChannelPicker();
+    });
+    mosfetChannelPickerButton.addEventListener('keydown', handleMosfetChannelButtonKeydown);
+    mosfetChannelPickerList.addEventListener('click', handleMosfetChannelListClick);
+    mosfetChannelPickerList.addEventListener('keydown', handleMosfetChannelListKeydown);
+    mosfetChannelPickerList.addEventListener('focusout', handleMosfetChannelListFocusOut);
+  }
+
+  if (mosfetPartSelect) {
+    mosfetPartSelect.addEventListener('change', () => {
+      setMosfetPartSelection(mosfetPartSelect.value);
+    });
+  }
+
+  if (mosfetPartPickerButton && mosfetPartPickerList) {
+    mosfetPartPickerButton.addEventListener('click', event => {
+      event.preventDefault();
+      toggleMosfetPartPicker();
+    });
+    mosfetPartPickerButton.addEventListener('keydown', handleMosfetPartButtonKeydown);
+    mosfetPartPickerList.addEventListener('click', handleMosfetPartListClick);
+    mosfetPartPickerList.addEventListener('keydown', handleMosfetPartListKeydown);
+    mosfetPartPickerList.addEventListener('focusout', handleMosfetPartListFocusOut);
   }
 
   if (capacitorValueSelect) {
@@ -5113,6 +5597,8 @@ export function initEventHandlers() {
     resistorValuePicker ||
     capacitorValuePicker ||
     diodeValuePicker ||
+    mosfetChannelPicker ||
+    mosfetPartPicker ||
     potentiometerValuePicker ||
     potentiometerTaperPicker ||
     bearingTypePicker ||
@@ -5138,6 +5624,8 @@ export function initEventHandlers() {
     closeResistorValuePicker();
     closeCapacitorValuePicker();
     closeDiodeValuePicker();
+    closeMosfetChannelPicker();
+    closeMosfetPartPicker();
     closePotentiometerValuePicker();
     closePotentiometerTaperPicker();
   });
