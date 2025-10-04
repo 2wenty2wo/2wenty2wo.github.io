@@ -1311,9 +1311,13 @@ function ensureTextFits({
   mediaPresent,
   textLines,
 }) {
-  const hasText = [textLines.line1, textLines.line2, textLines.line3]
-    .map(value => (value || '').trim())
-    .some(value => value.length > 0);
+  const trimmedPrimaryLine = (textLines.line1 || '').trim();
+  const trimmedSecondaryLine = (textLines.line2 || '').trim();
+  const trimmedTertiaryLine = (textLines.line3 || '').trim();
+  const hasPrimaryLine = trimmedPrimaryLine.length > 0;
+  const hasText = [trimmedPrimaryLine, trimmedSecondaryLine, trimmedTertiaryLine].some(
+    value => value.length > 0,
+  );
   const minTextWidthPx = hasText ? mmToPx(minTextWidthMm || 9, pxPerMm) : 0;
   const textGapPx =
     mediaPresent && hasText
@@ -1374,17 +1378,22 @@ function ensureTextFits({
     effectiveTextWidthPx = recomputeTextRect();
   }
 
-  let mainFit = fitSingleLineText({
-    text: textLines.line1,
-    fontWeight: mainFontWeight,
-    minPt: preset.text_zone.main.min_pt,
-    maxPt: preset.text_zone.main.max_pt,
-    widthPx: effectiveTextWidthPx,
-    pxPerMm,
-    letterSpacingLimit: preset.text_zone.main.letter_spacing_adj || -0.3,
-  });
+  let mainFit = null;
+  if (hasPrimaryLine) {
+    mainFit = fitSingleLineText({
+      text: textLines.line1,
+      fontWeight: mainFontWeight,
+      minPt: preset.text_zone.main.min_pt,
+      maxPt: preset.text_zone.main.max_pt,
+      widthPx: effectiveTextWidthPx,
+      pxPerMm,
+      letterSpacingLimit: preset.text_zone.main.letter_spacing_adj || -0.3,
+    });
+  }
   if (
+    hasPrimaryLine &&
     hasText &&
+    mainFit &&
     mainFit.fontSizePx <= toFontPx(preset.text_zone.main.min_pt, pxPerMm) + 0.2
   ) {
     for (let i = 0; i < 4 && mediaWidthPx > 0; i += 1) {
