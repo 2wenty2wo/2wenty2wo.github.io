@@ -27,10 +27,10 @@ function isBrowser() {
 
 function shouldActivateFromQuery() {
   if (!isBrowser()) {
-    return false;
+    return null;
   }
   const params = new URLSearchParams(window.location.search);
-  return params.get('layoutEditor') === '1';
+  return params.get('layoutEditor');
 }
 
 function restoreActiveFlag() {
@@ -66,10 +66,17 @@ function evaluateActivation() {
     return true;
   }
   const fromQuery = shouldActivateFromQuery();
-  if (fromQuery) {
+  if (fromQuery === '0') {
+    editorState.active = false;
+    persistActiveFlag(false);
+    return false;
+  }
+  if (fromQuery === '1') {
     editorState.active = true;
-    persistActiveFlag(true);
     return true;
+  }
+  if (fromQuery !== null) {
+    return false;
   }
   const stored = restoreActiveFlag();
   if (stored) {
