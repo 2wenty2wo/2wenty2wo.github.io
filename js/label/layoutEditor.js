@@ -475,6 +475,17 @@ function bindPresetInputs(panel, heightKey) {
       onChange: value => setValue('text_zone.main.letter_spacing_adj', value),
     }),
   );
+  body.appendChild(
+    createSelectField({
+      label: 'Font weight',
+      value: String(preset.text_zone.main.font_weight ?? 800),
+      options: [
+        { label: 'Regular (600)', value: '600' },
+        { label: 'Bold (800)', value: '800' },
+      ],
+      onChange: value => setValue('text_zone.main.font_weight', Number(value)),
+    }),
+  );
 
   addSectionTitle('Subtitles');
   body.appendChild(

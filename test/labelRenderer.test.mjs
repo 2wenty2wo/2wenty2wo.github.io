@@ -21,6 +21,16 @@ function extractImages(svgMarkup) {
   }));
 }
 
+function getPresetMainFontWeight(heightMm) {
+  const preset = getActiveLayoutPreset(heightMm);
+  return preset.text_zone?.main?.font_weight ?? 800;
+}
+
+function findMainTextElements(svgMarkup, fontWeight) {
+  const pattern = new RegExp(`<text[^>]*font-weight="${fontWeight}"[^>]*>([^<]+)<\\/text>`, 'g');
+  return [...svgMarkup.matchAll(pattern)];
+}
+
 test('37×12 mm labels keep bolt icons side-by-side', async () => {
   const geometry = {
     labelWidthMm: 37,
@@ -96,7 +106,8 @@ test('37×18 mm labels stack bolt icons vertically with balanced spacing', async
   const [top, bottom] = images;
   assert.ok(Math.abs(top.x - bottom.x) < 2, 'icons should stay centered when stacked');
   assert.ok(bottom.y > top.y + top.height - 1, 'stacked icons should not overlap');
-  const textMatches = [...result.svgMarkup.matchAll(/font-weight="800"[^>]*>([^<]+)<\/text>/g)];
+  const mainFontWeight = getPresetMainFontWeight(geometry.printableHeightMm);
+  const textMatches = findMainTextElements(result.svgMarkup, mainFontWeight);
   assert.equal(textMatches.length, 1, 'main line should render once');
   assert.equal(textMatches[0][1].trim(), 'M2 × 10', 'main line should remain intact');
 });
@@ -205,8 +216,9 @@ test('middle text alignment centers both main and subtitle anchors', async () =>
       Math.abs(result.textLayout.sub.x - expectedCenterX) < 0.51,
       `subtitle anchor (${result.textLayout.sub.x.toFixed(2)}) should equal text rect midpoint (${expectedCenterX.toFixed(2)})`,
     );
-    const mainMatch = result.svgMarkup.match(/<text[^>]*font-weight="800"[^>]*>/);
-    assert.ok(mainMatch, 'expected main text element with font-weight 800');
+    const mainFontWeight = getPresetMainFontWeight(geometry.printableHeightMm);
+    const mainMatch = result.svgMarkup.match(new RegExp(`<text[^>]*font-weight="${mainFontWeight}"[^>]*>`));
+    assert.ok(mainMatch, 'expected main text element with configured font weight');
     assert.match(mainMatch[0], /text-anchor="middle"/);
     const subtitleMatch = result.svgMarkup.match(/<text[^>]*font-weight="600"[^>]*>/);
     assert.ok(subtitleMatch, 'expected subtitle text element with font-weight 600');
@@ -231,7 +243,8 @@ test('main line shrinks before ellipsizing', async () => {
     line3: '',
   };
   const result = await renderLabelSVG({ geometry, pxPerMm, textLines, hardwareInfo: null, qrContent: '' });
-  const mainMatches = [...result.svgMarkup.matchAll(/font-weight="800"[^>]*>([^<]+)<\/text>/g)];
+  const mainFontWeight = getPresetMainFontWeight(geometry.printableHeightMm);
+  const mainMatches = findMainTextElements(result.svgMarkup, mainFontWeight);
   assert.equal(mainMatches.length, 1, 'main line should render exactly once');
   assert.equal(mainMatches[0][1].trim(), 'M2.5 × 16 Countersunk Socket Cap');
 });
@@ -251,9 +264,43 @@ test('main line only ellipsizes when unavoidable', async () => {
     line3: '',
   };
   const result = await renderLabelSVG({ geometry, pxPerMm, textLines, hardwareInfo: null, qrContent: '' });
-  const mainMatches = [...result.svgMarkup.matchAll(/font-weight="800"[^>]*>([^<]+)<\/text>/g)];
+  const mainFontWeight = getPresetMainFontWeight(geometry.printableHeightMm);
+  const mainMatches = findMainTextElements(result.svgMarkup, mainFontWeight);
   assert.equal(mainMatches.length, 1, 'main line should still occupy one line');
   assert.ok(mainMatches[0][1].trim().endsWith('…'), 'ellipsis should appear only when absolutely required');
+});
+
+test('main font weight follows preset overrides', async () => {
+  clearPresetOverrides();
+  try {
+    const geometry = {
+      labelWidthMm: 37,
+      labelHeightMm: 12,
+      printableWidthMm: 33,
+      printableHeightMm: 10,
+      marginX: 2,
+      marginY: 1,
+    };
+    setPresetOverride(geometry.printableHeightMm, {
+      text_zone: { main: { font_weight: 600 } },
+    });
+    const textLines = { line1: 'Non-Bold', line2: '', line3: '' };
+    const result = await renderLabelSVG({
+      geometry,
+      pxPerMm,
+      textLines,
+      hardwareInfo: null,
+      qrContent: '',
+    });
+    const mainFontWeight = getPresetMainFontWeight(geometry.printableHeightMm);
+    assert.equal(mainFontWeight, 600, 'override should adjust active preset weight');
+    const mainMatches = findMainTextElements(result.svgMarkup, mainFontWeight);
+    assert.equal(mainMatches.length, 1, 'main line should render once with overridden weight');
+    assert.equal(mainMatches[0][1].trim(), 'Non-Bold');
+    assert.equal(result.textLayout.main.fontWeight, mainFontWeight);
+  } finally {
+    clearPresetOverrides();
+  }
 });
 
 test('subtitle lines remain distinct with optional ellipsis on the last line', async () => {
@@ -341,7 +388,8 @@ test('end text alignment anchors text to the right edge when QR is absent', asyn
       Math.abs(result.textLayout.sub.x - expectedRightX) < 0.51,
       `subtitle anchor (${result.textLayout.sub.x.toFixed(2)}) should equal text rect right edge (${expectedRightX.toFixed(2)})`,
     );
-    const mainMatch = result.svgMarkup.match(/<text[^>]*font-weight="800"[^>]*>/);
+    const mainFontWeight = getPresetMainFontWeight(geometry.printableHeightMm);
+    const mainMatch = result.svgMarkup.match(new RegExp(`<text[^>]*font-weight="${mainFontWeight}"[^>]*>`));
     assert.ok(mainMatch, 'expected main text element');
     assert.match(mainMatch[0], /text-anchor="end"/);
   } finally {
