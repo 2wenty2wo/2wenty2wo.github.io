@@ -142,7 +142,6 @@ const {
   customImageClearButton,
   customImageNameDisplay,
   customIconFields,
-  customIconStyleSelect,
   customIconSearchInput,
   customIconSelect,
   customIconPicker,
@@ -150,6 +149,12 @@ const {
   customIconPickerList,
   customIconStatus,
   customIconPreview,
+  customPartFields,
+  customPartPicker,
+  customPartPickerButton,
+  customPartPickerList,
+  customPartSelect,
+  customPartStatus,
   notesField,
   standardField,
   boltStandardGroup,
@@ -220,7 +225,7 @@ const validBoltHeadIds = new Set(
 );
 const NUT_TYPE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const validNutTypeIds = new Set(nutTypeOptions.map(option => option.id));
-const CUSTOM_GRAPHIC_SOURCES = new Set(['image', 'icon']);
+const CUSTOM_GRAPHIC_SOURCES = new Set(['image', 'icon', 'parts']);
 const DEFAULT_CUSTOM_GRAPHIC_SOURCE = 'image';
 const DEFAULT_ICON_STYLE = 'solid';
 const CUSTOM_ICON_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
@@ -231,6 +236,11 @@ const FONT_AWESOME_STYLE_CLASSES = {
 };
 let customIconRequestId = 0;
 let lastIconCollection = { style: '', total: 0 };
+const CUSTOM_PART_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
+const partGraphicOptions = Object.entries(hardwareTypeImageMap)
+  .map(([id, src]) => ({ id, label: id, image: src }))
+  .sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
+const validCustomPartIds = new Set(partGraphicOptions.map(option => option.id));
 const WASHER_TYPE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const validWasherTypeIds = new Set(washerTypeOptions.map(option => option.id));
 const SWITCH_TYPE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
@@ -690,6 +700,170 @@ export function populateHardwareTypePicker() {
   }
 
   syncHardwareTypePicker();
+}
+
+function getCustomPartOption(partId) {
+  if (!partId) {
+    return null;
+  }
+  return partGraphicOptions.find(option => option.id === partId) || null;
+}
+
+export function populateCustomPartPicker() {
+  if (!customPartSelect) {
+    return;
+  }
+
+  customPartSelect.innerHTML = '';
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = CUSTOM_PART_PLACEHOLDER_TEXT;
+  customPartSelect.appendChild(placeholder);
+
+  partGraphicOptions.forEach(option => {
+    const opt = document.createElement('option');
+    opt.value = option.id;
+    opt.textContent = option.label;
+    opt.dataset.image = option.image || '';
+    customPartSelect.appendChild(opt);
+  });
+
+  if (customPartPickerList) {
+    customPartPickerList.innerHTML = '';
+    partGraphicOptions.forEach(option => {
+      const item = document.createElement('li');
+      item.className = 'bolt-drive-picker__option';
+      item.dataset.value = option.id;
+      item.dataset.label = option.label;
+      item.dataset.image = option.image || '';
+      item.setAttribute('role', 'option');
+      item.setAttribute('aria-selected', 'false');
+      item.tabIndex = -1;
+
+      const iconWrapper = document.createElement('span');
+      iconWrapper.className = option.image
+        ? 'bolt-drive-picker__option-icon'
+        : 'bolt-drive-picker__option-icon is-empty';
+      iconWrapper.setAttribute('aria-hidden', 'true');
+
+      if (option.image) {
+        const img = document.createElement('img');
+        img.className = 'bolt-drive-picker__option-icon-image';
+        img.src = option.image;
+        img.alt = '';
+        img.loading = 'lazy';
+        img.decoding = 'async';
+        iconWrapper.appendChild(img);
+      }
+
+      const label = document.createElement('span');
+      label.className = 'bolt-drive-picker__option-label';
+      label.textContent = option.label;
+
+      item.appendChild(iconWrapper);
+      item.appendChild(label);
+      customPartPickerList.appendChild(item);
+    });
+  }
+
+  if (customPartPickerButton) {
+    customPartPickerButton.disabled = partGraphicOptions.length === 0;
+    customPartPickerButton.setAttribute('aria-expanded', 'false');
+  }
+
+  syncCustomPartPicker({ isValid: true });
+}
+
+export function syncCustomPartPicker({ isValid = true } = {}) {
+  if (!customPartSelect) {
+    return;
+  }
+
+  const currentValue = typeof state.customPartId === 'string' ? state.customPartId : '';
+  const sanitizedValue = validCustomPartIds.has(currentValue) ? currentValue : '';
+  if (sanitizedValue !== currentValue) {
+    state.customPartId = sanitizedValue;
+  }
+
+  customPartSelect.value = sanitizedValue;
+  if (!sanitizedValue && customPartSelect.options.length > 0) {
+    customPartSelect.selectedIndex = 0;
+  }
+
+  const selectedOption = getCustomPartOption(sanitizedValue);
+
+  if (customPartPickerButton) {
+    const label = customPartPickerButton.querySelector('.bolt-drive-picker__current-label');
+    const iconWrapper = customPartPickerButton.querySelector('.bolt-drive-picker__current-icon');
+    const iconImage = customPartPickerButton.querySelector('.bolt-drive-picker__current-icon-image');
+
+    if (label) {
+      label.textContent = selectedOption ? selectedOption.label : CUSTOM_PART_PLACEHOLDER_TEXT;
+    }
+
+    if (iconWrapper && iconImage) {
+      if (selectedOption && selectedOption.image) {
+        iconImage.src = selectedOption.image;
+        iconImage.hidden = false;
+        iconWrapper.classList.remove('is-empty');
+      } else {
+        iconImage.hidden = true;
+        iconImage.removeAttribute('src');
+        iconWrapper.classList.add('is-empty');
+      }
+    }
+
+    if (isValid) {
+      customPartPickerButton.classList.remove('is-invalid');
+      customPartPickerButton.removeAttribute('aria-invalid');
+    } else {
+      customPartPickerButton.classList.add('is-invalid');
+      customPartPickerButton.setAttribute('aria-invalid', 'true');
+    }
+  }
+
+  if (customPartPicker) {
+    customPartPicker.classList.toggle('is-invalid', !isValid);
+  }
+
+  if (customPartPickerList) {
+    const items = Array.from(customPartPickerList.querySelectorAll('[role="option"]'));
+    items.forEach(item => {
+      const isSelected = item.dataset.value === sanitizedValue;
+      item.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      item.classList.toggle('is-selected', isSelected);
+      item.tabIndex = -1;
+    });
+  }
+
+  if (customPartStatus) {
+    if (selectedOption) {
+      customPartStatus.textContent = `${selectedOption.label} icon selected.`;
+      customPartStatus.classList.remove('text-danger');
+    } else {
+      customPartStatus.textContent = 'No built-in part icon selected.';
+      customPartStatus.classList.remove('text-danger');
+    }
+  }
+}
+
+export function setCustomPartSelection(nextId, { triggerUpdate = true } = {}) {
+  const desiredValue = typeof nextId === 'string' ? nextId.trim() : '';
+  const sanitizedValue = validCustomPartIds.has(desiredValue) ? desiredValue : '';
+  const previousValue = typeof state.customPartId === 'string' ? state.customPartId : '';
+
+  state.customPartId = sanitizedValue;
+  if (sanitizedValue) {
+    state.customGraphicSource = 'parts';
+  }
+  syncCustomPartPicker({ isValid: true });
+  applyCustomGraphicInfoDisplay();
+  updateCustomImageUi();
+
+  if (triggerUpdate && previousValue !== sanitizedValue) {
+    updatePreview();
+    updateDownloadState();
+  }
 }
 
 function resolveComponentMountImage(mountId) {
@@ -3884,9 +4058,8 @@ function normalizeCustomGraphicSource(value) {
 }
 
 function getCurrentIconStyle() {
-  const normalized = normalizeIconStyle(state.customIconStyle || DEFAULT_ICON_STYLE);
-  state.customIconStyle = normalized;
-  return normalized;
+  state.customIconStyle = DEFAULT_ICON_STYLE;
+  return DEFAULT_ICON_STYLE;
 }
 
 function setIconSelectEnabled(enabled) {
@@ -3989,7 +4162,7 @@ function resetCustomIconSvgData() {
 }
 
 function refreshSelectedCustomIconAsset() {
-  const style = normalizeIconStyle(state.customIconStyle || DEFAULT_ICON_STYLE);
+  const style = DEFAULT_ICON_STYLE;
   const name = typeof state.customIconName === 'string' ? state.customIconName.trim() : '';
   resetCustomIconSvgData();
   if (!name) {
@@ -4142,17 +4315,16 @@ function setCustomIconStatus(message, { isError = false, isLoading = false } = {
 function applyCustomGraphicInfoDisplay() {
   const source = normalizeCustomGraphicSource(state.customGraphicSource);
   const style = getCurrentIconStyle();
-  if (customIconStyleSelect) {
-    customIconStyleSelect.value = style;
-  }
   if (customImageNameDisplay) {
     let displayText = '';
     if (source === 'image' && state.customImageName) {
       displayText = state.customImageName;
     } else if (source === 'icon' && state.customIconName) {
       const label = state.customIconLabel || state.customIconName;
-      const styleLabel = style.charAt(0).toUpperCase() + style.slice(1);
-      displayText = `${label} · ${styleLabel}`;
+      displayText = label;
+    } else if (source === 'parts' && state.customPartId) {
+      const partOption = getCustomPartOption(state.customPartId);
+      displayText = partOption ? partOption.label : state.customPartId;
     }
     if (displayText) {
       customImageNameDisplay.textContent = displayText;
@@ -4167,8 +4339,11 @@ function applyCustomGraphicInfoDisplay() {
   } else {
     clearCustomIconPreview();
   }
+  if (source === 'parts') {
+    syncCustomPartPicker({ isValid: true });
+  }
   if (customIconSelect) {
-    if (source === 'icon' && state.customIconName && state.customIconStyle === style) {
+    if (source === 'icon' && state.customIconName) {
       customIconSelect.value = state.customIconName;
     } else if (source !== 'icon') {
       customIconSelect.value = '';
@@ -4290,7 +4465,7 @@ export async function refreshCustomIconOptions({ preserveSelection = true } = {}
           ? `Showing ${filtered.length.toLocaleString()} icons.`
           : `Showing ${filtered.length.toLocaleString()} of ${total.toLocaleString()} icons.`;
       setCustomIconStatus(message);
-      if (preserveSelection && state.customIconName && state.customIconStyle === style) {
+      if (preserveSelection && state.customIconName) {
         customIconSelect.value = state.customIconName;
         if (customIconSelect.selectedIndex === -1) {
           state.customIconName = '';
@@ -4347,30 +4522,8 @@ export function setCustomGraphicSource(source, options = {}) {
   }
 }
 
-export function setCustomIconStyle(style, { preserveSelection = true } = {}) {
-  const normalized = normalizeIconStyle(style || DEFAULT_ICON_STYLE);
-  if (state.customIconStyle === normalized) {
-    refreshCustomIconOptions({ preserveSelection });
-    applyCustomGraphicInfoDisplay();
-    return;
-  }
-  state.customIconStyle = normalized;
-  if (!preserveSelection) {
-    state.customIconName = '';
-    state.customIconUnicode = '';
-    state.customIconLabel = '';
-    resetCustomIconSvgData();
-  } else {
-    refreshSelectedCustomIconAsset();
-  }
-  refreshCustomIconOptions({ preserveSelection });
-  applyCustomGraphicInfoDisplay();
-  updateDownloadState();
-  updatePreview();
-}
-
 export function setCustomIconSelection(icon = {}) {
-  const style = normalizeIconStyle(icon.style || state.customIconStyle || DEFAULT_ICON_STYLE);
+  const style = DEFAULT_ICON_STYLE;
   const name = typeof icon.name === 'string' ? icon.name : '';
   const unicode = typeof icon.unicode === 'string' ? icon.unicode : '';
   const label = typeof icon.label === 'string' && icon.label.trim().length > 0 ? icon.label : name;
@@ -4387,7 +4540,7 @@ export function setCustomIconSelection(icon = {}) {
         if (!record) {
           return;
         }
-        if (state.customIconName !== record.name || state.customIconStyle !== record.style) {
+        if (state.customIconName !== record.name) {
           return;
         }
         state.customIconUnicode = record.unicode;
@@ -4436,12 +4589,23 @@ export function updateCustomImageUi() {
   if (customIconFields) {
     customIconFields.classList.toggle('d-none', source !== 'icon');
   }
+  if (customPartFields) {
+    customPartFields.classList.toggle('d-none', source !== 'parts');
+  }
   const hasImage = source === 'image' && Boolean(state.customImageData);
   const hasIcon =
     source === 'icon' && Boolean(state.customIconUnicode || state.customIconSvgData);
+  const hasPart = source === 'parts' && Boolean(state.customPartId);
   if (customImageClearButton) {
-    const label = source === 'icon' ? 'Remove icon' : 'Remove image';
-    customImageClearButton.disabled = !(hasImage || hasIcon);
+    let label = 'Clear selection';
+    if (source === 'icon') {
+      label = 'Remove icon';
+    } else if (source === 'parts') {
+      label = 'Remove part icon';
+    } else {
+      label = 'Remove image';
+    }
+    customImageClearButton.disabled = !(hasImage || hasIcon || hasPart);
     customImageClearButton.textContent = label;
     customImageClearButton.setAttribute('aria-label', label);
   }
@@ -4461,6 +4625,12 @@ export function updateCustomImageUi() {
       setIconSelectEnabled(enableSelect);
       setIconSearchEnabled(true);
     }
+  } else if (source === 'parts') {
+    setIconControlsBusy(false);
+    setIconSelectEnabled(false);
+    setIconSearchEnabled(false);
+    setCustomIconStatus('');
+    syncCustomPartPicker({ isValid: true });
   } else {
     setIconControlsBusy(false);
     setIconSelectEnabled(false);
@@ -4489,6 +4659,9 @@ export function clearCustomImage({ resetInput = true } = {}) {
       customIconSelect.value = '';
       customIconSelect.selectedIndex = -1;
     }
+  } else if (source === 'parts') {
+    state.customPartId = '';
+    syncCustomPartPicker({ isValid: true });
   } else {
     state.customImageData = '';
     state.customImageName = '';

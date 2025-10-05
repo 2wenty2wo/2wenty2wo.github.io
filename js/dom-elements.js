@@ -128,7 +128,6 @@ const customImageInput = document.getElementById('custom-image-input');
 const customImageClearButton = document.getElementById('custom-image-clear');
 const customImageNameDisplay = document.getElementById('custom-image-name');
 const customIconFields = document.getElementById('custom-icon-fields');
-const customIconStyleSelect = document.getElementById('custom-icon-style');
 const customIconSearchInput = document.getElementById('custom-icon-search');
 const customIconSelect = document.getElementById('custom-icon-select');
 const customIconPicker = document.getElementById('custom-icon-picker');
@@ -136,6 +135,12 @@ const customIconPickerButton = document.getElementById('custom-icon-picker-butto
 const customIconPickerList = document.getElementById('custom-icon-picker-list');
 const customIconStatus = document.getElementById('custom-icon-status');
 const customIconPreview = document.getElementById('custom-icon-preview');
+const customPartFields = document.getElementById('custom-part-fields');
+const customPartPicker = document.getElementById('custom-part-picker');
+const customPartPickerButton = document.getElementById('custom-part-picker-button');
+const customPartPickerList = document.getElementById('custom-part-picker-list');
+const customPartSelect = document.getElementById('custom-part-select');
+const customPartStatus = document.getElementById('custom-part-status');
 const customLine1Input = document.getElementById('custom-line1-input');
 const customLine2Input = document.getElementById('custom-line2-input');
 const customLine1Field = document.getElementById('custom-line1-field');
@@ -345,7 +350,6 @@ export const elements = {
   customImageClearButton,
   customImageNameDisplay,
   customIconFields,
-  customIconStyleSelect,
   customIconSearchInput,
   customIconSelect,
   customIconPicker,
@@ -353,6 +357,12 @@ export const elements = {
   customIconPickerList,
   customIconStatus,
   customIconPreview,
+  customPartFields,
+  customPartPicker,
+  customPartPickerButton,
+  customPartPickerList,
+  customPartSelect,
+  customPartStatus,
   customLine1Input,
   customLine2Input,
   customLine1Field,

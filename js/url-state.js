@@ -19,6 +19,7 @@ import {
   mosfetPartOptions,
   potentiometerValueOptions,
   potentiometerTaperOptions,
+  hardwareTypeImageMap,
 } from './data.js';
 
 export const SHARE_QUERY_PARAM = 'label';
@@ -67,6 +68,7 @@ const FIELD_MAP = {
   customIconLabel: 'cil',
   customImageData: 'cid',
   customImageName: 'cin',
+  customPartId: 'cpi',
 };
 
 const REVERSE_FIELD_MAP = Object.entries(FIELD_MAP).reduce((acc, [key, code]) => {
@@ -122,7 +124,7 @@ const boltHeadIds = new Set(
   boltHeadOptions.concat(screwTypeOptions).map(option => option.id),
 );
 const boltDriveIds = new Set(boltDriveOptions.map(option => option.id));
-const iconStyleOptions = new Set(['solid', 'regular', 'brands']);
+const customPartOptionSet = new Set(Object.keys(hardwareTypeImageMap));
 
 function encodeToBase64Url(input) {
   const encoder = new TextEncoder();
@@ -267,15 +269,22 @@ function sanitizeCustomGraphicSource(value) {
     return 'image';
   }
   const normalized = value.trim().toLowerCase();
-  return normalized === 'icon' ? 'icon' : 'image';
+  if (normalized === 'icon' || normalized === 'parts') {
+    return normalized;
+  }
+  return 'image';
 }
 
-function sanitizeIconStyle(value) {
+function sanitizeIconStyle() {
+  return 'solid';
+}
+
+function sanitizeCustomPartId(value) {
   if (typeof value !== 'string') {
-    return 'solid';
+    return '';
   }
-  const normalized = value.trim().toLowerCase();
-  return iconStyleOptions.has(normalized) ? normalized : 'solid';
+  const trimmed = value.trim();
+  return customPartOptionSet.has(trimmed) ? trimmed : '';
 }
 
 function sanitizeWidth(value) {
@@ -550,6 +559,9 @@ function applyExpandedPayload(expanded) {
   }
   if (typeof expanded.customImageName === 'string') {
     state.customImageName = sanitizeCustomImageName(expanded.customImageName);
+  }
+  if (typeof expanded.customPartId === 'string') {
+    state.customPartId = sanitizeCustomPartId(expanded.customPartId);
   }
 }
 

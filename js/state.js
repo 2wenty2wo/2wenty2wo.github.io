@@ -45,6 +45,7 @@ export const state = {
   customIconSvgData: '',
   customImageData: '',
   customImageName: '',
+  customPartId: '',
 };
 
 export const standardFilterState = {
