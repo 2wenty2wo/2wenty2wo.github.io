@@ -29,10 +29,11 @@ jest.mock('../js/label/renderLabelSVG.js', () => ({
 }));
 
 let buildTextLinesForTest;
+let isLabelReady;
 let state;
 
 beforeAll(async () => {
-  ({ buildTextLinesForTest } = await import('../js/render.js'));
+  ({ buildTextLinesForTest, isLabelReady } = await import('../js/render.js'));
   ({ state } = await import('../js/state.js'));
 });
 
@@ -63,5 +64,12 @@ describe('buildTextLinesForTest', () => {
     const lines = buildTextLinesForTest();
 
     expect(lines.line2).toBe('Glass Fuse');
+  });
+
+  it('considers the panel mount holder ready without an amperage', () => {
+    state.fuseType = 'Panel Mount Fuse Holder';
+    state.fuseValue = '';
+
+    expect(isLabelReady()).toBe(true);
   });
 });

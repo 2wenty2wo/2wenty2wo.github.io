@@ -355,7 +355,13 @@ function updateRadioGroupFeedback({ radios, container, messageElement, valid, me
 
 export function isLabelReady() {
   if (state.hardwareType === 'Fuse') {
-    return Boolean(state.fuseType && state.fuseValue);
+    if (!state.fuseType) {
+      return false;
+    }
+    if (state.fuseType === 'Panel Mount Fuse Holder') {
+      return true;
+    }
+    return Boolean(state.fuseValue);
   }
   if (state.hardwareType === 'Connector') {
     return Boolean(state.connectorCategory);
@@ -482,12 +488,14 @@ function applyValidationFeedback() {
       valid: typeValid,
     });
     syncFuseTypePicker({ isValid: typeValid });
-    const valueValid = Boolean(state.fuseValue);
+    const requiresFuseValue = state.fuseType !== 'Panel Mount Fuse Holder';
+    const valueValid = !requiresFuseValue || Boolean(state.fuseValue);
     updateInputFieldState({
       input: fuseValueSelect,
       container: fuseValueContainer,
       messageElement: fuseValueMessage,
       valid: valueValid,
+      message: '',
     });
     syncFuseValuePicker({ isValid: valueValid });
     updateInputFieldState({
