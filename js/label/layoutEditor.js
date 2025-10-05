@@ -716,6 +716,15 @@ function bindPresetInputs(panel, heightKey, options = {}) {
         options: [{ label: 'Bold (700)', value: '700' }],
         onChange: value => setValue('text_zone.main.font_weight', Number(value)),
       }),
+      createSelectField({
+        label: 'Wrap mode',
+        value: preset.text_zone.main.wrap_mode || 'fit',
+        options: [
+          { label: 'Single line (fit)', value: 'fit' },
+          { label: 'Wrap text', value: 'wrap' },
+        ],
+        onChange: value => setValue('text_zone.main.wrap_mode', value),
+      }),
     );
   });
 
@@ -744,6 +753,24 @@ function bindPresetInputs(panel, heightKey, options = {}) {
         step: 1,
         value: preset.text_zone.sub.line_height_pct,
         onChange: value => setValue('text_zone.sub.line_height_pct', value),
+      }),
+      createSelectField({
+        label: 'Subtitle 1 wrap mode',
+        value: preset.text_zone.sub.subtitle1_wrap_mode || 'wrap',
+        options: [
+          { label: 'Wrap text', value: 'wrap' },
+          { label: 'Single line (fit)', value: 'fit' },
+        ],
+        onChange: value => setValue('text_zone.sub.subtitle1_wrap_mode', value),
+      }),
+      createSelectField({
+        label: 'Subtitle 2 wrap mode',
+        value: preset.text_zone.sub.subtitle2_wrap_mode || 'wrap',
+        options: [
+          { label: 'Wrap text', value: 'wrap' },
+          { label: 'Single line (fit)', value: 'fit' },
+        ],
+        onChange: value => setValue('text_zone.sub.subtitle2_wrap_mode', value),
       }),
       createSelectField({
         label: 'Compact subtitles',

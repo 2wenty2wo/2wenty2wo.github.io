@@ -16,6 +16,21 @@ const SVG_XMLNS = 'http://www.w3.org/2000/svg';
 const SVG_XLINK = 'http://www.w3.org/1999/xlink';
 const LABEL_FONT_FAMILY = "'Oswald', 'Poppins', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif";
 const SUBTITLE_FONT_FAMILY = "'Roboto', 'Poppins', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif";
+const WRAP_MODE_WRAP = 'wrap';
+const WRAP_MODE_FIT = 'fit';
+
+function resolveWrapModeSetting(value, fallback = WRAP_MODE_WRAP) {
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === WRAP_MODE_WRAP || normalized === 'wrap-text' || normalized === 'wrap_words') {
+      return WRAP_MODE_WRAP;
+    }
+    if (normalized === WRAP_MODE_FIT || normalized === 'nowrap' || normalized === 'no-wrap' || normalized === 'fit-text') {
+      return WRAP_MODE_FIT;
+    }
+  }
+  return fallback;
+}
 const ROBOTO_FONT_DATA = `
 d09GMgABAAAAAFCEABIAAAAAplAAAFAZAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGoEYG6Y2HJB0BmA/U1RBVF4Ag0IIgX4JnwYRDAqBzmCBtmkLhVgAATYC
 JAOLLAQgBYR4ByAMhU4bRpYl7JgRsHEANpj+6a9Abp4l0B3s5PRCWUcGgo0DGM6nN/r/70flEJOStDjzDYpsJ0QmlTCSCjmRpAXBnCWYZMlwmKtmLYgySkWG
@@ -577,6 +592,46 @@ function wrapWords(
   return lines;
 }
 
+function normalizeLineEntry(line, { defaultWrapMode = WRAP_MODE_WRAP } = {}) {
+  if (line === null || line === undefined) {
+    return null;
+  }
+  let rawText = '';
+  if (typeof line === 'string') {
+    rawText = line;
+  } else if (typeof line === 'object' && line !== null && typeof line.text === 'string') {
+    rawText = line.text;
+  } else {
+    return null;
+  }
+  const text = rawText.replace(/[\r\n\t]+/g, ' ').trim();
+  if (text.length === 0) {
+    return null;
+  }
+  let resolvedNoWrap = null;
+  let wrapModeSetting = null;
+  if (typeof line === 'object' && line !== null) {
+    if (Object.hasOwn(line, 'noWrap') && typeof line.noWrap === 'boolean') {
+      resolvedNoWrap = line.noWrap;
+    }
+    if (Object.hasOwn(line, 'wrapMode')) {
+      wrapModeSetting = resolveWrapModeSetting(line.wrapMode, null);
+    } else if (Object.hasOwn(line, 'wrap_mode')) {
+      wrapModeSetting = resolveWrapModeSetting(line.wrap_mode, null);
+    }
+  }
+  if (wrapModeSetting === WRAP_MODE_FIT) {
+    resolvedNoWrap = true;
+  } else if (wrapModeSetting === WRAP_MODE_WRAP) {
+    resolvedNoWrap = false;
+  }
+  if (resolvedNoWrap === null) {
+    resolvedNoWrap = defaultWrapMode === WRAP_MODE_FIT;
+  }
+  const finalWrapMode = resolvedNoWrap ? WRAP_MODE_FIT : WRAP_MODE_WRAP;
+  return { text, wrapMode: finalWrapMode, noWrap: resolvedNoWrap };
+}
+
 function fitMultiLineText({
   lines,
   fontWeight = 300,
@@ -590,10 +645,11 @@ function fitMultiLineText({
   noWrap = false,
   fontFamily = LABEL_FONT_FAMILY,
 }) {
+  const defaultWrapMode = noWrap ? WRAP_MODE_FIT : WRAP_MODE_WRAP;
   const normalizedLines = Array.isArray(lines)
     ? lines
-        .map(line => (line || '').replace(/[\r\n\t]+/g, ' ').trim())
-        .filter(line => line.length > 0)
+        .map(line => normalizeLineEntry(line, { defaultWrapMode }))
+        .filter(Boolean)
     : [];
   if (normalizedLines.length === 0) {
     const minPx = toFontPx(minPt, pxPerMm);
@@ -625,7 +681,7 @@ function fitMultiLineText({
         widthPx,
         lineHeightPct,
         fontFamily,
-        { noWrap },
+        { defaultWrapMode },
       );
       const fitsHeight = layout.totalHeightPx <= heightPx + 0.25;
       if (layout.fitsWidth && fitsHeight) {
@@ -644,7 +700,7 @@ function fitMultiLineText({
         widthPx,
         lineHeightPct,
         fontFamily,
-        { noWrap },
+        { defaultWrapMode },
       );
       if (!layout.fitsWidth && allowEllipsis) {
         const lastIndex = layout.lines.length - 1;
@@ -698,16 +754,30 @@ function layoutLines(
   widthPx,
   lineHeightPct,
   fontFamily = LABEL_FONT_FAMILY,
-  { noWrap = false } = {},
+  { defaultWrapMode = WRAP_MODE_WRAP } = {},
 ) {
   const layoutLinesArray = [];
   const widths = [];
   const lineHeightPx = fontSizePx * (lineHeightPct / 100);
   lines.forEach(line => {
-    const measurements = noWrap
-      ? [line]
-      : wrapWords(line, fontSizePx, fontWeight, letterSpacingPx, widthPx, fontFamily);
-    measurements.forEach(entry => {
+    if (line === null || line === undefined) {
+      return;
+    }
+    let normalized = line;
+    if (typeof normalized !== 'object' || normalized === null || typeof normalized.text !== 'string') {
+      normalized = normalizeLineEntry(normalized, { defaultWrapMode });
+      if (!normalized) {
+        return;
+      }
+    }
+    const baseText = normalized.text;
+    if (!baseText) {
+      return;
+    }
+    const segments = normalized.noWrap
+      ? [baseText]
+      : wrapWords(baseText, fontSizePx, fontWeight, letterSpacingPx, widthPx, fontFamily);
+    segments.forEach(entry => {
       layoutLinesArray.push(entry);
       widths.push(measureTextWidth(entry, fontSizePx, fontWeight, fontFamily, letterSpacingPx));
     });
@@ -971,20 +1041,49 @@ function computeTextZones({ textRect, preset, pxPerMm }) {
 }
 
 function buildSubtitleCandidates(textLines, preset) {
-  const line2 = (textLines.line2 || '').trim();
-  const line3 = (textLines.line3 || '').trim();
+  const textPreset = preset.text_zone || {};
+  const subPreset = textPreset.sub || {};
+  const wrap2 = resolveWrapModeSetting(subPreset.subtitle1_wrap_mode, WRAP_MODE_WRAP);
+  const wrap3 = resolveWrapModeSetting(subPreset.subtitle2_wrap_mode, WRAP_MODE_WRAP);
+  const line2Entry = normalizeLineEntry(
+    { text: textLines.line2, wrapMode: wrap2 },
+    { defaultWrapMode: wrap2 },
+  );
+  const line3Entry = normalizeLineEntry(
+    { text: textLines.line3, wrapMode: wrap3 },
+    { defaultWrapMode: wrap3 },
+  );
   const candidates = [];
-  if (line2 || line3) {
-    candidates.push(
-      [line2, line3].filter(line => line && line.length > 0),
+  const baseCandidate = [];
+  if (line2Entry) {
+    baseCandidate.push(line2Entry);
+  }
+  if (line3Entry) {
+    baseCandidate.push(line3Entry);
+  }
+  if (baseCandidate.length > 0) {
+    candidates.push(baseCandidate);
+  }
+  if (
+    textPreset.compact_join_subtitles &&
+    line2Entry &&
+    line3Entry &&
+    line2Entry.text &&
+    line3Entry.text
+  ) {
+    const separator = textPreset.compact_separator || ' \u00b7 ';
+    const joined = normalizeLineEntry(
+      {
+        text: `${line2Entry.text}${separator}${line3Entry.text}`,
+        wrapMode: WRAP_MODE_FIT,
+      },
+      { defaultWrapMode: WRAP_MODE_FIT },
     );
-    const textPreset = preset.text_zone || {};
-    if (textPreset.compact_join_subtitles && line2 && line3) {
-      const separator = textPreset.compact_separator || ' \u00b7 ';
-      candidates.push([`${line2}${separator}${line3}`]);
+    if (joined) {
+      candidates.push([joined]);
     }
   }
-  return candidates.filter(candidate => candidate.length > 0);
+  return candidates;
 }
 
 function resolveTextAlignment(alignment) {
@@ -1059,6 +1158,9 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
   const subLineHeightPct = textPreset.sub?.line_height_pct ?? 115;
   const defaultSubLineHeightPct = textPreset.sub?.line_height_pct ?? 110;
   const mainLetterSpacingLimit = textPreset.main?.letter_spacing_adj || -0.3;
+  const mainWrapModeSetting = resolveWrapModeSetting(textPreset.main?.wrap_mode, WRAP_MODE_FIT);
+  const mainShouldWrap = mainWrapModeSetting === WRAP_MODE_WRAP;
+  const mainLineHeightPct = textPreset.main?.line_height_pct ?? 110;
 
   function buildScaledRange(originalRange, scale) {
     const safeScale = Number.isFinite(scale) && scale > 0 ? Math.min(scale, 1) : 1;
@@ -1069,24 +1171,52 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
   }
 
   function performFit(ranges) {
-    const mainFit = fitSingleLineText({
-      text: mainText,
-      fontWeight: mainFontWeight,
-      minPt: ranges.main.min,
-      maxPt: ranges.main.max,
-      widthPx: mainWidthForFitPx,
-      pxPerMm,
-      letterSpacingLimit: mainLetterSpacingLimit,
-    });
-    const mainAscent = Number.isFinite(mainFit.actualBoundingBoxAscent)
-      ? mainFit.actualBoundingBoxAscent
-      : null;
-    const mainDescent = Number.isFinite(mainFit.actualBoundingBoxDescent)
-      ? mainFit.actualBoundingBoxDescent
-      : null;
-    const hasMainMetrics = mainAscent !== null && mainDescent !== null;
-    const mainHeight = mainFit.text
-      ? hasMainMetrics
+    let mainFit;
+    let mainAscent = null;
+    let mainDescent = null;
+    let hasMainMetrics = false;
+    let mainLineCount = 0;
+    let mainLineHeightPx = 0;
+
+    if (mainShouldWrap) {
+      mainFit = fitMultiLineText({
+        lines: [{ text: mainText, wrapMode: mainWrapModeSetting }],
+        fontWeight: mainFontWeight,
+        minPt: ranges.main.min,
+        maxPt: ranges.main.max,
+        lineHeightPct: mainLineHeightPct,
+        widthPx: mainWidthForFitPx,
+        heightPx: zones.main.height,
+        pxPerMm,
+        fontFamily: LABEL_FONT_FAMILY,
+      });
+      mainLineCount = mainFit.lines.length;
+      mainLineHeightPx = mainFit.lineHeightPx || (mainFit.fontSizePx || 0);
+    } else {
+      mainFit = fitSingleLineText({
+        text: mainText,
+        fontWeight: mainFontWeight,
+        minPt: ranges.main.min,
+        maxPt: ranges.main.max,
+        widthPx: mainWidthForFitPx,
+        pxPerMm,
+        letterSpacingLimit: mainLetterSpacingLimit,
+      });
+      mainAscent = Number.isFinite(mainFit.actualBoundingBoxAscent)
+        ? mainFit.actualBoundingBoxAscent
+        : null;
+      mainDescent = Number.isFinite(mainFit.actualBoundingBoxDescent)
+        ? mainFit.actualBoundingBoxDescent
+        : null;
+      hasMainMetrics = mainAscent !== null && mainDescent !== null;
+      mainLineCount = mainFit.text ? 1 : 0;
+      mainLineHeightPx = mainFit.fontSizePx;
+    }
+
+    const mainHeight = mainLineCount
+      ? mainShouldWrap
+        ? mainFit.fontSizePx + mainLineHeightPx * (mainLineCount - 1)
+        : hasMainMetrics
         ? mainAscent + mainDescent
         : mainFit.fontSizePx
       : 0;
@@ -1114,7 +1244,6 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
             widthPx: subWidthForFitPx,
             heightPx: zones.sub.height,
             pxPerMm,
-            noWrap: isCompact,
             fontFamily: SUBTITLE_FONT_FAMILY,
           }),
           isCompact,
@@ -1183,6 +1312,8 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
       mainAscent,
       mainDescent,
       mainHeight,
+      mainLineCount,
+      mainLineHeightPx,
       subtitleFit,
       subtitleLineCount,
       subtitleHeight,
@@ -1239,6 +1370,8 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
   const mainDescent = fitResult.mainDescent;
   const hasMainMetrics = fitResult.hasMainMetrics;
   const mainHeight = fitResult.mainHeight;
+  const mainLineCount = fitResult.mainLineCount;
+  const mainLineHeightPx = fitResult.mainLineHeightPx;
   const subtitleFit = fitResult.subtitleFit;
   const subtitleLineCount = fitResult.subtitleLineCount;
   const subtitleHeight = fitResult.subtitleHeight;
@@ -1264,6 +1397,17 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
   zones.sub.effectiveWidth = Math.max(0, subtitleWidthPx - horizontalInsetPx);
 
   const mainBaseline = mainHeight > 0 ? zones.main.y + mainHeight / 2 : zones.main.y;
+  const mainLines = (() => {
+    if (mainLineCount <= 0) {
+      return [];
+    }
+    if (mainShouldWrap) {
+      return Array.isArray(mainFit.lines) ? mainFit.lines : [];
+    }
+    return mainFit.text ? [mainFit.text] : [];
+  })();
+  const mainTextValue = mainLines[0] || (typeof mainFit.text === 'string' ? mainFit.text : '');
+  const resolvedMainLineHeight = mainLineHeightPx || mainFit.lineHeightPx || mainFit.fontSizePx || 0;
 
   const subtitle = {
     ...subtitleFit,
@@ -1275,7 +1419,10 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
 
   return {
     main: {
-      text: mainFit.text,
+      text: mainTextValue,
+      lines: mainLines,
+      lineCount: mainLines.length,
+      lineHeightPx: resolvedMainLineHeight,
       fontSizePx: mainFit.fontSizePx,
       letterSpacingPx: mainFit.letterSpacingPx,
       baseline: mainBaseline,
@@ -1772,16 +1919,30 @@ export async function renderLabelSVG({
 
   innerParts.push(await renderMediaElements(mediaElements));
 
-  if (textLayout.main.text) {
-    const mainCenterY = textLayout.main.baseline;
+  const mainLines = Array.isArray(textLayout.main?.lines) ? textLayout.main.lines : [];
+  if (mainLines.length > 0) {
     const mainAnchor = textLayout.main.anchor || 'start';
     const mainX = textLayout.main.x ?? textLayout.zones.main.x;
     const mainFontWeight = resolveMainFontWeight(
       textLayout.main.fontWeight ?? preset.text_zone?.main?.font_weight,
     );
-    innerParts.push(
-      `<text x="${formatNumber(mainX)}" y="${formatNumber(mainCenterY)}" text-anchor="${mainAnchor}" font-family=${JSON.stringify(LABEL_FONT_FAMILY)} font-weight="${mainFontWeight}" font-size="${formatNumber(textLayout.main.fontSizePx)}" letter-spacing="${formatNumber(textLayout.main.letterSpacingPx)}" dominant-baseline="middle" fill="${LABEL_TEXT_COLOR}">${escapeXml(textLayout.main.text)}</text>`,
-    );
+    const mainLetterSpacing = textLayout.main.letterSpacingPx ?? 0;
+    if (mainLines.length === 1) {
+      const mainCenterY = textLayout.main.baseline ??
+        textLayout.zones.main.y + (textLayout.main.fontSizePx || 0) / 2;
+      innerParts.push(
+        `<text x="${formatNumber(mainX)}" y="${formatNumber(mainCenterY)}" text-anchor="${mainAnchor}" font-family=${JSON.stringify(LABEL_FONT_FAMILY)} font-weight="${mainFontWeight}" font-size="${formatNumber(textLayout.main.fontSizePx)}" letter-spacing="${formatNumber(mainLetterSpacing)}" dominant-baseline="middle" fill="${LABEL_TEXT_COLOR}">${escapeXml(mainLines[0])}</text>`,
+      );
+    } else {
+      const lineHeight = textLayout.main.lineHeightPx || textLayout.main.fontSizePx || 0;
+      let lineCenter = textLayout.zones.main.y + (textLayout.main.fontSizePx || 0) / 2;
+      mainLines.forEach(line => {
+        innerParts.push(
+          `<text x="${formatNumber(mainX)}" y="${formatNumber(lineCenter)}" text-anchor="${mainAnchor}" font-family=${JSON.stringify(LABEL_FONT_FAMILY)} font-weight="${mainFontWeight}" font-size="${formatNumber(textLayout.main.fontSizePx)}" letter-spacing="${formatNumber(mainLetterSpacing)}" dominant-baseline="middle" fill="${LABEL_TEXT_COLOR}">${escapeXml(line)}</text>`,
+        );
+        lineCenter += lineHeight;
+      });
+    }
   }
   if (textLayout.sub && textLayout.sub.lineCount > 0) {
     let lineCenter = textLayout.zones.sub.y + textLayout.sub.fontSizePx / 2;
