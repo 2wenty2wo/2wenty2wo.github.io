@@ -52,6 +52,10 @@ const mockFuseValuePickerList = {
   },
 };
 
+const mockFuseValueContainer = {
+  classList: createClassListMock(),
+};
+
 const mockFuseValuePickerButton = {
   disabled: true,
   attributes: {},
@@ -77,6 +81,7 @@ const mockFuseValuePicker = {
 jest.mock('../js/dom-elements.js', () => ({
   __esModule: true,
   elements: {
+    fuseValueContainer: mockFuseValueContainer,
     fuseValueSelect: mockFuseValueSelect,
     fuseValuePickerList: mockFuseValuePickerList,
     fuseValuePickerButton: mockFuseValuePickerButton,
@@ -138,10 +143,14 @@ global.document = {
 };
 
 let populateFuseValues;
+let setFuseTypeSelection;
+let syncFuseValuePicker;
 let state;
 
 beforeAll(async () => {
-  ({ populateFuseValues } = await import('../js/forms.js'));
+  ({ populateFuseValues, setFuseTypeSelection, syncFuseValuePicker } = await import(
+    '../js/forms.js',
+  ));
   ({ state } = await import('../js/state.js'));
 });
 
@@ -159,10 +168,17 @@ beforeEach(() => {
   mockFuseValuePickerButton.setAttribute.mockClear();
   mockFuseValuePickerButton.removeAttribute.mockClear();
   mockFuseValuePickerButton.querySelector.mockClear();
+  mockFuseValueContainer.classList.toggle.mockClear();
   mockFuseValuePicker.classList.contains.mockReturnValue(false);
   mockFuseValuePicker.classList.remove.mockClear();
   mockFuseValuePicker.classList.toggle.mockClear();
   state.fuseValue = '';
+  state.fuseType = 'Glass';
+  state.hardwareType = 'Fuse';
+  mockFuseValueSelect.disabled = false;
+  mockFuseValueSelect.value = '';
+  mockFuseValuePickerButton.disabled = true;
+  mockFuseValuePickerButton.attributes = {};
 });
 
 describe('fuse type option data', () => {
@@ -198,6 +214,37 @@ describe('populateFuseValues', () => {
     const pickerValues = mockFuseValuePickerList.items.map(item => item.dataset.value);
     expect(pickerValues).toContain('3.15');
     expect(mockFuseValuePickerList.hidden).toBe(true);
+  });
+});
+
+describe('fuse type selection behaviour', () => {
+  it('hides the amperage controls and clears the value for panel mount holders', () => {
+    state.fuseValue = '5';
+    mockFuseValuePicker.classList.contains.mockReturnValue(true);
+
+    setFuseTypeSelection('Panel Mount Fuse Holder', { triggerUpdate: false });
+
+    expect(state.fuseValue).toBe('');
+    expect(mockFuseValueSelect.disabled).toBe(true);
+    expect(mockFuseValueSelect.value).toBe('');
+    expect(mockFuseValueContainer.classList.toggle).toHaveBeenCalledWith('d-none', true);
+    expect(mockFuseValuePickerButton.disabled).toBe(true);
+    expect(mockFuseValuePickerButton.attributes['aria-expanded']).toBe('false');
+    expect(mockFuseValuePickerButton.classList.remove).toHaveBeenCalledWith('is-invalid');
+    expect(mockFuseValuePickerButton.removeAttribute).toHaveBeenCalledWith('aria-invalid');
+    expect(mockFuseValuePicker.classList.remove).toHaveBeenCalledWith('is-open');
+  });
+
+  it('keeps validation clear when amperage is not required', () => {
+    state.fuseType = 'Panel Mount Fuse Holder';
+    state.fuseValue = '';
+
+    syncFuseValuePicker({ isValid: false });
+
+    expect(mockFuseValuePickerButton.classList.add).not.toHaveBeenCalledWith('is-invalid');
+    expect(mockFuseValuePickerButton.classList.remove).toHaveBeenCalledWith('is-invalid');
+    expect(mockFuseValuePickerButton.removeAttribute).toHaveBeenCalledWith('aria-invalid');
+    expect(mockFuseValuePicker.classList.toggle).toHaveBeenCalledWith('is-invalid', false);
   });
 });
 

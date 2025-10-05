@@ -238,6 +238,8 @@ const switchTypeMap = new Map(switchTypeOptions.map(option => [option.id, option
 const FUSE_TYPE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const DEFAULT_FUSE_TYPE = 'Glass';
 const CARTRIDGE_FUSE_TYPES = new Set(['Glass', 'Ceramic']);
+const PANEL_MOUNT_FUSE_HOLDER_TYPE = 'Panel Mount Fuse Holder';
+const FUSE_TYPES_WITHOUT_AMPS = new Set([PANEL_MOUNT_FUSE_HOLDER_TYPE]);
 const validFuseTypeIds = new Set(fuseTypeOptions.map(option => option.id));
 const FUSE_VALUE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const validFuseValuesSet = new Set(fuseValues.map(value => String(value)));
@@ -2315,6 +2317,86 @@ export function syncHardwareTypePicker() {
   }
 }
 
+function fuseTypeRequiresValue(type) {
+  return !FUSE_TYPES_WITHOUT_AMPS.has(type);
+}
+
+function applyFuseValueVisibility({ showFuseFields = state.hardwareType === 'Fuse' } = {}) {
+  const sanitizedType = validFuseTypeIds.has(state.fuseType)
+    ? state.fuseType
+    : DEFAULT_FUSE_TYPE;
+
+  if (sanitizedType !== state.fuseType) {
+    state.fuseType = sanitizedType;
+  }
+
+  const requiresValue = showFuseFields && fuseTypeRequiresValue(sanitizedType);
+  const shouldShowField = requiresValue;
+
+  if (!requiresValue && state.fuseValue) {
+    state.fuseValue = '';
+  }
+
+  if (fuseValueContainer && fuseValueContainer.classList) {
+    fuseValueContainer.classList.toggle('d-none', !shouldShowField);
+  }
+
+  if (fuseValueSelect) {
+    fuseValueSelect.disabled = !shouldShowField;
+    fuseValueSelect.value = shouldShowField ? state.fuseValue || '' : '';
+  }
+
+  if (fuseValuePickerButton) {
+    fuseValuePickerButton.disabled = !shouldShowField;
+    if (!shouldShowField) {
+      if (typeof fuseValuePickerButton.setAttribute === 'function') {
+        fuseValuePickerButton.setAttribute('aria-expanded', 'false');
+      }
+      if (
+        fuseValuePickerButton.classList &&
+        typeof fuseValuePickerButton.classList.remove === 'function'
+      ) {
+        fuseValuePickerButton.classList.remove('is-invalid');
+      }
+      if (typeof fuseValuePickerButton.removeAttribute === 'function') {
+        fuseValuePickerButton.removeAttribute('aria-invalid');
+      }
+    } else {
+      const pickerIsOpen = Boolean(
+        fuseValuePicker &&
+          fuseValuePicker.classList &&
+          typeof fuseValuePicker.classList.contains === 'function' &&
+          fuseValuePicker.classList.contains('is-open'),
+      );
+      if (typeof fuseValuePickerButton.setAttribute === 'function') {
+        fuseValuePickerButton.setAttribute('aria-expanded', pickerIsOpen ? 'true' : 'false');
+      }
+    }
+  }
+
+  if (fuseValuePickerList) {
+    const pickerIsOpen = Boolean(
+      fuseValuePicker &&
+        fuseValuePicker.classList &&
+        typeof fuseValuePicker.classList.contains === 'function' &&
+        fuseValuePicker.classList.contains('is-open'),
+    );
+    const shouldHideList = !shouldShowField || !pickerIsOpen;
+    fuseValuePickerList.hidden = shouldHideList;
+  }
+
+  if (
+    !shouldShowField &&
+    fuseValuePicker &&
+    fuseValuePicker.classList &&
+    typeof fuseValuePicker.classList.remove === 'function'
+  ) {
+    fuseValuePicker.classList.remove('is-open');
+  }
+
+  return { requiresValue };
+}
+
 export function syncFuseTypePicker({ isValid = true } = {}) {
   const currentValue = typeof state.fuseType === 'string' ? state.fuseType : '';
   const sanitizedValue = validFuseTypeIds.has(currentValue) ? currentValue : DEFAULT_FUSE_TYPE;
@@ -2385,6 +2467,10 @@ export function setFuseTypeSelection(nextId, { triggerUpdate = true } = {}) {
 
   state.fuseType = sanitizedValue;
   syncFuseTypePicker({ isValid: true });
+
+  const showFuseFields = state.hardwareType === 'Fuse';
+  applyFuseValueVisibility({ showFuseFields });
+  syncFuseValuePicker({ isValid: true });
 
   const previousWasCartridge = CARTRIDGE_FUSE_TYPES.has(previousValue);
   const nextIsCartridge = CARTRIDGE_FUSE_TYPES.has(sanitizedValue);
@@ -3596,18 +3682,34 @@ export function updateConnectorCategoryUi() {
 export { populateThreadSizes, syncThreadSizePicker, setThreadSizeSelection };
 
 export function syncFuseValuePicker({ isValid = true } = {}) {
-  if (!fuseValueSelect) {
-    return;
+  const sanitizedType = validFuseTypeIds.has(state.fuseType)
+    ? state.fuseType
+    : DEFAULT_FUSE_TYPE;
+
+  if (sanitizedType !== state.fuseType) {
+    state.fuseType = sanitizedType;
   }
 
-  const currentValue = typeof state.fuseValue === 'string' ? state.fuseValue.trim() : '';
-  const sanitizedValue = currentValue && validFuseValuesSet.has(currentValue) ? currentValue : '';
+  const showFuseFields = state.hardwareType === 'Fuse';
+  const requiresValue = showFuseFields && fuseTypeRequiresValue(sanitizedType);
 
-  if (sanitizedValue !== currentValue) {
+  let currentValue = typeof state.fuseValue === 'string' ? state.fuseValue.trim() : '';
+  if (!requiresValue) {
+    currentValue = '';
+  }
+
+  const sanitizedValue =
+    requiresValue && currentValue && validFuseValuesSet.has(currentValue) ? currentValue : '';
+
+  if (sanitizedValue !== state.fuseValue) {
     state.fuseValue = sanitizedValue;
   }
 
-  fuseValueSelect.value = sanitizedValue;
+  if (fuseValueSelect) {
+    fuseValueSelect.value = sanitizedValue;
+  }
+
+  const effectiveValidity = requiresValue ? isValid : true;
 
   if (fuseValuePickerButton) {
     const label = fuseValuePickerButton.querySelector('.bolt-drive-picker__current-label');
@@ -3619,17 +3721,21 @@ export function syncFuseValuePicker({ isValid = true } = {}) {
       iconWrapper.classList.add('is-empty');
     }
 
-    if (isValid) {
+    if (effectiveValidity) {
       fuseValuePickerButton.classList.remove('is-invalid');
-      fuseValuePickerButton.removeAttribute('aria-invalid');
+      if (typeof fuseValuePickerButton.removeAttribute === 'function') {
+        fuseValuePickerButton.removeAttribute('aria-invalid');
+      }
     } else {
       fuseValuePickerButton.classList.add('is-invalid');
-      fuseValuePickerButton.setAttribute('aria-invalid', 'true');
+      if (typeof fuseValuePickerButton.setAttribute === 'function') {
+        fuseValuePickerButton.setAttribute('aria-invalid', 'true');
+      }
     }
   }
 
   if (fuseValuePicker) {
-    fuseValuePicker.classList.toggle('is-invalid', !isValid);
+    fuseValuePicker.classList.toggle('is-invalid', !effectiveValidity);
   }
 
   if (fuseValuePickerList) {
@@ -5210,36 +5316,11 @@ export function onHardwareTypeChange() {
   if (fuseTypeContainer) {
     fuseTypeContainer.classList.toggle('d-none', !showFuseFields);
   }
-  if (fuseValueContainer) {
-    fuseValueContainer.classList.toggle('d-none', !showFuseFields);
-  }
-  if (fuseValueSelect) {
-    fuseValueSelect.disabled = !showFuseFields;
-    if (showFuseFields) {
-      fuseValueSelect.value = state.fuseValue || '';
-    }
-  }
-  if (fuseValuePickerButton) {
-    fuseValuePickerButton.disabled = !showFuseFields;
-    if (!showFuseFields) {
-      fuseValuePickerButton.setAttribute('aria-expanded', 'false');
-    } else {
-      const isOpen = Boolean(fuseValuePicker && fuseValuePicker.classList.contains('is-open'));
-      fuseValuePickerButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-    }
-  }
-  if (fuseValuePickerList) {
-    const shouldHideList =
-      !showFuseFields || !fuseValuePicker || !fuseValuePicker.classList.contains('is-open');
-    fuseValuePickerList.hidden = shouldHideList;
-  }
-  if (!showFuseFields && fuseValuePicker) {
-    fuseValuePicker.classList.remove('is-open');
-  }
+  applyFuseValueVisibility({ showFuseFields });
   if (showFuseFields) {
     syncFuseTypePicker();
-    syncFuseValuePicker({ isValid: true });
   }
+  syncFuseValuePicker({ isValid: true });
   syncSwitchTypePicker({ isValid: true });
   if (connectorNotesHint) {
     connectorNotesHint.classList.toggle('d-none', !showConnectorFields);
