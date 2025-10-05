@@ -1,6 +1,6 @@
 export const defaultLayoutPresets = {
   9: {
-    padding_mm: 0.2,
+    padding_mm: 0,
     media_zone_width_pct: 38,
     media_zone_width_pct_min: 32,
     media_zone_width_pct_max: 44,
@@ -38,7 +38,7 @@ export const defaultLayoutPresets = {
     },
   },
   12: {
-    padding_mm: 0.3,
+    padding_mm: 0,
     media_zone_width_pct: 48,
     media_zone_width_pct_min: 34,
     media_zone_width_pct_max: 48,
@@ -52,7 +52,7 @@ export const defaultLayoutPresets = {
       top_pct: 58,
       gap_mm: 0,
       alignment: 'middle',
-      block_offset_mm: 0,
+      block_offset_mm: 0.1,
       horizontal_offset_mm: 0,
       main: {
         min_pt: 8.5,
@@ -90,7 +90,7 @@ export const defaultLayoutPresets = {
       top_pct: 60,
       gap_mm: 0.8,
       alignment: 'middle',
-      block_offset_mm: 0,
+      block_offset_mm: 0.5,
       horizontal_offset_mm: 0,
       main: {
         min_pt: 9.5,
@@ -114,7 +114,7 @@ export const defaultLayoutPresets = {
     },
   },
   24: {
-    padding_mm: 0.3,
+    padding_mm: 0,
     media_zone_width_pct: 37.5,
     media_zone_width_pct_min: 25,
     media_zone_width_pct_max: 38,
@@ -128,7 +128,7 @@ export const defaultLayoutPresets = {
       top_pct: 60,
       gap_mm: 1,
       alignment: 'middle',
-      block_offset_mm: 0,
+      block_offset_mm: 0.9,
       horizontal_offset_mm: 0,
       main: {
         min_pt: 9.1,
