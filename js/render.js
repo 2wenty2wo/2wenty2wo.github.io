@@ -1642,25 +1642,109 @@ async function ensureFontsReady() {
   }
 }
 
+function slugifyIdentifier(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function resolveComponentPartType(hardwareType) {
+  const category = (state.componentCategory || hardwareType || '').trim();
+  const label = category || hardwareType;
+  const slug = slugifyIdentifier(label);
+  const partType = `component:${slug || slugifyIdentifier(hardwareType) || 'component'}`;
+  return { partType, partLabel: label };
+}
+
+function resolveSubPartEntries(hardwareType, partType, partLabel) {
+  const entries = [];
+  let activeEntry = null;
+
+  const addEntry = ({ label, slugSource, category, isActive }) => {
+    const normalizedLabel = typeof label === 'string' ? label.trim() : '';
+    const slug = slugifyIdentifier(slugSource || normalizedLabel);
+    if (!normalizedLabel || !slug) {
+      return null;
+    }
+    const subPartType = `${category}:${slug}`;
+    const entry = { label: normalizedLabel, partType, subPartType };
+    entries.push(entry);
+    if (isActive) {
+      activeEntry = entry;
+    }
+    return entry;
+  };
+
+  if (hardwareType === 'Fuse') {
+    const fuseType = typeof state.fuseType === 'string' ? state.fuseType.trim() : '';
+    if (fuseType) {
+      const label = /fuse/i.test(fuseType) ? fuseType : `${fuseType} Fuse`;
+      addEntry({ label, slugSource: fuseType, category: 'fuse-type', isActive: true });
+    }
+  } else if (hardwareType === 'Switch') {
+    const switchType = typeof state.switchType === 'string' ? state.switchType.trim() : '';
+    if (switchType) {
+      addEntry({ label: switchType, slugSource: switchType, category: 'switch-type', isActive: true });
+    }
+  } else if (hardwareType === 'Connector') {
+    const categoryId = typeof state.connectorCategory === 'string' ? state.connectorCategory.trim() : '';
+    if (categoryId) {
+      const category = findConnectorCategory(categoryId);
+      const label = (category?.label || categoryId || '').trim();
+      addEntry({ label, slugSource: categoryId, category: 'connector-category', isActive: true });
+    }
+  } else if (ELECTRICAL_COMPONENT_TYPES.has(hardwareType)) {
+    const mount = typeof state.componentMount === 'string' ? state.componentMount.trim() : '';
+    if (mount) {
+      const label = `${mount} Mount`;
+      addEntry({ label, slugSource: mount, category: 'component-mount', isActive: true });
+    }
+  }
+
+  return { entries, activeEntry };
+}
+
 function resolveLayoutPartContext() {
   const hardwareType = typeof state.hardwareType === 'string' ? state.hardwareType.trim() : '';
-  if (!hardwareType) {
-    return { partType: null, partLabel: '' };
+  let partType = null;
+  let partLabel = '';
+  if (hardwareType) {
+    if (ELECTRICAL_COMPONENT_TYPES.has(hardwareType)) {
+      const componentContext = resolveComponentPartType(hardwareType);
+      partType = componentContext.partType;
+      partLabel = componentContext.partLabel;
+    } else {
+      partType = hardwareType;
+      partLabel = hardwareType;
+    }
   }
-  if (ELECTRICAL_COMPONENT_TYPES.has(hardwareType)) {
-    const category = (state.componentCategory || hardwareType || '').trim();
-    const label = category || hardwareType;
-    const slug = label
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-    const partType = `component:${slug || hardwareType.toLowerCase()}`;
-    return {
-      partType,
-      partLabel: label,
-    };
+
+  const hierarchy = [{ label: 'All parts', partType: null, subPartType: null }];
+  let activeScope = hierarchy[0];
+
+  if (partType) {
+    const { entries, activeEntry } = resolveSubPartEntries(hardwareType, partType, partLabel);
+    const partEntry = { label: partLabel || partType, partType, subPartType: null };
+    if (entries.length > 0) {
+      partEntry.children = entries.map(entry => ({ ...entry }));
+    }
+    hierarchy.push(partEntry);
+    activeScope = activeEntry ? { ...activeEntry } : { label: partEntry.label, partType, subPartType: null };
   }
-  return { partType: hardwareType, partLabel: hardwareType };
+
+  return {
+    partType,
+    partLabel,
+    scope: {
+      hierarchy,
+      active: { ...activeScope },
+    },
+  };
 }
 
 async function renderLabelSvgForState(geometryOverride, options = {}) {
@@ -1682,6 +1766,7 @@ async function renderLabelSvgForState(geometryOverride, options = {}) {
     layoutEditorToken,
     partType: partContext.partType,
     partLabel: partContext.partLabel,
+    partScope: partContext.scope,
   });
 }
 

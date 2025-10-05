@@ -1667,6 +1667,7 @@ export async function renderLabelSVG({
   qrContent,
   partType = null,
   partLabel = '',
+  partScope = null,
   minTextWidthMm = 9,
   qrGenerator,
   cropToPrintable = false,
@@ -1680,9 +1681,18 @@ export async function renderLabelSVG({
   const outputHeightPx = cropToPrintable ? printable.height : labelHeightPx;
   const translationX = cropToPrintable ? -printable.x : 0;
   const translationY = cropToPrintable ? -printable.y : 0;
-  const preset = getActiveLayoutPreset(geometry.labelHeightMm || geometry.printableHeightMm, {
-    partType,
-  });
+  const activeScope = partScope?.active || (partType ? { partType, subPartType: null } : null);
+  const presetOptions = {};
+  if (activeScope?.partType) {
+    presetOptions.partType = activeScope.partType;
+    if (activeScope.subPartType) {
+      presetOptions.subPartType = activeScope.subPartType;
+    }
+  }
+  const preset = getActiveLayoutPreset(
+    geometry.labelHeightMm || geometry.printableHeightMm,
+    Object.keys(presetOptions).length > 0 ? presetOptions : undefined,
+  );
   const contentRect = computeContentRect(printable, preset, pxPerMm);
   const mediaItems = resolveMediaItems(hardwareInfo);
   let mediaWidthPx = computeMediaZoneWidth({
@@ -1800,6 +1810,12 @@ export async function renderLabelSVG({
     qrContent,
     partType,
     partLabel,
+    partScope,
+    partContext: {
+      partType,
+      partLabel,
+      scope: partScope,
+    },
     layoutEditorToken,
   });
   if (editorState && editorState.active) {

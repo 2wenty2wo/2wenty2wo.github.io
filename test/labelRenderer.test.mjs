@@ -634,6 +634,33 @@ test('part-specific overrides take precedence over shared height overrides', () 
   }
 });
 
+test('sub-part overrides merge with part and global overrides', () => {
+  clearPresetOverrides();
+  try {
+    const heightKey = 12;
+    const partType = 'Fuse';
+    const subPartType = 'fuse-type:glass';
+    const globalOverride = { padding_mm: 1.2 };
+    const partOverride = { media_zone_width_pct: 52 };
+    const subOverride = { text_zone: { main: { max_pt: 17 } } };
+    setPresetOverride(heightKey, globalOverride);
+    setPresetOverride(heightKey, partOverride, { partType });
+    setPresetOverride(heightKey, subOverride, { partType, subPartType });
+    const active = getActiveLayoutPreset(heightKey, { partType, subPartType });
+    assert.equal(active.padding_mm, globalOverride.padding_mm, 'global override should persist for sub-part scope');
+    assert.equal(active.media_zone_width_pct, partOverride.media_zone_width_pct, 'part override should apply within sub-part scope');
+    assert.equal(
+      active.text_zone.main.max_pt,
+      subOverride.text_zone.main.max_pt,
+      'sub-part override should override nested properties',
+    );
+    const storedSub = getPresetOverride(heightKey, { partType, subPartType });
+    assert.deepEqual(storedSub, subOverride, 'sub-part override should be stored separately');
+  } finally {
+    clearPresetOverrides();
+  }
+});
+
 test('icon padding and media/text gap persist through export and import', () => {
   clearPresetOverrides();
   try {
@@ -743,28 +770,34 @@ test('fuse illustrations honor provided aspect ratio hints', async () => {
 });
 
 test('single-line labels center the main baseline within the text rect', async () => {
-  const geometry = {
-    labelWidthMm: 37,
-    labelHeightMm: 12,
-    printableWidthMm: 33,
-    printableHeightMm: 10,
-    marginX: 2,
-    marginY: 1,
-  };
-  const textLines = { line1: 'Centered Text', line2: '', line3: '' };
-  const result = await renderLabelSVG({
-    geometry,
-    pxPerMm,
-    textLines,
-    hardwareInfo: null,
-    qrContent: '',
-  });
-  assert.ok(result.textLayout, 'expected layout metadata to be returned');
-  const expectedCenterY = result.textRect.y + result.textRect.height / 2;
-  assert.ok(
-    Math.abs(result.textLayout.main.baseline - expectedCenterY) < 0.51,
-    `main baseline (${result.textLayout.main.baseline.toFixed(2)}) should align with text rect center (${expectedCenterY.toFixed(2)})`,
-  );
+  clearPresetOverrides();
+  try {
+    const geometry = {
+      labelWidthMm: 37,
+      labelHeightMm: 12,
+      printableWidthMm: 33,
+      printableHeightMm: 10,
+      marginX: 2,
+      marginY: 1,
+    };
+    setPresetOverride(geometry.labelHeightMm, { text_zone: { block_offset_mm: 0 } });
+    const textLines = { line1: 'Centered Text', line2: '', line3: '' };
+    const result = await renderLabelSVG({
+      geometry,
+      pxPerMm,
+      textLines,
+      hardwareInfo: null,
+      qrContent: '',
+    });
+    assert.ok(result.textLayout, 'expected layout metadata to be returned');
+    const expectedCenterY = result.textRect.y + result.textRect.height / 2;
+    assert.ok(
+      Math.abs(result.textLayout.main.baseline - expectedCenterY) < 0.51,
+      `main baseline (${result.textLayout.main.baseline.toFixed(2)}) should align with text rect center (${expectedCenterY.toFixed(2)})`,
+    );
+  } finally {
+    clearPresetOverrides();
+  }
 });
 
 test('middle text alignment centers both main and subtitle anchors', async () => {
@@ -1198,6 +1231,111 @@ test('layout editor keeps latest render height when exporting presets after rapi
       window.location.search = '?layoutEditor=0';
       ensureLayoutEditor({ ...baseContext, geometry: geometryShort, preset: shortPreset, layoutEditorToken: 1 });
     }
+    clearPresetOverrides();
+    cleanup();
+  }
+});
+
+test('layout editor scope select lists hierarchical overrides', () => {
+  clearPresetOverrides();
+  const cleanup = setupLayoutEditorTestEnvironment();
+  try {
+    const heightKey = 12;
+    const geometry = {
+      labelWidthMm: 37,
+      labelHeightMm: 12,
+      printableWidthMm: 33,
+      printableHeightMm: 10,
+      marginX: 2,
+      marginY: 1,
+    };
+    const scopeHierarchy = [
+      { label: 'All parts', partType: null, subPartType: null },
+      {
+        label: 'Fuse',
+        partType: 'Fuse',
+        subPartType: null,
+        children: [
+          { label: 'Glass Fuse', partType: 'Fuse', subPartType: 'fuse-type:glass' },
+          { label: 'Ceramic Fuse', partType: 'Fuse', subPartType: 'fuse-type:ceramic' },
+        ],
+      },
+    ];
+    const activeScope = scopeHierarchy[1].children[0];
+    setPresetOverride(heightKey, { media_zone_width_pct: 45 });
+    setPresetOverride(heightKey, { padding_mm: 1.6 }, { partType: 'Fuse' });
+    setPresetOverride(heightKey, { text_zone: { main: { max_pt: 16 } } }, {
+      partType: 'Fuse',
+      subPartType: 'fuse-type:glass',
+    });
+    const preset = getActiveLayoutPreset(heightKey, { partType: 'Fuse', subPartType: 'fuse-type:glass' });
+    ensureLayoutEditor({
+      geometry,
+      preset,
+      textLines: { line1: 'Fuse', line2: 'Glass', line3: '' },
+      hardwareInfo: null,
+      qrContent: '',
+      layoutEditorToken: 1,
+      partType: 'Fuse',
+      partLabel: 'Fuse',
+      partScope: { hierarchy: scopeHierarchy, active: activeScope },
+    });
+    ensureLayoutEditor({
+      geometry,
+      preset,
+      textLines: { line1: 'Fuse', line2: 'Glass', line3: '' },
+      hardwareInfo: null,
+      qrContent: '',
+      layoutEditorToken: 2,
+      partType: 'Fuse',
+      partLabel: 'Fuse',
+      partScope: { hierarchy: scopeHierarchy, active: activeScope },
+    });
+    const panel = document.getElementById('layout-editor-panel');
+    const select = panel.querySelector('[data-editor-scope]');
+    const clearButton = panel.querySelector('[data-editor-clear-part]');
+    assert.ok(select.listeners?.change?.length, 'scope select should expose change listener');
+    const triggerChange = () => {
+      (select.listeners?.change || []).forEach(listener => listener({ currentTarget: select, target: select }));
+    };
+    select.value = '2';
+    triggerChange();
+    assert.equal(clearButton.textContent, 'Clear Glass Fuse override');
+    assert.equal(clearButton.disabled, false);
+    select.value = '1';
+    triggerChange();
+    assert.equal(clearButton.textContent, 'Clear Fuse override');
+    assert.equal(clearButton.disabled, false);
+    (clearButton.listeners?.click || []).forEach(listener =>
+      listener({ currentTarget: clearButton, target: clearButton, preventDefault() {} }),
+    );
+    assert.equal(
+      getPresetOverride(heightKey, { partType: 'Fuse' }),
+      null,
+      'clearing Fuse scope should remove part override',
+    );
+    assert.ok(
+      getPresetOverride(heightKey, { partType: 'Fuse', subPartType: 'fuse-type:glass' }),
+      'sub-part override should remain after clearing part scope',
+    );
+    select.value = '0';
+    triggerChange();
+    assert.equal(clearButton.textContent, 'Clear All parts override');
+    assert.equal(clearButton.disabled, false);
+    select.value = '2';
+    triggerChange();
+    assert.equal(clearButton.textContent, 'Clear Glass Fuse override');
+    assert.equal(clearButton.disabled, false);
+    (clearButton.listeners?.click || []).forEach(listener =>
+      listener({ currentTarget: clearButton, target: clearButton, preventDefault() {} }),
+    );
+    assert.equal(
+      getPresetOverride(heightKey, { partType: 'Fuse', subPartType: 'fuse-type:glass' }),
+      null,
+      'clearing sub-part scope should remove sub-part override',
+    );
+    assert.equal(clearButton.disabled, true, 'clear button should disable when no override remains for scope');
+  } finally {
     clearPresetOverrides();
     cleanup();
   }
