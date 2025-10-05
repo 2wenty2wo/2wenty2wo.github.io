@@ -397,6 +397,33 @@ test('37×12 mm labels keep bolt icons side-by-side', async () => {
   assert.ok(Math.abs(left.y - right.y) < 1.5, 'icons should align horizontally');
   assert.ok(right.x > left.x + left.width - 1, 'icons should be side-by-side');
   assert.ok(left.width > 30 && right.width > 30, 'icons should retain visual size');
+
+  const presetKey = resolvePresetHeightKey(geometry);
+  const previousOverride = getPresetOverride(presetKey);
+  try {
+    setPresetOverride(presetKey, { ...(previousOverride || {}), icon_gap_mm: 0 });
+    const flushResult = await renderLabelSVG({
+      geometry,
+      pxPerMm,
+      textLines,
+      hardwareInfo,
+      qrContent: '',
+    });
+    const flushImages = extractImages(flushResult.svgMarkup);
+    assert.equal(flushImages.length, 2, 'expected two media images with zero gap');
+    const [flushLeft, flushRight] = flushImages;
+    const leftEdge = flushLeft.x + flushLeft.width;
+    assert.ok(
+      Math.abs(leftEdge - flushRight.x) < 0.5,
+      'icons should touch when icon gap is zero',
+    );
+  } finally {
+    if (previousOverride) {
+      setPresetOverride(presetKey, previousOverride);
+    } else {
+      setPresetOverride(presetKey, null);
+    }
+  }
 });
 
 test('37×24 mm labels stack bolt icons vertically', async () => {
