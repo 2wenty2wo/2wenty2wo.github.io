@@ -45,6 +45,7 @@ const fuseTypePickerList = document.getElementById('fuse-type-picker-list');
 const fuseValueContainer = document.getElementById('fuse-value-container');
 const fuseTypeMessage = document.getElementById('fuse-type-message');
 const glassOptionsContainer = document.getElementById('glass-options-container');
+const glassSpeedOptionsContainer = document.getElementById('glass-speed-options');
 const fuseValueSelect = document.getElementById('fuse-value-select');
 const fuseValuePicker = document.getElementById('fuse-value-picker');
 const fuseValuePickerButton = document.getElementById('fuse-value-picker-button');
@@ -263,6 +264,7 @@ export const elements = {
   fuseTypeMessage,
   fuseValueContainer,
   glassOptionsContainer,
+  glassSpeedOptionsContainer,
   fuseValueSelect,
   fuseValuePicker,
   fuseValuePickerButton,

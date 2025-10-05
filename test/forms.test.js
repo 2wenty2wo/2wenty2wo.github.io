@@ -78,6 +78,28 @@ const mockFuseValuePicker = {
   },
 };
 
+const mockGlassOptionsContainer = {
+  classList: createClassListMock(),
+};
+
+const mockGlassSpeedOptionsContainer = {
+  classList: createClassListMock(),
+};
+
+const mockGlassSizeSelect = {
+  value: '',
+};
+
+const mockGlassSlowBlowCheckbox = {
+  checked: false,
+  disabled: false,
+};
+
+const mockGlassFastBlowCheckbox = {
+  checked: false,
+  disabled: false,
+};
+
 jest.mock('../js/dom-elements.js', () => ({
   __esModule: true,
   elements: {
@@ -86,6 +108,11 @@ jest.mock('../js/dom-elements.js', () => ({
     fuseValuePickerList: mockFuseValuePickerList,
     fuseValuePickerButton: mockFuseValuePickerButton,
     fuseValuePicker: mockFuseValuePicker,
+    glassOptionsContainer: mockGlassOptionsContainer,
+    glassSpeedOptionsContainer: mockGlassSpeedOptionsContainer,
+    glassSizeSelect: mockGlassSizeSelect,
+    glassSlowBlowCheckbox: mockGlassSlowBlowCheckbox,
+    glassFastBlowCheckbox: mockGlassFastBlowCheckbox,
   },
 }));
 
@@ -172,9 +199,18 @@ beforeEach(() => {
   mockFuseValuePicker.classList.contains.mockReturnValue(false);
   mockFuseValuePicker.classList.remove.mockClear();
   mockFuseValuePicker.classList.toggle.mockClear();
+  mockGlassOptionsContainer.classList.toggle.mockClear();
+  mockGlassSpeedOptionsContainer.classList.toggle.mockClear();
+  mockGlassSizeSelect.value = '';
+  mockGlassSlowBlowCheckbox.checked = false;
+  mockGlassSlowBlowCheckbox.disabled = false;
+  mockGlassFastBlowCheckbox.checked = false;
+  mockGlassFastBlowCheckbox.disabled = false;
   state.fuseValue = '';
   state.fuseType = 'Glass';
   state.hardwareType = 'Fuse';
+  state.glassSize = '';
+  state.glassSpeed = '';
   mockFuseValueSelect.disabled = false;
   mockFuseValueSelect.value = '';
   mockFuseValuePickerButton.disabled = true;
@@ -245,6 +281,57 @@ describe('fuse type selection behaviour', () => {
     expect(mockFuseValuePickerButton.classList.remove).toHaveBeenCalledWith('is-invalid');
     expect(mockFuseValuePickerButton.removeAttribute).toHaveBeenCalledWith('aria-invalid');
     expect(mockFuseValuePicker.classList.toggle).toHaveBeenCalledWith('is-invalid', false);
+  });
+
+  it('reveals the glass options for panel mount holders and keeps the selected size', () => {
+    state.glassSize = '5 × 20 mm';
+    state.glassSpeed = 'Fast Blow';
+
+    setFuseTypeSelection('Panel Mount Fuse Holder', { triggerUpdate: false });
+
+    expect(mockGlassOptionsContainer.classList.toggle).toHaveBeenCalledWith('d-none', false);
+    expect(mockGlassSpeedOptionsContainer.classList.toggle).toHaveBeenCalledWith('d-none', true);
+    expect(mockGlassSizeSelect.value).toBe('5 × 20 mm');
+    expect(state.glassSpeed).toBe('');
+    expect(mockGlassSlowBlowCheckbox.checked).toBe(false);
+    expect(mockGlassFastBlowCheckbox.checked).toBe(false);
+    expect(mockGlassSlowBlowCheckbox.disabled).toBe(true);
+    expect(mockGlassFastBlowCheckbox.disabled).toBe(true);
+  });
+
+  it('hides and clears the glass options when switching to blade fuses', () => {
+    state.fuseType = 'Panel Mount Fuse Holder';
+    state.glassSize = '6.3 × 32 mm (1/4″ × 1-1/4″)';
+    mockGlassSizeSelect.value = state.glassSize;
+    state.glassSpeed = 'Slow Blow (Time Delay)';
+
+    setFuseTypeSelection('Blade', { triggerUpdate: false });
+
+    expect(mockGlassOptionsContainer.classList.toggle).toHaveBeenCalledWith('d-none', true);
+    expect(state.glassSize).toBe('');
+    expect(mockGlassSizeSelect.value).toBe('');
+    expect(mockGlassSpeedOptionsContainer.classList.toggle).toHaveBeenCalledWith('d-none', false);
+    expect(state.glassSpeed).toBe('');
+    expect(mockGlassSlowBlowCheckbox.checked).toBe(false);
+    expect(mockGlassFastBlowCheckbox.checked).toBe(false);
+    expect(mockGlassSlowBlowCheckbox.disabled).toBe(false);
+    expect(mockGlassFastBlowCheckbox.disabled).toBe(false);
+  });
+
+  it('restores fuse speed options when switching back to glass fuses', () => {
+    setFuseTypeSelection('Panel Mount Fuse Holder', { triggerUpdate: false });
+    state.glassSpeed = 'Slow Blow (Time Delay)';
+
+    setFuseTypeSelection('Glass', { triggerUpdate: false });
+
+    expect(mockGlassSpeedOptionsContainer.classList.toggle).toHaveBeenLastCalledWith(
+      'd-none',
+      false,
+    );
+    expect(mockGlassSlowBlowCheckbox.disabled).toBe(false);
+    expect(mockGlassFastBlowCheckbox.disabled).toBe(false);
+    expect(mockGlassSlowBlowCheckbox.checked).toBe(true);
+    expect(mockGlassFastBlowCheckbox.checked).toBe(false);
   });
 });
 

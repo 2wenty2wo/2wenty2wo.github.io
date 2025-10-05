@@ -56,6 +56,7 @@ const {
   fuseTypePickerList,
   fuseValueContainer,
   glassOptionsContainer,
+  glassSpeedOptionsContainer,
   fuseValueSelect,
   fuseValuePicker,
   fuseValuePickerButton,
@@ -237,8 +238,8 @@ const validSwitchTypeIds = new Set(switchTypeOptions.map(option => option.id));
 const switchTypeMap = new Map(switchTypeOptions.map(option => [option.id, option]));
 const FUSE_TYPE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const DEFAULT_FUSE_TYPE = 'Glass';
-const CARTRIDGE_FUSE_TYPES = new Set(['Glass', 'Ceramic']);
 const PANEL_MOUNT_FUSE_HOLDER_TYPE = 'Panel Mount Fuse Holder';
+const CARTRIDGE_FUSE_TYPES = new Set(['Glass', 'Ceramic', PANEL_MOUNT_FUSE_HOLDER_TYPE]);
 const FUSE_TYPES_WITHOUT_AMPS = new Set([PANEL_MOUNT_FUSE_HOLDER_TYPE]);
 const validFuseTypeIds = new Set(fuseTypeOptions.map(option => option.id));
 const FUSE_VALUE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
@@ -3825,28 +3826,51 @@ export function populateFuseValues() {
 export function updateGlassOptionVisibility({ resetIfHidden = false } = {}) {
   const shouldShow =
     state.hardwareType === 'Fuse' && CARTRIDGE_FUSE_TYPES.has(state.fuseType);
+  const requiresSpeedOptions =
+    shouldShow && state.fuseType !== PANEL_MOUNT_FUSE_HOLDER_TYPE;
   if (glassOptionsContainer) {
     glassOptionsContainer.classList.toggle('d-none', !shouldShow);
+  }
+  if (glassSpeedOptionsContainer) {
+    glassSpeedOptionsContainer.classList.toggle('d-none', shouldShow ? !requiresSpeedOptions : false);
   }
   if (shouldShow) {
     if (glassSizeSelect) {
       glassSizeSelect.value = state.glassSize || '';
     }
-    if (glassSlowBlowCheckbox && glassFastBlowCheckbox) {
-      glassSlowBlowCheckbox.checked = state.glassSpeed.startsWith('Slow');
-      glassFastBlowCheckbox.checked = state.glassSpeed.startsWith('Fast');
+    if (glassSlowBlowCheckbox) {
+      glassSlowBlowCheckbox.disabled = !requiresSpeedOptions;
+      glassSlowBlowCheckbox.checked =
+        requiresSpeedOptions && state.glassSpeed.startsWith('Slow');
+    }
+    if (glassFastBlowCheckbox) {
+      glassFastBlowCheckbox.disabled = !requiresSpeedOptions;
+      glassFastBlowCheckbox.checked =
+        requiresSpeedOptions && state.glassSpeed.startsWith('Fast');
+    }
+    if (!requiresSpeedOptions) {
+      state.glassSpeed = '';
     }
   } else if (resetIfHidden) {
     state.glassSpeed = '';
     state.glassSize = '';
     if (glassSlowBlowCheckbox) {
       glassSlowBlowCheckbox.checked = false;
+      glassSlowBlowCheckbox.disabled = false;
     }
     if (glassFastBlowCheckbox) {
       glassFastBlowCheckbox.checked = false;
+      glassFastBlowCheckbox.disabled = false;
     }
     if (glassSizeSelect) {
       glassSizeSelect.value = '';
+    }
+  } else {
+    if (glassSlowBlowCheckbox) {
+      glassSlowBlowCheckbox.disabled = false;
+    }
+    if (glassFastBlowCheckbox) {
+      glassFastBlowCheckbox.disabled = false;
     }
   }
 }
