@@ -531,7 +531,6 @@ function applyValidationFeedback() {
         container: switchTypeContainer,
         messageElement: switchTypeMessage,
         valid: switchValid,
-        message: switchValid ? '' : 'Select a switch type',
       });
       syncSwitchTypePicker({ isValid: switchValid });
     } else {
