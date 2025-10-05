@@ -685,7 +685,6 @@ function applyValidationFeedback() {
       container: componentMountContainer,
       messageElement: componentMountMessage,
       valid: mountValid,
-      message: mountValid ? '' : 'Choose a mounting style',
     });
     syncComponentMountPicker({ isValid: mountValid });
 
@@ -721,28 +720,24 @@ function applyValidationFeedback() {
       container: mosfetChannelField,
       messageElement: mosfetChannelMessage,
       valid: mosfetChannelValid,
-      message: mosfetChannelValid ? '' : 'Select a channel type',
     });
     updateInputFieldState({
       input: mosfetPartSelect,
       container: mosfetPartField,
       messageElement: mosfetPartMessage,
       valid: mosfetPartValid,
-      message: mosfetPartValid ? '' : 'Choose a MOSFET part number',
     });
     updateInputFieldState({
       input: potentiometerValueSelect,
       container: potentiometerValueField,
       messageElement: potentiometerValueMessage,
       valid: potentiometerValueValid,
-      message: potentiometerValueValid ? '' : 'Select a potentiometer value',
     });
     updateInputFieldState({
       input: potentiometerTaperSelect,
       container: potentiometerTaperField,
       messageElement: potentiometerTaperMessage,
       valid: potentiometerTaperValid,
-      message: potentiometerTaperValid ? '' : 'Select a taper',
     });
     syncResistorValuePicker({ isValid: resistorValid });
     syncCapacitorValuePicker({ isValid: capacitorValid });
