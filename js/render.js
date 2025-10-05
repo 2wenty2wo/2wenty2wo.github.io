@@ -367,7 +367,9 @@ export function isLabelReady() {
     return Boolean(state.connectorCategory);
   }
   if (state.hardwareType === 'Custom') {
-    return Boolean(state.customLine1 && state.customLine1.trim());
+    const hasLine1 = Boolean((state.customLine1 || '').trim());
+    const hasLine2 = Boolean((state.customLine2 || '').trim());
+    return hasLine1 || hasLine2;
   }
   if (state.hardwareType === 'Bearing') {
     return Boolean(state.bearingType);
@@ -815,8 +817,9 @@ function applyValidationFeedback() {
   }
 
   if (hardwareType === 'Custom') {
-    const title = (state.customLine1 || '').trim();
-    const valid = title.length > 0;
+    const line1 = (state.customLine1 || '').trim();
+    const line2 = (state.customLine2 || '').trim();
+    const valid = line1.length > 0 || line2.length > 0;
     updateInputFieldState({
       input: customLine1Input,
       container: customLine1Field,
@@ -1308,8 +1311,11 @@ function buildTextLines() {
   };
 
   if (state.hardwareType === 'Custom') {
-    const line1 = (state.customLine1 || '').trim() || 'Custom Label';
-    const line2 = (state.customLine2 || '').trim();
+    const line1Value = (state.customLine1 || '').trim();
+    const line2Value = (state.customLine2 || '').trim();
+    const hasAnyCustomText = line1Value.length > 0 || line2Value.length > 0;
+    const line1 = hasAnyCustomText ? line1Value : 'Custom Label';
+    const line2 = line2Value;
     return applyTextVisibility({ line1, line2, line3: '' });
   }
 
