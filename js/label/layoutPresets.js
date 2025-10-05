@@ -80,6 +80,19 @@ export const defaultLayoutPresets = {
       location: 'top-right',
       max_pct_of_text_zone_width: 32,
     },
+    __parts: {
+      Switch: {
+        __sub_parts: {
+          'switch-type:microswitch-roller': {
+            text_zone: {
+              main: {
+                wrap_mode: 'wrap',
+              },
+            },
+          },
+        },
+      },
+    },
   },
   18: {
     padding_mm: 0,
@@ -121,6 +134,20 @@ export const defaultLayoutPresets = {
       location: 'top-right',
       max_pct_of_text_zone_width: 32,
     },
+    __parts: {
+      Switch: {
+        __sub_parts: {
+          'switch-type:microswitch-roller': {
+            text_zone: {
+              main: {
+                wrap_mode: 'wrap',
+              },
+            },
+            media_zone_width_pct_max_user: 50,
+          },
+        },
+      },
+    },
   },
   24: {
     padding_mm: 0,
@@ -161,6 +188,22 @@ export const defaultLayoutPresets = {
       margin_mm: 0.8,
       location: 'top-right',
       max_pct_of_text_zone_width: 32,
+    },
+    __parts: {
+      Switch: {
+        __sub_parts: {
+          'switch-type:microswitch-roller': {
+            text_zone: {
+              main: {
+                wrap_mode: 'wrap',
+              },
+            },
+            media_zone_width_pct_max_user: 50,
+            media_zone_width_pct_max: 38,
+            icon_padding_mm: 0.4,
+          },
+        },
+      },
     },
   },
 };
