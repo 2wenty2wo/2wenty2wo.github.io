@@ -168,6 +168,11 @@ const fuseIllustrations = {
     alt: 'Blade fuse illustration',
     aspectRatio: 854 / 797,
   },
+  'Panel Mount Fuse Holder': {
+    src: 'images/fuses/fuse_holder_panel_mount.svg',
+    alt: 'Panel mount fuse holder illustration',
+    aspectRatio: 673 / 669,
+  },
 };
 
 function formatMillimeters(value) {
@@ -1285,7 +1290,11 @@ function buildTextLines() {
 
   if (state.hardwareType === 'Fuse') {
     const valueLabel = state.fuseValue ? `${state.fuseValue} A` : 'Fuse';
-    const typeLabel = state.fuseType ? `${state.fuseType} Fuse` : 'Fuse';
+    const fuseTypeLabel = (state.fuseType || '').trim();
+    const needsFuseSuffix = fuseTypeLabel && !/fuse/i.test(fuseTypeLabel);
+    const typeLabel = fuseTypeLabel
+      ? `${fuseTypeLabel}${needsFuseSuffix ? ' Fuse' : ''}`
+      : 'Fuse';
     const typeParts = [typeLabel];
     if (state.glassSize) {
       typeParts.push(state.glassSize);
@@ -1496,6 +1505,11 @@ function buildTextLines() {
   const line2 = state.standard ? state.standard : state.notes || '';
   return applyTextVisibility({ line1, line2, line3: '' });
 }
+
+export function buildTextLinesForTest() {
+  return buildTextLines();
+}
+
 function hidePreviewContent() {
   if (!labelPreviewImage) {
     return;
