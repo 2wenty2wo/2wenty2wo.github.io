@@ -1485,6 +1485,7 @@ function ensureTextFits({
     width: 0,
     height: contentRect.height,
     horizontalOffsetPx: 0,
+    horizontalOffsetLimits: { min: 0, max: 0 },
   };
 
   const applyHorizontalOffsetConstraints = () => {
@@ -1517,6 +1518,15 @@ function ensureTextFits({
     textRect.height = contentRect.height;
     return applyHorizontalOffsetConstraints();
   };
+
+  if (!hasText) {
+    mediaWidthPx = mediaPresent ? contentRect.width : 0;
+    textRect.x = contentRect.x;
+    textRect.width = 0;
+    textRect.height = contentRect.height;
+    applyHorizontalOffsetConstraints();
+    return { mediaWidthPx, textRect };
+  }
 
   let effectiveTextWidthPx = recomputeTextRect();
   for (let i = 0; i < 4; i += 1) {
