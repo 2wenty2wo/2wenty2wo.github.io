@@ -157,6 +157,7 @@ const STORAGE_VERSION = 2;
 const STORAGE_KEY = `gridfinity-layout-presets:v${STORAGE_VERSION}`;
 const LEGACY_STORAGE_KEYS = ['gridfinity-layout-presets'];
 const PARTS_KEY = '__parts';
+const SUB_PARTS_KEY = '__sub_parts';
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -287,7 +288,7 @@ function extractBaseOverride(entry) {
   return Object.keys(base).length > 0 ? base : null;
 }
 
-function extractPartOverride(entry, partType) {
+function getPartEntry(entry, partType) {
   if (!entry || typeof entry !== 'object' || !partType) {
     return null;
   }
@@ -295,26 +296,61 @@ function extractPartOverride(entry, partType) {
   if (!map || typeof map !== 'object') {
     return null;
   }
-  const partOverride = map[partType];
-  if (!partOverride || typeof partOverride !== 'object') {
+  const partEntry = map[partType];
+  if (!partEntry || typeof partEntry !== 'object') {
     return null;
   }
-  return partOverride;
+  return partEntry;
+}
+
+function extractPartOverride(entry, partType) {
+  const partEntry = getPartEntry(entry, partType);
+  if (!partEntry) {
+    return null;
+  }
+  const { [SUB_PARTS_KEY]: _ignored, ...rest } = partEntry;
+  return Object.keys(rest).length > 0 ? rest : null;
+}
+
+function extractSubPartOverride(entry, partType, subPartType) {
+  if (!subPartType) {
+    return null;
+  }
+  const partEntry = getPartEntry(entry, partType);
+  if (!partEntry) {
+    return null;
+  }
+  const subParts = partEntry[SUB_PARTS_KEY];
+  if (!subParts || typeof subParts !== 'object') {
+    return null;
+  }
+  const override = subParts[subPartType];
+  if (!override || typeof override !== 'object') {
+    return null;
+  }
+  return override;
 }
 
 export function getPresetOverride(heightMm, options = {}) {
   const overrides = loadPresetOverrides();
   const key = resolveKey(heightMm);
   const entry = getOverrideEntry(overrides, key);
-  const { partType = null } = options || {};
-  const override = partType ? extractPartOverride(entry, partType) : extractBaseOverride(entry);
+  const { partType = null, subPartType = null } = options || {};
+  let override = null;
+  if (partType) {
+    override = subPartType
+      ? extractSubPartOverride(entry, partType, subPartType)
+      : extractPartOverride(entry, partType);
+  } else {
+    override = extractBaseOverride(entry);
+  }
   return override ? clone(override) : null;
 }
 
 function deepMerge(base, override) {
   const merged = Array.isArray(base) ? [...base] : { ...base };
   Object.keys(override || {}).forEach(key => {
-    if (key === PARTS_KEY) {
+    if (key === PARTS_KEY || key === SUB_PARTS_KEY) {
       if (override[key] && typeof override[key] === 'object') {
         merged[key] = deepMerge(base[key] || {}, override[key]);
       }
@@ -340,11 +376,17 @@ export function getActiveLayoutPreset(heightMm, options = {}) {
   if (baseOverride) {
     result = deepMerge(result, baseOverride);
   }
-  const { partType = null } = options || {};
+  const { partType = null, subPartType = null } = options || {};
   if (partType) {
     const partOverride = extractPartOverride(entry, partType);
     if (partOverride) {
       result = deepMerge(result, partOverride);
+    }
+    if (subPartType) {
+      const subOverride = extractSubPartOverride(entry, partType, subPartType);
+      if (subOverride) {
+        result = deepMerge(result, subOverride);
+      }
     }
   }
   return result;
@@ -357,15 +399,48 @@ function hasNonPartKeys(entry) {
   return Object.keys(entry).some(key => key !== PARTS_KEY);
 }
 
+function cloneSubPartsMap(subParts) {
+  if (!subParts || typeof subParts !== 'object') {
+    return null;
+  }
+  const cloned = {};
+  Object.keys(subParts).forEach(key => {
+    const value = subParts[key];
+    if (value && typeof value === 'object' && Object.keys(value).length > 0) {
+      cloned[key] = clone(value);
+    }
+  });
+  return Object.keys(cloned).length > 0 ? cloned : null;
+}
+
+function sanitizePartEntry(entry) {
+  if (!entry || typeof entry !== 'object') {
+    return null;
+  }
+  const { [SUB_PARTS_KEY]: subPartsRaw, ...rest } = entry;
+  const sanitized = {};
+  Object.keys(rest).forEach(key => {
+    const value = rest[key];
+    if (value !== undefined) {
+      sanitized[key] = clone(value);
+    }
+  });
+  const subParts = cloneSubPartsMap(subPartsRaw);
+  if (subParts) {
+    sanitized[SUB_PARTS_KEY] = subParts;
+  }
+  return Object.keys(sanitized).length > 0 ? sanitized : null;
+}
+
 function clonePartsMap(parts) {
   if (!parts || typeof parts !== 'object') {
     return null;
   }
   const cloned = {};
   Object.keys(parts).forEach(key => {
-    const value = parts[key];
-    if (value !== undefined) {
-      cloned[key] = clone(value);
+    const entry = sanitizePartEntry(parts[key]);
+    if (entry) {
+      cloned[key] = entry;
     }
   });
   return Object.keys(cloned).length > 0 ? cloned : null;
@@ -375,11 +450,56 @@ export function setPresetOverride(heightMm, preset, options = {}) {
   const overrides = loadPresetOverrides();
   const key = resolveKey(heightMm);
   const entry = getOverrideEntry(overrides, key) ? clone(overrides[key]) : {};
-  const { partType = null } = options || {};
+  const { partType = null, subPartType = null } = options || {};
   if (partType) {
     const parts = entry[PARTS_KEY] && typeof entry[PARTS_KEY] === 'object' ? { ...entry[PARTS_KEY] } : {};
-    if (preset && Object.keys(preset).length > 0) {
-      parts[partType] = clone(preset);
+    let partEntry = sanitizePartEntry(parts[partType]) || {};
+    if (subPartType) {
+      const subParts = partEntry[SUB_PARTS_KEY]
+        ? { ...partEntry[SUB_PARTS_KEY] }
+        : {};
+      if (preset && Object.keys(preset).length > 0) {
+        subParts[subPartType] = clone(preset);
+      } else {
+        delete subParts[subPartType];
+      }
+      const cleanedSubParts = cloneSubPartsMap(subParts);
+      if (cleanedSubParts) {
+        partEntry[SUB_PARTS_KEY] = cleanedSubParts;
+      } else {
+        delete partEntry[SUB_PARTS_KEY];
+      }
+    } else if (preset && Object.keys(preset).length > 0) {
+      const sanitized = clone(preset);
+      delete sanitized[PARTS_KEY];
+      delete sanitized[SUB_PARTS_KEY];
+      const existingSubParts = partEntry[SUB_PARTS_KEY]
+        ? cloneSubPartsMap(partEntry[SUB_PARTS_KEY])
+        : null;
+      const nextEntry = clone(sanitized);
+      if (existingSubParts) {
+        nextEntry[SUB_PARTS_KEY] = existingSubParts;
+      }
+      partEntry = nextEntry;
+    } else {
+      if (partEntry[SUB_PARTS_KEY]) {
+        const cleaned = cloneSubPartsMap(partEntry[SUB_PARTS_KEY]);
+        if (cleaned) {
+          Object.keys(partEntry).forEach(key => {
+            if (key !== SUB_PARTS_KEY) {
+              delete partEntry[key];
+            }
+          });
+          partEntry[SUB_PARTS_KEY] = cleaned;
+        } else {
+          Object.keys(partEntry).forEach(key => delete partEntry[key]);
+        }
+      } else {
+        Object.keys(partEntry).forEach(key => delete partEntry[key]);
+      }
+    }
+    if (Object.keys(partEntry).length > 0) {
+      parts[partType] = partEntry;
     } else {
       delete parts[partType];
     }
@@ -397,21 +517,27 @@ export function setPresetOverride(heightMm, preset, options = {}) {
   } else if (preset && Object.keys(preset).length > 0) {
     const sanitized = clone(preset);
     delete sanitized[PARTS_KEY];
+    delete sanitized[SUB_PARTS_KEY];
     const parts = entry[PARTS_KEY] && typeof entry[PARTS_KEY] === 'object' ? entry[PARTS_KEY] : null;
     const nextEntry = clone(sanitized);
     if (parts && Object.keys(parts).length > 0) {
-      nextEntry[PARTS_KEY] = parts;
+      nextEntry[PARTS_KEY] = clonePartsMap(parts);
     }
     overrides[key] = nextEntry;
   } else {
     if (entry[PARTS_KEY]) {
-      overrides[key] = { [PARTS_KEY]: entry[PARTS_KEY] };
+      const cleanedParts = clonePartsMap(entry[PARTS_KEY]);
+      if (cleanedParts) {
+        overrides[key] = { [PARTS_KEY]: cleanedParts };
+      } else {
+        delete overrides[key];
+      }
     } else {
       delete overrides[key];
     }
   }
   savePresetOverrides(overrides);
-  notifyPresetListeners(key, { partType });
+  notifyPresetListeners(key, { partType, subPartType });
 }
 
 export function exportLayoutPresets(includeDefaults = false) {

@@ -16,11 +16,14 @@ let editorState = {
   active: false,
   initialized: false,
   currentHeightKey: null,
-  currentPartKey: null,
-  contextPartKey: null,
-  contextPartLabel: '',
   context: null,
   latestToken: 0,
+  scopeHierarchy: null,
+  scopeOptions: [],
+  currentScope: null,
+  contextScope: null,
+  contextPartType: null,
+  contextPartLabel: '',
 };
 
 let lastKeySequence = [];
@@ -342,39 +345,41 @@ function getScopeControlElements(panel) {
   return { container, select, clearButton };
 }
 
-function updateScopeControls(panel, { contextPartKey, partLabel, selectedPartKey, heightKey }) {
+function updateScopeControls(panel, { hierarchy = [], selectedScope = null, heightKey = null }) {
   const controls = getScopeControlElements(panel);
   if (!controls) {
     return;
   }
   const { container, select, clearButton } = controls;
-  if (!contextPartKey) {
+  const flattened = flattenScopeHierarchy(hierarchy);
+  editorState.scopeOptions = flattened;
+  if (flattened.length === 0) {
     container.hidden = true;
-    if (select) {
-      select.value = '';
-    }
     if (clearButton) {
       clearButton.hidden = true;
     }
     return;
   }
   container.hidden = false;
-  const displayLabel = partLabel || contextPartKey;
+  const resolvedSelection = resolveScopeSelection(flattened, selectedScope, flattened[0]);
   if (select) {
     select.textContent = '';
-    const allOption = document.createElement('option');
-    allOption.value = '';
-    allOption.textContent = 'All parts';
-    const partOption = document.createElement('option');
-    partOption.value = contextPartKey;
-    partOption.textContent = displayLabel;
-    select.append(allOption, partOption);
-    const value = selectedPartKey === contextPartKey ? contextPartKey : '';
-    select.value = value;
+    flattened.forEach((entry, index) => {
+      const option = document.createElement('option');
+      option.value = String(index);
+      const indent = entry.depth > 0 ? `${'— '.repeat(entry.depth)}` : '';
+      option.textContent = indent ? `${indent}${entry.label}` : entry.label;
+      select.appendChild(option);
+    });
+    const selectedIndex = flattened.findIndex(entry => scopeMatches(entry, resolvedSelection));
+    select.value = String(selectedIndex >= 0 ? selectedIndex : 0);
   }
   if (clearButton) {
-    clearButton.textContent = `Clear ${displayLabel} override`;
-    const hasOverride = Boolean(heightKey && getPresetOverride(heightKey, { partType: contextPartKey }));
+    const activeEntry = resolvedSelection || flattened[0] || null;
+    const label = activeEntry?.label || 'All parts';
+    clearButton.textContent = `Clear ${label} override`;
+    const overrideOptions = scopeToPresetOptions(activeEntry);
+    const hasOverride = Boolean(heightKey) && Boolean(getPresetOverride(heightKey, overrideOptions));
     clearButton.hidden = false;
     clearButton.disabled = !hasOverride;
   }
@@ -388,32 +393,32 @@ function setupScopeControls(panel) {
   const { select, clearButton } = controls;
   if (select) {
     select.addEventListener('change', () => {
-      const selectedValue = select.value;
-      const contextPartKey = editorState.contextPartKey;
-      editorState.currentPartKey = selectedValue && selectedValue === contextPartKey ? contextPartKey : null;
+      const index = Number.parseInt(select.value, 10);
+      const options = editorState.scopeOptions || [];
+      const nextScope = Number.isInteger(index) && options[index] ? options[index] : options[0] || null;
+      editorState.currentScope = nextScope;
       const heightKey = editorState.currentHeightKey || resolveHeightKeyFromContext(editorState.context);
       if (!heightKey) {
         return;
       }
       bindPresetInputs(panel, heightKey, {
-        partType: editorState.currentPartKey,
-        contextPartType: editorState.contextPartKey,
-        partLabel: editorState.contextPartLabel,
+        scopeHierarchy: editorState.scopeHierarchy || [],
+        selectedScope: editorState.currentScope,
       });
     });
   }
   if (clearButton) {
     clearButton.addEventListener('click', () => {
       const heightKey = editorState.currentHeightKey || resolveHeightKeyFromContext(editorState.context);
-      const partKey = editorState.contextPartKey;
-      if (!heightKey || !partKey) {
+      const scope = editorState.currentScope;
+      if (!heightKey) {
         return;
       }
-      setPresetOverride(heightKey, null, { partType: partKey });
+      const overrideOptions = scopeToPresetOptions(scope);
+      setPresetOverride(heightKey, null, overrideOptions);
       bindPresetInputs(panel, heightKey, {
-        partType: editorState.currentPartKey,
-        contextPartType: editorState.contextPartKey,
-        partLabel: editorState.contextPartLabel,
+        scopeHierarchy: editorState.scopeHierarchy || [],
+        selectedScope: editorState.currentScope,
       });
     });
   }
@@ -485,15 +490,23 @@ function createSelectField({ label, options, value, onChange }) {
 function bindPresetInputs(panel, heightKey, options = {}) {
   const body = panel.querySelector('.layout-editor-body');
   body.textContent = '';
-  const { partType: selectedPartType = null, contextPartType = null, partLabel = '' } = options || {};
+  const providedHierarchy = Array.isArray(options.scopeHierarchy)
+    ? cloneScopeHierarchy(options.scopeHierarchy)
+    : [];
+  const hierarchy = providedHierarchy.length > 0 ? providedHierarchy : [{ label: 'All parts', partType: null, subPartType: null }];
+  editorState.scopeHierarchy = cloneScopeHierarchy(hierarchy);
+  const flattened = flattenScopeHierarchy(editorState.scopeHierarchy);
+  const fallbackScope = options.fallbackScope || editorState.contextScope?.active || flattened[0] || null;
+  const normalizedSelection = resolveScopeSelection(flattened, options.selectedScope, fallbackScope);
+  editorState.currentScope = normalizedSelection;
   updateScopeControls(panel, {
-    contextPartKey: contextPartType,
-    partLabel,
-    selectedPartKey: selectedPartType,
+    hierarchy: editorState.scopeHierarchy,
+    selectedScope: normalizedSelection,
     heightKey,
   });
-  const preset = getActiveLayoutPreset(heightKey, selectedPartType ? { partType: selectedPartType } : undefined);
-  const override = getPresetOverride(heightKey, selectedPartType ? { partType: selectedPartType } : undefined) || {};
+  const presetOptions = scopeToPresetOptions(normalizedSelection);
+  const preset = getActiveLayoutPreset(heightKey, presetOptions);
+  const override = getPresetOverride(heightKey, presetOptions) || {};
 
   const setValue = (path, value) => {
     let target = override;
@@ -505,8 +518,11 @@ function bindPresetInputs(panel, heightKey, options = {}) {
       target = target[keys[i]];
     }
     target[keys[keys.length - 1]] = value;
-    setPresetOverride(heightKey, override, selectedPartType ? { partType: selectedPartType } : undefined);
-    notifyPresetListeners(heightKey, { partType: selectedPartType || null });
+    setPresetOverride(heightKey, override, presetOptions);
+    notifyPresetListeners(heightKey, {
+      partType: normalizedSelection?.partType ?? null,
+      subPartType: normalizedSelection?.subPartType ?? null,
+    });
   };
 
   const createTextField = ({ label, value, onChange }) => {
@@ -780,6 +796,128 @@ function resolveHeightKeyFromContext(ctx) {
   return ctx?.geometry?.labelHeightMm || ctx?.geometry?.printableHeightMm || 12;
 }
 
+function cloneScopeHierarchy(hierarchy) {
+  if (!Array.isArray(hierarchy)) {
+    return [];
+  }
+  return hierarchy
+    .map(node => {
+      if (!node || typeof node !== 'object') {
+        return null;
+      }
+      const cloned = {
+        label: typeof node.label === 'string' ? node.label : '',
+        partType: Object.hasOwn(node, 'partType') ? node.partType ?? null : null,
+        subPartType: Object.hasOwn(node, 'subPartType') ? node.subPartType ?? null : null,
+      };
+      if (Array.isArray(node.children) && node.children.length > 0) {
+        cloned.children = cloneScopeHierarchy(node.children);
+      }
+      return cloned;
+    })
+    .filter(Boolean);
+}
+
+function scopeMatches(a, b) {
+  if (!a || !b) {
+    return false;
+  }
+  const partA = Object.hasOwn(a, 'partType') ? a.partType ?? null : null;
+  const partB = Object.hasOwn(b, 'partType') ? b.partType ?? null : null;
+  const subA = Object.hasOwn(a, 'subPartType') ? a.subPartType ?? null : null;
+  const subB = Object.hasOwn(b, 'subPartType') ? b.subPartType ?? null : null;
+  return partA === partB && subA === subB;
+}
+
+function flattenScopeHierarchy(hierarchy, depth = 0, result = []) {
+  if (!Array.isArray(hierarchy)) {
+    return result;
+  }
+  hierarchy.forEach(node => {
+    if (!node || typeof node !== 'object') {
+      return;
+    }
+    result.push({
+      label: typeof node.label === 'string' && node.label ? node.label : 'All parts',
+      partType: Object.hasOwn(node, 'partType') ? node.partType ?? null : null,
+      subPartType: Object.hasOwn(node, 'subPartType') ? node.subPartType ?? null : null,
+      depth,
+    });
+    if (Array.isArray(node.children) && node.children.length > 0) {
+      flattenScopeHierarchy(node.children, depth + 1, result);
+    }
+  });
+  return result;
+}
+
+function resolveScopeSelection(flattened, preferred, fallback) {
+  if (Array.isArray(flattened)) {
+    if (preferred) {
+      const match = flattened.find(entry => scopeMatches(entry, preferred));
+      if (match) {
+        return match;
+      }
+    }
+    if (fallback) {
+      const match = flattened.find(entry => scopeMatches(entry, fallback));
+      if (match) {
+        return match;
+      }
+    }
+    return flattened.length > 0 ? flattened[0] : null;
+  }
+  return null;
+}
+
+function scopeToPresetOptions(scope) {
+  if (!scope || !scope.partType) {
+    return undefined;
+  }
+  const options = { partType: scope.partType };
+  if (scope.subPartType) {
+    options.subPartType = scope.subPartType;
+  }
+  return options;
+}
+
+function buildLegacyScope(partType, partLabel) {
+  const hierarchy = [{ label: 'All parts', partType: null, subPartType: null }];
+  if (partType) {
+    hierarchy.push({ label: partLabel || partType, partType, subPartType: null });
+  }
+  const active = partType
+    ? { label: partLabel || partType, partType, subPartType: null }
+    : { label: 'All parts', partType: null, subPartType: null };
+  return { hierarchy, active };
+}
+
+function resolveScopeContext(partType, partLabel, scope) {
+  if (scope && typeof scope === 'object') {
+    const hierarchy = cloneScopeHierarchy(scope.hierarchy);
+    const active = scope.active && typeof scope.active === 'object' ? scope.active : null;
+    if (hierarchy.length > 0) {
+      const normalizedActive =
+        active && (Object.hasOwn(active, 'partType') || Object.hasOwn(active, 'subPartType'))
+          ? {
+              label: typeof active.label === 'string' ? active.label : '',
+              partType: Object.hasOwn(active, 'partType') ? active.partType ?? null : null,
+              subPartType: Object.hasOwn(active, 'subPartType') ? active.subPartType ?? null : null,
+            }
+          : null;
+      const fallbackActive =
+        normalizedActive ||
+        hierarchy.find(node => scopeMatches(node, { partType, subPartType: null })) ||
+        hierarchy[0] ||
+        null;
+      return {
+        hierarchy,
+        active: fallbackActive,
+      };
+    }
+  }
+  return buildLegacyScope(partType, partLabel);
+}
+
 export function ensureLayoutEditor(context) {
   if (!isBrowser()) {
     return { active: false };
@@ -801,9 +939,12 @@ export function ensureLayoutEditor(context) {
       const ctx = editorState.context;
       const key = resolveHeightKeyFromContext(ctx);
       bindPresetInputs(panel, key, {
-        partType: editorState.currentPartKey,
-        contextPartType: editorState.contextPartKey,
-        partLabel: editorState.contextPartLabel,
+        scopeHierarchy:
+          editorState.scopeHierarchy && editorState.scopeHierarchy.length > 0
+            ? editorState.scopeHierarchy
+            : editorState.contextScope?.hierarchy || [],
+        selectedScope: editorState.currentScope,
+        fallbackScope: editorState.contextScope?.active || null,
       });
     });
     editorState.initialized = true;
@@ -827,19 +968,29 @@ export function ensureLayoutEditor(context) {
   }
   editorState.context = context;
   const key = resolveHeightKeyFromContext(context);
-  const contextPartKey =
-    typeof context?.partType === 'string' && context.partType ? context.partType : null;
+  const partContext = context?.partContext && typeof context.partContext === 'object' ? context.partContext : null;
+  const contextPartType =
+    typeof partContext?.partType === 'string' && partContext.partType
+      ? partContext.partType
+      : typeof context?.partType === 'string' && context.partType
+        ? context.partType
+        : null;
   const contextPartLabel =
-    typeof context?.partLabel === 'string' && context.partLabel
-      ? context.partLabel
-      : contextPartKey || '';
+    typeof partContext?.partLabel === 'string' && partContext.partLabel
+      ? partContext.partLabel
+      : typeof context?.partLabel === 'string' && context.partLabel
+        ? context.partLabel
+        : contextPartType || '';
+  const scopeSource = partContext?.scope || context?.partScope || null;
+  const previousScope = editorState.contextScope;
+  const resolvedScope = resolveScopeContext(contextPartType, contextPartLabel, scopeSource);
+  editorState.contextScope = resolvedScope;
   let shouldRebind = false;
-  if (editorState.contextPartKey !== contextPartKey) {
-    editorState.contextPartKey = contextPartKey;
-    editorState.contextPartLabel = contextPartLabel;
-    editorState.currentPartKey = contextPartKey;
+  if (editorState.contextPartType !== contextPartType) {
+    editorState.contextPartType = contextPartType;
     shouldRebind = true;
-  } else if (editorState.contextPartLabel !== contextPartLabel) {
+  }
+  if (editorState.contextPartLabel !== contextPartLabel) {
     editorState.contextPartLabel = contextPartLabel;
     shouldRebind = true;
   }
@@ -847,17 +998,24 @@ export function ensureLayoutEditor(context) {
     editorState.currentHeightKey = key;
     shouldRebind = true;
   }
+  const prevHierarchySignature = JSON.stringify(previousScope?.hierarchy || []);
+  const nextHierarchySignature = JSON.stringify(resolvedScope.hierarchy || []);
+  if (prevHierarchySignature !== nextHierarchySignature) {
+    shouldRebind = true;
+  }
+  if (!scopeMatches(previousScope?.active, resolvedScope.active)) {
+    shouldRebind = true;
+  }
   if (shouldRebind) {
     bindPresetInputs(panel, key, {
-      partType: editorState.currentPartKey,
-      contextPartType: editorState.contextPartKey,
-      partLabel: editorState.contextPartLabel,
+      scopeHierarchy: resolvedScope.hierarchy,
+      selectedScope: resolvedScope.active,
+      fallbackScope: resolvedScope.active,
     });
   } else {
     updateScopeControls(panel, {
-      contextPartKey: editorState.contextPartKey,
-      partLabel: editorState.contextPartLabel,
-      selectedPartKey: editorState.currentPartKey,
+      hierarchy: editorState.scopeHierarchy || resolvedScope.hierarchy,
+      selectedScope: editorState.currentScope || resolvedScope.active,
       heightKey: key,
     });
   }
