@@ -984,6 +984,146 @@ test('subtitle lines remain distinct with optional ellipsis on the last line', a
   );
 });
 
+test('main wrap mode toggle influences layout', async () => {
+  clearPresetOverrides();
+  try {
+    const geometry = {
+      labelWidthMm: 37,
+      labelHeightMm: 12,
+      printableWidthMm: 33,
+      printableHeightMm: 10,
+      marginX: 2,
+      marginY: 1,
+    };
+    const longMain =
+      'Ultra Long Main Line Content That Should Wrap Into Multiple Lines When The Mode Allows It';
+    const textLines = { line1: longMain, line2: '', line3: '' };
+
+    setPresetOverride(geometry.labelHeightMm, {
+      text_zone: { main: { wrap_mode: 'wrap' } },
+    });
+    const wrapped = await renderLabelSVG({
+      geometry,
+      pxPerMm,
+      textLines,
+      hardwareInfo: null,
+      qrContent: '',
+    });
+    const wrappedLines = wrapped.textLayout.main?.lines || [];
+    assert.ok(
+      wrappedLines.length >= 2,
+      'enabling wrap mode should allow the main line to span multiple lines',
+    );
+
+    clearPresetOverrides();
+    setPresetOverride(geometry.labelHeightMm, {
+      text_zone: { main: { wrap_mode: 'fit' } },
+    });
+    const fitted = await renderLabelSVG({
+      geometry,
+      pxPerMm,
+      textLines,
+      hardwareInfo: null,
+      qrContent: '',
+    });
+    const fittedLines = fitted.textLayout.main?.lines || [];
+    assert.equal(
+      fittedLines.length,
+      1,
+      'fit mode should keep the main line on a single line even when the content is long',
+    );
+  } finally {
+    clearPresetOverrides();
+  }
+});
+
+test('subtitle wrap modes apply per line', async () => {
+  clearPresetOverrides();
+  try {
+    const geometry = {
+      labelWidthMm: 37,
+      labelHeightMm: 12,
+      printableWidthMm: 33,
+      printableHeightMm: 10,
+      marginX: 2,
+      marginY: 1,
+    };
+    const longSubtitle =
+      'Extremely verbose subtitle information that would normally require wrapping to fit comfortably within the label width';
+
+    setPresetOverride(geometry.labelHeightMm, {
+      text_zone: { sub: { subtitle1_wrap_mode: 'fit', subtitle2_wrap_mode: 'wrap' } },
+    });
+    const fitSubtitle = await renderLabelSVG({
+      geometry,
+      pxPerMm,
+      textLines: { line1: 'Main', line2: longSubtitle, line3: '' },
+      hardwareInfo: null,
+      qrContent: '',
+    });
+    const fitSubtitleLines = fitSubtitle.textLayout.sub?.lines || [];
+    assert.equal(
+      fitSubtitleLines.length,
+      1,
+      'disabling wrap on subtitle 1 should keep it to a single rendered line',
+    );
+
+    clearPresetOverrides();
+    setPresetOverride(geometry.labelHeightMm, {
+      text_zone: { sub: { subtitle1_wrap_mode: 'wrap', subtitle2_wrap_mode: 'wrap' } },
+    });
+    const wrapSubtitle = await renderLabelSVG({
+      geometry,
+      pxPerMm,
+      textLines: { line1: 'Main', line2: longSubtitle, line3: '' },
+      hardwareInfo: null,
+      qrContent: '',
+    });
+    const wrapSubtitleLines = wrapSubtitle.textLayout.sub?.lines || [];
+    assert.ok(
+      wrapSubtitleLines.length >= 2,
+      'enabling wrap on subtitle 1 should allow it to expand onto multiple lines',
+    );
+
+    clearPresetOverrides();
+    setPresetOverride(geometry.labelHeightMm, {
+      text_zone: { sub: { subtitle1_wrap_mode: 'wrap', subtitle2_wrap_mode: 'fit' } },
+    });
+    const fitThirdLine = await renderLabelSVG({
+      geometry,
+      pxPerMm,
+      textLines: { line1: 'Main', line2: '', line3: longSubtitle },
+      hardwareInfo: null,
+      qrContent: '',
+    });
+    const fitThirdLines = fitThirdLine.textLayout.sub?.lines || [];
+    assert.equal(
+      fitThirdLines.length,
+      1,
+      'disabling wrap on subtitle 2 should keep it on one line when it appears alone',
+    );
+
+    clearPresetOverrides();
+    setPresetOverride(geometry.labelHeightMm, {
+      text_zone: { sub: { subtitle1_wrap_mode: 'wrap', subtitle2_wrap_mode: 'wrap' } },
+    });
+    const wrapThirdLine = await renderLabelSVG({
+      geometry,
+      pxPerMm,
+      textLines: { line1: 'Main', line2: '', line3: longSubtitle },
+      hardwareInfo: null,
+      qrContent: '',
+    });
+    const wrapThirdLines = wrapThirdLine.textLayout.sub?.lines || [];
+    assert.ok(
+      wrapThirdLines.length >= 2,
+      'enabling wrap on subtitle 2 should allow it to span multiple lines',
+    );
+  } finally {
+    clearPresetOverrides();
+  }
+});
+
 test('QR generator hook places QR image alongside text', async () => {
   const geometry = {
     labelWidthMm: 37,
@@ -1212,7 +1352,7 @@ test('layout editor keeps latest render height when exporting presets after rapi
     listeners.forEach(listener => listener({ currentTarget: paddingField.input, target: paddingField.input }));
 
     const storedRaw =
-      window.localStorage.getItem('gridfinity-layout-presets:v2') ||
+      window.localStorage.getItem('gridfinity-layout-presets:v3') ||
       window.localStorage.getItem('gridfinity-layout-presets');
     assert.ok(storedRaw, 'overrides should persist after editing latest height');
     const stored = JSON.parse(storedRaw);

@@ -21,11 +21,14 @@ export const defaultLayoutPresets = {
         max_pt: 10,
         letter_spacing_adj: -0.3,
         font_weight: 700,
+        wrap_mode: 'fit',
       },
       sub: {
         min_pt: 4.4,
         max_pt: 9,
         line_height_pct: 101,
+        subtitle1_wrap_mode: 'wrap',
+        subtitle2_wrap_mode: 'wrap',
       },
       compact_join_subtitles: false,
       compact_separator: ' \u00b7 ',
@@ -59,11 +62,14 @@ export const defaultLayoutPresets = {
         max_pt: 14,
         letter_spacing_adj: -0.3,
         font_weight: 700,
+        wrap_mode: 'fit',
       },
       sub: {
         min_pt: 6.1,
         max_pt: 10.5,
         line_height_pct: 112,
+        subtitle1_wrap_mode: 'wrap',
+        subtitle2_wrap_mode: 'wrap',
       },
       compact_join_subtitles: false,
       compact_separator: ' \u00b7 ',
@@ -97,11 +103,14 @@ export const defaultLayoutPresets = {
         max_pt: 20,
         letter_spacing_adj: -0.35,
         font_weight: 700,
+        wrap_mode: 'fit',
       },
       sub: {
         min_pt: 8,
         max_pt: 13,
         line_height_pct: 120,
+        subtitle1_wrap_mode: 'wrap',
+        subtitle2_wrap_mode: 'wrap',
       },
       compact_join_subtitles: false,
       compact_separator: ' \u00b7 ',
@@ -135,11 +144,14 @@ export const defaultLayoutPresets = {
         max_pt: 24,
         letter_spacing_adj: -0.35,
         font_weight: 700,
+        wrap_mode: 'fit',
       },
       sub: {
         min_pt: 7,
         max_pt: 15,
         line_height_pct: 120,
+        subtitle1_wrap_mode: 'wrap',
+        subtitle2_wrap_mode: 'wrap',
       },
       compact_join_subtitles: true,
       compact_separator: ' \u00b7 ',
@@ -153,7 +165,7 @@ export const defaultLayoutPresets = {
   },
 };
 
-const STORAGE_VERSION = 2;
+const STORAGE_VERSION = 3;
 const STORAGE_KEY = `gridfinity-layout-presets:v${STORAGE_VERSION}`;
 const LEGACY_STORAGE_KEYS = ['gridfinity-layout-presets'];
 const PARTS_KEY = '__parts';
