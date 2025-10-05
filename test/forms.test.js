@@ -1,5 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import {
+  componentImageMap,
   fuseTypeOptions,
   fuseValues,
   mosfetChannelOptions,
@@ -336,6 +337,10 @@ describe('fuse type selection behaviour', () => {
 });
 
 describe('MOSFET option data', () => {
+  it('uses dedicated artwork for the MOSFET SMD mount', () => {
+    expect(componentImageMap.MOSFET.SMD).toBe('images/mosfet/mosfet_smd.svg');
+  });
+
   it('provides shared artwork for each MOSFET channel type option', () => {
     expect(mosfetChannelOptions).toEqual(
       expect.arrayContaining([
