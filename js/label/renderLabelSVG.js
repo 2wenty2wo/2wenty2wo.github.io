@@ -1263,10 +1263,7 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
   zones.main.effectiveWidth = mainWidthForFitPx;
   zones.sub.effectiveWidth = Math.max(0, subtitleWidthPx - horizontalInsetPx);
 
-  let mainBaseline = mainHeight > 0 ? zones.main.y + mainHeight / 2 : zones.main.y;
-  if (mainHeight > 0 && hasMainMetrics) {
-    mainBaseline += (mainAscent - mainDescent) / 2;
-  }
+  const mainBaseline = mainHeight > 0 ? zones.main.y + mainHeight / 2 : zones.main.y;
 
   const subtitle = {
     ...subtitleFit,
