@@ -5603,6 +5603,7 @@ export function initEventHandlers() {
   if (customLine2Input) {
     customLine2Input.addEventListener('input', () => {
       state.customLine2 = customLine2Input.value;
+      updateDownloadState();
       updatePreview();
     });
   }
