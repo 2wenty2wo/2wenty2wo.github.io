@@ -1,5 +1,10 @@
 import { beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { fuseValues, mosfetChannelOptions, mosfetPartOptions } from '../js/data.js';
+import {
+  fuseTypeOptions,
+  fuseValues,
+  mosfetChannelOptions,
+  mosfetPartOptions,
+} from '../js/data.js';
 
 const createClassListMock = () => ({
   add: jest.fn(),
@@ -8,7 +13,7 @@ const createClassListMock = () => ({
   contains: jest.fn(() => false),
 });
 
-const fuseValueSelect = {
+const mockFuseValueSelect = {
   options: [],
   disabled: false,
   value: '',
@@ -25,7 +30,7 @@ const fuseValueSelect = {
   },
 };
 
-const fuseValuePickerList = {
+const mockFuseValuePickerList = {
   items: [],
   hidden: false,
   appendChild(item) {
@@ -47,7 +52,7 @@ const fuseValuePickerList = {
   },
 };
 
-const fuseValuePickerButton = {
+const mockFuseValuePickerButton = {
   disabled: true,
   attributes: {},
   classList: createClassListMock(),
@@ -60,7 +65,7 @@ const fuseValuePickerButton = {
   querySelector: jest.fn(() => null),
 };
 
-const fuseValuePicker = {
+const mockFuseValuePicker = {
   classList: {
     add: jest.fn(),
     remove: jest.fn(),
@@ -72,10 +77,10 @@ const fuseValuePicker = {
 jest.mock('../js/dom-elements.js', () => ({
   __esModule: true,
   elements: {
-    fuseValueSelect,
-    fuseValuePickerList,
-    fuseValuePickerButton,
-    fuseValuePicker,
+    fuseValueSelect: mockFuseValueSelect,
+    fuseValuePickerList: mockFuseValuePickerList,
+    fuseValuePickerButton: mockFuseValuePickerButton,
+    fuseValuePicker: mockFuseValuePicker,
   },
 }));
 
@@ -142,22 +147,36 @@ beforeAll(async () => {
 
 beforeEach(() => {
   createElementMock.mockClear();
-  fuseValueSelect.options = [];
-  fuseValueSelect.value = '';
-  fuseValuePickerList.items = [];
-  fuseValuePickerList.hidden = false;
-  fuseValuePickerButton.disabled = true;
-  fuseValuePickerButton.attributes = {};
-  fuseValuePickerButton.classList.add.mockClear();
-  fuseValuePickerButton.classList.remove.mockClear();
-  fuseValuePickerButton.classList.toggle.mockClear();
-  fuseValuePickerButton.setAttribute.mockClear();
-  fuseValuePickerButton.removeAttribute.mockClear();
-  fuseValuePickerButton.querySelector.mockClear();
-  fuseValuePicker.classList.contains.mockReturnValue(false);
-  fuseValuePicker.classList.remove.mockClear();
-  fuseValuePicker.classList.toggle.mockClear();
+  mockFuseValueSelect.options = [];
+  mockFuseValueSelect.value = '';
+  mockFuseValuePickerList.items = [];
+  mockFuseValuePickerList.hidden = false;
+  mockFuseValuePickerButton.disabled = true;
+  mockFuseValuePickerButton.attributes = {};
+  mockFuseValuePickerButton.classList.add.mockClear();
+  mockFuseValuePickerButton.classList.remove.mockClear();
+  mockFuseValuePickerButton.classList.toggle.mockClear();
+  mockFuseValuePickerButton.setAttribute.mockClear();
+  mockFuseValuePickerButton.removeAttribute.mockClear();
+  mockFuseValuePickerButton.querySelector.mockClear();
+  mockFuseValuePicker.classList.contains.mockReturnValue(false);
+  mockFuseValuePicker.classList.remove.mockClear();
+  mockFuseValuePicker.classList.toggle.mockClear();
   state.fuseValue = '';
+});
+
+describe('fuse type option data', () => {
+  it('includes the panel mount fuse holder option with artwork', () => {
+    expect(fuseTypeOptions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'Panel Mount Fuse Holder',
+          label: 'Panel Mount Fuse Holder',
+          image: 'images/fuses/fuse_holder_panel_mount.svg',
+        }),
+      ]),
+    );
+  });
 });
 
 describe('populateFuseValues', () => {
@@ -172,13 +191,13 @@ describe('populateFuseValues', () => {
 
     populateFuseValues();
 
-    const selectValues = fuseValueSelect.options.map(option => option.value);
+    const selectValues = mockFuseValueSelect.options.map(option => option.value);
     expect(selectValues).toContain('3.15');
-    expect(fuseValueSelect.value).toBe('3.15');
+    expect(mockFuseValueSelect.value).toBe('3.15');
 
-    const pickerValues = fuseValuePickerList.items.map(item => item.dataset.value);
+    const pickerValues = mockFuseValuePickerList.items.map(item => item.dataset.value);
     expect(pickerValues).toContain('3.15');
-    expect(fuseValuePickerList.hidden).toBe(true);
+    expect(mockFuseValuePickerList.hidden).toBe(true);
   });
 });
 

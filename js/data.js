@@ -78,6 +78,11 @@ export const fuseTypeOptions = [
   { id: 'Glass', label: 'Glass Fuse', image: 'images/fuses/glass_fuse.svg' },
   { id: 'Ceramic', label: 'Ceramic Fuse', image: 'images/fuses/ceramic_fuse.svg' },
   { id: 'Blade', label: 'Blade Fuse', image: 'images/fuses/blade_fuse.svg' },
+  {
+    id: 'Panel Mount Fuse Holder',
+    label: 'Panel Mount Fuse Holder',
+    image: 'images/fuses/fuse_holder_panel_mount.svg',
+  },
 ];
 
 export const switchTypeOptions = [
