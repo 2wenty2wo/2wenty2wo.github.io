@@ -1409,14 +1409,24 @@ function layoutIcons({
     return items;
   }
   // row layout
-  const slotWidth = (innerWidth - gapPx * (count - 1)) / count;
-  let cursorX = rect.x + paddingPx;
-  mediaItems.forEach(item => {
-    const { width, height } = resolveDimensions(item, slotWidth, innerHeight);
-    const x = cursorX + (slotWidth - width) / 2;
-    const y = rect.y + (rect.height - height) / 2;
+  const gapTotal = gapPx * Math.max(0, count - 1);
+  const naturalSizes = mediaItems.map(item =>
+    resolveDimensions(item, Number.POSITIVE_INFINITY, innerHeight),
+  );
+  const naturalTotalWidth = naturalSizes.reduce((sum, size) => sum + size.width, 0);
+  const availableForIcons = Math.max(0, innerWidth - gapTotal);
+  const scale = naturalTotalWidth > 0 ? Math.min(1, availableForIcons / naturalTotalWidth) : 1;
+  const scaledTotalWidth = naturalTotalWidth * scale;
+  const leftoverSpace = Math.max(0, innerWidth - (scaledTotalWidth + gapTotal));
+  let cursorX = rect.x + paddingPx + leftoverSpace / 2;
+  mediaItems.forEach((item, index) => {
+    const natural = naturalSizes[index];
+    const width = natural.width * scale;
+    const height = natural.height * scale;
+    const x = cursorX;
+    const y = rect.y + paddingPx + (innerHeight - height) / 2;
     items.push({ ...item, x, y, width, height });
-    cursorX += slotWidth + gapPx;
+    cursorX += width + gapPx;
   });
   return items;
 }
