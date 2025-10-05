@@ -138,7 +138,7 @@ export const componentImageMap = {
   },
   MOSFET: {
     'Through-Hole': 'images/mosfet/mosfet.svg',
-    SMD: 'images/mosfet/mosfet.svg',
+    SMD: 'images/mosfet/mosfet_smd.svg',
     default: 'images/mosfet/mosfet.svg',
   },
 };
