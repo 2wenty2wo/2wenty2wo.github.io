@@ -351,12 +351,19 @@ describe('MOSFET option data', () => {
   });
 
   it('includes popular MOSFET part numbers with matching art', () => {
-    const ids = mosfetPartOptions.map(option => option.id);
-    expect(ids).toEqual(
-      expect.arrayContaining(['IRLZ44N', 'AO3400A', 'BS170', 'IRF520', 'FQP30N06L']),
-    );
+    const expectedImages = {
+      IRLZ44N: 'images/mosfet/mosfet.svg',
+      AO3400A: 'images/mosfet/mosfet_smd.svg',
+      BS170: 'images/mosfet/mosfet.svg',
+      IRF520: 'images/mosfet/mosfet.svg',
+      FQP30N06L: 'images/mosfet/mosfet.svg',
+    };
+
+    const ids = mosfetPartOptions.map(option => option.id).sort();
+    expect(ids).toEqual(Object.keys(expectedImages).sort());
+
     mosfetPartOptions.forEach(option => {
-      expect(option.image).toBe('images/mosfet/mosfet.svg');
+      expect(option.image).toBe(expectedImages[option.id]);
     });
   });
 });

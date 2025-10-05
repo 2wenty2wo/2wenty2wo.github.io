@@ -336,7 +336,7 @@ export const mosfetPartOptions = [
     label: 'IRLZ44N Logic-Level MOSFET',
     image: 'images/mosfet/mosfet.svg',
   },
-  { id: 'AO3400A', label: 'AO3400A MOSFET', image: 'images/mosfet/mosfet.svg' },
+  { id: 'AO3400A', label: 'AO3400A MOSFET', image: 'images/mosfet/mosfet_smd.svg' },
   { id: 'BS170', label: 'BS170 MOSFET', image: 'images/mosfet/mosfet.svg' },
   { id: 'IRF520', label: 'IRF520 MOSFET', image: 'images/mosfet/mosfet.svg' },
   { id: 'FQP30N06L', label: 'FQP30N06L MOSFET', image: 'images/mosfet/mosfet.svg' },
