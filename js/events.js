@@ -6,7 +6,6 @@ import {
   handleCustomImageFile,
   clearCustomImage,
   setCustomGraphicSource,
-  setCustomIconStyle,
   setCustomIconSelection,
   refreshCustomIconOptions,
   handleStandardSelectKeydown,
@@ -46,6 +45,8 @@ import {
   updateComponentValueUi,
   setBearingTypeSelection,
   syncBearingTypePicker,
+  setCustomPartSelection,
+  syncCustomPartPicker,
 } from './forms.js';
 import {
   updatePreview,
@@ -126,12 +127,15 @@ const {
   lengthInput,
   notesInput,
   customGraphicSourceRadios,
-  customIconStyleSelect,
   customIconSearchInput,
   customIconSelect,
   customIconPicker,
   customIconPickerButton,
   customIconPickerList,
+  customPartSelect,
+  customPartPicker,
+  customPartPickerButton,
+  customPartPickerList,
   customLine1Input,
   customLine2Input,
   customImageInput,
@@ -202,6 +206,7 @@ let potentiometerValuePickerOpen = false;
 let potentiometerTaperPickerOpen = false;
 let bearingTypePickerOpen = false;
 let customIconPickerOpen = false;
+let customPartPickerOpen = false;
 let connectorCategoryPickerOpen = false;
 let connectorSeriesPickerOpen = false;
 
@@ -1618,7 +1623,7 @@ function handleCustomIconListKeydown(event) {
           name: option.dataset.value || '',
           unicode: option.dataset.unicode || '',
           label: option.dataset.label || option.textContent || option.dataset.value || '',
-          style: option.dataset.style || (customIconStyleSelect ? customIconStyleSelect.value : undefined),
+          style: option.dataset.style || 'solid',
         });
         closeCustomIconPicker({ focusButton: true });
       }
@@ -1652,7 +1657,7 @@ function handleCustomIconListClick(event) {
     name: option.dataset.value || '',
     unicode: option.dataset.unicode || '',
     label: option.dataset.label || option.textContent || option.dataset.value || '',
-    style: option.dataset.style || (customIconStyleSelect ? customIconStyleSelect.value : undefined),
+    style: option.dataset.style || 'solid',
   });
   closeCustomIconPicker({ focusButton: true });
 }
@@ -1672,6 +1677,216 @@ function handleCustomIconListFocusOut() {
     const active = document.activeElement;
     if (!active || !customIconPicker.contains(active)) {
       closeCustomIconPicker();
+    }
+  }, 0);
+}
+
+function getCustomPartOptionElements() {
+  if (!customPartPickerList) {
+    return [];
+  }
+  return Array.from(customPartPickerList.querySelectorAll('[role="option"]'));
+}
+
+function focusCustomPartOption(option) {
+  if (!option) {
+    return;
+  }
+  const options = getCustomPartOptionElements();
+  options.forEach(opt => {
+    opt.tabIndex = opt === option ? 0 : -1;
+  });
+  option.focus();
+  if (typeof option.scrollIntoView === 'function') {
+    option.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function openCustomPartPicker() {
+  if (!customPartPicker || !customPartPickerButton || !customPartPickerList) {
+    return;
+  }
+  if (customPartPickerButton.disabled) {
+    return;
+  }
+  if (customPartPickerOpen) {
+    return;
+  }
+  customPartPickerOpen = true;
+  customPartPicker.classList.add('is-open');
+  customPartPickerList.hidden = false;
+  customPartPickerButton.setAttribute('aria-expanded', 'true');
+  syncCustomPartPicker({ isValid: true });
+
+  const options = getCustomPartOptionElements();
+  if (options.length === 0) {
+    return;
+  }
+  const currentValue = typeof state.customPartId === 'string' ? state.customPartId : '';
+  const selectedOption = options.find(option => option.dataset.value === currentValue);
+  focusCustomPartOption(selectedOption || options[0]);
+}
+
+function closeCustomPartPicker({ focusButton = false } = {}) {
+  if (!customPartPicker || !customPartPickerButton || !customPartPickerList) {
+    return;
+  }
+  if (!customPartPickerOpen) {
+    if (focusButton && !customPartPickerButton.disabled) {
+      customPartPickerButton.focus();
+    }
+    return;
+  }
+  customPartPickerOpen = false;
+  customPartPicker.classList.remove('is-open');
+  customPartPickerList.hidden = true;
+  customPartPickerButton.setAttribute('aria-expanded', 'false');
+  if (focusButton && !customPartPickerButton.disabled) {
+    customPartPickerButton.focus();
+  }
+}
+
+function toggleCustomPartPicker() {
+  if (customPartPickerOpen) {
+    closeCustomPartPicker({ focusButton: false });
+  } else {
+    openCustomPartPicker();
+  }
+}
+
+function moveCustomPartOption(delta) {
+  if (!customPartPickerList) {
+    return;
+  }
+  const options = getCustomPartOptionElements();
+  if (options.length === 0) {
+    return;
+  }
+  const active = document.activeElement;
+  const activeOption = active && customPartPickerList.contains(active)
+    ? active.closest('[role="option"]')
+    : null;
+  let index = activeOption ? options.indexOf(activeOption) : -1;
+  if (index === -1) {
+    const currentValue = typeof state.customPartId === 'string' ? state.customPartId : '';
+    index = options.findIndex(option => option.dataset.value === currentValue);
+  }
+  let nextIndex = index + delta;
+  if (nextIndex < 0) {
+    nextIndex = options.length - 1;
+  } else if (nextIndex >= options.length) {
+    nextIndex = 0;
+  }
+  const nextOption = options[nextIndex];
+  if (nextOption) {
+    focusCustomPartOption(nextOption);
+  }
+}
+
+function handleCustomPartButtonKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    openCustomPartPicker();
+    moveCustomPartOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    openCustomPartPicker();
+    moveCustomPartOption(-1);
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    toggleCustomPartPicker();
+  }
+}
+
+function handleCustomPartListKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    moveCustomPartOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    moveCustomPartOption(-1);
+    return;
+  }
+  if (key === 'Home') {
+    event.preventDefault();
+    const options = getCustomPartOptionElements();
+    if (options.length > 0) {
+      focusCustomPartOption(options[0]);
+    }
+    return;
+  }
+  if (key === 'End') {
+    event.preventDefault();
+    const options = getCustomPartOptionElements();
+    if (options.length > 0) {
+      focusCustomPartOption(options[options.length - 1]);
+    }
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    const target = event.target;
+    if (target && target instanceof HTMLElement) {
+      const option = target.closest('[role="option"]');
+      if (option) {
+        setCustomGraphicSource('parts');
+        setCustomPartSelection(option.dataset.value || '');
+        closeCustomPartPicker({ focusButton: true });
+      }
+    }
+    return;
+  }
+  if (key === 'Escape') {
+    event.preventDefault();
+    closeCustomPartPicker({ focusButton: true });
+    return;
+  }
+  if (key === 'Tab') {
+    closeCustomPartPicker();
+  }
+}
+
+function handleCustomPartListClick(event) {
+  if (!customPartPickerList) {
+    return;
+  }
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+  const option = target.closest('[role="option"]');
+  if (!option || !customPartPickerList.contains(option)) {
+    return;
+  }
+  event.preventDefault();
+  setCustomGraphicSource('parts');
+  setCustomPartSelection(option.dataset.value || '');
+  closeCustomPartPicker({ focusButton: true });
+}
+
+function handleCustomPartListFocusOut() {
+  if (!customPartPickerOpen) {
+    return;
+  }
+  setTimeout(() => {
+    if (!customPartPickerOpen) {
+      return;
+    }
+    if (!customPartPicker) {
+      closeCustomPartPicker();
+      return;
+    }
+    const active = document.activeElement;
+    if (!active || !customPartPicker.contains(active)) {
+      closeCustomPartPicker();
     }
   }, 0);
 }
@@ -4942,6 +5157,11 @@ function handleDocumentPointer(event) {
       closeCustomIconPicker();
     }
   }
+  if (customPartPickerOpen && customPartPicker) {
+    if (!(target instanceof Node) || !customPartPicker.contains(target)) {
+      closeCustomPartPicker();
+    }
+  }
 }
 
 function handleDocumentFocusIn(event) {
@@ -5019,6 +5239,11 @@ function handleDocumentFocusIn(event) {
   if (customIconPickerOpen && customIconPicker) {
     if (!(target instanceof Node) || !customIconPicker.contains(target)) {
       closeCustomIconPicker();
+    }
+  }
+  if (customPartPickerOpen && customPartPicker) {
+    if (!(target instanceof Node) || !customPartPicker.contains(target)) {
+      closeCustomPartPicker();
     }
   }
 }
@@ -5395,12 +5620,6 @@ export function initEventHandlers() {
     });
   }
 
-  if (customIconStyleSelect) {
-    customIconStyleSelect.addEventListener('change', () => {
-      setCustomIconStyle(customIconStyleSelect.value);
-    });
-  }
-
   if (customIconSearchInput) {
     let iconSearchTimeoutId = 0;
     const scheduleIconSearch = () => {
@@ -5422,7 +5641,7 @@ export function initEventHandlers() {
     customIconSelect.addEventListener('change', () => {
       const selected = customIconSelect.selectedOptions[0];
       if (!selected) {
-        setCustomIconSelection({ name: '', unicode: '', label: '', style: customIconStyleSelect ? customIconStyleSelect.value : undefined });
+        setCustomIconSelection({ name: '', unicode: '', label: '', style: 'solid' });
         closeCustomIconPicker();
         return;
       }
@@ -5430,10 +5649,28 @@ export function initEventHandlers() {
         name: selected.value,
         unicode: selected.dataset.unicode || '',
         label: selected.dataset.label || selected.textContent || selected.value,
-        style: selected.dataset.style || (customIconStyleSelect ? customIconStyleSelect.value : undefined),
+        style: selected.dataset.style || 'solid',
       });
       closeCustomIconPicker();
     });
+  }
+
+  if (customPartSelect) {
+    customPartSelect.addEventListener('change', () => {
+      setCustomGraphicSource('parts');
+      setCustomPartSelection(customPartSelect.value);
+    });
+  }
+
+  if (customPartPickerButton && customPartPickerList) {
+    customPartPickerButton.addEventListener('click', event => {
+      event.preventDefault();
+      toggleCustomPartPicker();
+    });
+    customPartPickerButton.addEventListener('keydown', handleCustomPartButtonKeydown);
+    customPartPickerList.addEventListener('click', handleCustomPartListClick);
+    customPartPickerList.addEventListener('keydown', handleCustomPartListKeydown);
+    customPartPickerList.addEventListener('focusout', handleCustomPartListFocusOut);
   }
 
   if (customImageInput) {
@@ -5604,7 +5841,8 @@ export function initEventHandlers() {
     bearingTypePicker ||
     connectorCategoryPicker ||
     connectorSeriesPicker ||
-    customIconPicker
+    customIconPicker ||
+    customPartPicker
   ) {
     document.addEventListener('pointerdown', handleDocumentPointer);
     document.addEventListener('focusin', handleDocumentFocusIn);

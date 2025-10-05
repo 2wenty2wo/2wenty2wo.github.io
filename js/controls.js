@@ -18,6 +18,7 @@ import {
   populatePotentiometerValues,
   populatePotentiometerTapers,
   populateWasherTypeOptions,
+  populateCustomPartPicker,
   updateCustomImageUi,
   ensureCustomIconAsset,
   onHardwareTypeChange,
@@ -42,6 +43,7 @@ import {
   setPotentiometerTaperSelection,
   syncConnectorSeriesPicker,
   updateComponentValueUi,
+  setCustomPartSelection,
 } from './forms.js';
 import {
   updateDownloadState,
@@ -139,6 +141,7 @@ function applyStateToControls() {
   setNutTypeSelection(state.nutType || '', { triggerUpdate: false });
   setWasherTypeSelection(state.washerType || '', { triggerUpdate: false });
   setSwitchTypeSelection(state.switchType || '', { triggerUpdate: false });
+  setCustomPartSelection(state.customPartId || '', { triggerUpdate: false });
   if (textToggle) {
     textToggle.checked = state.showText;
     textToggle.setAttribute('aria-expanded', state.showText ? 'true' : 'false');
@@ -191,6 +194,7 @@ function init() {
   populatePotentiometerTapers();
   populateWasherTypeOptions();
   populateSwitchTypePicker();
+  populateCustomPartPicker();
   updateCustomImageUi();
   ensureCustomIconAsset();
   onHardwareTypeChange();

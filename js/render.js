@@ -939,7 +939,11 @@ function resolveHardwareImageInfo() {
     return null;
   }
   if (state.hardwareType === 'Custom') {
-    const source = state.customGraphicSource === 'icon' ? 'icon' : 'image';
+    const source = state.customGraphicSource === 'icon'
+      ? 'icon'
+      : state.customGraphicSource === 'parts'
+        ? 'parts'
+        : 'image';
     if (source === 'icon') {
       const hasIcon = Boolean(
         state.customIconName && (state.customIconSvgData || state.customIconUnicode),
@@ -949,9 +953,22 @@ function resolveHardwareImageInfo() {
         hasIcon,
         iconName: state.customIconName || '',
         iconUnicode: state.customIconUnicode || '',
-        iconStyle: state.customIconStyle || 'solid',
+        iconStyle: 'solid',
         iconLabel: state.customIconLabel || state.customIconName || 'Custom icon',
         iconSvgData: state.customIconSvgData || '',
+      };
+    }
+    if (source === 'parts') {
+      const partId = typeof state.customPartId === 'string' ? state.customPartId.trim() : '';
+      const imageSrc = partId ? hardwareTypeImageMap[partId] || '' : '';
+      if (!imageSrc) {
+        return null;
+      }
+      const altLabel = partId || 'Custom part icon';
+      return {
+        type: 'photo',
+        src: imageSrc,
+        alt: `${altLabel} illustration`,
       };
     }
     const hasImage = Boolean(state.customImageData);
@@ -1661,7 +1678,7 @@ function resolveComponentPartType(hardwareType) {
   return { partType, partLabel: label };
 }
 
-function resolveSubPartEntries(hardwareType, partType, partLabel) {
+function resolveSubPartEntries(hardwareType, partType) {
   const entries = [];
   let activeEntry = null;
 
@@ -1728,7 +1745,7 @@ function resolveLayoutPartContext() {
   let activeScope = hierarchy[0];
 
   if (partType) {
-    const { entries, activeEntry } = resolveSubPartEntries(hardwareType, partType, partLabel);
+    const { entries, activeEntry } = resolveSubPartEntries(hardwareType, partType);
     const partEntry = { label: partLabel || partType, partType, subPartType: null };
     if (entries.length > 0) {
       partEntry.children = entries.map(entry => ({ ...entry }));
