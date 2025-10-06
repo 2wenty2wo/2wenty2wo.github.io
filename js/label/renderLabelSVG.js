@@ -1166,18 +1166,10 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
   const horizontalInsetPx = Math.abs(horizontalOffsetPx);
   const blockOffsetRawPx = mmToPx(textPreset.block_offset_mm || 0, pxPerMm);
   const blockOffsetPx = Number.isFinite(blockOffsetRawPx) ? blockOffsetRawPx : 0;
-  const qrSizePx =
-    qrBounds && Number.isFinite(qrBounds.size)
-      ? qrBounds.size
-      : qrBounds && Number.isFinite(qrBounds.width)
-      ? qrBounds.width
-      : 0;
-  const qrMarginPx = qrBounds ? mmToPx(preset.qr?.margin_mm || 0, pxPerMm) : 0;
-  const qrReservedWidthPx = Math.max(0, qrSizePx + qrMarginPx);
-  const baseMainWidthPx = Math.max(0, zones.main.width - qrReservedWidthPx);
+  const baseMainWidthPx = Math.max(0, zones.main.width);
   const mainWidthForFitPx = Math.max(0, baseMainWidthPx - horizontalInsetPx);
   const subtitleCandidates = buildSubtitleCandidates(textLines, preset);
-  const baseSubWidthPx = Math.max(0, zones.sub.width - qrReservedWidthPx);
+  const baseSubWidthPx = Math.max(0, zones.sub.width);
   const subWidthForFitPx = Math.max(0, baseSubWidthPx - horizontalInsetPx);
   const subtitleWidthPx = baseSubWidthPx;
   const subtitleX = computeAlignedX(zones.sub.x, subtitleWidthPx, alignment) + horizontalOffsetPx;
