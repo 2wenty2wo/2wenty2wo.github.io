@@ -602,6 +602,12 @@ main {
   transition: background-color 0.2s ease;
 }
 
+.bolt-drive-picker__current-icon--no-background {
+  background: none !important;
+  border-radius: 0;
+  overflow: visible;
+}
+
 .bolt-drive-picker__current-icon.is-empty {
   visibility: hidden;
 }

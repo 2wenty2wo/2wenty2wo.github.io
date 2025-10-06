@@ -1206,6 +1206,26 @@ export function updateComponentValueUi({ resetIfHidden = true } = {}) {
         resistorValuePicker.classList.contains('is-open'),
     );
     resistorValuePickerButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+
+    const iconWrapper = resistorValuePickerButton.querySelector(
+      '.bolt-drive-picker__current-icon',
+    );
+    const iconImage = resistorValuePickerButton.querySelector(
+      '.bolt-drive-picker__current-icon-image',
+    );
+    if (iconWrapper && iconImage) {
+      if (showResistorValues) {
+        iconImage.src = 'images/resistors/omega.svg';
+        iconImage.hidden = false;
+        iconWrapper.classList.remove('is-empty');
+        iconWrapper.classList.add('bolt-drive-picker__current-icon--no-background');
+      } else {
+        iconImage.hidden = true;
+        iconImage.removeAttribute('src');
+        iconWrapper.classList.add('is-empty');
+        iconWrapper.classList.remove('bolt-drive-picker__current-icon--no-background');
+      }
+    }
   }
 
   if (resistorValuePickerList) {
@@ -1481,8 +1501,26 @@ export function syncResistorValuePicker({ isValid = true } = {}) {
 
   if (resistorValuePickerButton) {
     const label = resistorValuePickerButton.querySelector('.bolt-drive-picker__current-label');
+    const iconWrapper = resistorValuePickerButton.querySelector('.bolt-drive-picker__current-icon');
+    const iconImage = resistorValuePickerButton.querySelector(
+      '.bolt-drive-picker__current-icon-image',
+    );
     if (label) {
       label.textContent = sanitizedValue ? sanitizedValue : RESISTOR_VALUE_PLACEHOLDER_TEXT;
+    }
+
+    if (iconWrapper && iconImage) {
+      if (!resistorValuePickerButton.disabled) {
+        iconImage.src = 'images/resistors/omega.svg';
+        iconImage.hidden = false;
+        iconWrapper.classList.remove('is-empty');
+        iconWrapper.classList.add('bolt-drive-picker__current-icon--no-background');
+      } else {
+        iconImage.hidden = true;
+        iconImage.removeAttribute('src');
+        iconWrapper.classList.add('is-empty');
+        iconWrapper.classList.remove('bolt-drive-picker__current-icon--no-background');
+      }
     }
 
     if (isValid) {
