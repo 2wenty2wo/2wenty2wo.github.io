@@ -3929,7 +3929,18 @@ export function syncFuseValuePicker({ isValid = true } = {}) {
     }
     const iconWrapper = fuseValuePickerButton.querySelector('.bolt-drive-picker__current-icon');
     if (iconWrapper) {
-      iconWrapper.classList.add('is-empty');
+      const iconGlyph = iconWrapper.querySelector('.fuse-value-picker__glyph');
+      if (requiresValue) {
+        iconWrapper.classList.remove('is-empty');
+        if (iconGlyph) {
+          iconGlyph.classList.add('fa-solid', 'fa-a');
+        }
+      } else {
+        iconWrapper.classList.add('is-empty');
+        if (iconGlyph) {
+          iconGlyph.classList.remove('fa-solid', 'fa-a');
+        }
+      }
     }
 
     if (effectiveValidity) {
