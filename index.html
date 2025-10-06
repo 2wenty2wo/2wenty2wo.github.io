@@ -1193,15 +1193,26 @@
                   </div>
                   <div class="col-12 col-sm-6 thread-length-field" id="length-container">
                     <label for="length-input" class="form-label fw-semibold">Length</label>
-                    <input
-                      type="number"
-                      id="length-input"
-                      class="form-control picker-input"
-                      placeholder="e.g., 10"
-                      min="1"
-                      inputmode="decimal"
-                      aria-describedby="length-message"
-                    />
+                    <div class="picker-input-with-icon" id="length-input-wrapper">
+                      <span class="picker-input-with-icon__icon" aria-hidden="true">
+                        <img
+                          id="length-input-icon"
+                          class="picker-input-with-icon__icon-image"
+                          src=""
+                          alt=""
+                          hidden
+                        />
+                      </span>
+                      <input
+                        type="number"
+                        id="length-input"
+                        class="form-control picker-input picker-input-with-icon__input"
+                        placeholder="e.g., 10"
+                        min="1"
+                        inputmode="decimal"
+                        aria-describedby="length-message"
+                      />
+                    </div>
                     <div
                       id="length-message"
                       class="validation-message text-danger small mt-2 d-none"

@@ -11,6 +11,7 @@ import {
   nutTypeOptions,
   washerTypeOptions,
   hardwareCatalog,
+  hardwareImageFolders,
   hardwareTypeImageMap,
   connectorCatalog,
   STANDARD_PLACEHOLDER_TEXT,
@@ -48,6 +49,8 @@ const {
   threadLengthRow,
   lengthContainer,
   lengthInput,
+  lengthInputWrapper,
+  lengthInputIcon,
   fuseSelectionRow,
   fuseTypeContainer,
   fuseTypeSelect,
@@ -255,6 +258,39 @@ const validFuseTypeIds = new Set(fuseTypeOptions.map(option => option.id));
 const FUSE_VALUE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const validFuseValuesSet = new Set(fuseValues.map(value => String(value)));
 const ELECTRICAL_COMPONENT_TYPES = new Set(electricalComponentTypes);
+
+function syncThreadLengthInputIcon(nextType) {
+  if (!lengthInputWrapper || !lengthInputIcon) {
+    return;
+  }
+  const type = typeof nextType === 'string' ? nextType.trim() : state.hardwareType;
+  const shouldShowIcon = type === 'Bolt' || type === 'Screw';
+  if (!shouldShowIcon) {
+    lengthInputIcon.hidden = true;
+    lengthInputIcon.removeAttribute('src');
+    lengthInputIcon.removeAttribute('data-hardware-type');
+    lengthInputWrapper.classList.remove('has-icon');
+    return;
+  }
+
+  const folder = hardwareImageFolders[type];
+  if (!folder) {
+    lengthInputIcon.hidden = true;
+    lengthInputIcon.removeAttribute('src');
+    lengthInputIcon.removeAttribute('data-hardware-type');
+    lengthInputWrapper.classList.remove('has-icon');
+    return;
+  }
+
+  const currentType = lengthInputIcon.dataset.hardwareType || '';
+  if (currentType !== type) {
+    lengthInputIcon.src = `images/${folder}/thread_length.svg`;
+    lengthInputIcon.dataset.hardwareType = type;
+  }
+
+  lengthInputIcon.hidden = false;
+  lengthInputWrapper.classList.add('has-icon');
+}
 const COMPONENT_MOUNT_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const validComponentMounts = new Set(componentMountOptions.map(option => option.id));
 const RESISTOR_VALUE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
@@ -5262,6 +5298,8 @@ export function onHardwareTypeChange() {
   if (lengthContainer) {
     lengthContainer.style.display = requiresThreadDetails ? '' : 'none';
   }
+
+  syncThreadLengthInputIcon(type);
 
   if (switchSelectionRow) {
     switchSelectionRow.classList.toggle('d-none', !showSwitchFields);

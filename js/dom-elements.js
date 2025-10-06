@@ -15,6 +15,8 @@ const threadSizePickerList = document.getElementById('thread-size-picker-list');
 const threadLengthRow = document.getElementById('thread-length-row');
 const lengthContainer = document.getElementById('length-container');
 const lengthInput = document.getElementById('length-input');
+const lengthInputWrapper = document.getElementById('length-input-wrapper');
+const lengthInputIcon = document.getElementById('length-input-icon');
 const threadSizeMessage = document.getElementById('thread-size-message');
 const lengthMessage = document.getElementById('length-message');
 const nutTypeContainer = document.getElementById('nut-type-container');
@@ -239,6 +241,8 @@ export const elements = {
   threadLengthRow,
   lengthContainer,
   lengthInput,
+  lengthInputWrapper,
+  lengthInputIcon,
   threadSizeMessage,
   lengthMessage,
   nutTypeContainer,
