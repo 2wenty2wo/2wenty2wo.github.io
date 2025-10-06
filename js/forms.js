@@ -4357,11 +4357,7 @@ export function syncGlassSpeedPicker({
     }
     const iconWrapper = glassSpeedPickerButton.querySelector('.bolt-drive-picker__current-icon');
     if (iconWrapper) {
-      if (selectedOption) {
-        iconWrapper.classList.remove('is-empty');
-      } else {
-        iconWrapper.classList.add('is-empty');
-      }
+      iconWrapper.classList.remove('is-empty');
     }
     if (glassSpeedPickerButton.disabled) {
       glassSpeedPickerButton.setAttribute('aria-expanded', 'false');
@@ -4439,11 +4435,7 @@ export function syncGlassSizePicker({
     }
     const iconWrapper = glassSizePickerButton.querySelector('.bolt-drive-picker__current-icon');
     if (iconWrapper) {
-      if (selectedOption) {
-        iconWrapper.classList.remove('is-empty');
-      } else {
-        iconWrapper.classList.add('is-empty');
-      }
+      iconWrapper.classList.remove('is-empty');
     }
     if (glassSizePickerButton.disabled) {
       glassSizePickerButton.setAttribute('aria-expanded', 'false');
