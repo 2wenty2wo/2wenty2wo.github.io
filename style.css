@@ -109,6 +109,10 @@ main {
   margin: 0.5rem auto 0;
 }
 
+.height-options > * {
+  flex: 1 1 0;
+}
+
 .custom-icon-preview {
   display: inline-flex;
   align-items: center;
