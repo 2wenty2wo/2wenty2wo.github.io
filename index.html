@@ -1376,25 +1376,73 @@
                 </div>
                 <div id="glass-options-container" class="d-none">
                   <div class="row g-3">
-                    <div class="col-12 col-md-6">
+                    <div class="col-12 col-md-6" id="glass-speed-field">
                       <label for="glass-speed-select" class="form-label fw-semibold">Time</label>
-                      <div id="glass-speed-options">
-                        <select id="glass-speed-select" class="form-select">
+                      <div class="bolt-drive-picker" id="glass-speed-picker">
+                        <select id="glass-speed-select" class="visually-hidden">
                           <option value="">&nbsp;</option>
                           <option value="Slow-blow">Slow-blow</option>
                           <option value="Fast-blow">Fast-blow</option>
                         </select>
+                        <button
+                          type="button"
+                          class="bolt-drive-picker__button"
+                          id="glass-speed-picker-button"
+                          aria-haspopup="listbox"
+                          aria-expanded="false"
+                          aria-controls="glass-speed-picker-list"
+                        >
+                          <span class="bolt-drive-picker__current">
+                            <span class="bolt-drive-picker__current-icon is-empty" aria-hidden="true">
+                              <i class="fa-solid fa-stopwatch" aria-hidden="true"></i>
+                            </span>
+                            <span class="bolt-drive-picker__current-label">&nbsp;</span>
+                          </span>
+                          <span class="bolt-drive-picker__chevron" aria-hidden="true"></span>
+                        </button>
+                        <ul
+                          class="bolt-drive-picker__list"
+                          id="glass-speed-picker-list"
+                          role="listbox"
+                          aria-labelledby="glass-speed-picker-button"
+                          hidden
+                        ></ul>
                       </div>
                     </div>
-                    <div class="col-12 col-md-6">
+                    <div class="col-12 col-md-6" id="glass-size-field">
                       <label for="glass-size-select" class="form-label fw-semibold">Size</label>
-                      <select id="glass-size-select" class="form-select">
-                        <option value="">&nbsp;</option>
-                        <option value="5 × 20 mm">5 × 20 mm</option>
-                        <option value="6.3 × 32 mm (1/4″ × 1-1/4″)">
-                          6.3 × 32 mm (1/4″ × 1-1/4″)
-                        </option>
-                      </select>
+                      <div class="bolt-drive-picker" id="glass-size-picker">
+                        <select id="glass-size-select" class="visually-hidden">
+                          <option value="">&nbsp;</option>
+                          <option value="5 × 20 mm">5 × 20 mm</option>
+                          <option value="6.3 × 32 mm (1/4″ × 1-1/4″)">
+                            6.3 × 32 mm (1/4″ × 1-1/4″)
+                          </option>
+                        </select>
+                        <button
+                          type="button"
+                          class="bolt-drive-picker__button"
+                          id="glass-size-picker-button"
+                          aria-haspopup="listbox"
+                          aria-expanded="false"
+                          aria-controls="glass-size-picker-list"
+                        >
+                          <span class="bolt-drive-picker__current">
+                            <span class="bolt-drive-picker__current-icon is-empty" aria-hidden="true">
+                              <i class="fa-solid fa-arrows-left-right" aria-hidden="true"></i>
+                            </span>
+                            <span class="bolt-drive-picker__current-label">&nbsp;</span>
+                          </span>
+                          <span class="bolt-drive-picker__chevron" aria-hidden="true"></span>
+                        </button>
+                        <ul
+                          class="bolt-drive-picker__list"
+                          id="glass-size-picker-list"
+                          role="listbox"
+                          aria-labelledby="glass-size-picker-button"
+                          hidden
+                        ></ul>
+                      </div>
                     </div>
                   </div>
                 </div>

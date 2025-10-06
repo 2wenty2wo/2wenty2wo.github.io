@@ -47,12 +47,19 @@ const fuseTypePickerList = document.getElementById('fuse-type-picker-list');
 const fuseValueContainer = document.getElementById('fuse-value-container');
 const fuseTypeMessage = document.getElementById('fuse-type-message');
 const glassOptionsContainer = document.getElementById('glass-options-container');
-const glassSpeedOptionsContainer = document.getElementById('glass-speed-options');
+const glassSpeedField = document.getElementById('glass-speed-field');
+const glassSpeedPicker = document.getElementById('glass-speed-picker');
+const glassSpeedPickerButton = document.getElementById('glass-speed-picker-button');
+const glassSpeedPickerList = document.getElementById('glass-speed-picker-list');
 const glassSpeedSelect = document.getElementById('glass-speed-select');
 const fuseValueSelect = document.getElementById('fuse-value-select');
 const fuseValuePicker = document.getElementById('fuse-value-picker');
 const fuseValuePickerButton = document.getElementById('fuse-value-picker-button');
 const fuseValuePickerList = document.getElementById('fuse-value-picker-list');
+const glassSizeField = document.getElementById('glass-size-field');
+const glassSizePicker = document.getElementById('glass-size-picker');
+const glassSizePickerButton = document.getElementById('glass-size-picker-button');
+const glassSizePickerList = document.getElementById('glass-size-picker-list');
 const glassSizeSelect = document.getElementById('glass-size-select');
 const fuseValueMessage = document.getElementById('fuse-value-message');
 const notesInput = document.getElementById('notes-input');
@@ -272,12 +279,19 @@ export const elements = {
   fuseTypeMessage,
   fuseValueContainer,
   glassOptionsContainer,
-  glassSpeedOptionsContainer,
+  glassSpeedField,
+  glassSpeedPicker,
+  glassSpeedPickerButton,
+  glassSpeedPickerList,
   glassSpeedSelect,
   fuseValueSelect,
   fuseValuePicker,
   fuseValuePickerButton,
   fuseValuePickerList,
+  glassSizeField,
+  glassSizePicker,
+  glassSizePickerButton,
+  glassSizePickerList,
   glassSizeSelect,
   fuseValueMessage,
   notesInput,

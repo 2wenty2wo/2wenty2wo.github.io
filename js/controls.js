@@ -19,6 +19,8 @@ import {
   populatePotentiometerTapers,
   populateWasherTypeOptions,
   populateCustomPartPicker,
+  populateGlassSpeedOptions,
+  populateGlassSizeOptions,
   updateCustomImageUi,
   ensureCustomIconAsset,
   onHardwareTypeChange,
@@ -41,6 +43,8 @@ import {
   setMosfetPartSelection,
   setPotentiometerValueSelection,
   setPotentiometerTaperSelection,
+  setGlassSpeedSelection,
+  setGlassSizeSelection,
   syncConnectorSeriesPicker,
   updateComponentValueUi,
   setCustomPartSelection,
@@ -59,8 +63,6 @@ export { expandAllCollapsibleSections, collapseAllCollapsibleSections } from './
 function applyStateToControls() {
   const {
     systemTypeRadios,
-    glassSizeSelect,
-    glassSpeedSelect,
     lengthInput,
     notesInput,
     customLine1Input,
@@ -86,12 +88,8 @@ function applyStateToControls() {
   }
   setFuseTypeSelection(state.fuseType || 'Glass', { triggerUpdate: false });
   setFuseValueSelection(state.fuseValue || '', { triggerUpdate: false });
-  if (glassSizeSelect) {
-    glassSizeSelect.value = state.glassSize || '';
-  }
-  if (glassSpeedSelect) {
-    glassSpeedSelect.value = state.glassSpeed || '';
-  }
+  setGlassSizeSelection(state.glassSize || '', { triggerUpdate: false });
+  setGlassSpeedSelection(state.glassSpeed || '', { triggerUpdate: false });
 
   setConnectorCategorySelection(state.connectorCategory || '', { triggerUpdate: false });
   setThreadSizeSelection(state.threadSize || '', { triggerUpdate: false });
@@ -192,6 +190,8 @@ function init() {
   populateWasherTypeOptions();
   populateSwitchTypePicker();
   populateCustomPartPicker();
+  populateGlassSpeedOptions();
+  populateGlassSizeOptions();
   updateCustomImageUi();
   ensureCustomIconAsset();
   onHardwareTypeChange();

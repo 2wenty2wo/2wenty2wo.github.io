@@ -59,12 +59,19 @@ const {
   fuseTypePickerList,
   fuseValueContainer,
   glassOptionsContainer,
-  glassSpeedOptionsContainer,
+  glassSpeedField,
+  glassSpeedPicker,
+  glassSpeedPickerButton,
+  glassSpeedPickerList,
   glassSpeedSelect,
   fuseValueSelect,
   fuseValuePicker,
   fuseValuePickerButton,
   fuseValuePickerList,
+  glassSizeField,
+  glassSizePicker,
+  glassSizePickerButton,
+  glassSizePickerList,
   glassSizeSelect,
   notesInput,
   nutTypeContainer,
@@ -253,7 +260,27 @@ const DEFAULT_FUSE_TYPE = 'Glass';
 const PANEL_MOUNT_FUSE_HOLDER_TYPE = 'Panel Mount Fuse Holder';
 const CARTRIDGE_FUSE_TYPES = new Set(['Glass', 'Ceramic', PANEL_MOUNT_FUSE_HOLDER_TYPE]);
 const FUSE_TYPES_WITHOUT_AMPS = new Set([PANEL_MOUNT_FUSE_HOLDER_TYPE]);
+const GLASS_SPEED_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
+const GLASS_SIZE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const validFuseTypeIds = new Set(fuseTypeOptions.map(option => option.id));
+const glassSpeedOptionData = glassSpeedSelect
+  ? Array.from(glassSpeedSelect.options, option => ({
+      value: typeof option.value === 'string' ? option.value : '',
+      label: option.textContent || '',
+    }))
+  : [];
+const glassSizeOptionData = glassSizeSelect
+  ? Array.from(glassSizeSelect.options, option => ({
+      value: typeof option.value === 'string' ? option.value : '',
+      label: option.textContent || '',
+    }))
+  : [];
+const validGlassSpeedValues = new Set(
+  glassSpeedOptionData.filter(option => option.value).map(option => option.value),
+);
+const validGlassSizeValues = new Set(
+  glassSizeOptionData.filter(option => option.value).map(option => option.value),
+);
 const FUSE_VALUE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const validFuseValuesSet = new Set(fuseValues.map(value => String(value)));
 const ELECTRICAL_COMPONENT_TYPES = new Set(electricalComponentTypes);
@@ -4157,52 +4184,366 @@ export function populateFuseValues() {
   syncFuseValuePicker({ isValid: true });
 }
 
+export function populateGlassSpeedOptions() {
+  if (!glassSpeedSelect) {
+    return;
+  }
+
+  const previousValue = typeof state.glassSpeed === 'string' ? state.glassSpeed : '';
+
+  glassSpeedSelect.innerHTML = '';
+  glassSpeedOptionData.forEach(option => {
+    const opt = document.createElement('option');
+    opt.value = option.value;
+    opt.textContent = option.label;
+    glassSpeedSelect.appendChild(opt);
+  });
+
+  const hasSelectableOptions = glassSpeedOptionData.some(option => option.value);
+  const sanitizedValue = hasSelectableOptions && validGlassSpeedValues.has(previousValue)
+    ? previousValue
+    : '';
+
+  state.glassSpeed = sanitizedValue;
+  glassSpeedSelect.value = sanitizedValue;
+
+  if (glassSpeedPickerList) {
+    glassSpeedPickerList.innerHTML = '';
+    glassSpeedOptionData
+      .filter(option => option.value)
+      .forEach(option => {
+        const item = document.createElement('li');
+        item.className = 'bolt-drive-picker__option';
+        item.dataset.value = option.value;
+        item.setAttribute('role', 'option');
+        item.setAttribute('aria-selected', 'false');
+        item.tabIndex = -1;
+
+        const icon = document.createElement('span');
+        icon.className = 'bolt-drive-picker__option-icon is-empty';
+        icon.setAttribute('aria-hidden', 'true');
+        item.appendChild(icon);
+
+        const label = document.createElement('span');
+        label.className = 'bolt-drive-picker__option-label';
+        label.textContent = option.label;
+        item.appendChild(label);
+
+        glassSpeedPickerList.appendChild(item);
+      });
+    glassSpeedPickerList.hidden = true;
+  }
+
+  if (glassSpeedPickerButton) {
+    glassSpeedPickerButton.disabled = !hasSelectableOptions;
+    glassSpeedPickerButton.setAttribute('aria-expanded', 'false');
+  }
+
+  if (glassSpeedPicker) {
+    glassSpeedPicker.classList.remove('is-open');
+  }
+
+  syncGlassSpeedPicker({
+    isValid: true,
+    isDisabled: !hasSelectableOptions,
+    clearValue: !hasSelectableOptions,
+  });
+}
+
+export function populateGlassSizeOptions() {
+  if (!glassSizeSelect) {
+    return;
+  }
+
+  const previousValue = typeof state.glassSize === 'string' ? state.glassSize : '';
+
+  glassSizeSelect.innerHTML = '';
+  glassSizeOptionData.forEach(option => {
+    const opt = document.createElement('option');
+    opt.value = option.value;
+    opt.textContent = option.label;
+    glassSizeSelect.appendChild(opt);
+  });
+
+  const hasSelectableOptions = glassSizeOptionData.some(option => option.value);
+  const sanitizedValue = hasSelectableOptions && validGlassSizeValues.has(previousValue)
+    ? previousValue
+    : '';
+
+  state.glassSize = sanitizedValue;
+  glassSizeSelect.value = sanitizedValue;
+
+  if (glassSizePickerList) {
+    glassSizePickerList.innerHTML = '';
+    glassSizeOptionData
+      .filter(option => option.value)
+      .forEach(option => {
+        const item = document.createElement('li');
+        item.className = 'bolt-drive-picker__option';
+        item.dataset.value = option.value;
+        item.setAttribute('role', 'option');
+        item.setAttribute('aria-selected', 'false');
+        item.tabIndex = -1;
+
+        const icon = document.createElement('span');
+        icon.className = 'bolt-drive-picker__option-icon is-empty';
+        icon.setAttribute('aria-hidden', 'true');
+        item.appendChild(icon);
+
+        const label = document.createElement('span');
+        label.className = 'bolt-drive-picker__option-label';
+        label.textContent = option.label;
+        item.appendChild(label);
+
+        glassSizePickerList.appendChild(item);
+      });
+    glassSizePickerList.hidden = true;
+  }
+
+  if (glassSizePickerButton) {
+    glassSizePickerButton.disabled = !hasSelectableOptions;
+    glassSizePickerButton.setAttribute('aria-expanded', 'false');
+  }
+
+  if (glassSizePicker) {
+    glassSizePicker.classList.remove('is-open');
+  }
+
+  syncGlassSizePicker({
+    isValid: true,
+    isDisabled: !hasSelectableOptions,
+    clearValue: !hasSelectableOptions,
+  });
+}
+
+export function syncGlassSpeedPicker({
+  isValid = true,
+  isDisabled = false,
+  clearValue = false,
+} = {}) {
+  if (!glassSpeedSelect) {
+    return;
+  }
+
+  const hasSelectableOptions = glassSpeedOptionData.some(option => option.value);
+  const shouldDisablePicker = Boolean(isDisabled) || !hasSelectableOptions;
+  const shouldClearValue = Boolean(clearValue) || !hasSelectableOptions;
+
+  let sanitizedValue = typeof state.glassSpeed === 'string' ? state.glassSpeed : '';
+  if (shouldClearValue) {
+    sanitizedValue = '';
+  }
+  if (sanitizedValue && !validGlassSpeedValues.has(sanitizedValue)) {
+    sanitizedValue = '';
+  }
+
+  if (sanitizedValue !== state.glassSpeed) {
+    state.glassSpeed = sanitizedValue;
+  }
+
+  glassSpeedSelect.value = sanitizedValue;
+
+  const selectedOption = sanitizedValue
+    ? glassSpeedOptionData.find(option => option.value === sanitizedValue) || null
+    : null;
+
+  const effectiveValidity = shouldDisablePicker ? true : Boolean(isValid);
+
+  if (glassSpeedPickerButton) {
+    glassSpeedPickerButton.disabled = shouldDisablePicker;
+    const label = glassSpeedPickerButton.querySelector('.bolt-drive-picker__current-label');
+    if (label) {
+      label.textContent = selectedOption ? selectedOption.label : GLASS_SPEED_PLACEHOLDER_TEXT;
+    }
+    const iconWrapper = glassSpeedPickerButton.querySelector('.bolt-drive-picker__current-icon');
+    if (iconWrapper) {
+      if (selectedOption) {
+        iconWrapper.classList.remove('is-empty');
+      } else {
+        iconWrapper.classList.add('is-empty');
+      }
+    }
+    if (glassSpeedPickerButton.disabled) {
+      glassSpeedPickerButton.setAttribute('aria-expanded', 'false');
+    }
+    if (effectiveValidity) {
+      glassSpeedPickerButton.classList.remove('is-invalid');
+      if (typeof glassSpeedPickerButton.removeAttribute === 'function') {
+        glassSpeedPickerButton.removeAttribute('aria-invalid');
+      }
+    } else {
+      glassSpeedPickerButton.classList.add('is-invalid');
+      if (typeof glassSpeedPickerButton.setAttribute === 'function') {
+        glassSpeedPickerButton.setAttribute('aria-invalid', 'true');
+      }
+    }
+  }
+
+  if (glassSpeedPicker) {
+    glassSpeedPicker.classList.toggle('is-disabled', shouldDisablePicker);
+    glassSpeedPicker.classList.toggle('is-invalid', !effectiveValidity);
+  }
+
+  if (glassSpeedPickerList) {
+    const optionElements = Array.from(glassSpeedPickerList.querySelectorAll('[role="option"]'));
+    optionElements.forEach(optionElement => {
+      const isSelected = optionElement.dataset.value === sanitizedValue;
+      optionElement.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      optionElement.classList.toggle('is-selected', isSelected);
+      optionElement.tabIndex = -1;
+    });
+    if (shouldDisablePicker || (glassSpeedPickerButton && glassSpeedPickerButton.disabled)) {
+      glassSpeedPickerList.hidden = true;
+    }
+  }
+}
+
+export function syncGlassSizePicker({
+  isValid = true,
+  isDisabled = false,
+  clearValue = false,
+} = {}) {
+  if (!glassSizeSelect) {
+    return;
+  }
+
+  const hasSelectableOptions = glassSizeOptionData.some(option => option.value);
+  const shouldDisablePicker = Boolean(isDisabled) || !hasSelectableOptions;
+  const shouldClearValue = Boolean(clearValue) || !hasSelectableOptions;
+
+  let sanitizedValue = typeof state.glassSize === 'string' ? state.glassSize : '';
+  if (shouldClearValue) {
+    sanitizedValue = '';
+  }
+  if (sanitizedValue && !validGlassSizeValues.has(sanitizedValue)) {
+    sanitizedValue = '';
+  }
+
+  if (sanitizedValue !== state.glassSize) {
+    state.glassSize = sanitizedValue;
+  }
+
+  glassSizeSelect.value = sanitizedValue;
+
+  const selectedOption = sanitizedValue
+    ? glassSizeOptionData.find(option => option.value === sanitizedValue) || null
+    : null;
+
+  const effectiveValidity = shouldDisablePicker ? true : Boolean(isValid);
+
+  if (glassSizePickerButton) {
+    glassSizePickerButton.disabled = shouldDisablePicker;
+    const label = glassSizePickerButton.querySelector('.bolt-drive-picker__current-label');
+    if (label) {
+      label.textContent = selectedOption ? selectedOption.label : GLASS_SIZE_PLACEHOLDER_TEXT;
+    }
+    const iconWrapper = glassSizePickerButton.querySelector('.bolt-drive-picker__current-icon');
+    if (iconWrapper) {
+      if (selectedOption) {
+        iconWrapper.classList.remove('is-empty');
+      } else {
+        iconWrapper.classList.add('is-empty');
+      }
+    }
+    if (glassSizePickerButton.disabled) {
+      glassSizePickerButton.setAttribute('aria-expanded', 'false');
+    }
+    if (effectiveValidity) {
+      glassSizePickerButton.classList.remove('is-invalid');
+      if (typeof glassSizePickerButton.removeAttribute === 'function') {
+        glassSizePickerButton.removeAttribute('aria-invalid');
+      }
+    } else {
+      glassSizePickerButton.classList.add('is-invalid');
+      if (typeof glassSizePickerButton.setAttribute === 'function') {
+        glassSizePickerButton.setAttribute('aria-invalid', 'true');
+      }
+    }
+  }
+
+  if (glassSizePicker) {
+    glassSizePicker.classList.toggle('is-disabled', shouldDisablePicker);
+    glassSizePicker.classList.toggle('is-invalid', !effectiveValidity);
+  }
+
+  if (glassSizePickerList) {
+    const optionElements = Array.from(glassSizePickerList.querySelectorAll('[role="option"]'));
+    optionElements.forEach(optionElement => {
+      const isSelected = optionElement.dataset.value === sanitizedValue;
+      optionElement.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      optionElement.classList.toggle('is-selected', isSelected);
+      optionElement.tabIndex = -1;
+    });
+    if (shouldDisablePicker || (glassSizePickerButton && glassSizePickerButton.disabled)) {
+      glassSizePickerList.hidden = true;
+    }
+  }
+}
+
+export function setGlassSpeedSelection(nextValue, { triggerUpdate = true } = {}) {
+  const desiredValue = typeof nextValue === 'string' ? nextValue.trim() : '';
+  const sanitizedValue = desiredValue && validGlassSpeedValues.has(desiredValue) ? desiredValue : '';
+  const previousValue = typeof state.glassSpeed === 'string' ? state.glassSpeed : '';
+
+  state.glassSpeed = sanitizedValue;
+  syncGlassSpeedPicker({
+    isValid: true,
+    isDisabled: Boolean(glassSpeedPickerButton && glassSpeedPickerButton.disabled),
+  });
+
+  if (triggerUpdate && previousValue !== sanitizedValue) {
+    updateDownloadState();
+    updatePreview();
+  }
+}
+
+export function setGlassSizeSelection(nextValue, { triggerUpdate = true } = {}) {
+  const desiredValue = typeof nextValue === 'string' ? nextValue.trim() : '';
+  const sanitizedValue = desiredValue && validGlassSizeValues.has(desiredValue) ? desiredValue : '';
+  const previousValue = typeof state.glassSize === 'string' ? state.glassSize : '';
+
+  state.glassSize = sanitizedValue;
+  syncGlassSizePicker({
+    isValid: true,
+    isDisabled: Boolean(glassSizePickerButton && glassSizePickerButton.disabled),
+  });
+
+  if (triggerUpdate && previousValue !== sanitizedValue) {
+    updateDownloadState();
+    updatePreview();
+  }
+}
+
 export function updateGlassOptionVisibility({ resetIfHidden = false } = {}) {
   const shouldShow =
     state.hardwareType === 'Fuse' && CARTRIDGE_FUSE_TYPES.has(state.fuseType);
   const requiresSpeedOptions =
     shouldShow && state.fuseType !== PANEL_MOUNT_FUSE_HOLDER_TYPE;
+
   if (glassOptionsContainer) {
     glassOptionsContainer.classList.toggle('d-none', !shouldShow);
   }
-  if (glassSpeedOptionsContainer) {
-    glassSpeedOptionsContainer.classList.toggle('d-none', shouldShow ? !requiresSpeedOptions : false);
+  if (glassSpeedField) {
+    glassSpeedField.classList.toggle('d-none', shouldShow ? !requiresSpeedOptions : true);
   }
-  if (shouldShow) {
-    if (glassSizeSelect) {
-      glassSizeSelect.value = state.glassSize || '';
-    }
-    if (glassSpeedSelect) {
-      if (requiresSpeedOptions) {
-        const validOptionExists = Array.from(glassSpeedSelect.options || []).some(
-          option => option.value === state.glassSpeed,
-        );
-        if (!validOptionExists) {
-          state.glassSpeed = '';
-        }
-        glassSpeedSelect.disabled = false;
-        glassSpeedSelect.value = state.glassSpeed || '';
-      } else {
-        state.glassSpeed = '';
-        glassSpeedSelect.value = '';
-        glassSpeedSelect.disabled = true;
-      }
-    }
-  } else if (resetIfHidden) {
-    state.glassSpeed = '';
-    state.glassSize = '';
-    if (glassSpeedSelect) {
-      glassSpeedSelect.value = '';
-      glassSpeedSelect.disabled = false;
-    }
-    if (glassSizeSelect) {
-      glassSizeSelect.value = '';
-    }
-  } else {
-    if (glassSpeedSelect) {
-      glassSpeedSelect.disabled = false;
-    }
+  if (glassSizeField) {
+    glassSizeField.classList.toggle('d-none', !shouldShow);
   }
+
+  const shouldClearSpeed = !requiresSpeedOptions || (!shouldShow && resetIfHidden);
+  const shouldClearSize = !shouldShow && resetIfHidden;
+
+  syncGlassSpeedPicker({
+    isValid: true,
+    isDisabled: !shouldShow || !requiresSpeedOptions,
+    clearValue: shouldClearSpeed,
+  });
+
+  syncGlassSizePicker({
+    isValid: true,
+    isDisabled: !shouldShow,
+    clearValue: shouldClearSize,
+  });
 }
 
 function normalizeCustomGraphicSource(value) {

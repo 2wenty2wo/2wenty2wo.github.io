@@ -34,6 +34,10 @@ import {
   syncFuseTypePicker,
   setFuseValueSelection,
   syncFuseValuePicker,
+  setGlassSpeedSelection,
+  syncGlassSpeedPicker,
+  setGlassSizeSelection,
+  syncGlassSizePicker,
   setComponentMountSelection,
   setResistorValueSelection,
   setCapacitorValueSelection,
@@ -121,7 +125,13 @@ const {
   fuseValuePicker,
   fuseValuePickerButton,
   fuseValuePickerList,
+  glassSpeedPicker,
+  glassSpeedPickerButton,
+  glassSpeedPickerList,
   glassSpeedSelect,
+  glassSizePicker,
+  glassSizePickerButton,
+  glassSizePickerList,
   glassSizeSelect,
   lengthInput,
   notesInput,
@@ -195,6 +205,8 @@ let nutTypePickerOpen = false;
 let washerTypePickerOpen = false;
 let switchTypePickerOpen = false;
 let fuseValuePickerOpen = false;
+let glassSpeedPickerOpen = false;
+let glassSizePickerOpen = false;
 let componentMountPickerOpen = false;
 let resistorValuePickerOpen = false;
 let capacitorValuePickerOpen = false;
@@ -1245,6 +1257,444 @@ function handleFuseValueListFocusOut() {
     const active = document.activeElement;
     if (!active || !fuseValuePicker.contains(active)) {
       closeFuseValuePicker();
+    }
+  }, 0);
+}
+
+function getGlassSpeedOptionElements() {
+  if (!glassSpeedPickerList) {
+    return [];
+  }
+  return Array.from(glassSpeedPickerList.querySelectorAll('[role="option"]'));
+}
+
+function focusGlassSpeedOption(option) {
+  if (!option) {
+    return;
+  }
+  const options = getGlassSpeedOptionElements();
+  options.forEach(opt => {
+    opt.tabIndex = opt === option ? 0 : -1;
+  });
+  option.focus();
+  if (typeof option.scrollIntoView === 'function') {
+    option.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function openGlassSpeedPicker() {
+  if (!glassSpeedPicker || !glassSpeedPickerButton || !glassSpeedPickerList) {
+    return;
+  }
+  if (glassSpeedPickerButton.disabled || glassSpeedPickerOpen) {
+    return;
+  }
+  glassSpeedPickerOpen = true;
+  glassSpeedPicker.classList.add('is-open');
+  glassSpeedPickerList.hidden = false;
+  glassSpeedPickerButton.setAttribute('aria-expanded', 'true');
+  syncGlassSpeedPicker({ isValid: true });
+
+  const options = getGlassSpeedOptionElements();
+  if (options.length === 0) {
+    return;
+  }
+  const currentValue = typeof state.glassSpeed === 'string' ? state.glassSpeed : '';
+  const selectedOption = options.find(option => option.dataset.value === currentValue);
+  focusGlassSpeedOption(selectedOption || options[0]);
+}
+
+function closeGlassSpeedPicker({ focusButton = false } = {}) {
+  if (!glassSpeedPicker || !glassSpeedPickerButton || !glassSpeedPickerList) {
+    return;
+  }
+  if (!glassSpeedPickerOpen) {
+    if (focusButton && !glassSpeedPickerButton.disabled) {
+      glassSpeedPickerButton.focus();
+    }
+    return;
+  }
+  glassSpeedPickerOpen = false;
+  glassSpeedPicker.classList.remove('is-open');
+  glassSpeedPickerList.hidden = true;
+  glassSpeedPickerButton.setAttribute('aria-expanded', 'false');
+  if (focusButton && !glassSpeedPickerButton.disabled) {
+    glassSpeedPickerButton.focus();
+  }
+}
+
+function toggleGlassSpeedPicker() {
+  if (!glassSpeedPicker || !glassSpeedPickerButton || !glassSpeedPickerList) {
+    return;
+  }
+  if (glassSpeedPickerButton.disabled) {
+    return;
+  }
+  if (glassSpeedPickerList.hidden) {
+    glassSpeedPickerOpen = false;
+  }
+  if (glassSpeedPickerOpen) {
+    closeGlassSpeedPicker({ focusButton: false });
+  } else {
+    openGlassSpeedPicker();
+  }
+}
+
+function moveGlassSpeedOption(delta) {
+  if (!glassSpeedPickerList) {
+    return;
+  }
+  const options = getGlassSpeedOptionElements();
+  if (options.length === 0) {
+    return;
+  }
+  const active = document.activeElement;
+  const activeOption = active && glassSpeedPickerList.contains(active)
+    ? active.closest('[role="option"]')
+    : null;
+  let index = activeOption ? options.indexOf(activeOption) : -1;
+  if (index === -1) {
+    const currentValue = typeof state.glassSpeed === 'string' ? state.glassSpeed : '';
+    index = options.findIndex(option => option.dataset.value === currentValue);
+  }
+  let nextIndex = index + delta;
+  if (nextIndex < 0) {
+    nextIndex = options.length - 1;
+  } else if (nextIndex >= options.length) {
+    nextIndex = 0;
+  }
+  const nextOption = options[nextIndex];
+  if (nextOption) {
+    focusGlassSpeedOption(nextOption);
+  }
+}
+
+function handleGlassSpeedButtonKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    openGlassSpeedPicker();
+    moveGlassSpeedOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    openGlassSpeedPicker();
+    moveGlassSpeedOption(-1);
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    toggleGlassSpeedPicker();
+    return;
+  }
+  if (key === 'Escape' && glassSpeedPickerOpen) {
+    event.preventDefault();
+    closeGlassSpeedPicker({ focusButton: true });
+  }
+}
+
+function handleGlassSpeedListKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    moveGlassSpeedOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    moveGlassSpeedOption(-1);
+    return;
+  }
+  if (key === 'Home') {
+    event.preventDefault();
+    const options = getGlassSpeedOptionElements();
+    if (options.length > 0) {
+      focusGlassSpeedOption(options[0]);
+    }
+    return;
+  }
+  if (key === 'End') {
+    event.preventDefault();
+    const options = getGlassSpeedOptionElements();
+    if (options.length > 0) {
+      focusGlassSpeedOption(options[options.length - 1]);
+    }
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    const target = event.target;
+    if (target && target instanceof HTMLElement) {
+      const option = target.closest('[role="option"]');
+      if (option) {
+        setGlassSpeedSelection(option.dataset.value || '');
+        closeGlassSpeedPicker({ focusButton: true });
+      }
+    }
+    return;
+  }
+  if (key === 'Escape') {
+    event.preventDefault();
+    closeGlassSpeedPicker({ focusButton: true });
+    return;
+  }
+  if (key === 'Tab') {
+    closeGlassSpeedPicker();
+  }
+}
+
+function handleGlassSpeedListClick(event) {
+  if (!glassSpeedPickerList) {
+    return;
+  }
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+  const option = target.closest('[role="option"]');
+  if (!option || !glassSpeedPickerList.contains(option)) {
+    return;
+  }
+  event.preventDefault();
+  setGlassSpeedSelection(option.dataset.value || '');
+  closeGlassSpeedPicker({ focusButton: true });
+}
+
+function handleGlassSpeedListFocusOut() {
+  if (!glassSpeedPickerOpen) {
+    return;
+  }
+  setTimeout(() => {
+    if (!glassSpeedPickerOpen) {
+      return;
+    }
+    if (!glassSpeedPicker) {
+      closeGlassSpeedPicker();
+      return;
+    }
+    const active = document.activeElement;
+    if (!active || !glassSpeedPicker.contains(active)) {
+      closeGlassSpeedPicker();
+    }
+  }, 0);
+}
+
+function getGlassSizeOptionElements() {
+  if (!glassSizePickerList) {
+    return [];
+  }
+  return Array.from(glassSizePickerList.querySelectorAll('[role="option"]'));
+}
+
+function focusGlassSizeOption(option) {
+  if (!option) {
+    return;
+  }
+  const options = getGlassSizeOptionElements();
+  options.forEach(opt => {
+    opt.tabIndex = opt === option ? 0 : -1;
+  });
+  option.focus();
+  if (typeof option.scrollIntoView === 'function') {
+    option.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function openGlassSizePicker() {
+  if (!glassSizePicker || !glassSizePickerButton || !glassSizePickerList) {
+    return;
+  }
+  if (glassSizePickerButton.disabled || glassSizePickerOpen) {
+    return;
+  }
+  glassSizePickerOpen = true;
+  glassSizePicker.classList.add('is-open');
+  glassSizePickerList.hidden = false;
+  glassSizePickerButton.setAttribute('aria-expanded', 'true');
+  syncGlassSizePicker({ isValid: true });
+
+  const options = getGlassSizeOptionElements();
+  if (options.length === 0) {
+    return;
+  }
+  const currentValue = typeof state.glassSize === 'string' ? state.glassSize : '';
+  const selectedOption = options.find(option => option.dataset.value === currentValue);
+  focusGlassSizeOption(selectedOption || options[0]);
+}
+
+function closeGlassSizePicker({ focusButton = false } = {}) {
+  if (!glassSizePicker || !glassSizePickerButton || !glassSizePickerList) {
+    return;
+  }
+  if (!glassSizePickerOpen) {
+    if (focusButton && !glassSizePickerButton.disabled) {
+      glassSizePickerButton.focus();
+    }
+    return;
+  }
+  glassSizePickerOpen = false;
+  glassSizePicker.classList.remove('is-open');
+  glassSizePickerList.hidden = true;
+  glassSizePickerButton.setAttribute('aria-expanded', 'false');
+  if (focusButton && !glassSizePickerButton.disabled) {
+    glassSizePickerButton.focus();
+  }
+}
+
+function toggleGlassSizePicker() {
+  if (!glassSizePicker || !glassSizePickerButton || !glassSizePickerList) {
+    return;
+  }
+  if (glassSizePickerButton.disabled) {
+    return;
+  }
+  if (glassSizePickerList.hidden) {
+    glassSizePickerOpen = false;
+  }
+  if (glassSizePickerOpen) {
+    closeGlassSizePicker({ focusButton: false });
+  } else {
+    openGlassSizePicker();
+  }
+}
+
+function moveGlassSizeOption(delta) {
+  if (!glassSizePickerList) {
+    return;
+  }
+  const options = getGlassSizeOptionElements();
+  if (options.length === 0) {
+    return;
+  }
+  const active = document.activeElement;
+  const activeOption = active && glassSizePickerList.contains(active)
+    ? active.closest('[role="option"]')
+    : null;
+  let index = activeOption ? options.indexOf(activeOption) : -1;
+  if (index === -1) {
+    const currentValue = typeof state.glassSize === 'string' ? state.glassSize : '';
+    index = options.findIndex(option => option.dataset.value === currentValue);
+  }
+  let nextIndex = index + delta;
+  if (nextIndex < 0) {
+    nextIndex = options.length - 1;
+  } else if (nextIndex >= options.length) {
+    nextIndex = 0;
+  }
+  const nextOption = options[nextIndex];
+  if (nextOption) {
+    focusGlassSizeOption(nextOption);
+  }
+}
+
+function handleGlassSizeButtonKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    openGlassSizePicker();
+    moveGlassSizeOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    openGlassSizePicker();
+    moveGlassSizeOption(-1);
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    toggleGlassSizePicker();
+    return;
+  }
+  if (key === 'Escape' && glassSizePickerOpen) {
+    event.preventDefault();
+    closeGlassSizePicker({ focusButton: true });
+  }
+}
+
+function handleGlassSizeListKeydown(event) {
+  const { key } = event;
+  if (key === 'ArrowDown') {
+    event.preventDefault();
+    moveGlassSizeOption(1);
+    return;
+  }
+  if (key === 'ArrowUp') {
+    event.preventDefault();
+    moveGlassSizeOption(-1);
+    return;
+  }
+  if (key === 'Home') {
+    event.preventDefault();
+    const options = getGlassSizeOptionElements();
+    if (options.length > 0) {
+      focusGlassSizeOption(options[0]);
+    }
+    return;
+  }
+  if (key === 'End') {
+    event.preventDefault();
+    const options = getGlassSizeOptionElements();
+    if (options.length > 0) {
+      focusGlassSizeOption(options[options.length - 1]);
+    }
+    return;
+  }
+  if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Space') {
+    event.preventDefault();
+    const target = event.target;
+    if (target && target instanceof HTMLElement) {
+      const option = target.closest('[role="option"]');
+      if (option) {
+        setGlassSizeSelection(option.dataset.value || '');
+        closeGlassSizePicker({ focusButton: true });
+      }
+    }
+    return;
+  }
+  if (key === 'Escape') {
+    event.preventDefault();
+    closeGlassSizePicker({ focusButton: true });
+    return;
+  }
+  if (key === 'Tab') {
+    closeGlassSizePicker();
+  }
+}
+
+function handleGlassSizeListClick(event) {
+  if (!glassSizePickerList) {
+    return;
+  }
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+  const option = target.closest('[role="option"]');
+  if (!option || !glassSizePickerList.contains(option)) {
+    return;
+  }
+  event.preventDefault();
+  setGlassSizeSelection(option.dataset.value || '');
+  closeGlassSizePicker({ focusButton: true });
+}
+
+function handleGlassSizeListFocusOut() {
+  if (!glassSizePickerOpen) {
+    return;
+  }
+  setTimeout(() => {
+    if (!glassSizePickerOpen) {
+      return;
+    }
+    if (!glassSizePicker) {
+      closeGlassSizePicker();
+      return;
+    }
+    const active = document.activeElement;
+    if (!active || !glassSizePicker.contains(active)) {
+      closeGlassSizePicker();
     }
   }, 0);
 }
@@ -5096,6 +5546,16 @@ function handleDocumentPointer(event) {
       closeFuseValuePicker();
     }
   }
+  if (glassSpeedPickerOpen && glassSpeedPicker) {
+    if (!(target instanceof Node) || !glassSpeedPicker.contains(target)) {
+      closeGlassSpeedPicker();
+    }
+  }
+  if (glassSizePickerOpen && glassSizePicker) {
+    if (!(target instanceof Node) || !glassSizePicker.contains(target)) {
+      closeGlassSizePicker();
+    }
+  }
   if (componentMountPickerOpen && componentMountPicker) {
     if (!(target instanceof Node) || !componentMountPicker.contains(target)) {
       closeComponentMountPicker();
@@ -5332,6 +5792,28 @@ export function initEventHandlers() {
     fuseValuePickerList.addEventListener('focusout', handleFuseValueListFocusOut);
   }
 
+  if (glassSpeedPickerButton && glassSpeedPickerList) {
+    glassSpeedPickerButton.addEventListener('click', event => {
+      event.preventDefault();
+      toggleGlassSpeedPicker();
+    });
+    glassSpeedPickerButton.addEventListener('keydown', handleGlassSpeedButtonKeydown);
+    glassSpeedPickerList.addEventListener('click', handleGlassSpeedListClick);
+    glassSpeedPickerList.addEventListener('keydown', handleGlassSpeedListKeydown);
+    glassSpeedPickerList.addEventListener('focusout', handleGlassSpeedListFocusOut);
+  }
+
+  if (glassSizePickerButton && glassSizePickerList) {
+    glassSizePickerButton.addEventListener('click', event => {
+      event.preventDefault();
+      toggleGlassSizePicker();
+    });
+    glassSizePickerButton.addEventListener('keydown', handleGlassSizeButtonKeydown);
+    glassSizePickerList.addEventListener('click', handleGlassSizeListClick);
+    glassSizePickerList.addEventListener('keydown', handleGlassSizeListKeydown);
+    glassSizePickerList.addEventListener('focusout', handleGlassSizeListFocusOut);
+  }
+
   if (connectorCategorySelect) {
     connectorCategorySelect.addEventListener('change', () => {
       setConnectorCategorySelection(connectorCategorySelect.value);
@@ -5537,15 +6019,13 @@ export function initEventHandlers() {
 
   if (glassSpeedSelect) {
     glassSpeedSelect.addEventListener('change', () => {
-      state.glassSpeed = glassSpeedSelect.value;
-      updatePreview();
+      setGlassSpeedSelection(glassSpeedSelect.value);
     });
   }
 
   if (glassSizeSelect) {
     glassSizeSelect.addEventListener('change', () => {
-      state.glassSize = glassSizeSelect.value;
-      updatePreview();
+      setGlassSizeSelection(glassSizeSelect.value);
     });
   }
 
