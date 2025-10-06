@@ -1848,7 +1848,7 @@ export async function renderLabelSVG({
     iconCount: mediaItems.length,
     pxPerMm,
   });
-  const { mediaWidthPx: adjustedMediaWidth, textRect } = ensureTextFits({
+  let ensureResult = ensureTextFits({
     preset,
     mediaZoneWidthPx: mediaWidthPx,
     contentRect,
@@ -1857,31 +1857,102 @@ export async function renderLabelSVG({
     mediaPresent: mediaItems.length > 0,
     textLines,
   });
-  mediaWidthPx = adjustedMediaWidth;
+  mediaWidthPx = ensureResult.mediaWidthPx;
+  let textRect = ensureResult.textRect;
 
-  const qrPlan = computeQrLayout({
-    qrContent,
-    preset,
-    textRect,
-    pxPerMm,
-    qrGenerator,
-  });
+  let qrPlan = null;
+  let qrReservedWidthPx = 0;
+  const hasQrContent = typeof qrContent === 'string' && qrContent.trim().length > 0;
+  if (hasQrContent) {
+    const maxQrIterations = 4;
+    for (let i = 0; i < maxQrIterations; i += 1) {
+      const planInputRect =
+        qrReservedWidthPx > 0
+          ? { ...textRect, width: textRect.width + qrReservedWidthPx }
+          : textRect;
+      const candidatePlan = computeQrLayout({
+        qrContent,
+        preset,
+        textRect: planInputRect,
+        pxPerMm,
+        qrGenerator,
+      });
+      if (!candidatePlan) {
+        qrReservedWidthPx = 0;
+        break;
+      }
+      const clearance = candidatePlan.layout.sizePx + candidatePlan.layout.marginPx;
+      const diff = Math.abs(clearance - qrReservedWidthPx);
+      qrReservedWidthPx = clearance;
+      if (qrReservedWidthPx > 0) {
+        const qrAwareContentRect = {
+          ...contentRect,
+          width: Math.max(0, contentRect.width - qrReservedWidthPx),
+        };
+        ensureResult = ensureTextFits({
+          preset,
+          mediaZoneWidthPx: mediaWidthPx,
+          contentRect: qrAwareContentRect,
+          minTextWidthMm,
+          pxPerMm,
+          mediaPresent: mediaItems.length > 0,
+          textLines,
+        });
+        mediaWidthPx = ensureResult.mediaWidthPx;
+        textRect = ensureResult.textRect;
+      }
+      if (diff < 0.5) {
+        break;
+      }
+    }
+
+    if (qrReservedWidthPx > 0) {
+      const finalPlan = computeQrLayout({
+        qrContent,
+        preset,
+        textRect: { ...textRect, width: textRect.width + qrReservedWidthPx },
+        pxPerMm,
+        qrGenerator,
+      });
+      if (finalPlan) {
+        qrPlan = finalPlan;
+      } else {
+        qrReservedWidthPx = 0;
+      }
+    }
+
+    if (qrReservedWidthPx === 0) {
+      ensureResult = ensureTextFits({
+        preset,
+        mediaZoneWidthPx: mediaWidthPx,
+        contentRect,
+        minTextWidthMm,
+        pxPerMm,
+        mediaPresent: mediaItems.length > 0,
+        textLines,
+      });
+      mediaWidthPx = ensureResult.mediaWidthPx;
+      textRect = ensureResult.textRect;
+    }
+  }
+
   let qrElement = null;
   if (qrPlan) {
     qrElement = await renderQrElement(qrPlan);
-    if (qrElement) {
-      const qrClearancePx = qrElement.size + mmToPx(preset.qr.margin_mm || 0.5, pxPerMm);
-      textRect.width = Math.max(0, textRect.width - qrClearancePx);
-      const widthLimit = Math.max(0, textRect.width - 1);
-      const limits = textRect.horizontalOffsetLimits || {};
-      const prevMin = Number.isFinite(limits.min) ? limits.min : 0;
-      const prevMax = Number.isFinite(limits.max) ? limits.max : 0;
-      const minLimit = Math.max(-widthLimit, prevMin);
-      const maxLimit = Math.min(widthLimit, prevMax);
-      textRect.horizontalOffsetLimits = { min: minLimit, max: maxLimit };
-      if (Number.isFinite(textRect.horizontalOffsetPx)) {
-        textRect.horizontalOffsetPx = clamp(textRect.horizontalOffsetPx, minLimit, maxLimit);
-      }
+    if (!qrElement) {
+      // If QR rendering failed, fall back to text-only layout.
+      qrPlan = null;
+      ensureResult = ensureTextFits({
+        preset,
+        mediaZoneWidthPx: mediaWidthPx,
+        contentRect,
+        minTextWidthMm,
+        pxPerMm,
+        mediaPresent: mediaItems.length > 0,
+        textLines,
+      });
+      mediaWidthPx = ensureResult.mediaWidthPx;
+      textRect = ensureResult.textRect;
     }
   }
 
