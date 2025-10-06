@@ -57,6 +57,7 @@ const {
   labelPreviewImage,
   qrContentWrapper,
   qrContentInput,
+  qrcodeToggle,
   downloadButton,
   shareButton,
   printButton,
@@ -862,20 +863,43 @@ export function updateDownloadState() {
 }
 
 export function updateQrContentVisibility(options = {}) {
-  if (!qrContentWrapper || !qrContentInput) {
+  if (!qrContentWrapper || !qrContentInput || !qrcodeToggle) {
     return;
   }
-  const { focus = false } = options;
-  if (state.showQr) {
-    qrContentWrapper.classList.remove('d-none');
+  const { animate = true, focus = false } = options;
+  const shouldShow = Boolean(state.showQr);
+  const restoreTransition = animate ? null : temporarilyDisableTransition(qrContentWrapper);
+
+  if (!shouldShow) {
+    const measuredHeight = qrContentWrapper.scrollHeight;
+    if (measuredHeight > 0) {
+      qrContentWrapper.style.maxHeight = `${measuredHeight}px`;
+      void qrContentWrapper.offsetHeight;
+    }
+  }
+
+  qrcodeToggle.setAttribute('aria-expanded', shouldShow ? 'true' : 'false');
+  qrContentWrapper.classList.toggle('is-collapsed', !shouldShow);
+  qrContentWrapper.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+
+  if (shouldShow) {
+    qrContentWrapper.style.removeProperty('max-height');
     qrContentInput.disabled = false;
-    qrContentInput.value = state.qrContent;
+    qrContentInput.value = state.qrContent || '';
     if (focus) {
-      qrContentInput.focus();
+      requestAnimationFrame(() => {
+        qrContentInput.focus();
+      });
     }
   } else {
-    qrContentWrapper.classList.add('d-none');
+    qrContentWrapper.style.maxHeight = '0px';
     qrContentInput.disabled = true;
+  }
+
+  if (restoreTransition) {
+    requestAnimationFrame(() => {
+      restoreTransition();
+    });
   }
 }
 
