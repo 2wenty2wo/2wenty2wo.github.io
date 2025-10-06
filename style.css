@@ -628,6 +628,12 @@ main {
   transition: filter 0.2s ease;
 }
 
+.bolt-drive-picker__current-icon-image--omega {
+  max-width: 80%;
+  max-height: 80%;
+  margin: auto;
+}
+
 .bolt-drive-picker__current-icon-glyph {
   display: inline-block;
   min-width: 1.5rem;
