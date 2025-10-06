@@ -33,6 +33,7 @@
   --form-icon-filter: none;
   --focus-outline-width: 2px;
   --focus-outline-offset: 2px;
+  --range-track-bg: rgba(148, 163, 184, 0.45);
 }
 
 :root[data-theme='dark'] {
@@ -75,6 +76,7 @@
   --label-preview-check-1: rgba(148, 163, 184, 0.22);
   --label-preview-check-2: rgba(148, 163, 184, 0.1);
   --form-icon-filter: brightness(0) saturate(100%) invert(0.92);
+  --range-track-bg: rgba(148, 163, 184, 0.4);
 }
 
 body {
@@ -1282,6 +1284,19 @@ main {
 .form-range:focus-visible {
   outline: var(--focus-outline-width) solid var(--focus-ring-border);
   outline-offset: var(--focus-outline-offset);
+}
+
+.form-range::-webkit-slider-runnable-track {
+  height: 0.5rem;
+  background-color: var(--range-track-bg);
+  border-radius: 999px;
+}
+
+.form-range::-moz-range-track {
+  height: 0.5rem;
+  background-color: var(--range-track-bg);
+  border-radius: 999px;
+  border: none;
 }
 
 .form-range:focus-visible::-webkit-slider-thumb {
