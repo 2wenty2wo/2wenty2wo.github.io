@@ -267,7 +267,7 @@ main {
   gap: 0.75rem;
   padding-left: 1rem;
   border-left: 2px solid var(--bs-border-color, rgba(148, 163, 184, 0.35));
-  overflow: hidden;
+  overflow: visible;
   max-height: 400px;
   transition:
     max-height 0.25s ease,
@@ -283,6 +283,7 @@ main {
   border-left-color: transparent;
   max-height: 0;
   padding-left: 0;
+  overflow: hidden;
 }
 
 .label-suboptions.is-collapsed .label-suboption {
