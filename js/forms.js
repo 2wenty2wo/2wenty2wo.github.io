@@ -2282,7 +2282,7 @@ export function syncPotentiometerValuePicker({ isValid = true } = {}) {
     potentiometerValueSelect.selectedIndex = 0;
   }
 
-  const imageSrc = sanitizedValue ? 'images/potentiometer/potentiometer.svg' : '';
+  const imageSrc = sanitizedValue ? 'images/resistors/omega.svg' : '';
 
   if (potentiometerValuePickerButton) {
     const label =
@@ -2312,10 +2312,12 @@ export function syncPotentiometerValuePicker({ isValid = true } = {}) {
         iconWrapper.classList.remove('is-empty');
         iconImage.src = imageSrc;
         iconImage.hidden = false;
+        iconImage.classList.add('bolt-drive-picker__current-icon-image--omega');
       } else {
         if (iconImage) {
           iconImage.hidden = true;
           iconImage.removeAttribute('src');
+          iconImage.classList.remove('bolt-drive-picker__current-icon-image--omega');
         }
         iconWrapper.classList.add('is-empty');
       }
