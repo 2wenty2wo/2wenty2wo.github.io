@@ -680,19 +680,55 @@ test('bolt subtitles include head, drive, and notes information', async () => {
       });
       const textLines = buildTextLinesForTest();
       assert.equal(textLines.line1, 'M6 × 20 mm', 'bolt size should appear on the main line');
+      assert.equal(textLines.line2, 'Socket Cap', 'head label should occupy the second line');
+      assert.equal(textLines.line3, 'Hex', 'drive label should occupy the third line');
+      assert.ok(!textLines.line2.includes('•'), 'head and drive labels should no longer be combined');
+      assert.ok(!textLines.line3.includes('Use threadlocker'), 'notes should not displace the drive label');
+
+      Object.assign(state, {
+        hardwareType: 'Bolt',
+        threadSize: 'M6',
+        length: '20 mm',
+        boltHead: '',
+        boltDrive: 'hex',
+        notes: 'Use threadlocker',
+        showText: true,
+        showTextMain: true,
+        showTextInfo: true,
+      });
+      const missingHeadLines = buildTextLinesForTest();
       assert.equal(
-        textLines.line2,
-        'Socket Cap • Hex',
-        'head and drive should be combined in the first subtitle line',
+        missingHeadLines.line2,
+        'Use threadlocker',
+        'notes should reuse the second line when the head label is absent',
       );
-      assert.equal(textLines.line3, 'Use threadlocker', 'notes should use the remaining subtitle slot');
-      assert.ok(
-        textLines.line2.includes('Socket Cap') && textLines.line2.includes('Hex'),
-        'expected head and drive labels to remain visible after formatting',
+      assert.equal(
+        missingHeadLines.line3,
+        'Hex',
+        'drive label should remain on the third line when available',
       );
-      assert.ok(
-        [textLines.line2, textLines.line3].some(line => line.includes('Use threadlocker')),
-        'notes should be surfaced in the subtitle lines',
+
+      Object.assign(state, {
+        hardwareType: 'Bolt',
+        threadSize: 'M6',
+        length: '20 mm',
+        boltHead: 'cap_head',
+        boltDrive: '',
+        notes: 'Use threadlocker',
+        showText: true,
+        showTextMain: true,
+        showTextInfo: true,
+      });
+      const missingDriveLines = buildTextLinesForTest();
+      assert.equal(
+        missingDriveLines.line2,
+        'Socket Cap',
+        'head label should continue to appear on the second line when present',
+      );
+      assert.equal(
+        missingDriveLines.line3,
+        'Use threadlocker',
+        'notes should reuse the third line when the drive label is absent',
       );
     } finally {
       Object.assign(state, originalState);
@@ -793,7 +829,7 @@ test('single icon fills the media zone proportionally', async () => {
   const result = await renderLabelSVG({
     geometry,
     pxPerMm,
-    textLines: { line1: 'Bolt', line2: 'Cap Head', line3: '' },
+    textLines: { line1: 'Bolt', line2: 'Cap Head', line3: 'Hex Drive' },
     hardwareInfo,
     qrContent: '',
   });

@@ -1493,20 +1493,13 @@ function buildTextLines() {
     const headLabel = headEntry ? headEntry.label : '';
     const driveLabel = driveEntry ? driveEntry.label : '';
     const notes = (state.notes || '').trim();
-    const subtitleParts = [];
-    if (headLabel) {
-      subtitleParts.push(headLabel);
-    }
-    if (driveLabel) {
-      subtitleParts.push(driveLabel);
-    }
-    let line2 = subtitleParts.join(' • ');
-    let line3 = '';
+    let line2 = headLabel || '';
+    let line3 = driveLabel || '';
     if (notes) {
-      if (line2) {
-        line3 = notes;
-      } else {
+      if (!line2) {
         line2 = notes;
+      } else if (!line3) {
+        line3 = notes;
       }
     }
     const line1 = pieces.join(' ') || 'Bolt';
