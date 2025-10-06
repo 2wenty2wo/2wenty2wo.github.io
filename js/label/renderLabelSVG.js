@@ -1915,6 +1915,19 @@ export async function renderLabelSVG({
           ...contentRect,
           width: Math.max(0, contentRect.width - qrReservedWidthPx),
         };
+        const widthReductionPx = Math.max(0, contentRect.width - qrAwareContentRect.width);
+        if (widthReductionPx > 0) {
+          const baselineMediaWidthPx = Math.max(0, mediaWidthPx);
+          const baselineTextWidthPx = Math.max(0, textRect.width);
+          const flexibleWidthPx = baselineMediaWidthPx + baselineTextWidthPx;
+          if (flexibleWidthPx > 0) {
+            const mediaShare = baselineMediaWidthPx / flexibleWidthPx;
+            const targetMediaWidthPx = baselineMediaWidthPx - widthReductionPx * mediaShare;
+            mediaWidthPx = clamp(targetMediaWidthPx, 0, qrAwareContentRect.width);
+          } else {
+            mediaWidthPx = Math.min(mediaWidthPx, qrAwareContentRect.width);
+          }
+        }
         ensureResult = ensureTextFits({
           preset,
           mediaZoneWidthPx: mediaWidthPx,
