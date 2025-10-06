@@ -1222,6 +1222,49 @@ test('QR generator hook places QR image alongside text', async () => {
   assert.ok(images[0].x > Number(textMatches[0][1]), 'QR should appear to the right of text content');
 });
 
+test('textRect width shrinks by a single QR clearance when QR content is present', async () => {
+  clearPresetOverrides();
+  try {
+    const geometry = {
+      labelWidthMm: 37,
+      labelHeightMm: 12,
+      printableWidthMm: 33,
+      printableHeightMm: 10,
+      marginX: 2,
+      marginY: 1,
+    };
+    const preset = getActiveLayoutPreset(geometry.labelHeightMm);
+    const textLines = { line1: 'QR Width Check', line2: '', line3: '' };
+    const baseResult = await renderLabelSVG({
+      geometry,
+      pxPerMm,
+      textLines,
+      hardwareInfo: null,
+      qrContent: '',
+    });
+    const qrDataUrl = 'data:image/png;base64,AAAAC';
+    const qrResult = await renderLabelSVG({
+      geometry,
+      pxPerMm,
+      textLines,
+      hardwareInfo: null,
+      qrContent: 'https://example.com',
+      qrGenerator: async (_, size) => ({ dataUrl: qrDataUrl, sizePx: size }),
+    });
+    const expectedDropPx = mmToPx(
+      (preset.qr?.side_mm || 0) + (preset.qr?.margin_mm || 0),
+      pxPerMm,
+    );
+    const actualDropPx = baseResult.textRect.width - qrResult.textRect.width;
+    assert.ok(
+      Math.abs(actualDropPx - expectedDropPx) < 0.51,
+      `expected textRect width drop of ${expectedDropPx.toFixed(2)}px but got ${actualDropPx.toFixed(2)}px`,
+    );
+  } finally {
+    clearPresetOverrides();
+  }
+});
+
 test('end text alignment anchors text to the right edge when QR is absent', async () => {
   clearPresetOverrides();
   try {
