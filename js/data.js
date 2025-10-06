@@ -437,13 +437,45 @@ export const washerTypeMap = new Map(
 );
 
 export const bearingOptions = [
-  { code: '608ZZ', description: '8 × 22 × 7 mm, metal shields' },
-  { code: '608-2RS', description: '8 × 22 × 7 mm, rubber seals' },
-  { code: '625ZZ', description: '5 × 16 × 5 mm, miniature shielded' },
-  { code: '6200ZZ', description: '10 × 30 × 9 mm, deep groove' },
-  { code: '6900ZZ', description: '10 × 22 × 6 mm, thin section' },
-  { code: '6701ZZ', description: '12 × 18 × 4 mm, thin section' },
-  { code: 'MR85-2RS', description: '5 × 8 × 2.5 mm, rubber seals' },
+  {
+    code: '608ZZ',
+    dimensions: '8 × 22 × 7 mm',
+    shieldType: 'Metal shields',
+  },
+  {
+    code: '608-2RS',
+    dimensions: '8 × 22 × 7 mm',
+    shieldType: 'Rubber seals',
+  },
+  {
+    code: '625ZZ',
+    dimensions: '5 × 16 × 5 mm',
+    shieldType: 'Metal shields',
+    notes: 'Miniature profile',
+  },
+  {
+    code: '6200ZZ',
+    dimensions: '10 × 30 × 9 mm',
+    shieldType: 'Metal shields',
+    notes: 'Deep groove series',
+  },
+  {
+    code: '6900ZZ',
+    dimensions: '10 × 22 × 6 mm',
+    shieldType: 'Metal shields',
+    notes: 'Thin section design',
+  },
+  {
+    code: '6701ZZ',
+    dimensions: '12 × 18 × 4 mm',
+    shieldType: 'Metal shields',
+    notes: 'Thin section design',
+  },
+  {
+    code: 'MR85-2RS',
+    dimensions: '5 × 8 × 2.5 mm',
+    shieldType: 'Rubber seals',
+  },
 ];
 
 export const hardwareCatalog = {

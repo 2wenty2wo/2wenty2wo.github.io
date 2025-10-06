@@ -756,6 +756,25 @@ main {
   text-overflow: ellipsis;
 }
 
+.bearing-picker__option-label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.125rem;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: initial;
+}
+
+.bearing-picker__option-label .bearing-picker__line {
+  display: block;
+  width: 100%;
+}
+
+.bearing-picker__option-label .bearing-picker__code {
+  font-weight: 600;
+}
+
 .bolt-drive-picker__group {
   padding: 0.25rem 0.75rem;
   font-size: 0.75rem;
