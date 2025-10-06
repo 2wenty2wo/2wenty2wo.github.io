@@ -1480,11 +1480,12 @@ function computeQrLayout({
   const qrMarginMm = preset.qr.margin_mm || 0.6;
   const qrSidePx = Math.max(QR_SIDE_PX_MIN, Math.round(mmToPx(qrSideMm, pxPerMm)));
   const qrMarginPx = mmToPx(qrMarginMm, pxPerMm);
+  const availableHeightPx = Math.max(0, textRect.height - qrMarginPx * 2);
   const pct = Number.isFinite(preset.qr.max_pct_of_text_zone_width)
     ? preset.qr.max_pct_of_text_zone_width
     : 100;
   const maxWidthByPct = (pct / 100) * textRect.width;
-  const finalSidePx = Math.min(qrSidePx, maxWidthByPct);
+  const finalSidePx = Math.min(qrSidePx, maxWidthByPct, availableHeightPx);
   if (finalSidePx < QR_SIDE_PX_MIN * 0.65) {
     return null;
   }
@@ -1498,6 +1499,7 @@ function computeQrLayout({
     layout,
     generator: qrGenerator,
     content,
+    clearancePx: finalSidePx + qrMarginPx,
   };
 }
 
@@ -1945,7 +1947,8 @@ export async function renderLabelSVG({
         qrReservedWidthPx = 0;
         break;
       }
-      const clearance = candidatePlan.layout.sizePx + candidatePlan.layout.marginPx;
+      const clearance = candidatePlan.clearancePx ??
+        candidatePlan.layout.sizePx + candidatePlan.layout.marginPx;
       const diff = Math.abs(clearance - qrReservedWidthPx);
       qrReservedWidthPx = clearance;
       if (qrReservedWidthPx > 0) {

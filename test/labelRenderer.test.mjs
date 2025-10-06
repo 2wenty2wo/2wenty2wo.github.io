@@ -1251,14 +1251,72 @@ test('textRect width shrinks by a single QR clearance when QR content is present
       qrContent: 'https://example.com',
       qrGenerator: async (_, size) => ({ dataUrl: qrDataUrl, sizePx: size }),
     });
-    const expectedDropPx = mmToPx(
-      (preset.qr?.side_mm || 0) + (preset.qr?.margin_mm || 0),
-      pxPerMm,
+    const baseTextRect = baseResult.textRect;
+    const qrSidePx = Math.max(
+      24,
+      Math.round(mmToPx(preset.qr?.side_mm || 0, pxPerMm)),
     );
+    const qrMarginPx = mmToPx(preset.qr?.margin_mm || 0, pxPerMm);
+    const maxWidthPct = Number.isFinite(preset.qr?.max_pct_of_text_zone_width)
+      ? preset.qr.max_pct_of_text_zone_width
+      : 100;
+    const maxWidthByPct = (maxWidthPct / 100) * baseTextRect.width;
+    const availableHeightPx = Math.max(0, baseTextRect.height - qrMarginPx * 2);
+    const finalSidePx = Math.min(qrSidePx, maxWidthByPct, availableHeightPx);
+    const expectedDropPx = finalSidePx + qrMarginPx;
     const actualDropPx = baseResult.textRect.width - qrResult.textRect.width;
     assert.ok(
       Math.abs(actualDropPx - expectedDropPx) < 0.51,
       `expected textRect width drop of ${expectedDropPx.toFixed(2)}px but got ${actualDropPx.toFixed(2)}px`,
+    );
+  } finally {
+    clearPresetOverrides();
+  }
+});
+
+test('oversized QR clamps to text height and preserves block offset', async () => {
+  clearPresetOverrides();
+  try {
+    const geometry = {
+      labelWidthMm: 37,
+      labelHeightMm: 24,
+      printableWidthMm: 33,
+      printableHeightMm: 22,
+      marginX: 2,
+      marginY: 1,
+    };
+    const presetKey = geometry.labelHeightMm;
+    const basePreset = getActiveLayoutPreset(presetKey);
+    const exaggeratedSideMm = (geometry.printableHeightMm || geometry.labelHeightMm) * 2;
+    setPresetOverride(presetKey, {
+      qr: {
+        ...(basePreset.qr || {}),
+        side_mm: exaggeratedSideMm,
+      },
+    });
+    const qrDataUrl = 'data:image/png;base64,AAAAD';
+    const result = await renderLabelSVG({
+      geometry,
+      pxPerMm,
+      textLines: { line1: 'Tall QR', line2: 'Check', line3: '' },
+      hardwareInfo: null,
+      qrContent: 'https://example.com/oversized',
+      qrGenerator: async (_, size) => ({ dataUrl: qrDataUrl, sizePx: size }),
+    });
+    const images = extractImages(result.svgMarkup);
+    assert.equal(images.length, 1, 'expected a single QR image to render');
+
+    const activePreset = getActiveLayoutPreset(presetKey);
+    const qrMarginMm = activePreset.qr?.margin_mm || 0;
+    const qrMarginPx = mmToPx(qrMarginMm, pxPerMm);
+    const availableHeightPx = Math.max(0, result.textRect.height - qrMarginPx * 2);
+    assert.ok(
+      images[0].height <= availableHeightPx + 0.51,
+      `QR height (${images[0].height.toFixed(2)}px) should not exceed text height minus margins (${availableHeightPx.toFixed(2)}px)`,
+    );
+    assert.ok(
+      result.textLayout.zones.block.y >= result.textRect.y - 0.51,
+      'text block should remain at or below the top boundary of the text rect',
     );
   } finally {
     clearPresetOverrides();
@@ -1314,17 +1372,23 @@ test('layoutText keeps end-aligned anchors clear of QR bounds', () => {
       ...preset,
       text_zone: { ...preset.text_zone, alignment: 'end' },
     };
-    const textRect = { x: 20, y: 10, width: 160, height: 60 };
     const qrSizePx = 48;
     const qrMarginPx = mmToPx(override.qr.margin_mm || 0, pxPerMm);
+    const clearancePx = qrSizePx + qrMarginPx;
+    const textRect = {
+      x: 20,
+      y: 10,
+      width: 160 - clearancePx,
+      height: 60,
+    };
     const layout = layoutText({
       textLines: { line1: 'QR Label', line2: '', line3: '' },
       textRect,
       preset: override,
       pxPerMm,
-      qrBounds: { size: qrSizePx },
+      qrBounds: { size: qrSizePx, clearancePx },
     });
-    const expectedAnchor = textRect.x + textRect.width - (qrSizePx + qrMarginPx);
+    const expectedAnchor = textRect.x + textRect.width;
     assert.equal(layout.main.anchor, 'end');
     assert.ok(
       Math.abs(layout.main.x - expectedAnchor) < 0.51,
