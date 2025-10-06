@@ -4,6 +4,7 @@ import {
   metricThreadSizes,
   imperialThreadSizes,
   electricalComponentTypes,
+  hardwareImageFolders,
 } from './data.js';
 import { updatePreview, updateDownloadState } from './render.js';
 
@@ -21,6 +22,30 @@ const THREAD_SIZE_NOT_APPLICABLE_TEXT = 'Not applicable';
 let validThreadSizes = new Set();
 const ELECTRICAL_COMPONENT_TYPES = new Set(electricalComponentTypes);
 
+function updateThreadSizePickerIcon() {
+  if (!threadSizePickerButton) {
+    return;
+  }
+  const iconWrapper = threadSizePickerButton.querySelector('.bolt-drive-picker__current-icon');
+  const iconImage = threadSizePickerButton.querySelector('.bolt-drive-picker__current-icon-image');
+  if (!iconWrapper || !iconImage) {
+    return;
+  }
+
+  const folder = hardwareImageFolders[state.hardwareType];
+  const shouldShowIcon = Boolean(folder) && !threadSizePickerButton.disabled;
+
+  if (shouldShowIcon) {
+    iconImage.src = `images/${folder}/thread_size.svg`;
+    iconImage.hidden = false;
+    iconWrapper.classList.remove('is-empty');
+  } else {
+    iconImage.hidden = true;
+    iconImage.src = '';
+    iconWrapper.classList.add('is-empty');
+  }
+}
+
 function updateThreadSizePickerLabel(text) {
   if (!threadSizePickerButton) {
     return;
@@ -29,10 +54,7 @@ function updateThreadSizePickerLabel(text) {
   if (label) {
     label.textContent = text;
   }
-  const iconWrapper = threadSizePickerButton.querySelector('.bolt-drive-picker__current-icon');
-  if (iconWrapper) {
-    iconWrapper.classList.add('is-empty');
-  }
+  updateThreadSizePickerIcon();
 }
 
 function buildThreadSizeOptionItem(value) {
