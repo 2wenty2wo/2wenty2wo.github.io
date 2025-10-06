@@ -83,10 +83,6 @@ const mockGlassOptionsContainer = {
   classList: createClassListMock(),
 };
 
-const mockGlassSpeedOptionsContainer = {
-  classList: createClassListMock(),
-};
-
 const mockGlassSpeedSelect = {
   value: '',
   disabled: false,
@@ -95,7 +91,115 @@ const mockGlassSpeedSelect = {
 
 const mockGlassSizeSelect = {
   value: '',
+  options: [
+    { value: '' },
+    { value: '5 × 20 mm' },
+    { value: '6.3 × 32 mm (1/4″ × 1-1/4″)' },
+  ],
 };
+
+const mockGlassSpeedPicker = {
+  classList: createClassListMock(),
+};
+
+const mockGlassSpeedPickerLabel = { textContent: '' };
+const mockGlassSpeedPickerIcon = { classList: createClassListMock() };
+
+const mockGlassSpeedPickerButton = {
+  disabled: false,
+  attributes: {},
+  classList: createClassListMock(),
+  setAttribute: jest.fn(function setAttribute(name, value) {
+    this.attributes[name] = value;
+  }),
+  removeAttribute: jest.fn(function removeAttribute(name) {
+    delete this.attributes[name];
+  }),
+  querySelector: jest.fn(selector => {
+    if (selector === '.bolt-drive-picker__current-label') {
+      return mockGlassSpeedPickerLabel;
+    }
+    if (selector === '.bolt-drive-picker__current-icon') {
+      return mockGlassSpeedPickerIcon;
+    }
+    return null;
+  }),
+};
+
+const mockGlassSpeedPickerList = {
+  items: [],
+  hidden: false,
+  appendChild(item) {
+    this.items.push(item);
+    return item;
+  },
+  set innerHTML(value) {
+    if (value === '') {
+      this.items = [];
+      return;
+    }
+    throw new Error(`Unexpected innerHTML assignment: ${value}`);
+  },
+  querySelectorAll(selector) {
+    if (selector === '[role="option"]') {
+      return this.items;
+    }
+    return [];
+  },
+};
+
+const mockGlassSizePicker = {
+  classList: createClassListMock(),
+};
+
+const mockGlassSizePickerLabel = { textContent: '' };
+const mockGlassSizePickerIcon = { classList: createClassListMock() };
+
+const mockGlassSizePickerButton = {
+  disabled: false,
+  attributes: {},
+  classList: createClassListMock(),
+  setAttribute: jest.fn(function setAttribute(name, value) {
+    this.attributes[name] = value;
+  }),
+  removeAttribute: jest.fn(function removeAttribute(name) {
+    delete this.attributes[name];
+  }),
+  querySelector: jest.fn(selector => {
+    if (selector === '.bolt-drive-picker__current-label') {
+      return mockGlassSizePickerLabel;
+    }
+    if (selector === '.bolt-drive-picker__current-icon') {
+      return mockGlassSizePickerIcon;
+    }
+    return null;
+  }),
+};
+
+const mockGlassSizePickerList = {
+  items: [],
+  hidden: false,
+  appendChild(item) {
+    this.items.push(item);
+    return item;
+  },
+  set innerHTML(value) {
+    if (value === '') {
+      this.items = [];
+      return;
+    }
+    throw new Error(`Unexpected innerHTML assignment: ${value}`);
+  },
+  querySelectorAll(selector) {
+    if (selector === '[role="option"]') {
+      return this.items;
+    }
+    return [];
+  },
+};
+
+const mockGlassSpeedField = { classList: createClassListMock() };
+const mockGlassSizeField = { classList: createClassListMock() };
 
 jest.mock('../js/dom-elements.js', () => ({
   __esModule: true,
@@ -106,8 +210,15 @@ jest.mock('../js/dom-elements.js', () => ({
     fuseValuePickerButton: mockFuseValuePickerButton,
     fuseValuePicker: mockFuseValuePicker,
     glassOptionsContainer: mockGlassOptionsContainer,
-    glassSpeedOptionsContainer: mockGlassSpeedOptionsContainer,
+    glassSpeedField: mockGlassSpeedField,
+    glassSpeedPicker: mockGlassSpeedPicker,
+    glassSpeedPickerButton: mockGlassSpeedPickerButton,
+    glassSpeedPickerList: mockGlassSpeedPickerList,
     glassSpeedSelect: mockGlassSpeedSelect,
+    glassSizeField: mockGlassSizeField,
+    glassSizePicker: mockGlassSizePicker,
+    glassSizePickerButton: mockGlassSizePickerButton,
+    glassSizePickerList: mockGlassSizePickerList,
     glassSizeSelect: mockGlassSizeSelect,
   },
 }));
@@ -196,10 +307,41 @@ beforeEach(() => {
   mockFuseValuePicker.classList.remove.mockClear();
   mockFuseValuePicker.classList.toggle.mockClear();
   mockGlassOptionsContainer.classList.toggle.mockClear();
-  mockGlassSpeedOptionsContainer.classList.toggle.mockClear();
+  mockGlassSpeedField.classList.toggle.mockClear();
+  mockGlassSizeField.classList.toggle.mockClear();
   mockGlassSpeedSelect.value = '';
   mockGlassSpeedSelect.disabled = false;
   mockGlassSizeSelect.value = '';
+  mockGlassSpeedPicker.classList.toggle.mockClear();
+  mockGlassSizePicker.classList.toggle.mockClear();
+  mockGlassSpeedPickerButton.disabled = false;
+  mockGlassSpeedPickerButton.attributes = {};
+  mockGlassSpeedPickerButton.classList.add.mockClear();
+  mockGlassSpeedPickerButton.classList.remove.mockClear();
+  mockGlassSpeedPickerButton.classList.toggle.mockClear();
+  mockGlassSpeedPickerButton.setAttribute.mockClear();
+  mockGlassSpeedPickerButton.removeAttribute.mockClear();
+  mockGlassSpeedPickerButton.querySelector.mockClear();
+  mockGlassSpeedPickerList.items = [];
+  mockGlassSpeedPickerList.hidden = false;
+  mockGlassSpeedPickerLabel.textContent = '';
+  mockGlassSpeedPickerIcon.classList.add.mockClear();
+  mockGlassSpeedPickerIcon.classList.remove.mockClear();
+  mockGlassSpeedPickerIcon.classList.toggle.mockClear();
+  mockGlassSizePickerButton.disabled = false;
+  mockGlassSizePickerButton.attributes = {};
+  mockGlassSizePickerButton.classList.add.mockClear();
+  mockGlassSizePickerButton.classList.remove.mockClear();
+  mockGlassSizePickerButton.classList.toggle.mockClear();
+  mockGlassSizePickerButton.setAttribute.mockClear();
+  mockGlassSizePickerButton.removeAttribute.mockClear();
+  mockGlassSizePickerButton.querySelector.mockClear();
+  mockGlassSizePickerList.items = [];
+  mockGlassSizePickerList.hidden = false;
+  mockGlassSizePickerLabel.textContent = '';
+  mockGlassSizePickerIcon.classList.add.mockClear();
+  mockGlassSizePickerIcon.classList.remove.mockClear();
+  mockGlassSizePickerIcon.classList.toggle.mockClear();
   state.fuseValue = '';
   state.fuseType = 'Glass';
   state.hardwareType = 'Fuse';
@@ -284,11 +426,14 @@ describe('fuse type selection behaviour', () => {
     setFuseTypeSelection('Panel Mount Fuse Holder', { triggerUpdate: false });
 
     expect(mockGlassOptionsContainer.classList.toggle).toHaveBeenCalledWith('d-none', false);
-    expect(mockGlassSpeedOptionsContainer.classList.toggle).toHaveBeenCalledWith('d-none', true);
+    expect(mockGlassSpeedField.classList.toggle).toHaveBeenCalledWith('d-none', true);
+    expect(mockGlassSizeField.classList.toggle).toHaveBeenCalledWith('d-none', false);
     expect(mockGlassSizeSelect.value).toBe('5 × 20 mm');
     expect(state.glassSpeed).toBe('');
     expect(mockGlassSpeedSelect.value).toBe('');
     expect(mockGlassSpeedSelect.disabled).toBe(true);
+    expect(mockGlassSpeedPickerButton.disabled).toBe(true);
+    expect(mockGlassSpeedPickerList.hidden).toBe(true);
   });
 
   it('hides and clears the glass options when switching to blade fuses', () => {
@@ -302,10 +447,12 @@ describe('fuse type selection behaviour', () => {
     expect(mockGlassOptionsContainer.classList.toggle).toHaveBeenCalledWith('d-none', true);
     expect(state.glassSize).toBe('');
     expect(mockGlassSizeSelect.value).toBe('');
-    expect(mockGlassSpeedOptionsContainer.classList.toggle).toHaveBeenCalledWith('d-none', false);
+    expect(mockGlassSpeedField.classList.toggle).toHaveBeenCalledWith('d-none', true);
+    expect(mockGlassSizeField.classList.toggle).toHaveBeenCalledWith('d-none', true);
     expect(state.glassSpeed).toBe('');
     expect(mockGlassSpeedSelect.value).toBe('');
-    expect(mockGlassSpeedSelect.disabled).toBe(false);
+    expect(mockGlassSpeedSelect.disabled).toBe(true);
+    expect(mockGlassSpeedPickerButton.disabled).toBe(true);
   });
 
   it('restores fuse speed options when switching back to glass fuses', () => {
@@ -314,12 +461,10 @@ describe('fuse type selection behaviour', () => {
 
     setFuseTypeSelection('Glass', { triggerUpdate: false });
 
-    expect(mockGlassSpeedOptionsContainer.classList.toggle).toHaveBeenLastCalledWith(
-      'd-none',
-      false,
-    );
+    expect(mockGlassSpeedField.classList.toggle).toHaveBeenLastCalledWith('d-none', false);
     expect(mockGlassSpeedSelect.disabled).toBe(false);
     expect(mockGlassSpeedSelect.value).toBe('Slow-blow');
+    expect(mockGlassSpeedPickerButton.disabled).toBe(false);
   });
 });
 
