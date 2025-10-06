@@ -312,6 +312,67 @@ const validPotentiometerTapers = new Set(
 );
 const BEARING_TYPE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const validBearingCodes = new Set(bearingOptions.map(option => option.code));
+
+function formatBearingDetails(option) {
+  if (!option) {
+    return '';
+  }
+  const detailParts = [option.dimensions, option.shieldType, option.notes]
+    .map(part => (typeof part === 'string' ? part.trim() : ''))
+    .filter(Boolean);
+  return detailParts.join(' — ');
+}
+
+function formatBearingOptionLabel(option) {
+  if (!option) {
+    return '';
+  }
+  const detailParts = [option.dimensions, option.shieldType]
+    .map(part => (typeof part === 'string' ? part.trim() : ''))
+    .filter(Boolean);
+  if (option.notes && option.notes.trim()) {
+    detailParts.push(option.notes.trim());
+  }
+  if (detailParts.length === 0) {
+    return option.code;
+  }
+  return `${option.code} — ${detailParts.join(' · ')}`;
+}
+
+function createBearingLabelFragment(option) {
+  const fragment = document.createDocumentFragment();
+  if (!option) {
+    return fragment;
+  }
+
+  const codeLine = document.createElement('span');
+  codeLine.className = 'bearing-picker__line bearing-picker__code';
+  codeLine.textContent = option.code;
+  fragment.appendChild(codeLine);
+
+  if (option.dimensions && option.dimensions.trim()) {
+    const dimensionLine = document.createElement('span');
+    dimensionLine.className = 'bearing-picker__line bearing-picker__dimensions';
+    dimensionLine.textContent = option.dimensions.trim();
+    fragment.appendChild(dimensionLine);
+  }
+
+  if (option.shieldType && option.shieldType.trim()) {
+    const shieldLine = document.createElement('span');
+    shieldLine.className = 'bearing-picker__line bearing-picker__shield';
+    shieldLine.textContent = option.shieldType.trim();
+    fragment.appendChild(shieldLine);
+  }
+
+  if (option.notes && option.notes.trim()) {
+    const notesLine = document.createElement('span');
+    notesLine.className = 'bearing-picker__line bearing-picker__notes';
+    notesLine.textContent = option.notes.trim();
+    fragment.appendChild(notesLine);
+  }
+
+  return fragment;
+}
 const CONNECTOR_CATEGORY_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const CONNECTOR_SERIES_PLACEHOLDER_TEXT = CONNECTOR_PLACEHOLDER_TEXT;
 const validConnectorCategoryIds = new Set(connectorCatalog.map(category => category.id));
@@ -3740,12 +3801,9 @@ function findBearingOption(code) {
 export function syncBearingTypePicker({ isValid = true } = {}) {
   const currentValue = typeof state.bearingType === 'string' ? state.bearingType.trim() : '';
   const sanitizedValue = validBearingCodes.has(currentValue) ? currentValue : '';
-  const optionElement =
-    sanitizedValue && bearingTypeSelect
-      ? bearingTypeSelect.querySelector(`option[value="${sanitizedValue}"]`)
-      : null;
-  const labelText = optionElement
-    ? optionElement.textContent.trim()
+  const optionData = findBearingOption(sanitizedValue);
+  const labelText = optionData
+    ? formatBearingOptionLabel(optionData)
     : BEARING_TYPE_PLACEHOLDER_TEXT;
 
   if (bearingTypeSelect) {
@@ -3755,7 +3813,16 @@ export function syncBearingTypePicker({ isValid = true } = {}) {
   if (bearingTypePickerButton) {
     const label = bearingTypePickerButton.querySelector('.bolt-drive-picker__current-label');
     if (label) {
-      label.textContent = labelText;
+      label.textContent = '';
+      if (optionData) {
+        label.classList.add('bearing-picker__option-label');
+        label.appendChild(createBearingLabelFragment(optionData));
+        label.setAttribute('aria-label', labelText);
+      } else {
+        label.classList.remove('bearing-picker__option-label');
+        label.textContent = BEARING_TYPE_PLACEHOLDER_TEXT;
+        label.removeAttribute('aria-label');
+      }
     }
     const iconWrapper = bearingTypePickerButton.querySelector('.bolt-drive-picker__current-icon');
     const iconImage = bearingTypePickerButton.querySelector(
@@ -3784,6 +3851,12 @@ export function syncBearingTypePicker({ isValid = true } = {}) {
       bearingTypePickerButton.classList.add('is-invalid');
       bearingTypePickerButton.setAttribute('aria-invalid', 'true');
     }
+
+    if (optionData) {
+      bearingTypePickerButton.setAttribute('aria-label', labelText);
+    } else {
+      bearingTypePickerButton.removeAttribute('aria-label');
+    }
   }
 
   if (bearingTypePicker) {
@@ -3808,7 +3881,7 @@ export function setBearingTypeSelection(nextCode, { triggerUpdate = true } = {})
   const optionData = findBearingOption(sanitizedValue);
 
   state.bearingType = sanitizedValue;
-  state.bearingDetails = optionData ? optionData.description : '';
+  state.bearingDetails = optionData ? formatBearingDetails(optionData) : '';
 
   syncBearingTypePicker({ isValid: true });
 
@@ -3843,8 +3916,8 @@ export function populateBearingOptions() {
   bearingOptions.forEach(option => {
     const opt = document.createElement('option');
     opt.value = option.code;
-    opt.textContent = `${option.code} — ${option.description}`;
-    opt.dataset.description = option.description;
+    opt.textContent = formatBearingOptionLabel(option);
+    opt.dataset.details = formatBearingDetails(option);
     bearingTypeSelect.appendChild(opt);
 
     if (bearingTypePickerList) {
@@ -3853,10 +3926,11 @@ export function populateBearingOptions() {
       item.dataset.value = option.code;
       item.setAttribute('role', 'option');
       item.tabIndex = -1;
+      item.setAttribute('aria-label', formatBearingOptionLabel(option));
 
-      const label = document.createElement('span');
-      label.className = 'bolt-drive-picker__option-label';
-      label.textContent = `${option.code} — ${option.description}`;
+      const label = document.createElement('div');
+      label.className = 'bolt-drive-picker__option-label bearing-picker__option-label';
+      label.appendChild(createBearingLabelFragment(option));
 
       item.appendChild(label);
 
@@ -3866,7 +3940,7 @@ export function populateBearingOptions() {
 
   const selectedOption = findBearingOption(sanitizedValue);
   state.bearingType = sanitizedValue;
-  state.bearingDetails = selectedOption ? selectedOption.description : '';
+  state.bearingDetails = selectedOption ? formatBearingDetails(selectedOption) : '';
 
   if (bearingTypePickerButton) {
     bearingTypePickerButton.disabled = bearingOptions.length === 0;
