@@ -634,6 +634,78 @@ test('part-specific overrides take precedence over shared height overrides', () 
   }
 });
 
+test('bolt subtitles include head, drive, and notes information', async () => {
+  const stubDocument = {
+    getElementById: () => null,
+    querySelector: () => null,
+    querySelectorAll: () => [],
+    documentElement: { style: { setProperty: () => {} } },
+    createElement: tag => {
+      if (tag === 'canvas') {
+        return {
+          getContext: () => ({
+            drawImage: () => {},
+            clearRect: () => {},
+            scale: () => {},
+          }),
+          toBlob: callback => callback(null),
+        };
+      }
+      return { style: {}, classList: { add: () => {}, remove: () => {}, contains: () => false } };
+    },
+    fonts: {
+      ready: Promise.resolve(),
+      load: () => Promise.resolve(),
+    },
+  };
+  const originalDocument = global.document;
+  try {
+    global.document = stubDocument;
+    const [{ state }, { buildTextLinesForTest }] = await Promise.all([
+      import('../js/state.js'),
+      import('../js/render.js'),
+    ]);
+    const originalState = { ...state };
+    try {
+      Object.assign(state, {
+        hardwareType: 'Bolt',
+        threadSize: 'M6',
+        length: '20 mm',
+        boltHead: 'cap_head',
+        boltDrive: 'hex',
+        notes: 'Use threadlocker',
+        showText: true,
+        showTextMain: true,
+        showTextInfo: true,
+      });
+      const textLines = buildTextLinesForTest();
+      assert.equal(textLines.line1, 'M6 × 20 mm', 'bolt size should appear on the main line');
+      assert.equal(
+        textLines.line2,
+        'Socket Cap • Hex',
+        'head and drive should be combined in the first subtitle line',
+      );
+      assert.equal(textLines.line3, 'Use threadlocker', 'notes should use the remaining subtitle slot');
+      assert.ok(
+        textLines.line2.includes('Socket Cap') && textLines.line2.includes('Hex'),
+        'expected head and drive labels to remain visible after formatting',
+      );
+      assert.ok(
+        [textLines.line2, textLines.line3].some(line => line.includes('Use threadlocker')),
+        'notes should be surfaced in the subtitle lines',
+      );
+    } finally {
+      Object.assign(state, originalState);
+    }
+  } finally {
+    if (originalDocument === undefined) {
+      delete global.document;
+    } else {
+      global.document = originalDocument;
+    }
+  }
+});
+
 test('sub-part overrides merge with part and global overrides', () => {
   clearPresetOverrides();
   try {

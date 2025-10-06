@@ -1490,8 +1490,25 @@ function buildTextLines() {
     const driveEntry = boltDriveMap.get((state.boltDrive || '').trim());
     const headLabel = headEntry ? headEntry.label : '';
     const driveLabel = driveEntry ? driveEntry.label : '';
+    const notes = (state.notes || '').trim();
+    const subtitleParts = [];
+    if (headLabel) {
+      subtitleParts.push(headLabel);
+    }
+    if (driveLabel) {
+      subtitleParts.push(driveLabel);
+    }
+    let line2 = subtitleParts.join(' • ');
+    let line3 = '';
+    if (notes) {
+      if (line2) {
+        line3 = notes;
+      } else {
+        line2 = notes;
+      }
+    }
     const line1 = pieces.join(' ') || 'Bolt';
-    return applyTextVisibility({ line1, line2: headLabel || '', line3: driveLabel || '' });
+    return applyTextVisibility({ line1, line2, line3 });
   }
 
   if (state.hardwareType === 'Nut') {

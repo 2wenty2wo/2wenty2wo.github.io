@@ -1064,6 +1064,40 @@ function buildSubtitleCandidates(textLines, preset) {
   if (baseCandidate.length > 0) {
     candidates.push(baseCandidate);
   }
+  const expandedCandidate = [];
+  let hasExpansion = false;
+  const splitSeparators = [' • ', ' · ', ' \u00b7 '];
+  for (const entry of baseCandidate) {
+    if (!entry || !entry.text) {
+      continue;
+    }
+    const separator = splitSeparators.find(token => entry.text.includes(token));
+    if (!separator) {
+      expandedCandidate.push(entry);
+      continue;
+    }
+    const parts = entry.text
+      .split(separator)
+      .map(part => part.trim())
+      .filter(Boolean);
+    if (parts.length < 2) {
+      expandedCandidate.push(entry);
+      continue;
+    }
+    hasExpansion = true;
+    for (const part of parts) {
+      const expanded = normalizeLineEntry(
+        { text: part, wrapMode: entry.wrapMode },
+        { defaultWrapMode: entry.wrapMode },
+      );
+      if (expanded) {
+        expandedCandidate.push(expanded);
+      }
+    }
+  }
+  if (hasExpansion && expandedCandidate.length > 0) {
+    candidates.push(expandedCandidate);
+  }
   if (
     textPreset.compact_join_subtitles &&
     line2Entry &&
