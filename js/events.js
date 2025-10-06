@@ -121,8 +121,7 @@ const {
   fuseValuePicker,
   fuseValuePickerButton,
   fuseValuePickerList,
-  glassSlowBlowCheckbox,
-  glassFastBlowCheckbox,
+  glassSpeedSelect,
   glassSizeSelect,
   lengthInput,
   notesInput,
@@ -5536,34 +5535,9 @@ export function initEventHandlers() {
     });
   }
 
-  if (glassSlowBlowCheckbox) {
-    glassSlowBlowCheckbox.addEventListener('change', () => {
-      if (!glassSlowBlowCheckbox.checked) {
-        if (!glassFastBlowCheckbox || !glassFastBlowCheckbox.checked) {
-          state.glassSpeed = '';
-        }
-      } else {
-        state.glassSpeed = 'Slow Blow (Time Delay)';
-        if (glassFastBlowCheckbox) {
-          glassFastBlowCheckbox.checked = false;
-        }
-      }
-      updatePreview();
-    });
-  }
-
-  if (glassFastBlowCheckbox) {
-    glassFastBlowCheckbox.addEventListener('change', () => {
-      if (!glassFastBlowCheckbox.checked) {
-        if (!glassSlowBlowCheckbox || !glassSlowBlowCheckbox.checked) {
-          state.glassSpeed = '';
-        }
-      } else {
-        state.glassSpeed = 'Fast Blow';
-        if (glassSlowBlowCheckbox) {
-          glassSlowBlowCheckbox.checked = false;
-        }
-      }
+  if (glassSpeedSelect) {
+    glassSpeedSelect.addEventListener('change', () => {
+      state.glassSpeed = glassSpeedSelect.value;
       updatePreview();
     });
   }
