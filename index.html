@@ -1652,51 +1652,62 @@
                     />
                   </div>
                 </div>
-                <div
-                  class="d-flex align-items-center justify-content-between p-3 rounded-4 border bg-body-secondary"
-                >
-                  <label
-                    class="d-flex align-items-center gap-2 fw-semibold text-body mb-0"
-                    for="qrcode-toggle"
-                  >
-                    <i class="fa-solid fa-qrcode text-secondary fs-5" aria-hidden="true"></i>
-                    <span>QR Code</span>
-                  </label>
-                  <div class="form-check form-switch m-0 ps-0">
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      role="switch"
-                      id="qrcode-toggle"
-                    />
-                  </div>
-                </div>
-                <div id="qr-content-wrapper" class="p-3 rounded-4 border bg-body-secondary d-none">
-                  <label
-                    for="qr-content-input"
-                    class="form-label fw-semibold mb-2 d-flex align-items-center gap-2"
-                  >
-                    QR Code Content
-                    <span
-                      class="qr-info-icon"
-                      tabindex="0"
-                      role="img"
-                      aria-label="Long URLs will be automatically shortened for better QR code readability. This makes the QR code simpler and easier to scan on small labels."
-                      data-tooltip="Long URLs will be automatically shortened for better QR code readability. This makes the QR code simpler and easier to scan on small labels."
+                <div class="p-3 rounded-4 border bg-body-secondary">
+                  <div class="d-flex align-items-center justify-content-between gap-2">
+                    <label
+                      class="d-flex align-items-center gap-2 fw-semibold text-body mb-0"
+                      for="qrcode-toggle"
+                      id="qrcode-toggle-label"
                     >
-                      <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
-                    </span>
-                  </label>
-                  <input
-                    type="url"
-                    inputmode="url"
-                    id="qr-content-input"
-                    class="form-control"
-                    placeholder="URL or text for QR code"
-                    autocomplete="off"
-                    spellcheck="false"
-                    disabled
-                  />
+                      <i class="fa-solid fa-qrcode text-secondary fs-5" aria-hidden="true"></i>
+                      <span>QR Code</span>
+                    </label>
+                    <div class="form-check form-switch m-0 ps-0">
+                      <input
+                        class="form-check-input"
+                        type="checkbox"
+                        role="switch"
+                        id="qrcode-toggle"
+                        aria-controls="qr-content-wrapper"
+                        aria-expanded="false"
+                      />
+                    </div>
+                  </div>
+                  <div
+                    id="qr-content-wrapper"
+                    class="label-suboptions mt-3 is-collapsed"
+                    role="group"
+                    aria-labelledby="qrcode-toggle-label"
+                    aria-hidden="true"
+                  >
+                    <div class="label-suboption d-flex flex-column gap-2">
+                      <label
+                        for="qr-content-input"
+                        class="form-label fw-semibold d-flex align-items-center gap-2 mb-0"
+                      >
+                        QR Code Content
+                        <span
+                          class="qr-info-icon"
+                          tabindex="0"
+                          role="img"
+                          aria-label="Long URLs will be automatically shortened for better QR code readability. This makes the QR code simpler and easier to scan on small labels."
+                          data-tooltip="Long URLs will be automatically shortened for better QR code readability. This makes the QR code simpler and easier to scan on small labels."
+                        >
+                          <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                        </span>
+                      </label>
+                      <input
+                        type="url"
+                        inputmode="url"
+                        id="qr-content-input"
+                        class="form-control"
+                        placeholder="URL or text for QR code"
+                        autocomplete="off"
+                        spellcheck="false"
+                        disabled
+                      />
+                    </div>
+                  </div>
                 </div>
                 <div>
                   <label

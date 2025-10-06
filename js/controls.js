@@ -157,6 +157,7 @@ function applyStateToControls() {
   }
   if (qrcodeToggle) {
     qrcodeToggle.checked = state.showQr;
+    qrcodeToggle.setAttribute('aria-expanded', state.showQr ? 'true' : 'false');
   }
   if (qrContentInput) {
     qrContentInput.value = state.qrContent || '';
@@ -202,7 +203,7 @@ function init() {
   initEventHandlers();
   updateDownloadState();
   updateTextOptionsVisibility({ animate: false });
-  updateQrContentVisibility();
+  updateQrContentVisibility({ animate: false });
   updatePreview();
 }
 
