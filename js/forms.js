@@ -1216,13 +1216,13 @@ export function updateComponentValueUi({ resetIfHidden = true } = {}) {
       if (showResistorValues) {
         iconImage.src = 'images/resistors/omega.svg';
         iconImage.hidden = false;
+        iconImage.classList.add('bolt-drive-picker__current-icon-image--omega');
         iconWrapper.classList.remove('is-empty');
-        iconWrapper.classList.add('bolt-drive-picker__current-icon--no-background');
       } else {
         iconImage.hidden = true;
         iconImage.removeAttribute('src');
+        iconImage.classList.remove('bolt-drive-picker__current-icon-image--omega');
         iconWrapper.classList.add('is-empty');
-        iconWrapper.classList.remove('bolt-drive-picker__current-icon--no-background');
       }
     }
   }
@@ -1512,13 +1512,13 @@ export function syncResistorValuePicker({ isValid = true } = {}) {
       if (!resistorValuePickerButton.disabled) {
         iconImage.src = 'images/resistors/omega.svg';
         iconImage.hidden = false;
+        iconImage.classList.add('bolt-drive-picker__current-icon-image--omega');
         iconWrapper.classList.remove('is-empty');
-        iconWrapper.classList.add('bolt-drive-picker__current-icon--no-background');
       } else {
         iconImage.hidden = true;
         iconImage.removeAttribute('src');
+        iconImage.classList.remove('bolt-drive-picker__current-icon-image--omega');
         iconWrapper.classList.add('is-empty');
-        iconWrapper.classList.remove('bolt-drive-picker__current-icon--no-background');
       }
     }
 
