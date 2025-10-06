@@ -303,6 +303,7 @@ const LETTER_SPACING_BASE_STEPS = [0, -0.1, -0.2, -0.3, -0.4];
 const QR_SIDE_PX_MIN = 24;
 const ICON_PADDING_MM = 0.4;
 const MEDIA_TEXT_GAP_MM = 0.6;
+const QR_TEXT_WIDTH_MM_FLOOR = 4;
 const MIN_MAIN_FONT_WEIGHT = 700;
 const MAX_MAIN_FONT_WEIGHT = 700;
 
@@ -1642,6 +1643,7 @@ function ensureTextFits({
   pxPerMm,
   mediaPresent,
   textLines,
+  mediaZoneWidthMinPx,
 }) {
   const trimmedPrimaryLine = (textLines.line1 || '').trim();
   const trimmedSecondaryLine = (textLines.line2 || '').trim();
@@ -1655,7 +1657,12 @@ function ensureTextFits({
     mediaPresent && hasText
       ? mmToPx(preset.media_text_gap_mm ?? MEDIA_TEXT_GAP_MM, pxPerMm)
       : 0;
-  let mediaWidthPx = mediaPresent ? mediaZoneWidthPx : 0;
+  const minMediaWidthPx = mediaPresent
+    ? Math.min(Math.max(0, mediaZoneWidthMinPx ?? 0), contentRect.width)
+    : 0;
+  let mediaWidthPx = mediaPresent
+    ? clamp(mediaZoneWidthPx, minMediaWidthPx, contentRect.width)
+    : 0;
   const mainFontWeight = resolveMainFontWeight(preset.text_zone?.main?.font_weight);
   const horizontalOffsetRawPx = mmToPx(preset.text_zone?.horizontal_offset_mm || 0, pxPerMm);
   const horizontalOffsetTargetPx = Number.isFinite(horizontalOffsetRawPx)
@@ -1716,7 +1723,14 @@ function ensureTextFits({
     if (effectiveTextWidthPx >= minTextWidthPx - 0.5) {
       break;
     }
-    mediaWidthPx = Math.max(0, mediaWidthPx - contentRect.width * 0.06);
+    if (!mediaPresent) {
+      break;
+    }
+    const reduced = Math.max(minMediaWidthPx, mediaWidthPx - contentRect.width * 0.06);
+    if (reduced === mediaWidthPx) {
+      break;
+    }
+    mediaWidthPx = reduced;
     effectiveTextWidthPx = recomputeTextRect();
   }
 
@@ -1739,7 +1753,14 @@ function ensureTextFits({
     mainFit.fontSizePx <= toFontPx(preset.text_zone.main.min_pt, pxPerMm) + 0.2
   ) {
     for (let i = 0; i < 4 && mediaWidthPx > 0; i += 1) {
-      mediaWidthPx = Math.max(0, mediaWidthPx - contentRect.width * 0.04);
+      if (!mediaPresent) {
+        break;
+      }
+      const reduced = Math.max(minMediaWidthPx, mediaWidthPx - contentRect.width * 0.04);
+      if (reduced === mediaWidthPx) {
+        break;
+      }
+      mediaWidthPx = reduced;
       textRect.width = Math.max(
         minTextWidthPx,
         contentRect.width - mediaWidthPx - (mediaWidthPx > 0 ? textGapPx : 0),
@@ -1885,6 +1906,23 @@ export async function renderLabelSVG({
   });
   mediaWidthPx = ensureResult.mediaWidthPx;
   let textRect = ensureResult.textRect;
+  const baselineMediaWidthPx = mediaWidthPx;
+  const baselineTextWidthPx = textRect.width;
+  const baselineContentWidthPx = contentRect.width;
+  const baselineZoneTotalPx = baselineMediaWidthPx + baselineTextWidthPx;
+  const baselineTextGapPx =
+    baselineMediaWidthPx > 0 && baselineTextWidthPx > 0
+      ? mmToPx(preset.media_text_gap_mm ?? MEDIA_TEXT_GAP_MM, pxPerMm)
+      : 0;
+  const baselineMediaShare =
+    baselineZoneTotalPx > 0 ? baselineMediaWidthPx / baselineZoneTotalPx : 0;
+  const minTextWidthBaselineMm = Number.isFinite(minTextWidthMm)
+    ? Math.max(0, minTextWidthMm)
+    : 0;
+  const minTextWidthQrFloorMm =
+    minTextWidthBaselineMm > 0
+      ? Math.min(minTextWidthBaselineMm, QR_TEXT_WIDTH_MM_FLOOR)
+      : 0;
 
   let qrPlan = null;
   let qrReservedWidthPx = 0;
@@ -1915,27 +1953,43 @@ export async function renderLabelSVG({
           ...contentRect,
           width: Math.max(0, contentRect.width - qrReservedWidthPx),
         };
-        const widthReductionPx = Math.max(0, contentRect.width - qrAwareContentRect.width);
-        if (widthReductionPx > 0) {
-          const baselineMediaWidthPx = Math.max(0, mediaWidthPx);
-          const baselineTextWidthPx = Math.max(0, textRect.width);
-          const flexibleWidthPx = baselineMediaWidthPx + baselineTextWidthPx;
-          if (flexibleWidthPx > 0) {
-            const mediaShare = baselineMediaWidthPx / flexibleWidthPx;
-            const targetMediaWidthPx = baselineMediaWidthPx - widthReductionPx * mediaShare;
-            mediaWidthPx = clamp(targetMediaWidthPx, 0, qrAwareContentRect.width);
-          } else {
-            mediaWidthPx = Math.min(mediaWidthPx, qrAwareContentRect.width);
-          }
+        const contentWidthRatio =
+          baselineContentWidthPx > 0
+            ? clamp(qrAwareContentRect.width / baselineContentWidthPx, 0, 1)
+            : 1;
+        const qrAwareCombinedWidthPx = Math.max(
+          0,
+          qrAwareContentRect.width -
+            (baselineMediaShare > 0 && baselineTextWidthPx > 0 ? baselineTextGapPx : 0),
+        );
+        const proportionalMediaTargetPx = mediaItems.length > 0
+          ? clamp(qrAwareCombinedWidthPx * baselineMediaShare, 0, qrAwareContentRect.width)
+          : 0;
+        if (mediaItems.length > 0) {
+          mediaWidthPx = proportionalMediaTargetPx;
+        } else {
+          mediaWidthPx = 0;
         }
+        const initialMediaWidthPx = mediaWidthPx;
+        const scaledMinTextWidthMm =
+          minTextWidthBaselineMm > 0
+            ? Math.min(
+                minTextWidthBaselineMm,
+                Math.max(
+                  minTextWidthQrFloorMm,
+                  minTextWidthBaselineMm * contentWidthRatio,
+                ),
+              )
+            : 0;
         ensureResult = ensureTextFits({
           preset,
-          mediaZoneWidthPx: mediaWidthPx,
+          mediaZoneWidthPx: initialMediaWidthPx,
           contentRect: qrAwareContentRect,
-          minTextWidthMm,
+          minTextWidthMm: scaledMinTextWidthMm,
           pxPerMm,
           mediaPresent: mediaItems.length > 0,
           textLines,
+          mediaZoneWidthMinPx: proportionalMediaTargetPx,
         });
         mediaWidthPx = ensureResult.mediaWidthPx;
         textRect = ensureResult.textRect;
