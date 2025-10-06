@@ -255,10 +255,10 @@ export const capacitorValueOptions = Array.from(capacitorValueSet)
   });
 
 export const potentiometerValueOptions = [
-  { id: '1 kΩ', label: '1 kΩ', image: 'images/potentiometer/potentiometer.svg' },
-  { id: '10 kΩ', label: '10 kΩ', image: 'images/potentiometer/potentiometer.svg' },
-  { id: '100 kΩ', label: '100 kΩ', image: 'images/potentiometer/potentiometer.svg' },
-  { id: '1 MΩ', label: '1 MΩ', image: 'images/potentiometer/potentiometer.svg' },
+  { id: '1 kΩ', label: '1 kΩ', image: 'images/resistors/omega.svg' },
+  { id: '10 kΩ', label: '10 kΩ', image: 'images/resistors/omega.svg' },
+  { id: '100 kΩ', label: '100 kΩ', image: 'images/resistors/omega.svg' },
+  { id: '1 MΩ', label: '1 MΩ', image: 'images/resistors/omega.svg' },
 ];
 
 export const potentiometerTaperOptions = [
