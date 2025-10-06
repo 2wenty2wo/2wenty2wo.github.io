@@ -871,6 +871,7 @@ export function updateQrContentVisibility(options = {}) {
   const restoreTransition = animate ? null : temporarilyDisableTransition(qrContentWrapper);
 
   if (!shouldShow) {
+    qrContentWrapper.style.overflow = 'hidden';
     const measuredHeight = qrContentWrapper.scrollHeight;
     if (measuredHeight > 0) {
       qrContentWrapper.style.maxHeight = `${measuredHeight}px`;
@@ -883,6 +884,7 @@ export function updateQrContentVisibility(options = {}) {
   qrContentWrapper.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
 
   if (shouldShow) {
+    qrContentWrapper.style.overflow = 'visible';
     qrContentWrapper.style.removeProperty('max-height');
     qrContentInput.disabled = false;
     qrContentInput.value = state.qrContent || '';
