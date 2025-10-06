@@ -112,7 +112,17 @@ const glassSizeOptions = new Set(
         .filter(value => value && value.trim().length > 0)
     : [],
 );
-const glassSpeedOptions = new Set(['Slow Blow (Time Delay)', 'Fast Blow']);
+const glassSpeedOptions = new Set(
+  elements.glassSpeedSelect
+    ? Array.from(elements.glassSpeedSelect.options, option => option.value)
+        .map(value => value.trim())
+        .filter(value => value.length > 0)
+    : ['Slow-blow', 'Fast-blow'],
+);
+const legacyGlassSpeedMap = new Map([
+  ['Slow Blow (Time Delay)', 'Slow-blow'],
+  ['Fast Blow', 'Fast-blow'],
+]);
 const metricThreadSet = new Set(metricThreadSizes);
 const imperialThreadSet = new Set(imperialThreadSizes);
 const allThreadSizes = new Set([...metricThreadSet, ...imperialThreadSet]);
@@ -222,7 +232,8 @@ function sanitizeGlassSpeed(value) {
   if (!trimmed) {
     return '';
   }
-  return glassSpeedOptions.has(trimmed) ? trimmed : '';
+  const normalized = legacyGlassSpeedMap.get(trimmed) || trimmed;
+  return glassSpeedOptions.has(normalized) ? normalized : '';
 }
 
 function sanitizeGlassSize(value) {

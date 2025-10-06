@@ -60,13 +60,12 @@ const {
   fuseValueContainer,
   glassOptionsContainer,
   glassSpeedOptionsContainer,
+  glassSpeedSelect,
   fuseValueSelect,
   fuseValuePicker,
   fuseValuePickerButton,
   fuseValuePickerList,
   glassSizeSelect,
-  glassSlowBlowCheckbox,
-  glassFastBlowCheckbox,
   notesInput,
   nutTypeContainer,
   nutTypePicker,
@@ -4097,39 +4096,35 @@ export function updateGlassOptionVisibility({ resetIfHidden = false } = {}) {
     if (glassSizeSelect) {
       glassSizeSelect.value = state.glassSize || '';
     }
-    if (glassSlowBlowCheckbox) {
-      glassSlowBlowCheckbox.disabled = !requiresSpeedOptions;
-      glassSlowBlowCheckbox.checked =
-        requiresSpeedOptions && state.glassSpeed.startsWith('Slow');
-    }
-    if (glassFastBlowCheckbox) {
-      glassFastBlowCheckbox.disabled = !requiresSpeedOptions;
-      glassFastBlowCheckbox.checked =
-        requiresSpeedOptions && state.glassSpeed.startsWith('Fast');
-    }
-    if (!requiresSpeedOptions) {
-      state.glassSpeed = '';
+    if (glassSpeedSelect) {
+      if (requiresSpeedOptions) {
+        const validOptionExists = Array.from(glassSpeedSelect.options || []).some(
+          option => option.value === state.glassSpeed,
+        );
+        if (!validOptionExists) {
+          state.glassSpeed = '';
+        }
+        glassSpeedSelect.disabled = false;
+        glassSpeedSelect.value = state.glassSpeed || '';
+      } else {
+        state.glassSpeed = '';
+        glassSpeedSelect.value = '';
+        glassSpeedSelect.disabled = true;
+      }
     }
   } else if (resetIfHidden) {
     state.glassSpeed = '';
     state.glassSize = '';
-    if (glassSlowBlowCheckbox) {
-      glassSlowBlowCheckbox.checked = false;
-      glassSlowBlowCheckbox.disabled = false;
-    }
-    if (glassFastBlowCheckbox) {
-      glassFastBlowCheckbox.checked = false;
-      glassFastBlowCheckbox.disabled = false;
+    if (glassSpeedSelect) {
+      glassSpeedSelect.value = '';
+      glassSpeedSelect.disabled = false;
     }
     if (glassSizeSelect) {
       glassSizeSelect.value = '';
     }
   } else {
-    if (glassSlowBlowCheckbox) {
-      glassSlowBlowCheckbox.disabled = false;
-    }
-    if (glassFastBlowCheckbox) {
-      glassFastBlowCheckbox.disabled = false;
+    if (glassSpeedSelect) {
+      glassSpeedSelect.disabled = false;
     }
   }
 }

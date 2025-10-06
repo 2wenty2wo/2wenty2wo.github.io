@@ -48,13 +48,12 @@ const fuseValueContainer = document.getElementById('fuse-value-container');
 const fuseTypeMessage = document.getElementById('fuse-type-message');
 const glassOptionsContainer = document.getElementById('glass-options-container');
 const glassSpeedOptionsContainer = document.getElementById('glass-speed-options');
+const glassSpeedSelect = document.getElementById('glass-speed-select');
 const fuseValueSelect = document.getElementById('fuse-value-select');
 const fuseValuePicker = document.getElementById('fuse-value-picker');
 const fuseValuePickerButton = document.getElementById('fuse-value-picker-button');
 const fuseValuePickerList = document.getElementById('fuse-value-picker-list');
 const glassSizeSelect = document.getElementById('glass-size-select');
-const glassSlowBlowCheckbox = document.getElementById('glass-slow-blow');
-const glassFastBlowCheckbox = document.getElementById('glass-fast-blow');
 const fuseValueMessage = document.getElementById('fuse-value-message');
 const notesInput = document.getElementById('notes-input');
 const measurementSystemContainer = document.getElementById('measurement-system-container');
@@ -274,13 +273,12 @@ export const elements = {
   fuseValueContainer,
   glassOptionsContainer,
   glassSpeedOptionsContainer,
+  glassSpeedSelect,
   fuseValueSelect,
   fuseValuePicker,
   fuseValuePickerButton,
   fuseValuePickerList,
   glassSizeSelect,
-  glassSlowBlowCheckbox,
-  glassFastBlowCheckbox,
   fuseValueMessage,
   notesInput,
   measurementSystemContainer,

@@ -60,8 +60,7 @@ function applyStateToControls() {
   const {
     systemTypeRadios,
     glassSizeSelect,
-    glassSlowBlowCheckbox,
-    glassFastBlowCheckbox,
+    glassSpeedSelect,
     lengthInput,
     notesInput,
     customLine1Input,
@@ -90,11 +89,8 @@ function applyStateToControls() {
   if (glassSizeSelect) {
     glassSizeSelect.value = state.glassSize || '';
   }
-  if (glassSlowBlowCheckbox) {
-    glassSlowBlowCheckbox.checked = state.glassSpeed.startsWith('Slow');
-  }
-  if (glassFastBlowCheckbox) {
-    glassFastBlowCheckbox.checked = state.glassSpeed.startsWith('Fast');
+  if (glassSpeedSelect) {
+    glassSpeedSelect.value = state.glassSpeed || '';
   }
 
   setConnectorCategorySelection(state.connectorCategory || '', { triggerUpdate: false });
