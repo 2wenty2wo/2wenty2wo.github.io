@@ -38,7 +38,7 @@ import {
   componentImageMap,
   diodeValueLabelMap,
   mosfetChannelLabelMap,
-  mosfetPartLabelMap,
+  mosfetPartShortLabelMap,
 } from './data.js';
 import {
   renderLabelSVG,
@@ -1383,8 +1383,8 @@ function buildTextLines() {
       const channelId = state.mosfetChannel || '';
       const partId = state.mosfetPart || '';
       const channelLabel = channelId ? mosfetChannelLabelMap[channelId] || channelId : '';
-      const partLabel = partId ? mosfetPartLabelMap[partId] || partId : '';
-      const line1 = partLabel || 'MOSFET';
+      const partNumber = partId ? mosfetPartShortLabelMap[partId] || partId : '';
+      const line1 = partNumber || 'MOSFET';
       const line2Parts = [];
       if (channelLabel) {
         line2Parts.push(channelLabel);

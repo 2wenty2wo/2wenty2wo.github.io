@@ -334,12 +334,33 @@ export const mosfetPartOptions = [
   {
     id: 'IRLZ44N',
     label: 'IRLZ44N Logic-Level MOSFET',
+    shortLabel: 'IRLZ44N',
     image: 'images/mosfet/mosfet.svg',
   },
-  { id: 'AO3400A', label: 'AO3400A MOSFET', image: 'images/mosfet/mosfet_smd.svg' },
-  { id: 'BS170', label: 'BS170 MOSFET', image: 'images/mosfet/mosfet.svg' },
-  { id: 'IRF520', label: 'IRF520 MOSFET', image: 'images/mosfet/mosfet.svg' },
-  { id: 'FQP30N06L', label: 'FQP30N06L MOSFET', image: 'images/mosfet/mosfet.svg' },
+  {
+    id: 'AO3400A',
+    label: 'AO3400A MOSFET',
+    shortLabel: 'AO3400A',
+    image: 'images/mosfet/mosfet_smd.svg',
+  },
+  {
+    id: 'BS170',
+    label: 'BS170 MOSFET',
+    shortLabel: 'BS170',
+    image: 'images/mosfet/mosfet.svg',
+  },
+  {
+    id: 'IRF520',
+    label: 'IRF520 MOSFET',
+    shortLabel: 'IRF520',
+    image: 'images/mosfet/mosfet.svg',
+  },
+  {
+    id: 'FQP30N06L',
+    label: 'FQP30N06L MOSFET',
+    shortLabel: 'FQP30N06L',
+    image: 'images/mosfet/mosfet.svg',
+  },
 ];
 
 export const mosfetChannelLabelMap = mosfetChannelOptions.reduce((map, option) => {
@@ -349,6 +370,11 @@ export const mosfetChannelLabelMap = mosfetChannelOptions.reduce((map, option) =
 
 export const mosfetPartLabelMap = mosfetPartOptions.reduce((map, option) => {
   map[option.id] = option.label;
+  return map;
+}, {});
+
+export const mosfetPartShortLabelMap = mosfetPartOptions.reduce((map, option) => {
+  map[option.id] = option.shortLabel || option.id;
   return map;
 }, {});
 
