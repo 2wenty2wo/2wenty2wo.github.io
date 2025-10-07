@@ -61,11 +61,11 @@ describe('buildTextLinesForTest', () => {
   it('includes the selected glass size for panel mount holders', () => {
     state.fuseType = 'Panel Mount Fuse Holder';
     state.fuseValue = '';
-    state.glassSize = '6.3 × 32 mm (1/4″ × 1-1/4″)';
+    state.glassSize = '6.3 × 32 mm';
 
     const lines = buildTextLinesForTest();
 
-    expect(lines.line2).toBe('Panel Mount Fuse Holder — 6.3 × 32 mm (1/4″ × 1-1/4″)');
+    expect(lines.line2).toBe('Panel Mount Fuse Holder — 6.3 × 32 mm');
   });
 
   it('still appends the suffix when it is missing', () => {
