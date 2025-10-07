@@ -373,6 +373,27 @@ test('default layout presets expose icon padding and media/text gap defaults', (
   });
 });
 
+test('default layout presets define subtitle wrap modes for three subtitle slots', () => {
+  Object.entries(defaultLayoutPresets).forEach(([height, preset]) => {
+    const sub = preset.text_zone?.sub || {};
+    assert.equal(
+      sub.subtitle1_wrap_mode || 'wrap',
+      'wrap',
+      `preset ${height} should default subtitle1 wrap mode to wrap`,
+    );
+    assert.equal(
+      sub.subtitle2_wrap_mode || 'wrap',
+      'wrap',
+      `preset ${height} should default subtitle2 wrap mode to wrap`,
+    );
+    assert.equal(
+      sub.subtitle3_wrap_mode || 'wrap',
+      'wrap',
+      `preset ${height} should default subtitle3 wrap mode to wrap`,
+    );
+  });
+});
+
 test('37×12 mm labels keep bolt icons side-by-side', async () => {
   const geometry = {
     labelWidthMm: 37,
@@ -1158,9 +1179,13 @@ test('subtitle wrap modes apply per line', async () => {
     };
     const longSubtitle =
       'Extremely verbose subtitle information that would normally require wrapping to fit comfortably within the label width';
+    const longTertiarySubtitle =
+      'Additional optional notes that easily extend beyond a single line when wrapping is permitted for the tertiary subtitle block';
 
     setPresetOverride(geometry.labelHeightMm, {
-      text_zone: { sub: { subtitle1_wrap_mode: 'fit', subtitle2_wrap_mode: 'wrap' } },
+      text_zone: {
+        sub: { subtitle1_wrap_mode: 'fit', subtitle2_wrap_mode: 'wrap', subtitle3_wrap_mode: 'wrap' },
+      },
     });
     const fitSubtitle = await renderLabelSVG({
       geometry,
@@ -1175,10 +1200,19 @@ test('subtitle wrap modes apply per line', async () => {
       1,
       'disabling wrap on subtitle 1 should keep it to a single rendered line',
     );
+    const fitSubtitleEntries = fitSubtitle.textLayout.sub?.entries || [];
+    assert.equal(fitSubtitleEntries.length, 1, 'subtitle entries should include the first subtitle');
+    assert.equal(
+      fitSubtitleEntries[0]?.wrapMode,
+      'fit',
+      'subtitle 1 entry should reflect the resolved fit wrap mode',
+    );
 
     clearPresetOverrides();
     setPresetOverride(geometry.labelHeightMm, {
-      text_zone: { sub: { subtitle1_wrap_mode: 'wrap', subtitle2_wrap_mode: 'wrap' } },
+      text_zone: {
+        sub: { subtitle1_wrap_mode: 'wrap', subtitle2_wrap_mode: 'wrap', subtitle3_wrap_mode: 'wrap' },
+      },
     });
     const wrapSubtitle = await renderLabelSVG({
       geometry,
@@ -1192,10 +1226,14 @@ test('subtitle wrap modes apply per line', async () => {
       wrapSubtitleLines.length >= 2,
       'enabling wrap on subtitle 1 should allow it to expand onto multiple lines',
     );
+    const wrapSubtitleEntries = wrapSubtitle.textLayout.sub?.entries || [];
+    assert.equal(wrapSubtitleEntries[0]?.wrapMode, 'wrap', 'subtitle 1 entry should report wrap mode');
 
     clearPresetOverrides();
     setPresetOverride(geometry.labelHeightMm, {
-      text_zone: { sub: { subtitle1_wrap_mode: 'wrap', subtitle2_wrap_mode: 'fit' } },
+      text_zone: {
+        sub: { subtitle1_wrap_mode: 'wrap', subtitle2_wrap_mode: 'fit', subtitle3_wrap_mode: 'wrap' },
+      },
     });
     const fitThirdLine = await renderLabelSVG({
       geometry,
@@ -1210,10 +1248,14 @@ test('subtitle wrap modes apply per line', async () => {
       1,
       'disabling wrap on subtitle 2 should keep it on one line when it appears alone',
     );
+    const fitThirdEntries = fitThirdLine.textLayout.sub?.entries || [];
+    assert.equal(fitThirdEntries[0]?.wrapMode, 'fit', 'subtitle 2 entry should record fit mode');
 
     clearPresetOverrides();
     setPresetOverride(geometry.labelHeightMm, {
-      text_zone: { sub: { subtitle1_wrap_mode: 'wrap', subtitle2_wrap_mode: 'wrap' } },
+      text_zone: {
+        sub: { subtitle1_wrap_mode: 'wrap', subtitle2_wrap_mode: 'wrap', subtitle3_wrap_mode: 'wrap' },
+      },
     });
     const wrapThirdLine = await renderLabelSVG({
       geometry,
@@ -1226,6 +1268,65 @@ test('subtitle wrap modes apply per line', async () => {
     assert.ok(
       wrapThirdLines.length >= 2,
       'enabling wrap on subtitle 2 should allow it to span multiple lines',
+    );
+    const wrapThirdEntries = wrapThirdLine.textLayout.sub?.entries || [];
+    assert.equal(wrapThirdEntries[0]?.wrapMode, 'wrap', 'subtitle 2 entry should report wrap mode');
+
+    clearPresetOverrides();
+    setPresetOverride(geometry.labelHeightMm, {
+      text_zone: {
+        sub: { subtitle1_wrap_mode: 'wrap', subtitle2_wrap_mode: 'wrap', subtitle3_wrap_mode: 'fit' },
+      },
+    });
+    const fitFourthLine = await renderLabelSVG({
+      geometry,
+      pxPerMm,
+      textLines: { line1: 'Main', line2: '', line3: '', subtitle3: longTertiarySubtitle },
+      hardwareInfo: null,
+      qrContent: '',
+    });
+    const fitFourthLines = fitFourthLine.textLayout.sub?.lines || [];
+    assert.equal(
+      fitFourthLines.length,
+      1,
+      'disabling wrap on subtitle 3 should keep optional notes to a single line',
+    );
+    const fitFourthEntries = fitFourthLine.textLayout.sub?.entries || [];
+    assert.equal(fitFourthEntries[0]?.wrapMode, 'fit', 'subtitle 3 entry should record fit mode');
+
+    clearPresetOverrides();
+    setPresetOverride(geometry.labelHeightMm, {
+      text_zone: {
+        sub: { subtitle1_wrap_mode: 'wrap', subtitle2_wrap_mode: 'wrap', subtitle3_wrap_mode: 'wrap' },
+      },
+    });
+    const wrapFourthLine = await renderLabelSVG({
+      geometry,
+      pxPerMm,
+      textLines: { line1: 'Main', line2: '', line3: '', subtitle3: longTertiarySubtitle },
+      hardwareInfo: null,
+      qrContent: '',
+    });
+    const wrapFourthLines = wrapFourthLine.textLayout.sub?.lines || [];
+    assert.ok(
+      wrapFourthLines.length >= 2,
+      'enabling wrap on subtitle 3 should allow tertiary notes to wrap naturally',
+    );
+    const wrapFourthEntries = wrapFourthLine.textLayout.sub?.entries || [];
+    assert.equal(wrapFourthEntries[0]?.wrapMode, 'wrap', 'subtitle 3 entry should report wrap mode');
+
+    const multiEntry = await renderLabelSVG({
+      geometry,
+      pxPerMm,
+      textLines: { line1: 'Main', line2: 'First', line3: 'Second', subtitle3: 'Third' },
+      hardwareInfo: null,
+      qrContent: '',
+    });
+    const multiEntries = multiEntry.textLayout.sub?.entries || [];
+    assert.deepEqual(
+      multiEntries.map(entry => entry.text),
+      ['First', 'Second', 'Third'],
+      'subtitle entries should preserve the order of all three subtitle strings',
     );
   } finally {
     clearPresetOverrides();
@@ -1539,32 +1640,40 @@ test('layout editor keeps latest render height when exporting presets after rapi
     assert.ok(panel, 'layout editor panel should exist');
     const body = panel.querySelector('.layout-editor-body');
     assert.ok(body, 'layout editor body should be available');
-    const collectLabeledInputs = node => {
+    const collectLabeledControls = node => {
       const collected = [];
       const walk = current => {
         if (!current || !Array.isArray(current.children)) {
           return;
         }
         const labelEl = current.children.find(child => child.tagName === 'LABEL');
-        const inputEl = current.children.find(child => child.tagName === 'INPUT');
-        if (labelEl && inputEl) {
-          collected.push({ label: labelEl.textContent, input: inputEl });
+        const controlEl = current.children.find(
+          child => child.tagName === 'INPUT' || child.tagName === 'SELECT',
+        );
+        if (labelEl && controlEl) {
+          collected.push({ label: labelEl.textContent, control: controlEl });
         }
         current.children.forEach(child => walk(child));
       };
       walk(node);
       return collected;
     };
-    const labeledInputs = collectLabeledInputs(body);
-    const paddingField = labeledInputs.find(field => field.label === 'Padding (mm)');
+    const labeledControls = collectLabeledControls(body);
+    const paddingField = labeledControls.find(field => field.label === 'Padding (mm)');
     assert.ok(paddingField, 'expected to locate numeric field for padding');
-    const iconPaddingField = labeledInputs.find(field => field.label === 'Icon padding (mm)');
+    const iconPaddingField = labeledControls.find(field => field.label === 'Icon padding (mm)');
     assert.ok(iconPaddingField, 'icon padding field should be present');
-    const mediaGapField = labeledInputs.find(field => field.label === 'Media/Text gap (mm)');
+    const mediaGapField = labeledControls.find(field => field.label === 'Media/Text gap (mm)');
     assert.ok(mediaGapField, 'media/text gap field should be present');
-    paddingField.input.value = '2.7';
-    const listeners = paddingField.input.listeners?.input || [];
-    listeners.forEach(listener => listener({ currentTarget: paddingField.input, target: paddingField.input }));
+    const subtitle3WrapField = labeledControls.find(
+      field => field.label === 'Subtitle 3 wrap mode',
+    );
+    assert.ok(subtitle3WrapField, 'subtitle 3 wrap mode selector should be present');
+    paddingField.control.value = '2.7';
+    const listeners = paddingField.control.listeners?.input || [];
+    listeners.forEach(listener =>
+      listener({ currentTarget: paddingField.control, target: paddingField.control }),
+    );
 
     const storedRaw =
       window.localStorage.getItem('gridfinity-layout-presets:v3') ||
