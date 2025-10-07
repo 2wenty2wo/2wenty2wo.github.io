@@ -94,7 +94,7 @@ const baseGlassSpeedOptions = [
 const baseGlassSizeOptions = [
   { value: '', textContent: NBSP },
   { value: '5 × 20 mm', textContent: '5 × 20 mm' },
-  { value: '6.3 × 32 mm (1/4″ × 1-1/4″)', textContent: '6.3 × 32 mm (1/4″ × 1-1/4″)' },
+  { value: '6.3 × 32 mm', textContent: '6.3 × 32 mm' },
 ];
 
 const cloneOptions = options => options.map(option => ({ ...option }));
@@ -484,7 +484,7 @@ describe('fuse type selection behaviour', () => {
 
   it('hides and clears the glass options when switching to blade fuses', () => {
     state.fuseType = 'Panel Mount Fuse Holder';
-    state.glassSize = '6.3 × 32 mm (1/4″ × 1-1/4″)';
+    state.glassSize = '6.3 × 32 mm';
     mockGlassSizeSelect.value = state.glassSize;
     state.glassSpeed = 'Slow-blow';
 
