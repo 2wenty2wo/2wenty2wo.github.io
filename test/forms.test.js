@@ -83,19 +83,53 @@ const mockGlassOptionsContainer = {
   classList: createClassListMock(),
 };
 
+const NBSP = '\u00a0';
+
+const baseGlassSpeedOptions = [
+  { value: '', textContent: NBSP },
+  { value: 'Slow-blow', textContent: 'Slow-blow' },
+  { value: 'Fast-blow', textContent: 'Fast-blow' },
+];
+
+const baseGlassSizeOptions = [
+  { value: '', textContent: NBSP },
+  { value: '5 × 20 mm', textContent: '5 × 20 mm' },
+  { value: '6.3 × 32 mm (1/4″ × 1-1/4″)', textContent: '6.3 × 32 mm (1/4″ × 1-1/4″)' },
+];
+
+const cloneOptions = options => options.map(option => ({ ...option }));
+
 const mockGlassSpeedSelect = {
   value: '',
   disabled: false,
-  options: [{ value: '' }, { value: 'Slow-blow' }, { value: 'Fast-blow' }],
+  options: cloneOptions(baseGlassSpeedOptions),
+  appendChild(option) {
+    this.options.push(option);
+    return option;
+  },
+  set innerHTML(value) {
+    if (value === '') {
+      this.options = [];
+      return;
+    }
+    throw new Error(`Unexpected innerHTML assignment: ${value}`);
+  },
 };
 
 const mockGlassSizeSelect = {
   value: '',
-  options: [
-    { value: '' },
-    { value: '5 × 20 mm' },
-    { value: '6.3 × 32 mm (1/4″ × 1-1/4″)' },
-  ],
+  options: cloneOptions(baseGlassSizeOptions),
+  appendChild(option) {
+    this.options.push(option);
+    return option;
+  },
+  set innerHTML(value) {
+    if (value === '') {
+      this.options = [];
+      return;
+    }
+    throw new Error(`Unexpected innerHTML assignment: ${value}`);
+  },
 };
 
 const mockGlassSpeedPicker = {
@@ -277,14 +311,24 @@ global.document = {
 };
 
 let populateFuseValues;
+let populateGlassSpeedOptions;
+let populateGlassSizeOptions;
 let setFuseTypeSelection;
+let setGlassSpeedSelection;
+let setGlassSizeSelection;
 let syncFuseValuePicker;
 let state;
 
 beforeAll(async () => {
-  ({ populateFuseValues, setFuseTypeSelection, syncFuseValuePicker } = await import(
-    '../js/forms.js',
-  ));
+  ({
+    populateFuseValues,
+    populateGlassSpeedOptions,
+    populateGlassSizeOptions,
+    setFuseTypeSelection,
+    setGlassSpeedSelection,
+    setGlassSizeSelection,
+    syncFuseValuePicker,
+  } = await import('../js/forms.js'));
   ({ state } = await import('../js/state.js'));
 });
 
@@ -311,7 +355,9 @@ beforeEach(() => {
   mockGlassSizeField.classList.toggle.mockClear();
   mockGlassSpeedSelect.value = '';
   mockGlassSpeedSelect.disabled = false;
+  mockGlassSpeedSelect.options = cloneOptions(baseGlassSpeedOptions);
   mockGlassSizeSelect.value = '';
+  mockGlassSizeSelect.options = cloneOptions(baseGlassSizeOptions);
   mockGlassSpeedPicker.classList.toggle.mockClear();
   mockGlassSizePicker.classList.toggle.mockClear();
   mockGlassSpeedPickerButton.disabled = false;
@@ -465,6 +511,78 @@ describe('fuse type selection behaviour', () => {
     expect(mockGlassSpeedSelect.disabled).toBe(false);
     expect(mockGlassSpeedSelect.value).toBe('Slow-blow');
     expect(mockGlassSpeedPickerButton.disabled).toBe(false);
+  });
+});
+
+describe('glass fuse pickers', () => {
+  it('includes the placeholder entry in the glass speed picker list', () => {
+    populateGlassSpeedOptions();
+
+    expect(mockGlassSpeedPickerList.items).toHaveLength(baseGlassSpeedOptions.length);
+    const placeholderItem = mockGlassSpeedPickerList.items[0];
+    expect(placeholderItem.dataset.value).toBe('');
+    const labelSpan = placeholderItem.children.find(
+      child => child.className === 'bolt-drive-picker__option-label',
+    );
+    expect(labelSpan && labelSpan.textContent).toBe(NBSP);
+  });
+
+  it('includes the placeholder entry in the glass size picker list', () => {
+    populateGlassSizeOptions();
+
+    expect(mockGlassSizePickerList.items).toHaveLength(baseGlassSizeOptions.length);
+    const placeholderItem = mockGlassSizePickerList.items[0];
+    expect(placeholderItem.dataset.value).toBe('');
+    const labelSpan = placeholderItem.children.find(
+      child => child.className === 'bolt-drive-picker__option-label',
+    );
+    expect(labelSpan && labelSpan.textContent).toBe(NBSP);
+  });
+
+  it('allows clearing the glass speed selection using the placeholder option', () => {
+    populateGlassSpeedOptions();
+
+    setGlassSpeedSelection('Slow-blow', { triggerUpdate: false });
+    expect(state.glassSpeed).toBe('Slow-blow');
+    expect(mockGlassSpeedPickerLabel.textContent).toBe('Slow-blow');
+
+    const placeholderItem = mockGlassSpeedPickerList.items.find(item => item.dataset.value === '');
+    expect(placeholderItem).toBeDefined();
+    const placeholder = placeholderItem;
+
+    mockGlassSpeedPickerIcon.classList.toggle.mockClear();
+    placeholder.classList.toggle.mockClear();
+
+    setGlassSpeedSelection('', { triggerUpdate: false });
+
+    expect(state.glassSpeed).toBe('');
+    expect(mockGlassSpeedPickerLabel.textContent).toBe(NBSP);
+    expect(mockGlassSpeedPickerIcon.classList.toggle).toHaveBeenCalledWith('is-empty', true);
+    expect(placeholder.attributes['aria-selected']).toBe('true');
+    expect(placeholder.classList.toggle).toHaveBeenCalledWith('is-selected', true);
+  });
+
+  it('allows clearing the glass size selection using the placeholder option', () => {
+    populateGlassSizeOptions();
+
+    setGlassSizeSelection('5 × 20 mm', { triggerUpdate: false });
+    expect(state.glassSize).toBe('5 × 20 mm');
+    expect(mockGlassSizePickerLabel.textContent).toBe('5 × 20 mm');
+
+    const placeholderItem = mockGlassSizePickerList.items.find(item => item.dataset.value === '');
+    expect(placeholderItem).toBeDefined();
+    const placeholder = placeholderItem;
+
+    mockGlassSizePickerIcon.classList.toggle.mockClear();
+    placeholder.classList.toggle.mockClear();
+
+    setGlassSizeSelection('', { triggerUpdate: false });
+
+    expect(state.glassSize).toBe('');
+    expect(mockGlassSizePickerLabel.textContent).toBe(NBSP);
+    expect(mockGlassSizePickerIcon.classList.toggle).toHaveBeenCalledWith('is-empty', true);
+    expect(placeholder.attributes['aria-selected']).toBe('true');
+    expect(placeholder.classList.toggle).toHaveBeenCalledWith('is-selected', true);
   });
 });
 

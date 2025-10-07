@@ -4209,28 +4209,26 @@ export function populateGlassSpeedOptions() {
 
   if (glassSpeedPickerList) {
     glassSpeedPickerList.innerHTML = '';
-    glassSpeedOptionData
-      .filter(option => option.value)
-      .forEach(option => {
-        const item = document.createElement('li');
-        item.className = 'bolt-drive-picker__option';
-        item.dataset.value = option.value;
-        item.setAttribute('role', 'option');
-        item.setAttribute('aria-selected', 'false');
-        item.tabIndex = -1;
+    glassSpeedOptionData.forEach(option => {
+      const item = document.createElement('li');
+      item.className = 'bolt-drive-picker__option';
+      item.dataset.value = option.value;
+      item.setAttribute('role', 'option');
+      item.setAttribute('aria-selected', 'false');
+      item.tabIndex = -1;
 
-        const icon = document.createElement('span');
-        icon.className = 'bolt-drive-picker__option-icon is-empty';
-        icon.setAttribute('aria-hidden', 'true');
-        item.appendChild(icon);
+      const icon = document.createElement('span');
+      icon.className = 'bolt-drive-picker__option-icon is-empty';
+      icon.setAttribute('aria-hidden', 'true');
+      item.appendChild(icon);
 
-        const label = document.createElement('span');
-        label.className = 'bolt-drive-picker__option-label';
-        label.textContent = option.label;
-        item.appendChild(label);
+      const label = document.createElement('span');
+      label.className = 'bolt-drive-picker__option-label';
+      label.textContent = option.label;
+      item.appendChild(label);
 
-        glassSpeedPickerList.appendChild(item);
-      });
+      glassSpeedPickerList.appendChild(item);
+    });
     glassSpeedPickerList.hidden = true;
   }
 
@@ -4275,28 +4273,26 @@ export function populateGlassSizeOptions() {
 
   if (glassSizePickerList) {
     glassSizePickerList.innerHTML = '';
-    glassSizeOptionData
-      .filter(option => option.value)
-      .forEach(option => {
-        const item = document.createElement('li');
-        item.className = 'bolt-drive-picker__option';
-        item.dataset.value = option.value;
-        item.setAttribute('role', 'option');
-        item.setAttribute('aria-selected', 'false');
-        item.tabIndex = -1;
+    glassSizeOptionData.forEach(option => {
+      const item = document.createElement('li');
+      item.className = 'bolt-drive-picker__option';
+      item.dataset.value = option.value;
+      item.setAttribute('role', 'option');
+      item.setAttribute('aria-selected', 'false');
+      item.tabIndex = -1;
 
-        const icon = document.createElement('span');
-        icon.className = 'bolt-drive-picker__option-icon is-empty';
-        icon.setAttribute('aria-hidden', 'true');
-        item.appendChild(icon);
+      const icon = document.createElement('span');
+      icon.className = 'bolt-drive-picker__option-icon is-empty';
+      icon.setAttribute('aria-hidden', 'true');
+      item.appendChild(icon);
 
-        const label = document.createElement('span');
-        label.className = 'bolt-drive-picker__option-label';
-        label.textContent = option.label;
-        item.appendChild(label);
+      const label = document.createElement('span');
+      label.className = 'bolt-drive-picker__option-label';
+      label.textContent = option.label;
+      item.appendChild(label);
 
-        glassSizePickerList.appendChild(item);
-      });
+      glassSizePickerList.appendChild(item);
+    });
     glassSizePickerList.hidden = true;
   }
 
@@ -4357,7 +4353,16 @@ export function syncGlassSpeedPicker({
     }
     const iconWrapper = glassSpeedPickerButton.querySelector('.bolt-drive-picker__current-icon');
     if (iconWrapper) {
-      iconWrapper.classList.remove('is-empty');
+      const classList = iconWrapper.classList;
+      if (classList && typeof classList.toggle === 'function') {
+        classList.toggle('is-empty', !selectedOption);
+      } else if (classList && typeof classList.remove === 'function' && typeof classList.add === 'function') {
+        if (selectedOption) {
+          classList.remove('is-empty');
+        } else {
+          classList.add('is-empty');
+        }
+      }
     }
     if (glassSpeedPickerButton.disabled) {
       glassSpeedPickerButton.setAttribute('aria-expanded', 'false');
@@ -4435,7 +4440,16 @@ export function syncGlassSizePicker({
     }
     const iconWrapper = glassSizePickerButton.querySelector('.bolt-drive-picker__current-icon');
     if (iconWrapper) {
-      iconWrapper.classList.remove('is-empty');
+      const classList = iconWrapper.classList;
+      if (classList && typeof classList.toggle === 'function') {
+        classList.toggle('is-empty', !selectedOption);
+      } else if (classList && typeof classList.remove === 'function' && typeof classList.add === 'function') {
+        if (selectedOption) {
+          classList.remove('is-empty');
+        } else {
+          classList.add('is-empty');
+        }
+      }
     }
     if (glassSizePickerButton.disabled) {
       glassSizePickerButton.setAttribute('aria-expanded', 'false');
