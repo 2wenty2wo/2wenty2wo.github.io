@@ -1041,19 +1041,54 @@ function computeTextZones({ textRect, preset, pxPerMm }) {
   };
 }
 
+function resolveSubtitleRawValues(textLines) {
+  if (!textLines || typeof textLines !== 'object') {
+    return [undefined, undefined, undefined];
+  }
+  let subtitle3Raw;
+  if (Object.hasOwn(textLines, 'subtitle3')) {
+    subtitle3Raw = textLines.subtitle3;
+  } else if (Object.hasOwn(textLines, 'line4')) {
+    subtitle3Raw = textLines.line4;
+  }
+  return [textLines.line2, textLines.line3, subtitle3Raw];
+}
+
+function extractSubtitleText(rawValue) {
+  if (typeof rawValue === 'string') {
+    return rawValue;
+  }
+  if (rawValue && typeof rawValue === 'object' && typeof rawValue.text === 'string') {
+    return rawValue.text;
+  }
+  return '';
+}
+
+function buildSubtitleEntry(rawValue, wrapMode) {
+  if (rawValue === undefined || rawValue === null) {
+    return null;
+  }
+  const resolvedWrap = wrapMode || WRAP_MODE_WRAP;
+  if (rawValue && typeof rawValue === 'object') {
+    const candidate = { ...rawValue };
+    if (!Object.hasOwn(candidate, 'wrapMode') && !Object.hasOwn(candidate, 'wrap_mode')) {
+      candidate.wrapMode = resolvedWrap;
+    }
+    return normalizeLineEntry(candidate, { defaultWrapMode: resolvedWrap });
+  }
+  return normalizeLineEntry({ text: rawValue, wrapMode: resolvedWrap }, { defaultWrapMode: resolvedWrap });
+}
+
 function buildSubtitleCandidates(textLines, preset) {
   const textPreset = preset.text_zone || {};
   const subPreset = textPreset.sub || {};
   const wrap2 = resolveWrapModeSetting(subPreset.subtitle1_wrap_mode, WRAP_MODE_WRAP);
   const wrap3 = resolveWrapModeSetting(subPreset.subtitle2_wrap_mode, WRAP_MODE_WRAP);
-  const line2Entry = normalizeLineEntry(
-    { text: textLines.line2, wrapMode: wrap2 },
-    { defaultWrapMode: wrap2 },
-  );
-  const line3Entry = normalizeLineEntry(
-    { text: textLines.line3, wrapMode: wrap3 },
-    { defaultWrapMode: wrap3 },
-  );
+  const wrap4 = resolveWrapModeSetting(subPreset.subtitle3_wrap_mode, WRAP_MODE_WRAP);
+  const [rawSubtitle1, rawSubtitle2, rawSubtitle3] = resolveSubtitleRawValues(textLines);
+  const line2Entry = buildSubtitleEntry(rawSubtitle1, wrap2);
+  const line3Entry = buildSubtitleEntry(rawSubtitle2, wrap3);
+  const line4Entry = buildSubtitleEntry(rawSubtitle3, wrap4);
   const candidates = [];
   const baseCandidate = [];
   if (line2Entry) {
@@ -1061,6 +1096,9 @@ function buildSubtitleCandidates(textLines, preset) {
   }
   if (line3Entry) {
     baseCandidate.push(line3Entry);
+  }
+  if (line4Entry) {
+    baseCandidate.push(line4Entry);
   }
   if (baseCandidate.length > 0) {
     candidates.push(baseCandidate);
@@ -1099,26 +1137,30 @@ function buildSubtitleCandidates(textLines, preset) {
   if (hasExpansion && expandedCandidate.length > 0) {
     candidates.push(expandedCandidate);
   }
-  if (
-    textPreset.compact_join_subtitles &&
-    line2Entry &&
-    line3Entry &&
-    line2Entry.text &&
-    line3Entry.text
-  ) {
-    const separator = textPreset.compact_separator || ' \u00b7 ';
-    const joined = normalizeLineEntry(
-      {
-        text: `${line2Entry.text}${separator}${line3Entry.text}`,
-        wrapMode: WRAP_MODE_FIT,
-      },
-      { defaultWrapMode: WRAP_MODE_FIT },
+  if (textPreset.compact_join_subtitles) {
+    const joinableEntries = [line2Entry, line3Entry, line4Entry].filter(
+      entry => entry && entry.text,
     );
-    if (joined) {
-      candidates.push([joined]);
+    if (joinableEntries.length >= 2) {
+      const separator = textPreset.compact_separator || ' \u00b7 ';
+      const joinedText = joinableEntries.map(entry => entry.text).join(separator);
+      const joined = normalizeLineEntry(
+        {
+          text: joinedText,
+          wrapMode: WRAP_MODE_FIT,
+        },
+        { defaultWrapMode: WRAP_MODE_FIT },
+      );
+      if (joined) {
+        candidates.push([joined]);
+      }
     }
   }
   return candidates;
+}
+
+function resolveSubtitleEntryTexts(textLines) {
+  return resolveSubtitleRawValues(textLines).map(value => extractSubtitleText(value));
 }
 
 function resolveTextAlignment(alignment) {
@@ -1256,6 +1298,7 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
       lineHeightPx: defaultSubFontPx * (defaultSubLineHeightPct / 100),
       ellipsisApplied: false,
       fontFamily: SUBTITLE_FONT_FAMILY,
+      entries: [],
     };
 
     if (subtitleCandidates.length > 0) {
@@ -1274,6 +1317,7 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
             fontFamily: SUBTITLE_FONT_FAMILY,
           }),
           isCompact,
+          entries: candidate.map(entry => ({ ...entry })),
         };
       });
 
@@ -1314,7 +1358,10 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
         return left.isCompact === right.isCompact ? 0 : left.isCompact ? 1 : -1;
       });
 
-      subtitleFit = rankedCandidates[0]?.fit || subtitleFit;
+      const bestCandidate = rankedCandidates[0] || candidateFits[0] || null;
+      if (bestCandidate) {
+        subtitleFit = { ...bestCandidate.fit, entries: bestCandidate.entries };
+      }
     }
 
     const subtitleLineCount = subtitleFit.lines.length;
@@ -1438,6 +1485,7 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
 
   const subtitle = {
     ...subtitleFit,
+    entries: Array.isArray(subtitleFit.entries) ? subtitleFit.entries : [],
     height: subtitleHeight,
     lineCount: subtitleLineCount,
     anchor: alignment,
@@ -1648,12 +1696,15 @@ function ensureTextFits({
   mediaZoneWidthMinPx,
 }) {
   const trimmedPrimaryLine = (textLines.line1 || '').trim();
-  const trimmedSecondaryLine = (textLines.line2 || '').trim();
-  const trimmedTertiaryLine = (textLines.line3 || '').trim();
+  const [trimmedSecondaryLine, trimmedTertiaryLine, trimmedQuaternaryLine] =
+    resolveSubtitleEntryTexts(textLines).map(value => (value || '').trim());
   const hasPrimaryLine = trimmedPrimaryLine.length > 0;
-  const hasText = [trimmedPrimaryLine, trimmedSecondaryLine, trimmedTertiaryLine].some(
-    value => value.length > 0,
-  );
+  const hasText = [
+    trimmedPrimaryLine,
+    trimmedSecondaryLine,
+    trimmedTertiaryLine,
+    trimmedQuaternaryLine,
+  ].some(value => value.length > 0);
   const minTextWidthPx = hasText ? mmToPx(minTextWidthMm || 9, pxPerMm) : 0;
   const textGapPx =
     mediaPresent && hasText

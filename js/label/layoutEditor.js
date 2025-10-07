@@ -773,6 +773,15 @@ function bindPresetInputs(panel, heightKey, options = {}) {
         onChange: value => setValue('text_zone.sub.subtitle2_wrap_mode', value),
       }),
       createSelectField({
+        label: 'Subtitle 3 wrap mode',
+        value: preset.text_zone.sub.subtitle3_wrap_mode || 'wrap',
+        options: [
+          { label: 'Wrap text', value: 'wrap' },
+          { label: 'Single line (fit)', value: 'fit' },
+        ],
+        onChange: value => setValue('text_zone.sub.subtitle3_wrap_mode', value),
+      }),
+      createSelectField({
         label: 'Compact subtitles',
         value: preset.text_zone.compact_join_subtitles ? '1' : '0',
         options: [
