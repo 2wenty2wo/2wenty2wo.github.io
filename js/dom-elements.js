@@ -218,6 +218,7 @@ const hardwareTypePickerRecentSection = document.getElementById('hardware-type-p
 const hardwareTypePickerRecent = document.getElementById('hardware-type-picker-recent');
 const hardwareTypePickerList = document.getElementById('hardware-type-picker-list');
 const hardwareTypePickerEmpty = document.getElementById('hardware-type-picker-empty');
+const hardwareTypeRandomButton = document.getElementById('hardware-type-random-button');
 const hardwareTypeOptions = new Set(
   hardwareTypeRadios
     .map(radio => radio.value)
@@ -443,6 +444,7 @@ export const elements = {
   hardwareTypePickerRecent,
   hardwareTypePickerList,
   hardwareTypePickerEmpty,
+  hardwareTypeRandomButton,
   hardwareTypeOptions,
   systemTypeRadios,
   heightRadios,
