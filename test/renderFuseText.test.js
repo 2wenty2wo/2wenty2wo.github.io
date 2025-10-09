@@ -47,6 +47,8 @@ beforeEach(() => {
   state.showText = true;
   state.showTextMain = true;
   state.showTextInfo = true;
+  state.showTextInfoLine2 = true;
+  state.showTextInfoLine3 = true;
 });
 
 describe('buildTextLinesForTest', () => {
@@ -74,6 +76,30 @@ describe('buildTextLinesForTest', () => {
     const lines = buildTextLinesForTest();
 
     expect(lines.line2).toBe('Glass Fuse');
+  });
+
+  it('hides the secondary info line when disabled', () => {
+    state.fuseType = 'Glass';
+    state.glassSize = '6.3 × 32 mm';
+    state.glassSpeed = 'Fast-blow';
+    state.showTextInfoLine2 = false;
+
+    const lines = buildTextLinesForTest();
+
+    expect(lines.line2).toBe('');
+    expect(lines.line3).toBe('Fast-blow');
+  });
+
+  it('hides the tertiary info line when disabled', () => {
+    state.fuseType = 'Glass';
+    state.glassSpeed = 'Fast-blow';
+    state.notes = 'Spare';
+    state.showTextInfoLine3 = false;
+
+    const lines = buildTextLinesForTest();
+
+    expect(lines.line2).toBe('Glass Fuse');
+    expect(lines.line3).toBe('');
   });
 
   it('considers the panel mount holder ready without an amperage', () => {

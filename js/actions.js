@@ -91,20 +91,22 @@ export function downloadLabel() {
       const fileParts = [];
       const includeText = Boolean(state.showText);
       const includeMainText = includeText && state.showTextMain;
-      const includeInfoText = includeText && state.showTextInfo;
+      const includeInfoLine2 = includeText && state.showTextInfo && state.showTextInfoLine2;
+      const includeInfoLine3 = includeText && state.showTextInfo && state.showTextInfoLine3;
+      const includeInfoText = includeInfoLine2 || includeInfoLine3;
       if (state.hardwareType === 'Fuse') {
         fileParts.push('Fuse');
-        if (includeInfoText && state.fuseType) {
+        if (includeInfoLine2 && state.fuseType) {
           fileParts.push(state.fuseType);
         }
         if (includeMainText && state.fuseValue) {
           fileParts.push(`${state.fuseValue}A`);
         }
         if (state.fuseType === 'Glass') {
-          if (includeInfoText && state.glassSize) {
+          if (includeInfoLine2 && state.glassSize) {
             fileParts.push(state.glassSize);
           }
-          if (includeInfoText && state.glassSpeed) {
+          if (includeInfoLine3 && state.glassSpeed) {
             fileParts.push(state.glassSpeed);
           }
         }
@@ -116,7 +118,7 @@ export function downloadLabel() {
             fileParts.push(category.label);
           }
         }
-        if (includeInfoText && state.notes) {
+        if (includeInfoLine2 && state.notes) {
           fileParts.push(state.notes);
         }
       } else if (state.hardwareType === 'Custom') {
@@ -124,14 +126,14 @@ export function downloadLabel() {
         if (includeMainText && state.customLine1) {
           fileParts.push(state.customLine1);
         }
-        if (includeInfoText && state.customLine2) {
+        if (includeInfoLine2 && state.customLine2) {
           fileParts.push(state.customLine2);
         }
       } else if (state.hardwareType === 'Bearing') {
         if (includeMainText && state.bearingType) {
           fileParts.push(state.bearingType);
         }
-        if (includeInfoText && state.bearingDetails) {
+        if (includeInfoLine2 && state.bearingDetails) {
           fileParts.push(state.bearingDetails);
         }
       } else if (state.hardwareType === 'Bolt') {
@@ -143,10 +145,10 @@ export function downloadLabel() {
         }
         const headEntry = boltHeadMap.get((state.boltHead || '').trim());
         const driveEntry = boltDriveMap.get((state.boltDrive || '').trim());
-        if (includeInfoText && headEntry && headEntry.label) {
+        if (includeInfoLine2 && headEntry && headEntry.label) {
           fileParts.push(headEntry.label);
         }
-        if (includeInfoText && driveEntry && driveEntry.label) {
+        if (includeInfoLine3 && driveEntry && driveEntry.label) {
           fileParts.push(driveEntry.label);
         }
       } else if (state.hardwareType === 'Screw') {
@@ -158,10 +160,10 @@ export function downloadLabel() {
         }
         const typeEntry = screwTypeMap.get((state.boltHead || '').trim());
         const driveEntry = boltDriveMap.get((state.boltDrive || '').trim());
-        if (includeInfoText && typeEntry && typeEntry.label) {
+        if (includeInfoLine2 && typeEntry && typeEntry.label) {
           fileParts.push(typeEntry.label);
         }
-        if (includeInfoText && driveEntry && driveEntry.label) {
+        if (includeInfoLine3 && driveEntry && driveEntry.label) {
           fileParts.push(driveEntry.label);
         }
       } else {
@@ -170,10 +172,10 @@ export function downloadLabel() {
         }
       }
       if (state.hardwareType !== 'Bolt' && state.hardwareType !== 'Screw') {
-        if (includeInfoText && state.standardCode) {
+        if (includeInfoLine2 && state.standardCode) {
           fileParts.push(state.standardCode);
         }
-        if (includeInfoText && state.standard && state.standard !== state.standardCode) {
+        if ((includeInfoLine2 || includeInfoLine3) && state.standard && state.standard !== state.standardCode) {
           fileParts.push(state.standard);
         }
       }

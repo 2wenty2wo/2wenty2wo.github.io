@@ -57,6 +57,7 @@ import {
   updateDownloadState,
   updateQrContentVisibility,
   updateTextOptionsVisibility,
+  updateTextInfoOptionsVisibility,
 } from './render.js';
 import { downloadLabel, printLabel, shareLabel } from './actions.js';
 
@@ -176,6 +177,8 @@ const {
   textToggle,
   textMainToggle,
   textInfoToggle,
+  textInfoLine2Toggle,
+  textInfoLine3Toggle,
   imageToggle,
   qrcodeToggle,
   qrContentInput,
@@ -6347,6 +6350,23 @@ export function initEventHandlers() {
   if (textInfoToggle) {
     textInfoToggle.addEventListener('change', () => {
       state.showTextInfo = textInfoToggle.checked;
+      updateTextInfoOptionsVisibility();
+      updateDownloadState();
+      updatePreview();
+    });
+  }
+
+  if (textInfoLine2Toggle) {
+    textInfoLine2Toggle.addEventListener('change', () => {
+      state.showTextInfoLine2 = textInfoLine2Toggle.checked;
+      updateDownloadState();
+      updatePreview();
+    });
+  }
+
+  if (textInfoLine3Toggle) {
+    textInfoLine3Toggle.addEventListener('change', () => {
+      state.showTextInfoLine3 = textInfoLine3Toggle.checked;
       updateDownloadState();
       updatePreview();
     });

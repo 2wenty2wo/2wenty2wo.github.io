@@ -183,6 +183,9 @@ const textToggle = document.getElementById('text-toggle');
 const textOptionsWrapper = document.getElementById('text-options-wrapper');
 const textMainToggle = document.getElementById('text-main-toggle');
 const textInfoToggle = document.getElementById('text-info-toggle');
+const textInfoOptionsWrapper = document.getElementById('text-info-options-wrapper');
+const textInfoLine2Toggle = document.getElementById('text-info-line2-toggle');
+const textInfoLine3Toggle = document.getElementById('text-info-line3-toggle');
 const imageToggle = document.getElementById('image-toggle');
 const qrcodeToggle = document.getElementById('qrcode-toggle');
 const widthRange = document.getElementById('width-range');
@@ -413,6 +416,9 @@ export const elements = {
   textOptionsWrapper,
   textMainToggle,
   textInfoToggle,
+  textInfoOptionsWrapper,
+  textInfoLine2Toggle,
+  textInfoLine3Toggle,
   imageToggle,
   qrcodeToggle,
   widthRange,
