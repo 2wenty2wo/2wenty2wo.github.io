@@ -18,8 +18,6 @@ export const state = {
   showText: true,
   showTextMain: true,
   showTextInfo: true,
-  showTextInfoLine2: true,
-  showTextInfoLine3: true,
   showImage: true,
   showQr: false,
   qrContent: '',

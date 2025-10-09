@@ -71,8 +71,6 @@ function applyStateToControls() {
     textToggle,
     textMainToggle,
     textInfoToggle,
-    textInfoLine2Toggle,
-    textInfoLine3Toggle,
     imageToggle,
     qrcodeToggle,
     qrContentInput,
@@ -147,13 +145,6 @@ function applyStateToControls() {
   }
   if (textInfoToggle) {
     textInfoToggle.checked = state.showTextInfo;
-    textInfoToggle.setAttribute('aria-expanded', state.showTextInfo ? 'true' : 'false');
-  }
-  if (textInfoLine2Toggle) {
-    textInfoLine2Toggle.checked = state.showTextInfoLine2;
-  }
-  if (textInfoLine3Toggle) {
-    textInfoLine3Toggle.checked = state.showTextInfoLine3;
   }
   if (imageToggle) {
     imageToggle.checked = state.showImage;
