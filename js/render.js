@@ -65,9 +65,6 @@ const {
   textOptionsWrapper,
   textMainToggle,
   textInfoToggle,
-  textInfoOptionsWrapper,
-  textInfoLine2Toggle,
-  textInfoLine3Toggle,
   threadSizeSelect,
   threadSizeContainer,
   lengthInput,
@@ -148,19 +145,6 @@ let previewReadyState = false;
 let previewStatusFrameId = null;
 let previewRenderRequestId = 0;
 let layoutEditorRenderRequestId = 0;
-
-function isInfoLineEnabled(lineNumber) {
-  if (!state.showText || !state.showTextInfo) {
-    return false;
-  }
-  if (lineNumber === 2) {
-    return Boolean(state.showTextInfoLine2);
-  }
-  if (lineNumber === 3) {
-    return Boolean(state.showTextInfoLine3);
-  }
-  return false;
-}
 
 layoutPresetTools.subscribePresetChanges(() => {
   if (!previewContainer) {
@@ -424,11 +408,10 @@ export function isLabelReady() {
   if (state.hardwareType === 'Bolt' || state.hardwareType === 'Screw') {
     const hasThread = Boolean(state.threadSize);
     const hasLength = Boolean(state.length);
+    const detailsRequired = Boolean(state.showImage || (state.showText && state.showTextInfo));
     const hasHead = Boolean(state.boltHead);
     const hasDrive = Boolean(state.boltDrive);
-    const requireHead = Boolean(state.showImage || isInfoLineEnabled(2));
-    const requireDrive = Boolean(state.showImage || isInfoLineEnabled(3));
-    const detailsSatisfied = (!requireHead || hasHead) && (!requireDrive || hasDrive);
+    const detailsSatisfied = !detailsRequired || (hasHead && hasDrive);
     return Boolean(hasThread && hasLength && detailsSatisfied);
   }
   if (state.hardwareType === 'Washer') {
@@ -563,11 +546,12 @@ function applyValidationFeedback() {
     }
   }
 
-  if (hardwareType === 'Bolt' || hardwareType === 'Screw') {
-    const requireHead = Boolean(state.showImage || isInfoLineEnabled(2));
-    const requireDrive = Boolean(state.showImage || isInfoLineEnabled(3));
-    const headValid = !requireHead || Boolean(state.boltHead);
-    const driveValid = !requireDrive || Boolean(state.boltDrive);
+  if (
+    (hardwareType === 'Bolt' || hardwareType === 'Screw') &&
+    (state.showImage || (state.showText && state.showTextInfo))
+  ) {
+    const headValid = Boolean(state.boltHead);
+    const driveValid = Boolean(state.boltDrive);
     updateInputFieldState({
       input: boltHeadSelect,
       container: boltHeadField,
@@ -932,46 +916,6 @@ function temporarilyDisableTransition(element) {
   };
 }
 
-export function updateTextInfoOptionsVisibility(options = {}) {
-  if (!textInfoOptionsWrapper || !textInfoToggle) {
-    return;
-  }
-  const { animate = true } = options;
-  const shouldShow = Boolean(state.showText && state.showTextInfo);
-  const restoreTransition = animate
-    ? null
-    : temporarilyDisableTransition(textInfoOptionsWrapper);
-  if (!shouldShow) {
-    const measuredHeight = textInfoOptionsWrapper.scrollHeight;
-    if (measuredHeight > 0) {
-      textInfoOptionsWrapper.style.maxHeight = `${measuredHeight}px`;
-      void textInfoOptionsWrapper.offsetHeight;
-    }
-  }
-  textInfoToggle.setAttribute('aria-expanded', shouldShow ? 'true' : 'false');
-  textInfoOptionsWrapper.classList.toggle('is-collapsed', !shouldShow);
-  textInfoOptionsWrapper.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
-  if (shouldShow) {
-    textInfoOptionsWrapper.style.removeProperty('max-height');
-  } else {
-    textInfoOptionsWrapper.style.maxHeight = '0px';
-  }
-  if (textInfoLine2Toggle) {
-    textInfoLine2Toggle.disabled = !shouldShow;
-  }
-  if (textInfoLine3Toggle) {
-    textInfoLine3Toggle.disabled = !shouldShow;
-  }
-  textInfoOptionsWrapper.querySelectorAll('.label-suboption').forEach(suboption => {
-    suboption.setAttribute('aria-disabled', shouldShow ? 'false' : 'true');
-  });
-  if (restoreTransition) {
-    requestAnimationFrame(() => {
-      restoreTransition();
-    });
-  }
-}
-
 export function updateTextOptionsVisibility(options = {}) {
   if (!textOptionsWrapper || !textToggle || !textMainToggle || !textInfoToggle) {
     return;
@@ -999,7 +943,6 @@ export function updateTextOptionsVisibility(options = {}) {
   textOptionsWrapper.querySelectorAll('.label-suboption').forEach(suboption => {
     suboption.setAttribute('aria-disabled', shouldShow ? 'false' : 'true');
   });
-  updateTextInfoOptionsVisibility({ animate });
   if (restoreTransition) {
     requestAnimationFrame(() => {
       restoreTransition();
@@ -1382,13 +1325,6 @@ function buildTextLines() {
     }
     if (!state.showTextInfo) {
       normalized.line2 = '';
-      normalized.line3 = '';
-      return normalized;
-    }
-    if (!state.showTextInfoLine2) {
-      normalized.line2 = '';
-    }
-    if (!state.showTextInfoLine3) {
       normalized.line3 = '';
     }
     return normalized;

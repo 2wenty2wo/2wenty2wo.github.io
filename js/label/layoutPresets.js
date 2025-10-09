@@ -368,7 +368,6 @@ function extractPartOverride(entry, partType) {
     return null;
   }
   const { [SUB_PARTS_KEY]: _ignored, ...rest } = partEntry;
-  void _ignored;
   return Object.keys(rest).length > 0 ? rest : null;
 }
 
