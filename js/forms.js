@@ -5761,6 +5761,7 @@ export function onHardwareTypeChange() {
   const showFastenerFields = showBoltFields || showScrewFields;
   const showNutFields = type === 'Nut';
   const showWasherFields = type === 'Washer';
+  const hideNotesField = showCustomFields || showFastenerFields;
 
   if (lengthContainer) {
     lengthContainer.style.display = requiresThreadDetails ? '' : 'none';
@@ -6028,9 +6029,9 @@ export function onHardwareTypeChange() {
     connectorNotesHint.classList.toggle('d-none', !showConnectorFields);
   }
   if (notesField) {
-    notesField.classList.toggle('d-none', showCustomFields);
+    notesField.classList.toggle('d-none', hideNotesField);
   }
-  if (notesLabel) {
+  if (!hideNotesField && notesLabel) {
     if (showConnectorFields) {
       notesLabel.textContent = 'Connector Details (optional)';
     } else if (showComponentFields) {
@@ -6192,7 +6193,7 @@ export function onHardwareTypeChange() {
     state.washerType = '';
     syncWasherTypePicker({ isValid: true });
   }
-  if (notesInput) {
+  if (!hideNotesField && notesInput) {
     if (showConnectorFields) {
       notesInput.required = false;
       notesInput.setAttribute('aria-required', 'false');
