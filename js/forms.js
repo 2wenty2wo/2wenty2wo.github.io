@@ -6222,6 +6222,343 @@ export function onHardwareTypeChange() {
   updateDownloadState();
 }
 
+const FASTENER_LENGTH_OPTIONS = ['6', '8', '10', '12', '16', '20', '25', '30', '35', '40', '50'];
+const HEAT_INSERT_LENGTH_OPTIONS = ['4', '5', '6', '8', '10', '12'];
+const CUSTOM_LINE_ONE_SAMPLES = [
+  'Sample Label',
+  'Assorted Hardware',
+  'Prototype Parts',
+  'Workshop Supplies',
+];
+const CUSTOM_LINE_TWO_SAMPLES = ['Bin A3', 'Drawer 2', 'Shelf Row 5', 'Tray 1'];
+const GLASS_SPEED_VALUES = glassSpeedOptionData.map(option => option.value).filter(Boolean);
+const GLASS_SIZE_VALUES = glassSizeOptionData.map(option => option.value).filter(Boolean);
+const COMPONENT_MOUNT_IDS = componentMountOptions.map(option => option.id);
+
+function getRandomItem(list) {
+  if (!Array.isArray(list) || list.length === 0) {
+    return null;
+  }
+  const index = Math.floor(Math.random() * list.length);
+  return list[index];
+}
+
+function getThreadSizeValues() {
+  if (!threadSizeSelect || threadSizeSelect.disabled) {
+    return [];
+  }
+  return Array.from(threadSizeSelect.options)
+    .map(option => (typeof option.value === 'string' ? option.value.trim() : ''))
+    .filter(Boolean);
+}
+
+function selectRandomThreadSize() {
+  return getRandomItem(getThreadSizeValues());
+}
+
+function setLengthValue(length) {
+  const normalized =
+    typeof length === 'number'
+      ? String(length)
+      : typeof length === 'string'
+        ? length.trim()
+        : '';
+  state.length = normalized;
+  if (lengthInput) {
+    lengthInput.value = normalized;
+  }
+}
+
+function applyStandardEntry(entry) {
+  if (!entry) {
+    state.standard = '';
+    state.standardCode = '';
+    if (standardSelect) {
+      standardSelect.value = '';
+      const placeholder = standardSelect.querySelector('option[value=""]');
+      if (placeholder) {
+        placeholder.selected = true;
+      }
+    }
+    return;
+  }
+
+  const code = typeof entry.code === 'string' ? entry.code.trim() : String(entry.code || '').trim();
+  const name = typeof entry.name === 'string' ? entry.name.trim() : '';
+
+  state.standardCode = code;
+  state.standard = name || code;
+
+  if (standardSelect) {
+    const option = Array.from(standardSelect.options).find(opt => opt.value === code) || null;
+    if (option) {
+      standardSelect.value = code;
+      option.selected = true;
+      const displayName = option.dataset.name || option.textContent || state.standard;
+      if (displayName) {
+        state.standard = displayName;
+      }
+    }
+  }
+}
+
+function clearStandardSelection() {
+  applyStandardEntry(null);
+}
+
+function selectRandomStandardForType(type) {
+  const catalog = Array.isArray(hardwareCatalog[type]) ? hardwareCatalog[type] : [];
+  if (catalog.length === 0) {
+    clearStandardSelection();
+    return;
+  }
+  const entry = getRandomItem(catalog);
+  applyStandardEntry(entry || null);
+}
+
+function setComponentCategoryValue(category) {
+  if (!category) {
+    return;
+  }
+  state.componentCategory = category;
+  if (Array.isArray(componentCategoryRadios) && componentCategoryRadios.length > 0) {
+    componentCategoryRadios.forEach(radio => {
+      if (!radio) {
+        return;
+      }
+      radio.checked = radio.value === category;
+    });
+  }
+}
+
+function setCustomLines(line1, line2) {
+  const normalizedLine1 = typeof line1 === 'string' ? line1 : '';
+  const normalizedLine2 = typeof line2 === 'string' ? line2 : '';
+  state.customLine1 = normalizedLine1;
+  state.customLine2 = normalizedLine2;
+  if (customLine1Input) {
+    customLine1Input.value = normalizedLine1;
+  }
+  if (customLine2Input) {
+    customLine2Input.value = normalizedLine2;
+  }
+}
+
+function randomizeElectricalComponent(type) {
+  const category = type || state.componentCategory || 'Resistor';
+  setComponentCategoryValue(category);
+  const mountId = getRandomItem(COMPONENT_MOUNT_IDS) || 'Through-Hole';
+  setComponentMountSelection(mountId, { triggerUpdate: false });
+  updateComponentValueUi({ resetIfHidden: false });
+
+  if (type === 'Resistor') {
+    const value = getRandomItem(resistorValueOptions);
+    if (value) {
+      setResistorValueSelection(value.id, { triggerUpdate: false });
+    }
+  } else if (type === 'Capacitor') {
+    const value = getRandomItem(capacitorValueOptions);
+    if (value) {
+      setCapacitorValueSelection(value.id, { triggerUpdate: false });
+    }
+  } else if (type === 'Diode') {
+    const value = getRandomItem(diodeValueOptions);
+    if (value) {
+      setDiodeValueSelection(value.id, { triggerUpdate: false });
+    }
+  } else if (type === 'MOSFET') {
+    const channel = getRandomItem(mosfetChannelOptions);
+    if (channel) {
+      setMosfetChannelSelection(channel.id, { triggerUpdate: false });
+    }
+    const part = getRandomItem(mosfetPartOptions);
+    if (part) {
+      setMosfetPartSelection(part.id, { triggerUpdate: false });
+    }
+  } else if (type === 'Potentiometer') {
+    const value = getRandomItem(potentiometerValueOptions);
+    if (value) {
+      setPotentiometerValueSelection(value.id, { triggerUpdate: false });
+    }
+    const taper = getRandomItem(potentiometerTaperOptions);
+    if (taper) {
+      setPotentiometerTaperSelection(taper.id, { triggerUpdate: false });
+    }
+  }
+
+  updateComponentValueUi({ resetIfHidden: false });
+}
+
+export function randomizeCurrentPart() {
+  const type = typeof state.hardwareType === 'string' ? state.hardwareType.trim() : '';
+  if (!type) {
+    return;
+  }
+
+  clearStandardSelection();
+
+  if (ELECTRICAL_COMPONENT_TYPES.has(type)) {
+    randomizeElectricalComponent(type);
+    updateDownloadState();
+    updatePreview();
+    return;
+  }
+
+  switch (type) {
+    case 'Bolt': {
+      const threadSize = selectRandomThreadSize();
+      if (threadSize) {
+        setThreadSizeSelection(threadSize, { triggerUpdate: false });
+      }
+      const length = getRandomItem(FASTENER_LENGTH_OPTIONS);
+      setLengthValue(length || '');
+      const headOption = getRandomItem(boltHeadOptions);
+      if (headOption) {
+        setBoltHeadSelection(headOption.id, { triggerUpdate: false });
+      }
+      const driveOption = getRandomItem(boltDriveOptions);
+      if (driveOption) {
+        setBoltDriveSelection(driveOption.id, { triggerUpdate: false });
+      }
+      break;
+    }
+    case 'Screw': {
+      const threadSize = selectRandomThreadSize();
+      if (threadSize) {
+        setThreadSizeSelection(threadSize, { triggerUpdate: false });
+      }
+      const length = getRandomItem(FASTENER_LENGTH_OPTIONS);
+      setLengthValue(length || '');
+      const headOption = getRandomItem(screwTypeOptions);
+      if (headOption) {
+        setBoltHeadSelection(headOption.id, { triggerUpdate: false });
+      }
+      const driveOption = getRandomItem(boltDriveOptions);
+      if (driveOption) {
+        setBoltDriveSelection(driveOption.id, { triggerUpdate: false });
+      }
+      selectRandomStandardForType('Screw');
+      break;
+    }
+    case 'Threaded Heat Insert': {
+      const threadSize = selectRandomThreadSize();
+      if (threadSize) {
+        setThreadSizeSelection(threadSize, { triggerUpdate: false });
+      }
+      const length = getRandomItem(HEAT_INSERT_LENGTH_OPTIONS);
+      setLengthValue(length || '');
+      break;
+    }
+    case 'Nut': {
+      const threadSize = selectRandomThreadSize();
+      if (threadSize) {
+        setThreadSizeSelection(threadSize, { triggerUpdate: false });
+      }
+      const nutOption = getRandomItem(nutTypeOptions);
+      if (nutOption) {
+        setNutTypeSelection(nutOption.id, { triggerUpdate: false });
+      }
+      selectRandomStandardForType('Nut');
+      break;
+    }
+    case 'Washer': {
+      const threadSize = selectRandomThreadSize();
+      if (threadSize) {
+        setThreadSizeSelection(threadSize, { triggerUpdate: false });
+      }
+      const washerOption = getRandomItem(washerTypeOptions);
+      if (washerOption) {
+        setWasherTypeSelection(washerOption.id, { triggerUpdate: false });
+      }
+      selectRandomStandardForType('Washer');
+      break;
+    }
+    case 'Fuse': {
+      const fuseOption = getRandomItem(fuseTypeOptions);
+      if (fuseOption) {
+        setFuseTypeSelection(fuseOption.id, { triggerUpdate: false });
+        if (!FUSE_TYPES_WITHOUT_AMPS.has(fuseOption.id)) {
+          const fuseValue = getRandomItem(fuseValues);
+          if (fuseValue) {
+            setFuseValueSelection(String(fuseValue), { triggerUpdate: false });
+          }
+        } else {
+          setFuseValueSelection('', { triggerUpdate: false });
+        }
+        if (CARTRIDGE_FUSE_TYPES.has(fuseOption.id)) {
+          const size = getRandomItem(GLASS_SIZE_VALUES);
+          if (size) {
+            setGlassSizeSelection(size, { triggerUpdate: false });
+          }
+          const speedChoices =
+            fuseOption.id === PANEL_MOUNT_FUSE_HOLDER_TYPE ? [] : GLASS_SPEED_VALUES;
+          const speed = getRandomItem(speedChoices);
+          if (speed) {
+            setGlassSpeedSelection(speed, { triggerUpdate: false });
+          } else {
+            setGlassSpeedSelection('', { triggerUpdate: false });
+          }
+        } else {
+          setGlassSpeedSelection('', { triggerUpdate: false });
+          setGlassSizeSelection('', { triggerUpdate: false });
+        }
+      }
+      break;
+    }
+    case 'Connector': {
+      const category = getRandomItem(connectorCatalog);
+      if (category) {
+        setConnectorCategorySelection(category.id, { triggerUpdate: false });
+        updateConnectorCategoryUi();
+        populateStandards();
+        const seriesEntry = Array.isArray(category.series)
+          ? getRandomItem(category.series)
+          : null;
+        if (seriesEntry && seriesEntry.code) {
+          setConnectorSeriesSelection(seriesEntry.code, { triggerUpdate: false });
+        } else {
+          setConnectorSeriesSelection('', { triggerUpdate: false });
+        }
+      }
+      break;
+    }
+    case 'Switch': {
+      const switchOption = getRandomItem(switchTypeOptions);
+      if (switchOption) {
+        setSwitchTypeSelection(switchOption.id, { triggerUpdate: false });
+      }
+      break;
+    }
+    case 'Bearing': {
+      const bearingOption = getRandomItem(bearingOptions);
+      if (bearingOption) {
+        setBearingTypeSelection(bearingOption.code, { triggerUpdate: false });
+      }
+      break;
+    }
+    case 'Custom': {
+      const line1 = getRandomItem(CUSTOM_LINE_ONE_SAMPLES) || 'Custom Label';
+      const line2 = getRandomItem(CUSTOM_LINE_TWO_SAMPLES) || '';
+      setCustomLines(line1, line2);
+      const partOption = getRandomItem(partGraphicOptions);
+      if (partOption) {
+        setCustomPartSelection(partOption.id, { triggerUpdate: false });
+      }
+      break;
+    }
+    default: {
+      const threadSize = selectRandomThreadSize();
+      if (threadSize) {
+        setThreadSizeSelection(threadSize, { triggerUpdate: false });
+      }
+      break;
+    }
+  }
+
+  updateDownloadState();
+  updatePreview();
+}
+
 export function applyHardwareTypeSelection(nextType) {
   if (typeof nextType !== 'string') {
     syncHardwareTypeControls();

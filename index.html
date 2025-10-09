@@ -150,13 +150,25 @@
               <div class="collapsible-content" id="part-details-content" data-collapsible-content>
                 <div class="vstack gap-3">
                 <div>
-                  <label
-                    class="form-label fw-semibold"
-                    for="hardware-type-select"
-                    id="hardware-type-label"
-                  >
-                    Part Type
-                  </label>
+                  <div class="part-type-header">
+                    <label
+                      class="form-label fw-semibold"
+                      for="hardware-type-select"
+                      id="hardware-type-label"
+                    >
+                      Part Type
+                    </label>
+                    <button
+                      type="button"
+                      class="part-type-random-button"
+                      id="hardware-type-random-button"
+                      aria-label="Fill part details with sample data"
+                      title="Fill part details with sample data"
+                    >
+                      <span class="visually-hidden">Fill part details with sample data</span>
+                      <i class="fa-solid fa-shuffle" aria-hidden="true"></i>
+                    </button>
+                  </div>
                   <div class="part-type-picker" id="hardware-type-picker">
                     <select
                       id="hardware-type-select"
