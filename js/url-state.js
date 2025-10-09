@@ -42,6 +42,8 @@ const FIELD_MAP = {
   showText: 'st',
   showTextMain: 'stm',
   showTextInfo: 'sti',
+  showTextInfoLine2: 'sti2',
+  showTextInfoLine3: 'sti3',
   showImage: 'si',
   showQr: 'sq',
   qrContent: 'qc',
@@ -519,6 +521,12 @@ function applyExpandedPayload(expanded) {
   }
   if (typeof expanded.showTextInfo === 'boolean') {
     state.showTextInfo = expanded.showTextInfo;
+  }
+  if (typeof expanded.showTextInfoLine2 === 'boolean') {
+    state.showTextInfoLine2 = expanded.showTextInfoLine2;
+  }
+  if (typeof expanded.showTextInfoLine3 === 'boolean') {
+    state.showTextInfoLine3 = expanded.showTextInfoLine3;
   }
   if (typeof expanded.showImage === 'boolean') {
     state.showImage = expanded.showImage;

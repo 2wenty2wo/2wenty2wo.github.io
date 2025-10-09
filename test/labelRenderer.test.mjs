@@ -682,7 +682,7 @@ test('bolt subtitles include head, drive, and notes information', async () => {
   const originalDocument = global.document;
   try {
     global.document = stubDocument;
-    const [{ state }, { buildTextLinesForTest }] = await Promise.all([
+    const [{ state }, { buildTextLinesForTest, isLabelReady }] = await Promise.all([
       import('../js/state.js'),
       import('../js/render.js'),
     ]);
@@ -698,6 +698,9 @@ test('bolt subtitles include head, drive, and notes information', async () => {
         showText: true,
         showTextMain: true,
         showTextInfo: true,
+        showTextInfoLine2: true,
+        showTextInfoLine3: true,
+        showImage: false,
       });
       const textLines = buildTextLinesForTest();
       assert.equal(textLines.line1, 'M6 × 20 mm', 'bolt size should appear on the main line');
@@ -716,6 +719,9 @@ test('bolt subtitles include head, drive, and notes information', async () => {
         showText: true,
         showTextMain: true,
         showTextInfo: true,
+        showTextInfoLine2: true,
+        showTextInfoLine3: true,
+        showImage: false,
       });
       const missingHeadLines = buildTextLinesForTest();
       assert.equal(
@@ -739,6 +745,9 @@ test('bolt subtitles include head, drive, and notes information', async () => {
         showText: true,
         showTextMain: true,
         showTextInfo: true,
+        showTextInfoLine2: true,
+        showTextInfoLine3: true,
+        showImage: false,
       });
       const missingDriveLines = buildTextLinesForTest();
       assert.equal(
@@ -1886,3 +1895,49 @@ test('icon-only labels can expand media zone to full content width with override
     clearPresetOverrides();
   }
 });
+      Object.assign(state, {
+        hardwareType: 'Bolt',
+        threadSize: 'M6',
+        length: '20 mm',
+        boltHead: 'cap_head',
+        boltDrive: 'hex',
+        notes: 'Use threadlocker',
+        showText: true,
+        showTextMain: true,
+        showTextInfo: true,
+        showTextInfoLine2: false,
+        showTextInfoLine3: true,
+        showImage: false,
+      });
+      const noHeadLine = buildTextLinesForTest();
+      assert.equal(noHeadLine.line2, '', 'disabling the secondary line should hide the head label');
+      assert.equal(noHeadLine.line3, 'Hex', 'tertiary line should still display the drive label');
+      assert.equal(
+        isLabelReady(),
+        true,
+        'bolt labels should remain ready when the head line is disabled and the drive is provided',
+      );
+
+      Object.assign(state, {
+        hardwareType: 'Bolt',
+        threadSize: 'M6',
+        length: '20 mm',
+        boltHead: 'cap_head',
+        boltDrive: 'hex',
+        notes: 'Use threadlocker',
+        showText: true,
+        showTextMain: true,
+        showTextInfo: true,
+        showTextInfoLine2: true,
+        showTextInfoLine3: false,
+        showImage: false,
+      });
+      const noDriveLine = buildTextLinesForTest();
+      assert.equal(noDriveLine.line2, 'Socket Cap', 'secondary line should remain visible when enabled');
+      assert.equal(noDriveLine.line3, '', 'disabling the tertiary line should hide the drive label');
+      state.boltDrive = '';
+      assert.equal(
+        isLabelReady(),
+        true,
+        'bolt labels should remain ready when the tertiary line is disabled and the drive is omitted',
+      );
