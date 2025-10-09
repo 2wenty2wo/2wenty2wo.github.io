@@ -1426,60 +1426,6 @@ main {
   }
 }
 
-.part-type-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
-}
-
-.part-type-header .form-label {
-  margin-bottom: 0;
-}
-
-.part-type-random-button {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  padding: 0;
-  border-radius: 0.75rem;
-  border: 1px solid var(--theme-toggle-border);
-  background-color: var(--theme-toggle-bg);
-  color: var(--theme-toggle-color);
-  cursor: pointer;
-  line-height: 1;
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease,
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.part-type-random-button:hover {
-  background-color: var(--theme-toggle-bg-hover);
-  border-color: var(--focus-ring-border);
-}
-
-.part-type-random-button:focus-visible {
-  outline: var(--focus-outline-width) solid var(--focus-ring-border);
-  outline-offset: var(--focus-outline-offset);
-  box-shadow: 0 0 0 0.2rem var(--focus-ring-color);
-}
-
-.part-type-random-button .fa-shuffle {
-  font-size: 1rem;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .part-type-random-button {
-    transition: none;
-  }
-}
-
 .part-type-picker {
   display: flex;
   flex-direction: column;

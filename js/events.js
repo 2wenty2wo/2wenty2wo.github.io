@@ -51,7 +51,6 @@ import {
   syncBearingTypePicker,
   setCustomPartSelection,
   syncCustomPartPicker,
-  randomizeCurrentPart,
 } from './forms.js';
 import {
   updatePreview,
@@ -72,7 +71,6 @@ const {
   hardwareTypePickerCloseButton,
   hardwareTypePickerSearch,
   hardwareTypePickerFilters,
-  hardwareTypeRandomButton,
   connectorCategorySelect,
   connectorCategoryPicker,
   connectorCategoryPickerButton,
@@ -5724,12 +5722,6 @@ export function initEventHandlers() {
     };
     hardwareTypeSelect.addEventListener('change', handleSelectChange);
     hardwareTypeSelect.addEventListener('input', handleSelectChange);
-  }
-
-  if (hardwareTypeRandomButton) {
-    hardwareTypeRandomButton.addEventListener('click', () => {
-      randomizeCurrentPart();
-    });
   }
 
   updateHardwareTypePickerMode();
