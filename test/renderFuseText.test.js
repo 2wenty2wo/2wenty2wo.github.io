@@ -62,11 +62,36 @@ describe('buildTextLinesForTest', () => {
     state.fuseType = 'Panel Mount Fuse Holder';
     state.fuseValue = '';
     state.glassSize = '6.3 × 32 mm';
+    state.glassSpeed = 'Fast';
+    state.notes = 'Spare';
 
     const lines = buildTextLinesForTest();
 
     expect(lines.line2).toBe('Panel Mount Fuse Holder');
     expect(lines.line3).toBe('6.3 × 32 mm');
+    expect(lines.line4).toBe('Fast • Spare');
+  });
+
+  it('lists additional info on line3 when there is no glass size', () => {
+    state.fuseType = 'Glass';
+    state.glassSpeed = 'Slow-Blow';
+    state.notes = '';
+
+    const lines = buildTextLinesForTest();
+
+    expect(lines.line3).toBe('Slow-Blow');
+    expect(lines.line4).toBe('');
+  });
+
+  it('joins multiple details with separators when size is absent', () => {
+    state.fuseType = 'Glass';
+    state.glassSpeed = 'Fast';
+    state.notes = 'Primary';
+
+    const lines = buildTextLinesForTest();
+
+    expect(lines.line3).toBe('Fast • Primary');
+    expect(lines.line4).toBe('');
   });
 
   it('still appends the suffix when it is missing', () => {
