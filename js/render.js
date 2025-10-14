@@ -1316,9 +1316,10 @@ function buildTextLines() {
       line1: lines.line1 || '',
       line2: lines.line2 || '',
       line3: lines.line3 || '',
+      line4: lines.line4 || '',
     };
     if (!state.showText) {
-      return { line1: '', line2: '', line3: '' };
+      return { line1: '', line2: '', line3: '', line4: '' };
     }
     if (!state.showTextMain) {
       normalized.line1 = '';
@@ -1326,6 +1327,7 @@ function buildTextLines() {
     if (!state.showTextInfo) {
       normalized.line2 = '';
       normalized.line3 = '';
+      normalized.line4 = '';
     }
     return normalized;
   };
@@ -1347,17 +1349,17 @@ function buildTextLines() {
       ? `${fuseTypeLabel}${needsFuseSuffix ? ' Fuse' : ''}`
       : 'Fuse';
     const line2 = typeLabel;
-    const line3Parts = [];
-    if (state.glassSize) {
-      line3Parts.push(state.glassSize);
+    const size = typeof state.glassSize === 'string' ? state.glassSize.trim() : '';
+    const extraInfoParts = [state.glassSpeed, state.notes]
+      .map(part => (typeof part === 'string' ? part.trim() : ''))
+      .filter(Boolean);
+
+    if (size) {
+      const line4 = extraInfoParts.join(' • ');
+      return applyTextVisibility({ line1: valueLabel, line2, line3: size, line4 });
     }
-    if (state.glassSpeed) {
-      line3Parts.push(state.glassSpeed);
-    }
-    if (state.notes) {
-      line3Parts.push(state.notes);
-    }
-    const line3 = line3Parts.join(' • ');
+
+    const line3 = extraInfoParts.join(' • ');
     return applyTextVisibility({ line1: valueLabel, line2, line3 });
   }
 
