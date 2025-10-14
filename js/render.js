@@ -1368,8 +1368,11 @@ function buildTextLines() {
 
   if (state.hardwareType === 'Bearing') {
     const line1 = state.bearingType || 'Bearing';
-    const line2 = state.bearingDetails || '';
-    const line3 = state.notes || '';
+    const line2 = state.bearingDimensions || state.bearingDetails || '';
+    const line3Parts = [state.bearingShieldType, state.bearingNotes, state.notes]
+      .map(part => (typeof part === 'string' ? part.trim() : ''))
+      .filter(Boolean);
+    const line3 = line3Parts.join(' • ');
     return applyTextVisibility({ line1, line2, line3 });
   }
 

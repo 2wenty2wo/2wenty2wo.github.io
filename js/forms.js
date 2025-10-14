@@ -340,30 +340,71 @@ const validPotentiometerTapers = new Set(
 const BEARING_TYPE_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
 const validBearingCodes = new Set(bearingOptions.map(option => option.code));
 
-function formatBearingDetails(option) {
-  if (!option) {
+function normalizeBearingDimensions(value) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function normalizeBearingShieldType(value) {
+  const trimmed = typeof value === 'string' ? value.trim() : '';
+  if (!trimmed) {
     return '';
   }
-  const detailParts = [option.dimensions, option.shieldType, option.notes]
-    .map(part => (typeof part === 'string' ? part.trim() : ''))
-    .filter(Boolean);
-  return detailParts.join(' — ');
+  const lower = trimmed.toLowerCase();
+  return lower.replace(/(^|[\s/-])([a-z])/g, (match, prefix, char) => `${prefix}${char.toUpperCase()}`);
+}
+
+function normalizeBearingNotes(value) {
+  const trimmed = typeof value === 'string' ? value.trim() : '';
+  if (!trimmed) {
+    return '';
+  }
+  return trimmed.replace(/\s+/g, ' ');
+}
+
+function normalizeBearingFields(option) {
+  if (!option) {
+    return {
+      dimensions: '',
+      shieldType: '',
+      notes: '',
+      details: '',
+    };
+  }
+
+  const dimensions = normalizeBearingDimensions(option.dimensions);
+  const shieldType = normalizeBearingShieldType(option.shieldType);
+  const notes = normalizeBearingNotes(option.notes);
+  const details = [dimensions, shieldType, notes].filter(Boolean).join(' — ');
+
+  return {
+    dimensions,
+    shieldType,
+    notes,
+    details,
+  };
+}
+
+function formatBearingDetails(option) {
+  return normalizeBearingFields(option).details;
 }
 
 function formatBearingOptionLabel(option) {
   if (!option) {
     return '';
   }
-  const detailParts = [option.dimensions, option.shieldType]
-    .map(part => (typeof part === 'string' ? part.trim() : ''))
-    .filter(Boolean);
-  if (option.notes && option.notes.trim()) {
-    detailParts.push(option.notes.trim());
+  const code = typeof option.code === 'string' ? option.code.trim() : '';
+  const { dimensions, shieldType, notes } = normalizeBearingFields(option);
+  const detailParts = [dimensions, shieldType].filter(Boolean);
+  if (notes) {
+    detailParts.push(notes);
+  }
+  if (!code) {
+    return detailParts.join(' · ');
   }
   if (detailParts.length === 0) {
-    return option.code;
+    return code;
   }
-  return `${option.code} — ${detailParts.join(' · ')}`;
+  return `${code} — ${detailParts.join(' · ')}`;
 }
 
 const CONNECTOR_CATEGORY_PLACEHOLDER_TEXT = PLACEHOLDER_BLANK;
@@ -3868,9 +3909,13 @@ export function setBearingTypeSelection(nextCode, { triggerUpdate = true } = {})
   const sanitizedValue = validBearingCodes.has(desiredValue) ? desiredValue : '';
   const previousValue = typeof state.bearingType === 'string' ? state.bearingType : '';
   const optionData = findBearingOption(sanitizedValue);
+  const normalizedFields = normalizeBearingFields(optionData);
 
   state.bearingType = sanitizedValue;
-  state.bearingDetails = optionData ? formatBearingDetails(optionData) : '';
+  state.bearingDimensions = normalizedFields.dimensions;
+  state.bearingShieldType = normalizedFields.shieldType;
+  state.bearingNotes = normalizedFields.notes;
+  state.bearingDetails = normalizedFields.details;
 
   syncBearingTypePicker({ isValid: true });
 
@@ -3884,6 +3929,9 @@ export function populateBearingOptions() {
   if (!bearingTypeSelect) {
     state.bearingType = '';
     state.bearingDetails = '';
+    state.bearingDimensions = '';
+    state.bearingShieldType = '';
+    state.bearingNotes = '';
     return;
   }
 
@@ -3928,8 +3976,12 @@ export function populateBearingOptions() {
   });
 
   const selectedOption = findBearingOption(sanitizedValue);
+  const normalizedFields = normalizeBearingFields(selectedOption);
   state.bearingType = sanitizedValue;
-  state.bearingDetails = selectedOption ? formatBearingDetails(selectedOption) : '';
+  state.bearingDimensions = normalizedFields.dimensions;
+  state.bearingShieldType = normalizedFields.shieldType;
+  state.bearingNotes = normalizedFields.notes;
+  state.bearingDetails = normalizedFields.details;
 
   if (bearingTypePickerButton) {
     bearingTypePickerButton.disabled = bearingOptions.length === 0;
