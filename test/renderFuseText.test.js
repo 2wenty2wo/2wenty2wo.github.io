@@ -65,7 +65,8 @@ describe('buildTextLinesForTest', () => {
 
     const lines = buildTextLinesForTest();
 
-    expect(lines.line2).toBe('Panel Mount Fuse Holder — 6.3 × 32 mm');
+    expect(lines.line2).toBe('Panel Mount Fuse Holder');
+    expect(lines.line3).toBe('6.3 × 32 mm');
   });
 
   it('still appends the suffix when it is missing', () => {
