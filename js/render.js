@@ -1346,12 +1346,11 @@ function buildTextLines() {
     const typeLabel = fuseTypeLabel
       ? `${fuseTypeLabel}${needsFuseSuffix ? ' Fuse' : ''}`
       : 'Fuse';
-    const typeParts = [typeLabel];
-    if (state.glassSize) {
-      typeParts.push(state.glassSize);
-    }
-    const line2 = typeParts.filter(Boolean).join(' — ');
+    const line2 = typeLabel;
     const line3Parts = [];
+    if (state.glassSize) {
+      line3Parts.push(state.glassSize);
+    }
     if (state.glassSpeed) {
       line3Parts.push(state.glassSpeed);
     }
