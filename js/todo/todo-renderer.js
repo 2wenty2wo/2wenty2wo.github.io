@@ -57,7 +57,21 @@ function showMessage(listElement, message, variant = 'secondary') {
   listElement.append(li);
 }
 
-export async function renderTodoList(container) {
+export async function fetchTodoItems() {
+  const response = await fetch('data/todo-items.json', { cache: 'no-store' });
+  if (!response.ok) {
+    throw new Error(`Request failed with status ${response.status}`);
+  }
+
+  const items = await response.json();
+  if (!Array.isArray(items)) {
+    throw new TypeError('Expected the to-do list response to be an array.');
+  }
+
+  return items;
+}
+
+export function renderTodoList(container, items) {
   if (!container) {
     return;
   }
@@ -66,14 +80,11 @@ export async function renderTodoList(container) {
   container.setAttribute('aria-busy', 'true');
 
   try {
-    const response = await fetch('data/todo-items.json', { cache: 'no-store' });
-    if (!response.ok) {
-      throw new Error(`Request failed with status ${response.status}`);
+    if (!Array.isArray(items)) {
+      throw new TypeError('To-do items must be provided as an array.');
     }
 
-    const items = await response.json();
-
-    if (!Array.isArray(items) || items.length === 0) {
+    if (items.length === 0) {
       showMessage(container, 'No to-do items are currently listed.');
       return;
     }
