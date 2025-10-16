@@ -117,6 +117,64 @@
         <span class="fw-semibold" id="development-warning">Currently held together with duct tape and optimism.</span>
       </div>
       <section id="todo-list" class="card shadow-sm">
+        <div class="card-header bg-body-tertiary border-bottom-0">
+          <div
+            id="todo-status-filters"
+            class="d-flex flex-column flex-md-row flex-wrap gap-2 align-items-md-center justify-content-md-between"
+          >
+            <span class="fw-semibold text-body-secondary">Filter</span>
+            <div class="d-flex flex-wrap gap-2" role="group" aria-label="Filter to-do items by status">
+              <button
+                type="button"
+                class="btn btn-sm btn-primary rounded-pill"
+                data-status="all"
+                aria-pressed="true"
+              >
+                All
+              </button>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-primary rounded-pill"
+                data-status="todo"
+                aria-pressed="false"
+              >
+                To Do
+              </button>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-primary rounded-pill"
+                data-status="in-progress"
+                aria-pressed="false"
+              >
+                In Progress
+              </button>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-primary rounded-pill"
+                data-status="in-review"
+                aria-pressed="false"
+              >
+                In Review
+              </button>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-primary rounded-pill"
+                data-status="blocked"
+                aria-pressed="false"
+              >
+                Blocked
+              </button>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-primary rounded-pill"
+                data-status="done"
+                aria-pressed="false"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
         <div class="card-body">
           <div class="d-flex flex-column flex-lg-row gap-3 align-items-lg-center justify-content-lg-between">
             <div>
