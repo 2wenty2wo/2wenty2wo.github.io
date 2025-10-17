@@ -17,9 +17,10 @@ let cachedTodoItems = [];
 function setActiveFilter(button) {
   for (const filterButton of filterButtons) {
     const isActive = filterButton === button;
+    const variant = filterButton.getAttribute('data-variant') || 'primary';
     filterButton.setAttribute('aria-pressed', String(isActive));
-    filterButton.classList.toggle('btn-primary', isActive);
-    filterButton.classList.toggle('btn-outline-primary', !isActive);
+    filterButton.classList.toggle(`btn-${variant}`, isActive);
+    filterButton.classList.toggle(`btn-outline-${variant}`, !isActive);
   }
 }
 
