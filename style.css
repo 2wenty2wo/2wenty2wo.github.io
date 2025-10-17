@@ -204,6 +204,121 @@ main {
   background-color: var(--theme-toggle-bg-hover);
 }
 
+#todo-list .card-header {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background-color: var(--bs-card-cap-bg, var(--bs-tertiary-bg));
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--bs-border-color-translucent, var(--bs-border-color));
+  box-shadow: 0 0.75rem 1.5rem -1rem rgba(15, 23, 42, 0.24);
+}
+
+[data-theme='dark'] #todo-list .card-header,
+[data-bs-theme='dark'] #todo-list .card-header {
+  border-bottom-color: rgba(148, 163, 184, 0.35);
+  box-shadow: 0 0.75rem 1.5rem -1rem rgba(15, 23, 42, 0.6);
+}
+
+.status-tablist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.status-tab {
+  --status-tab-accent: var(--bs-primary);
+  --status-tab-accent-soft: rgba(var(--bs-primary-rgb), 0.12);
+  --status-tab-border: rgba(var(--bs-primary-rgb), 0.35);
+  --status-tab-text: var(--bs-primary);
+  --status-tab-text-active: var(--bs-primary-text-emphasis, var(--bs-primary));
+  --status-tab-hover-bg: rgba(var(--bs-primary-rgb), 0.08);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2rem;
+  padding: 0.375rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--status-tab-border, var(--bs-border-color));
+  background-color: transparent;
+  color: var(--status-tab-text, var(--bs-body-color));
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.status-tab:hover,
+.status-tab:focus-visible {
+  border-color: var(--status-tab-accent);
+  color: var(--status-tab-text-active, var(--status-tab-text));
+}
+
+.status-tab:hover {
+  background-color: var(--status-tab-hover-bg, var(--status-tab-accent-soft));
+}
+
+.status-tab:focus-visible {
+  outline: var(--focus-outline-width) solid var(--focus-ring-border);
+  outline-offset: var(--focus-outline-offset);
+  box-shadow: 0 0 0 var(--focus-outline-width) var(--focus-ring-color);
+}
+
+.status-tab--active {
+  color: var(--status-tab-text-active, var(--status-tab-text));
+  background-color: var(--status-tab-accent-soft);
+  border-color: var(--status-tab-accent);
+  box-shadow: inset 0 0 0 1px var(--status-tab-accent);
+}
+
+.status-tab[data-variant='secondary'] {
+  --status-tab-accent: var(--bs-secondary);
+  --status-tab-accent-soft: rgba(var(--bs-secondary-rgb), 0.15);
+  --status-tab-border: rgba(var(--bs-secondary-rgb), 0.35);
+  --status-tab-text: var(--bs-secondary);
+  --status-tab-text-active: var(--bs-secondary-text-emphasis, var(--bs-secondary));
+  --status-tab-hover-bg: rgba(var(--bs-secondary-rgb), 0.12);
+}
+
+.status-tab[data-variant='info'] {
+  --status-tab-accent: var(--bs-info);
+  --status-tab-accent-soft: rgba(var(--bs-info-rgb), 0.18);
+  --status-tab-border: rgba(var(--bs-info-rgb), 0.35);
+  --status-tab-text: var(--bs-info);
+  --status-tab-text-active: var(--bs-info-text-emphasis, var(--bs-info));
+  --status-tab-hover-bg: rgba(var(--bs-info-rgb), 0.12);
+}
+
+.status-tab[data-variant='warning'] {
+  --status-tab-accent: var(--bs-warning);
+  --status-tab-accent-soft: rgba(var(--bs-warning-rgb), 0.2);
+  --status-tab-border: rgba(var(--bs-warning-rgb), 0.4);
+  --status-tab-text: var(--bs-warning-text-emphasis, var(--bs-warning));
+  --status-tab-text-active: var(--bs-warning-text-emphasis, var(--bs-warning));
+  --status-tab-hover-bg: rgba(var(--bs-warning-rgb), 0.18);
+}
+
+.status-tab[data-variant='success'] {
+  --status-tab-accent: var(--bs-success);
+  --status-tab-accent-soft: rgba(var(--bs-success-rgb), 0.18);
+  --status-tab-border: rgba(var(--bs-success-rgb), 0.35);
+  --status-tab-text: var(--bs-success);
+  --status-tab-text-active: var(--bs-success-text-emphasis, var(--bs-success));
+  --status-tab-hover-bg: rgba(var(--bs-success-rgb), 0.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-tab {
+    transition: none;
+  }
+}
+
 #todo-list li[data-status] {
   position: relative;
   --todo-status-accent: var(--bs-border-color);
