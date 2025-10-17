@@ -75,7 +75,7 @@ export async function fetchTodoItems() {
   return items;
 }
 
-export function renderTodoList(container, items) {
+export function renderTodoList(container, items, emptyStateMessage) {
   if (!container) {
     return;
   }
@@ -89,7 +89,8 @@ export function renderTodoList(container, items) {
     }
 
     if (items.length === 0) {
-      showMessage(container, 'No to-do items are currently listed.');
+      const message = emptyStateMessage || 'No to-do items are currently listed.';
+      showMessage(container, message);
       return;
     }
 
