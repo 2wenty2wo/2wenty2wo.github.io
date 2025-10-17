@@ -6,8 +6,9 @@ const STATUS_STYLES = {
   done: { label: 'Done', className: 'text-bg-success' }
 };
 
-function createStatusBadge(status) {
-  const normalized = typeof status === 'string' ? status.toLowerCase() : '';
+function createStatusBadge(status, normalizedStatus) {
+  const normalized =
+    normalizedStatus ?? (typeof status === 'string' ? status.toLowerCase() : '');
   const style = STATUS_STYLES[normalized] || { label: status || 'Unknown', className: 'text-bg-dark' };
   const badge = document.createElement('span');
   badge.className = `badge rounded-pill ${style.className}`;
@@ -21,6 +22,9 @@ function createTodoListItem(item) {
   li.className = 'list-group-item py-3';
   li.setAttribute('data-todo-id', item.id || '');
 
+  const normalizedStatus = typeof item.status === 'string' ? item.status.trim().toLowerCase() : '';
+  li.dataset.status = normalizedStatus || 'unknown';
+
   const header = document.createElement('div');
   header.className = 'd-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2';
 
@@ -28,7 +32,7 @@ function createTodoListItem(item) {
   title.className = 'fw-semibold';
   title.textContent = item.title || 'Untitled task';
 
-  const badge = createStatusBadge(item.status);
+  const badge = createStatusBadge(item.status, normalizedStatus);
 
   header.append(title, badge);
   li.append(header);

@@ -198,6 +198,41 @@ main {
   background-color: var(--theme-toggle-bg-hover);
 }
 
+#todo-list li[data-status] {
+  position: relative;
+  --todo-status-accent: var(--bs-border-color);
+  --todo-status-background: var(--bs-tertiary-bg, var(--bs-list-group-bg));
+  border-inline-start: 0.35rem solid var(--todo-status-accent);
+  padding-inline-start: calc(var(--bs-list-group-item-padding-x) + 0.5rem);
+  background-color: var(--todo-status-background);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+#todo-list li[data-status='todo'] {
+  --todo-status-accent: var(--bs-secondary-border-subtle);
+  --todo-status-background: var(--bs-secondary-bg-subtle);
+}
+
+#todo-list li[data-status='in-progress'] {
+  --todo-status-accent: var(--bs-info-border-subtle);
+  --todo-status-background: var(--bs-info-bg-subtle);
+}
+
+#todo-list li[data-status='in-review'] {
+  --todo-status-accent: var(--bs-primary-border-subtle);
+  --todo-status-background: var(--bs-primary-bg-subtle);
+}
+
+#todo-list li[data-status='blocked'] {
+  --todo-status-accent: var(--bs-warning-border-subtle);
+  --todo-status-background: var(--bs-warning-bg-subtle);
+}
+
+#todo-list li[data-status='done'] {
+  --todo-status-accent: var(--bs-success-border-subtle);
+  --todo-status-background: var(--bs-success-bg-subtle);
+}
+
 .section-toggle-button:focus-visible {
   outline: var(--focus-outline-width) solid var(--focus-ring-border);
   outline-offset: var(--focus-outline-offset);
