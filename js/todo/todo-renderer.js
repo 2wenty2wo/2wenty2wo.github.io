@@ -1,8 +1,6 @@
 const STATUS_STYLES = {
   todo: { label: 'To Do', className: 'text-bg-secondary' },
   'in-progress': { label: 'In Progress', className: 'text-bg-info' },
-  'in-review': { label: 'In Review', className: 'text-bg-primary' },
-  blocked: { label: 'Blocked', className: 'text-bg-warning' },
   done: { label: 'Done', className: 'text-bg-success' }
 };
 

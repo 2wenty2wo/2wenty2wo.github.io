@@ -16,13 +16,13 @@
   {
     "id": "todo-003",
     "title": "Design printable label templates for metric fasteners",
-    "status": "in-review",
+    "status": "in-progress",
     "lastUpdated": "2024-06-02"
   },
   {
     "id": "todo-004",
     "title": "Ship quality-of-life fixes from the latest user feedback",
-    "status": "blocked",
+    "status": "todo",
     "notes": "Waiting on final icon assets before updating the presets.",
     "lastUpdated": "2024-05-29"
   },
