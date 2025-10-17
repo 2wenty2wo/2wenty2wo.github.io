@@ -1,29 +1,86 @@
 # Gridfinity Label Maker
 
-## Overview
+Design, personalize, and print labels for your Gridfinity storage system right
+from the browser. The live experience is hosted on GitHub Pages and always
+available at **<https://2wenty2wo.github.io/>**.
 
-Gridfinity Label Maker is a static web application for designing and printing
-labels sized for Gridfinity storage bins. The app runs entirely in the browser
-and relies on modular JavaScript, modern HTML, and layered CSS for styling.
-Bootstrap utilities provide responsive layout primitives, while lightweight
-third-party libraries are lazy-loaded to power optional QR code generation and
-image export.
+## Navigation
 
-Key capabilities exposed through `index.html` and the supporting scripts
-include:
+- [Using the Label Maker](#using-the-label-maker)
+- [Feature Walkthrough](#feature-walkthrough)
+- [Sharing and Collaboration](#sharing-and-collaboration)
+- [Additional Pages](#additional-pages)
+- [FAQ](#faq)
+- [Project Structure](#project-structure)
+- [Change Log](#change-log)
 
-- Dark and light theme toggle with preference persistence.
-- Hardware presets that reconfigure the form for screws, nuts, inserts, fuses,
-  bearings, electronic components, and fully custom labels.
-- Contextual validation and helper messaging that keep the preview in sync with
-  selected options.
-- Optional QR code content with automatic library loading only when needed.
-- Download-and-print flows that use a shared SVG renderer to keep the preview
-  and exported artwork in sync.
-- Shareable label URLs with Web Share API support and clipboard fallback.
+## Using the Label Maker
 
-The repository is structured as a traditional GitHub Pages site, making it easy
-to host the tool directly from the `main` branch.
+1. Visit the hosted label maker at <https://2wenty2wo.github.io/>.
+2. Pick a **Preset** (for example, screws, inserts, or fully custom) to load the
+   matching layout and helper text.
+3. Enter your hardware details, adjust measurements, and tailor the text shown
+   on the label preview.
+4. Choose between **Light** and **Dark** themes using the theme toggle in the
+   toolbar. Your preference is stored for the next visit.
+5. Use the live preview pane to confirm spacing, alignment, and iconography.
+6. Select **Download** for an SVG you can archive or edit, or **Print** for a
+   printer-friendly sheet using the current label settings.
+
+### Fine-tune each section
+
+- **Label Layout** – Rearrange fields, toggle optional panels, and adjust slot
+  sizing for complex drawers.
+- **Hardware Details** – Quickly swap between common thread sizes, bearing
+  dimensions, or electronics footprints. Preset metadata keeps measurements
+  accurate.
+- **Visual Enhancements** – Add icons, pick Font Awesome glyphs, and configure
+  optional QR codes without leaving the page.
+
+## Feature Walkthrough
+
+Gridfinity Label Maker is a static web application powered entirely by modular
+JavaScript, modern HTML, and layered CSS. Highlights include:
+
+- **Theme persistence** that remembers your dark or light preference.
+- **Preset-driven forms** that auto-populate fields for screws, nuts, inserts,
+  fuses, bearings, electronics, and more.
+- **Contextual validation** to keep the preview aligned with your selections and
+  warn when inputs fall outside recommended ranges.
+- **On-demand QR codes** that lazy-load the generator only when a code is
+  enabled, keeping the base experience lightweight.
+- **Unified SVG rendering** to ensure the onscreen preview matches downloaded
+  and printed output.
+- **Shareable label URLs** with Web Share API integration and clipboard
+  fallbacks for browsers without native sharing.
+
+## Sharing and Collaboration
+
+Use the **Share** button next to Download and Print to capture the entire label
+configuration in a link. When supported, the Web Share API opens native share
+sheets so you can message or airdrop labels directly. Browsers without Web Share
+support copy the link to your clipboard and display a confirmation. Opening a
+shared URL hydrates every input and immediately restores the label preview.
+
+## Additional Pages
+
+- **Label Maker** – <https://2wenty2wo.github.io/> is the main interface for
+  designing, downloading, and printing labels.
+- **Printable TODO List** – <https://2wenty2wo.github.io/todo.html> offers a
+  matching checklist template rendered with the same styling utilities.
+
+## FAQ
+
+**Do I need to install anything?**  
+No. Everything runs in the browser and works on desktops, tablets, and phones.
+
+**Which browsers are supported?**  
+Modern Chromium, Firefox, and Safari releases are tested regularly. Earlier
+versions may function but are not officially supported.
+
+**Can I contribute improvements?**  
+Absolutely! Review [`CONTRIBUTING.md`](CONTRIBUTING.md) for development, testing,
+and deployment guidance.
 
 ## Project Structure
 
@@ -59,65 +116,6 @@ to host the tool directly from the `main` branch.
 └── images/
     └── icons/             # Favicons and touch icons used across devices
 ```
-
-## Building the Project
-
-No build step is required. All assets are committed in their final form and
-referenced directly from `index.html`. When making changes, open the HTML file
-in a browser or serve the repository via a static file server to reflect your
-updates.
-
-## Running Locally
-
-1. Clone the repository.
-2. From the repository root, start a simple HTTP server:
-   ```bash
-   python3 -m http.server 8000
-   ```
-3. Navigate to <http://localhost:8000> in your browser to use the tool.
-
-Any other static server (for example, `npx serve` or a local web server
-extension) will also work.
-
-## Sharing Labels
-
-Use the **Share** button next to Download and Print to generate a link that
-captures the current label configuration. The helper serializes every relevant
-state value—including hardware selections, measurements, toggles, QR content,
-and custom imagery—into a compact base64 payload stored in the `label` query
-parameter.
-
-When supported, the app invokes the Web Share API so the link can be sent via
-native share sheets on mobile and desktop. Browsers without Web Share support
-fall back to copying the link to the clipboard and display a confirmation
-message. Opening a shared URL pre-populates the form and preview so the label is
-ready to review, print, or export without additional input.
-
-## Development Workflow and Version Control Safeguards
-
-To keep the `main` branch deployable at all times:
-
-1. Create a new branch for each feature or modernization effort.
-2. Commit and test your changes on the feature branch.
-3. Open a pull request back to `main`, ensuring that reviews or automated checks
-   pass before merging.
-
-This workflow preserves a working reference point so that you can revert or
-compare changes easily if something goes wrong.
-
-## Deployment
-
-Because the project is a static site, deployment can be as simple as pushing the
-contents of the `main` branch to GitHub Pages or any static hosting provider.
-When using GitHub Pages, ensure the publishing source is set to the `main`
-branch (or `/docs` folder if you choose to relocate the site assets).
-
-## Contributing
-
-1. Fork the repository and create a branch for your contribution.
-2. Follow the development workflow above to keep changes isolated.
-3. Add or update documentation and tests where relevant.
-4. Submit a pull request summarizing the changes and any notable impacts.
 
 ## License
 
