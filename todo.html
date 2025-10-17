@@ -201,6 +201,34 @@
                 Done
               </button>
             </div>
+            <div class="flex-grow-1 flex-md-grow-0">
+              <label class="form-label visually-hidden" for="todo-search"
+                >Search to-do items</label
+              >
+              <div class="input-group">
+                <span class="input-group-text" id="todo-search-icon">
+                  <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                  <span class="visually-hidden">Search</span>
+                </span>
+                <input
+                  type="search"
+                  class="form-control"
+                  id="todo-search"
+                  placeholder="Search keywords"
+                  aria-describedby="todo-search-icon"
+                  aria-label="Search to-do items"
+                  autocomplete="off"
+                />
+                <button
+                  class="btn btn-outline-secondary"
+                  type="button"
+                  id="todo-search-clear"
+                  aria-label="Clear search"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
           </div>
         </div>
         <div class="card-body">
