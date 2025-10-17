@@ -9,19 +9,38 @@ if (developmentWarning) {
   setRandomDevelopmentWarning(developmentWarning);
 }
 
-const todoListContainer = document.querySelector('#todo-list ul');
-const filterButtons = document.querySelectorAll('#todo-status-filters [data-status]');
+const todoListContainer = document.querySelector('#todo-list-items');
+const filterTabs = Array.from(
+  document.querySelectorAll('#todo-status-filters [data-status]'),
+);
 
 let cachedTodoItems = [];
 
-function setActiveFilter(button) {
-  for (const filterButton of filterButtons) {
-    const isActive = filterButton === button;
-    const variant = filterButton.getAttribute('data-variant') || 'primary';
-    filterButton.setAttribute('aria-pressed', String(isActive));
-    filterButton.classList.toggle(`btn-${variant}`, isActive);
-    filterButton.classList.toggle(`btn-outline-${variant}`, !isActive);
+function setActiveFilter(tab) {
+  for (const filterTab of filterTabs) {
+    const isActive = filterTab === tab;
+    filterTab.setAttribute('aria-selected', String(isActive));
+    filterTab.setAttribute('tabindex', isActive ? '0' : '-1');
+    filterTab.classList.toggle('status-tab--active', isActive);
   }
+}
+
+function activateFilter(tab) {
+  setActiveFilter(tab);
+  const status = (tab.getAttribute('data-status') || 'all').toLowerCase();
+  const filteredItems = filterItemsByStatus(status);
+  renderTodoList(todoListContainer, filteredItems);
+}
+
+function getAdjacentTab(currentTab, direction) {
+  const currentIndex = filterTabs.indexOf(currentTab);
+  if (currentIndex === -1) {
+    return undefined;
+  }
+
+  const offset = direction === 'next' ? 1 : -1;
+  const nextIndex = (currentIndex + offset + filterTabs.length) % filterTabs.length;
+  return filterTabs[nextIndex];
 }
 
 function filterItemsByStatus(status) {
@@ -36,7 +55,7 @@ function filterItemsByStatus(status) {
 }
 
 async function initTodoList() {
-  if (!todoListContainer) {
+  if (!todoListContainer || filterTabs.length === 0) {
     return;
   }
 
@@ -49,23 +68,74 @@ async function initTodoList() {
     return;
   }
 
-  const initiallyActiveButton = Array.from(filterButtons).find(
-    (button) => button.getAttribute('aria-pressed') === 'true',
-  );
-  if (initiallyActiveButton) {
-    setActiveFilter(initiallyActiveButton);
+  const initiallyActiveTab =
+    filterTabs.find((tab) => tab.getAttribute('aria-selected') === 'true') ||
+    filterTabs[0];
+
+  if (initiallyActiveTab) {
+    activateFilter(initiallyActiveTab);
   }
 
-  for (const button of filterButtons) {
-    button.addEventListener('click', () => {
-      if (button.getAttribute('aria-pressed') === 'true') {
+  for (const tab of filterTabs) {
+    tab.addEventListener('click', () => {
+      if (tab.getAttribute('aria-selected') === 'true') {
         return;
       }
 
-      setActiveFilter(button);
-      const status = (button.getAttribute('data-status') || 'all').toLowerCase();
-      const filteredItems = filterItemsByStatus(status);
-      renderTodoList(todoListContainer, filteredItems);
+      activateFilter(tab);
+    });
+
+    tab.addEventListener('keydown', (event) => {
+      switch (event.key) {
+        case 'ArrowRight':
+        case 'ArrowDown': {
+          event.preventDefault();
+          const nextTab = getAdjacentTab(tab, 'next');
+          if (nextTab) {
+            activateFilter(nextTab);
+            nextTab.focus();
+          }
+          break;
+        }
+        case 'ArrowLeft':
+        case 'ArrowUp': {
+          event.preventDefault();
+          const previousTab = getAdjacentTab(tab, 'previous');
+          if (previousTab) {
+            activateFilter(previousTab);
+            previousTab.focus();
+          }
+          break;
+        }
+        case 'Home': {
+          event.preventDefault();
+          const firstTab = filterTabs[0];
+          if (firstTab) {
+            activateFilter(firstTab);
+            firstTab.focus();
+          }
+          break;
+        }
+        case 'End': {
+          event.preventDefault();
+          const lastTab = filterTabs[filterTabs.length - 1];
+          if (lastTab) {
+            activateFilter(lastTab);
+            lastTab.focus();
+          }
+          break;
+        }
+        case ' ': // Space
+        case 'Enter': {
+          event.preventDefault();
+          if (tab.getAttribute('aria-selected') !== 'true') {
+            activateFilter(tab);
+          }
+          break;
+        }
+        default:
+          break;
+      }
     });
   }
 }

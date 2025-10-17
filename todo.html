@@ -117,64 +117,86 @@
         <span class="fw-semibold" id="development-warning">Currently held together with duct tape and optimism.</span>
       </div>
       <section id="todo-list" class="card shadow-sm">
-        <div class="card-header bg-body-tertiary border-bottom-0">
+        <div class="card-header bg-body-tertiary">
           <div
             id="todo-status-filters"
             class="d-flex flex-column flex-md-row flex-wrap gap-2 align-items-md-center justify-content-md-between"
           >
             <span class="fw-semibold text-body-secondary">Filter</span>
-            <div class="d-flex flex-wrap gap-2" role="group" aria-label="Filter to-do items by status">
+            <div
+              class="status-tablist"
+              role="tablist"
+              aria-label="Filter to-do items by status"
+            >
               <button
                 type="button"
-                class="btn btn-sm btn-primary rounded-pill"
+                class="status-tab status-tab--active"
                 data-status="all"
                 data-variant="primary"
-                aria-pressed="true"
+                role="tab"
+                aria-selected="true"
+                aria-controls="todo-list-items"
+                tabindex="0"
               >
                 All
               </button>
               <button
                 type="button"
-                class="btn btn-sm btn-outline-secondary rounded-pill"
+                class="status-tab"
                 data-status="todo"
                 data-variant="secondary"
-                aria-pressed="false"
+                role="tab"
+                aria-selected="false"
+                aria-controls="todo-list-items"
+                tabindex="-1"
               >
                 To Do
               </button>
               <button
                 type="button"
-                class="btn btn-sm btn-outline-info rounded-pill"
+                class="status-tab"
                 data-status="in-progress"
                 data-variant="info"
-                aria-pressed="false"
+                role="tab"
+                aria-selected="false"
+                aria-controls="todo-list-items"
+                tabindex="-1"
               >
                 In Progress
               </button>
               <button
                 type="button"
-                class="btn btn-sm btn-outline-primary rounded-pill"
+                class="status-tab"
                 data-status="in-review"
                 data-variant="primary"
-                aria-pressed="false"
+                role="tab"
+                aria-selected="false"
+                aria-controls="todo-list-items"
+                tabindex="-1"
               >
                 In Review
               </button>
               <button
                 type="button"
-                class="btn btn-sm btn-outline-warning rounded-pill"
+                class="status-tab"
                 data-status="blocked"
                 data-variant="warning"
-                aria-pressed="false"
+                role="tab"
+                aria-selected="false"
+                aria-controls="todo-list-items"
+                tabindex="-1"
               >
                 Blocked
               </button>
               <button
                 type="button"
-                class="btn btn-sm btn-outline-success rounded-pill"
+                class="status-tab"
                 data-status="done"
                 data-variant="success"
-                aria-pressed="false"
+                role="tab"
+                aria-selected="false"
+                aria-controls="todo-list-items"
+                tabindex="-1"
               >
                 Done
               </button>
@@ -194,7 +216,12 @@
             <i class="fa-solid fa-clipboard-list fa-3x text-primary" aria-hidden="true"></i>
           </div>
         </div>
-        <ul class="list-group list-group-flush" aria-live="polite" aria-busy="true"></ul>
+        <ul
+          id="todo-list-items"
+          class="list-group list-group-flush"
+          aria-live="polite"
+          aria-busy="true"
+        ></ul>
       </section>
     </main>
   </body>
