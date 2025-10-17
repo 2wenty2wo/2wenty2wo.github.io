@@ -109,6 +109,12 @@ main {
   margin: 0.5rem auto 0;
 }
 
+.upcoming-focus-areas-header {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .height-options > * {
   flex: 1 1 0;
 }
