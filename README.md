@@ -30,17 +30,28 @@ to host the tool directly from the `main` branch.
 ```
 ├── index.html             # Application shell, form markup, and feature toggles
 ├── js/
-│   ├── actions.js         # Shared action handlers invoked by UI events
-│   ├── controls.js        # Entry point that bootstraps modules and listeners
-│   ├── data.js            # Static measurements, presets, and asset lookups
-│   ├── dom-elements.js    # Cached DOM references for easier querying
-│   ├── events.js          # Wiring for form, download, and print events
-│   ├── forms.js           # Field population, validation, and UI helpers
-│   ├── lazy-loaders.js    # On-demand loading of the QR code library
-│   ├── render.js          # Label preview updates and export orchestration
-│   ├── state.js           # Centralized application state store
-│   ├── theme.js           # Theme toggle behavior and persistence helpers
-│   └── threadSizes.js     # Thread-size presets for hardware options
+│   ├── actions.js               # Shared action handlers invoked by UI events
+│   ├── collapsible-sections.js  # Expand/collapse helpers for grouped settings
+│   ├── controls.js              # Entry point that bootstraps modules and listeners
+│   ├── data.js                  # Static measurements, presets, and asset lookups
+│   ├── dom-elements.js          # Cached DOM references for easier querying
+│   ├── events.js                # Wiring for form, download, and print events
+│   ├── fontawesome-icons.js     # Icon mapping for lazy-loaded Font Awesome glyphs
+│   ├── forms.js                 # Field population, validation, and UI helpers
+│   ├── label/
+│   │   ├── layoutEditor.js      # Drag-and-drop layout editing for advanced labels
+│   │   ├── layoutPresets.js     # Predefined label layouts and slot definitions
+│   │   └── renderLabelSVG.js    # SVG assembly for label previews and exports
+│   ├── lazy-loaders.js          # On-demand loading of the QR code library
+│   ├── render.js                # Label preview updates and export orchestration
+│   ├── state.js                 # Centralized application state store
+│   ├── theme.js                 # Theme toggle behavior and persistence helpers
+│   ├── threadSizes.js           # Thread-size presets for hardware options
+│   ├── todo/
+│   │   └── todo-renderer.js     # Rendering helpers for the printable TODO list
+│   ├── todo-page.js             # Bootstraps the TODO page and its interactions
+│   ├── url-state.js             # URL serialization and parsing for shareable labels
+│   └── warning-message.js       # Utility for inline warning banners and alerts
 ├── style.css              # Custom styling layered on Bootstrap defaults
 ├── style-print.css        # Print-specific overrides for labels
 ├── print.css              # Utility styles applied to print views
