@@ -178,16 +178,15 @@
               </button>
             </div>
             <div class="todo-category-filter flex-grow-1 flex-md-grow-0">
-              <label class="form-label visually-hidden" for="todo-category-filter"
-                >Filter to-do items by category</label
+              <span class="visually-hidden" id="todo-category-filter-label"
+                >Filter to-do items by category</span
               >
-              <select
-                class="form-select"
+              <div
+                class="status-tablist category-tablist"
                 id="todo-category-filter"
-                aria-label="Filter to-do items by category"
-              >
-                <option value="all">All categories</option>
-              </select>
+                role="tablist"
+                aria-labelledby="todo-category-filter-label"
+              ></div>
             </div>
             <div class="flex-grow-1 flex-md-grow-0">
               <label class="form-label visually-hidden" for="todo-search"
