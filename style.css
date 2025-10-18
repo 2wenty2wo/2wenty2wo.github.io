@@ -254,6 +254,8 @@ main {
     background-color 0.2s ease,
     border-color 0.2s ease,
     box-shadow 0.2s ease;
+}
+
 :is(.status-tab, .category-tab):hover,
 :is(.status-tab, .category-tab):focus-visible {
   border-color: var(--status-tab-accent);
