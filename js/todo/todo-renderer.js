@@ -236,16 +236,36 @@ function createVoteControls(item) {
   const upvoteButton = document.createElement('button');
   upvoteButton.type = 'button';
   upvoteButton.className = 'btn btn-sm todo-vote-button btn-outline-success';
-  upvoteButton.textContent = '👍';
   upvoteButton.setAttribute('aria-label', 'Upvote this to-do item');
   upvoteButton.setAttribute('aria-pressed', 'false');
+  upvoteButton.textContent = '';
+
+  const upvoteIcon = document.createElement('i');
+  upvoteIcon.className = 'fa-solid fa-thumbs-up';
+  upvoteIcon.setAttribute('aria-hidden', 'true');
+  upvoteButton.append(upvoteIcon);
+
+  const upvoteLabel = document.createElement('span');
+  upvoteLabel.className = 'visually-hidden';
+  upvoteLabel.textContent = 'Upvote this to-do item';
+  upvoteButton.append(upvoteLabel);
 
   const downvoteButton = document.createElement('button');
   downvoteButton.type = 'button';
   downvoteButton.className = 'btn btn-sm todo-vote-button btn-outline-danger';
-  downvoteButton.textContent = '👎';
   downvoteButton.setAttribute('aria-label', 'Downvote this to-do item');
   downvoteButton.setAttribute('aria-pressed', 'false');
+  downvoteButton.textContent = '';
+
+  const downvoteIcon = document.createElement('i');
+  downvoteIcon.className = 'fa-solid fa-thumbs-down';
+  downvoteIcon.setAttribute('aria-hidden', 'true');
+  downvoteButton.append(downvoteIcon);
+
+  const downvoteLabel = document.createElement('span');
+  downvoteLabel.className = 'visually-hidden';
+  downvoteLabel.textContent = 'Downvote this to-do item';
+  downvoteButton.append(downvoteLabel);
 
   function setButtonState(button, isActive, activeClass, inactiveClass) {
     button.classList.toggle(activeClass, isActive);
