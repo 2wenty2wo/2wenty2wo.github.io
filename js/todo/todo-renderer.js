@@ -221,14 +221,9 @@ function createVoteControls(item) {
   scoreValue.setAttribute('aria-labelledby', scoreLabelId);
 
   function updateScoreDisplay() {
-    if (!ratingAvailable) {
-      scoreValue.textContent = '—';
-      scoreValue.setAttribute('aria-label', 'Net score unavailable');
-      return;
-    }
-
-    scoreValue.textContent = String(displayedRating);
-    scoreValue.setAttribute('aria-label', `Net score: ${displayedRating}`);
+    const normalizedRating = ratingAvailable ? displayedRating : 0;
+    scoreValue.textContent = String(normalizedRating);
+    scoreValue.setAttribute('aria-label', `Net score: ${normalizedRating}`);
   }
 
   updateScoreDisplay();
@@ -511,7 +506,10 @@ export async function fetchTodoItems() {
         return item;
       }
 
-      return { ...item };
+      const existingRating =
+        typeof item.rating === 'number' && Number.isFinite(item.rating) ? item.rating : 0;
+
+      return { ...item, rating: existingRating };
     });
   }
 
