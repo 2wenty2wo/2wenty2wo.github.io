@@ -378,10 +378,20 @@ main {
   position: relative;
   --todo-status-accent: var(--bs-border-color);
   --todo-status-background: var(--bs-tertiary-bg, var(--bs-list-group-bg));
+  --todo-divider-color: var(--bs-border-color-translucent, var(--bs-border-color));
   border-inline-start: 0.35rem solid var(--todo-status-accent);
   padding-inline-start: calc(var(--bs-list-group-item-padding-x) + 0.5rem);
   background-color: var(--todo-status-background);
   transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+#todo-list li[data-status]:not(:last-child) {
+  border-bottom: 1px solid var(--todo-divider-color);
+}
+
+[data-theme='dark'] #todo-list li[data-status],
+[data-bs-theme='dark'] #todo-list li[data-status] {
+  --todo-divider-color: color-mix(in srgb, var(--bs-border-color) 50%, transparent);
 }
 
 #todo-list li[data-status='todo'] {
