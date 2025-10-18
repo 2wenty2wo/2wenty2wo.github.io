@@ -4,6 +4,78 @@ const STATUS_STYLES = {
   done: { label: 'Done', className: 'text-bg-success' }
 };
 
+const CATEGORY_STYLES = {
+  bug: { label: 'Bug', className: 'text-bg-danger' },
+  feature: { label: 'Feature', className: 'text-bg-primary' },
+  'new-feature': { label: 'New Feature', className: 'text-bg-primary' },
+  enhancement: { label: 'Enhancement', className: 'text-bg-info' },
+  improvement: { label: 'Improvement', className: 'text-bg-warning' },
+  documentation: { label: 'Documentation', className: 'text-bg-secondary' }
+};
+
+const UNCATEGORIZED_CATEGORY = 'uncategorized';
+
+function normalizeCategory(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  const trimmed = value.trim().toLowerCase();
+  if (trimmed.length === 0) {
+    return '';
+  }
+
+  return trimmed.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+function formatCategoryLabel(value) {
+  if (typeof value !== 'string') {
+    return 'Uncategorized';
+  }
+
+  return value
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .filter((segment) => segment.length > 0)
+    .map((segment) => segment[0].toUpperCase() + segment.slice(1))
+    .join(' ');
+}
+
+function extractCategoryValues(category) {
+  if (Array.isArray(category)) {
+    return category
+      .map((value) => (typeof value === 'string' ? value.trim() : ''))
+      .filter((value) => value.length > 0);
+  }
+
+  if (typeof category === 'string') {
+    const trimmed = category.trim();
+    return trimmed ? [trimmed] : [];
+  }
+
+  return [];
+}
+
+function createCategoryBadge(category) {
+  const normalized = normalizeCategory(category);
+  const badge = document.createElement('span');
+  badge.className = 'badge rounded-pill';
+
+  const style = CATEGORY_STYLES[normalized];
+  if (style) {
+    badge.className += ` ${style.className}`;
+    badge.textContent = style.label;
+  } else {
+    badge.className += ' badge-category-default';
+    badge.textContent = formatCategoryLabel(category);
+  }
+
+  badge.setAttribute('data-category', normalized || UNCATEGORIZED_CATEGORY);
+  return badge;
+}
+
 function createStatusBadge(status, normalizedStatus) {
   const normalized =
     normalizedStatus ?? (typeof status === 'string' ? status.toLowerCase() : '');
@@ -23,6 +95,24 @@ function createTodoListItem(item) {
   const normalizedStatus = typeof item.status === 'string' ? item.status.trim().toLowerCase() : '';
   li.dataset.status = normalizedStatus || 'unknown';
 
+  const rawCategories = extractCategoryValues(item.category);
+  const uniqueCategories = [];
+  const seenCategories = new Set();
+  for (const raw of rawCategories) {
+    const normalizedCategory = normalizeCategory(raw);
+    if (!normalizedCategory || seenCategories.has(normalizedCategory)) {
+      continue;
+    }
+
+    seenCategories.add(normalizedCategory);
+    uniqueCategories.push(raw);
+  }
+
+  li.dataset.categories =
+    uniqueCategories.length > 0
+      ? Array.from(seenCategories).join(',')
+      : UNCATEGORIZED_CATEGORY;
+
   const header = document.createElement('div');
   header.className = 'd-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2';
 
@@ -34,6 +124,22 @@ function createTodoListItem(item) {
 
   header.append(title, badge);
   li.append(header);
+
+  if (uniqueCategories.length > 0) {
+    const categoryList = document.createElement('div');
+    categoryList.className = 'todo-item-categories d-flex flex-wrap gap-2 mt-2';
+
+    const visuallyHiddenLabel = document.createElement('span');
+    visuallyHiddenLabel.className = 'visually-hidden';
+    visuallyHiddenLabel.textContent = 'Categories:';
+    categoryList.append(visuallyHiddenLabel);
+
+    for (const category of uniqueCategories) {
+      categoryList.append(createCategoryBadge(category));
+    }
+
+    li.append(categoryList);
+  }
 
   if (item.notes) {
     const notes = document.createElement('p');

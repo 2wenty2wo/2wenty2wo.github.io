@@ -319,6 +319,40 @@ main {
   }
 }
 
+.todo-category-filter .form-select {
+  min-width: 12rem;
+  font-weight: 500;
+}
+
+@media (max-width: 767.98px) {
+  .todo-category-filter .form-select {
+    min-width: 100%;
+  }
+}
+
+.todo-item-categories {
+  align-items: center;
+}
+
+.todo-item-categories .badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.badge-category-default {
+  background-color: var(--bs-tertiary-bg);
+  color: var(--bs-body-color);
+  border: 1px solid var(--bs-border-color-translucent, var(--bs-border-color));
+}
+
+[data-theme='dark'] .badge-category-default,
+[data-bs-theme='dark'] .badge-category-default {
+  background-color: rgba(148, 163, 184, 0.16);
+  color: var(--bs-body-color);
+  border-color: rgba(148, 163, 184, 0.35);
+}
+
 #todo-list li[data-status] {
   position: relative;
   --todo-status-accent: var(--bs-border-color);

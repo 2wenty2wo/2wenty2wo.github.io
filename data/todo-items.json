@@ -3,6 +3,7 @@
     "id": "todo-006",
     "title": "Fix QR code formatting",
     "status": "todo",
+    "category": "bug",
     "notes": "QR codes are not resizing their text and icons properly.",
     "lastUpdated": "2025-10-18"
   }
