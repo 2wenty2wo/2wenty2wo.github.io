@@ -15,10 +15,14 @@ const filterTabs = Array.from(
 );
 const todoSearchInput = document.getElementById('todo-search');
 const todoSearchClearButton = document.getElementById('todo-search-clear');
+const todoCategoryFilter = document.getElementById('todo-category-filter');
 
 let cachedTodoItems = [];
 let activeStatus = 'all';
+let activeCategory = 'all';
 let searchQuery = '';
+
+const UNCATEGORIZED_CATEGORY = 'uncategorized';
 
 function setActiveFilter(tab) {
   for (const filterTab of filterTabs) {
@@ -46,6 +50,66 @@ function getAdjacentTab(currentTab, direction) {
   return filterTabs[nextIndex];
 }
 
+function normalizeCategory(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  const trimmed = value.trim().toLowerCase();
+  if (trimmed.length === 0) {
+    return '';
+  }
+
+  return trimmed.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+function formatCategoryLabel(value) {
+  if (typeof value !== 'string') {
+    return 'Uncategorized';
+  }
+
+  return value
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .filter((segment) => segment.length > 0)
+    .map((segment) => segment[0].toUpperCase() + segment.slice(1))
+    .join(' ');
+}
+
+function extractCategoryValues(category) {
+  if (Array.isArray(category)) {
+    return category
+      .map((value) => (typeof value === 'string' ? value.trim() : ''))
+      .filter((value) => value.length > 0);
+  }
+
+  if (typeof category === 'string') {
+    const trimmed = category.trim();
+    return trimmed ? [trimmed] : [];
+  }
+
+  return [];
+}
+
+function getItemCategories(item) {
+  if (!item) {
+    return [];
+  }
+
+  const rawValues = extractCategoryValues(item.category);
+  const normalizedValues = new Set();
+  for (const raw of rawValues) {
+    const normalized = normalizeCategory(raw);
+    if (normalized) {
+      normalizedValues.add(normalized);
+    }
+  }
+
+  return Array.from(normalizedValues);
+}
+
 function filterItemsByStatus(items, status) {
   if (status === 'all') {
     return items;
@@ -55,6 +119,86 @@ function filterItemsByStatus(items, status) {
     const itemStatus = typeof item.status === 'string' ? item.status.toLowerCase() : '';
     return itemStatus === status;
   });
+}
+
+function filterItemsByCategory(items, category) {
+  if (category === 'all') {
+    return items;
+  }
+
+  const matchUncategorized = category === UNCATEGORIZED_CATEGORY;
+
+  return items.filter((item) => {
+    const categories = getItemCategories(item);
+    if (categories.length === 0) {
+      return matchUncategorized;
+    }
+
+    if (matchUncategorized) {
+      return false;
+    }
+
+    return categories.includes(category);
+  });
+}
+
+function populateCategoryFilter(items) {
+  if (!todoCategoryFilter) {
+    return;
+  }
+
+  const categories = new Map();
+  let hasUncategorized = false;
+
+  for (const item of items) {
+    const rawValues = extractCategoryValues(item.category);
+    if (rawValues.length === 0) {
+      hasUncategorized = true;
+      continue;
+    }
+
+    for (const raw of rawValues) {
+      const normalized = normalizeCategory(raw);
+      if (!normalized || categories.has(normalized)) {
+        continue;
+      }
+
+      categories.set(normalized, formatCategoryLabel(raw));
+    }
+  }
+
+  if (hasUncategorized) {
+    categories.set(UNCATEGORIZED_CATEGORY, 'Uncategorized');
+  }
+
+  const sortedCategories = Array.from(categories.entries()).sort(([, labelA], [, labelB]) =>
+    labelA.localeCompare(labelB)
+  );
+
+  todoCategoryFilter.innerHTML = '';
+
+  const defaultOption = document.createElement('option');
+  defaultOption.value = 'all';
+  defaultOption.textContent = 'All categories';
+  todoCategoryFilter.append(defaultOption);
+
+  for (const [value, label] of sortedCategories) {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = label;
+    todoCategoryFilter.append(option);
+  }
+
+  const availableValues = new Set(['all']);
+  for (const [value] of sortedCategories) {
+    availableValues.add(value);
+  }
+
+  if (!availableValues.has(activeCategory)) {
+    activeCategory = 'all';
+  }
+
+  todoCategoryFilter.value = activeCategory;
 }
 
 function fuzzyMatch(query, text) {
@@ -88,7 +232,8 @@ function filterItemsByQuery(items, query) {
   }
 
   return items.filter((item) => {
-    const searchableParts = [item.title, item.notes, item.status]
+    const categoryLabels = extractCategoryValues(item.category);
+    const searchableParts = [item.title, item.notes, item.status, ...categoryLabels]
       .filter((value) => typeof value === 'string' && value.trim().length > 0)
       .join(' ');
 
@@ -106,9 +251,11 @@ function applyFilters() {
   }
 
   const itemsByStatus = filterItemsByStatus(cachedTodoItems, activeStatus);
-  const filteredItems = filterItemsByQuery(itemsByStatus, searchQuery);
+  const itemsByCategory = filterItemsByCategory(itemsByStatus, activeCategory);
+  const filteredItems = filterItemsByQuery(itemsByCategory, searchQuery);
   const hasActiveFilters =
-    cachedTodoItems.length > 0 && (activeStatus !== 'all' || searchQuery.length > 0);
+    cachedTodoItems.length > 0 &&
+    (activeStatus !== 'all' || activeCategory !== 'all' || searchQuery.length > 0);
 
   const emptyStateMessage = hasActiveFilters ? 'No to-do items match your filters.' : undefined;
 
@@ -127,6 +274,8 @@ async function initTodoList() {
     renderTodoList(todoListContainer, undefined);
     return;
   }
+
+  populateCategoryFilter(cachedTodoItems);
 
   const initiallyActiveTab =
     filterTabs.find((tab) => tab.getAttribute('aria-selected') === 'true') ||
@@ -242,6 +391,18 @@ async function initTodoList() {
         applyFilters();
       }
       todoSearchInput.focus();
+    });
+  }
+
+  if (todoCategoryFilter) {
+    todoCategoryFilter.addEventListener('change', () => {
+      const selectedValue = todoCategoryFilter.value || 'all';
+      if (selectedValue === activeCategory) {
+        return;
+      }
+
+      activeCategory = selectedValue;
+      applyFilters();
     });
   }
 }
