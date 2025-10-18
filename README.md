@@ -69,6 +69,50 @@ shared URL hydrates every input and immediately restores the label preview.
 - **Printable TODO List** – <https://2wenty2wo.github.io/todo.html> offers a
   matching checklist template rendered with the same styling utilities.
 
+## To-do vote service
+
+The project now includes a serverless endpoint (`netlify/functions/todo-votes.js`)
+that stores per-user votes for each to-do item. When deployed to Netlify, the
+function is exposed at `/api/todo-votes` for both reads and writes.
+
+### Environment variables
+
+Configure the following variables in your Netlify site (or equivalent hosting
+platform) before deploying:
+
+| Variable | Description |
+| --- | --- |
+| `SUPABASE_URL` | Supabase project URL used to persist votes. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key with `todo_votes` table access. |
+| `TODO_VOTES_TABLE` (optional) | Name of the Supabase table (defaults to `todo_votes`). |
+| `TODO_VOTES_ALLOWED_ORIGINS` (optional) | Comma-delimited list of origins allowed by CORS. Leave blank to allow any origin. |
+
+Create the backing table with a unique constraint to enforce one vote per user
+and to-do ID:
+
+```sql
+create table if not exists public.todo_votes (
+  todo_id text not null,
+  user_id text not null,
+  value integer not null check (value in (-1, 0, 1)),
+  updated_at timestamptz not null default now()
+);
+
+create unique index if not exists todo_votes_todo_id_user_id_idx
+  on public.todo_votes (todo_id, user_id);
+```
+
+### Deployment
+
+1. Deploy the repository to Netlify with Functions enabled (no build step is
+   required for this static site).
+2. Set the environment variables above in the Netlify dashboard.
+3. Redeploy to make the new settings available to the function.
+4. From the static site, issue `fetch('/api/todo-votes', { method: 'GET' })` to
+   read totals and `fetch('/api/todo-votes', { method: 'POST', body: '{"todoId":"...","vote":1}' })`
+   to upsert a vote. Include an optional `userId` in the JSON payload or rely on
+   the hashed IP + User Agent fallback.
+
 ## FAQ
 
 **Do I need to install anything?**  
