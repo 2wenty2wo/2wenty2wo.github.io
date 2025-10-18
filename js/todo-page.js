@@ -10,44 +10,91 @@ if (developmentWarning) {
 }
 
 const todoListContainer = document.querySelector('#todo-list-items');
-const filterTabs = Array.from(
+const statusTabs = Array.from(
   document.querySelectorAll('#todo-status-filters [data-status]'),
 );
 const todoSearchInput = document.getElementById('todo-search');
 const todoSearchClearButton = document.getElementById('todo-search-clear');
-const todoCategoryFilter = document.getElementById('todo-category-filter');
+const categoryFilterContainer = document.getElementById('todo-category-filter');
 
 let cachedTodoItems = [];
 let activeStatus = 'all';
 let activeCategory = 'all';
 let searchQuery = '';
+let categoryTabs = [];
 
 const UNCATEGORIZED_CATEGORY = 'uncategorized';
 
-function setActiveFilter(tab) {
-  for (const filterTab of filterTabs) {
-    const isActive = filterTab === tab;
-    filterTab.setAttribute('aria-selected', String(isActive));
-    filterTab.setAttribute('tabindex', isActive ? '0' : '-1');
-    filterTab.classList.toggle('status-tab--active', isActive);
+const CATEGORY_VARIANT_MAP = new Map([
+  ['all', 'primary'],
+  ['bug', 'danger'],
+  ['feature', 'primary'],
+  ['new-feature', 'primary'],
+  ['enhancement', 'info'],
+  ['improvement', 'warning'],
+  ['documentation', 'secondary'],
+  [UNCATEGORIZED_CATEGORY, 'secondary']
+]);
+
+function getCategoryVariant(value) {
+  const normalized = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  if (!normalized) {
+    return 'secondary';
+  }
+
+  return CATEGORY_VARIANT_MAP.get(normalized) || 'secondary';
+}
+
+function setActiveStatusTab(tab) {
+  for (const statusTab of statusTabs) {
+    const isActive = statusTab === tab;
+    statusTab.setAttribute('aria-selected', String(isActive));
+    statusTab.setAttribute('tabindex', isActive ? '0' : '-1');
+    statusTab.classList.toggle('status-tab--active', isActive);
   }
 }
 
-function activateFilter(tab) {
-  setActiveFilter(tab);
+function activateStatusTab(tab) {
+  setActiveStatusTab(tab);
   activeStatus = (tab.getAttribute('data-status') || 'all').toLowerCase();
   applyFilters();
 }
 
-function getAdjacentTab(currentTab, direction) {
-  const currentIndex = filterTabs.indexOf(currentTab);
+function getAdjacentStatusTab(currentTab, direction) {
+  const currentIndex = statusTabs.indexOf(currentTab);
   if (currentIndex === -1) {
     return undefined;
   }
 
   const offset = direction === 'next' ? 1 : -1;
-  const nextIndex = (currentIndex + offset + filterTabs.length) % filterTabs.length;
-  return filterTabs[nextIndex];
+  const nextIndex = (currentIndex + offset + statusTabs.length) % statusTabs.length;
+  return statusTabs[nextIndex];
+}
+
+function setActiveCategoryTab(tab) {
+  for (const categoryTab of categoryTabs) {
+    const isActive = categoryTab === tab;
+    categoryTab.setAttribute('aria-selected', String(isActive));
+    categoryTab.setAttribute('tabindex', isActive ? '0' : '-1');
+    categoryTab.classList.toggle('status-tab--active', isActive);
+  }
+}
+
+function activateCategoryTab(tab) {
+  setActiveCategoryTab(tab);
+  activeCategory = (tab.getAttribute('data-category') || 'all').toLowerCase();
+  applyFilters();
+}
+
+function getAdjacentCategoryTab(currentTab, direction) {
+  const currentIndex = categoryTabs.indexOf(currentTab);
+  if (currentIndex === -1) {
+    return undefined;
+  }
+
+  const offset = direction === 'next' ? 1 : -1;
+  const nextIndex = (currentIndex + offset + categoryTabs.length) % categoryTabs.length;
+  return categoryTabs[nextIndex];
 }
 
 function normalizeCategory(value) {
@@ -143,7 +190,7 @@ function filterItemsByCategory(items, category) {
 }
 
 function populateCategoryFilter(items) {
-  if (!todoCategoryFilter) {
+  if (!categoryFilterContainer) {
     return;
   }
 
@@ -175,30 +222,111 @@ function populateCategoryFilter(items) {
     labelA.localeCompare(labelB)
   );
 
-  todoCategoryFilter.innerHTML = '';
+  categoryFilterContainer.innerHTML = '';
 
-  const defaultOption = document.createElement('option');
-  defaultOption.value = 'all';
-  defaultOption.textContent = 'All categories';
-  todoCategoryFilter.append(defaultOption);
+  const createCategoryTab = (value, label) => {
+    const tab = document.createElement('button');
+    tab.type = 'button';
+    tab.className = 'status-tab category-tab';
+    tab.setAttribute('data-category', value);
+    tab.setAttribute('data-variant', getCategoryVariant(value));
+    tab.setAttribute('role', 'tab');
+    tab.setAttribute('aria-selected', 'false');
+    tab.setAttribute('aria-controls', 'todo-list-items');
+    tab.setAttribute('tabindex', '-1');
+    tab.textContent = label;
+    return tab;
+  };
+
+  categoryFilterContainer.append(createCategoryTab('all', 'All'));
 
   for (const [value, label] of sortedCategories) {
-    const option = document.createElement('option');
-    option.value = value;
-    option.textContent = label;
-    todoCategoryFilter.append(option);
+    categoryFilterContainer.append(createCategoryTab(value, label));
   }
 
-  const availableValues = new Set(['all']);
-  for (const [value] of sortedCategories) {
-    availableValues.add(value);
-  }
+  categoryTabs = Array.from(
+    categoryFilterContainer.querySelectorAll('[data-category]'),
+  );
+
+  const availableValues = new Set(
+    categoryTabs.map((tab) => (tab.getAttribute('data-category') || '').toLowerCase()),
+  );
 
   if (!availableValues.has(activeCategory)) {
     activeCategory = 'all';
   }
 
-  todoCategoryFilter.value = activeCategory;
+  const initiallyActiveTab =
+    categoryTabs.find(
+      (tab) => (tab.getAttribute('data-category') || '').toLowerCase() === activeCategory,
+    ) || categoryTabs[0];
+
+  if (initiallyActiveTab) {
+    setActiveCategoryTab(initiallyActiveTab);
+  }
+
+  for (const tab of categoryTabs) {
+    tab.addEventListener('click', () => {
+      if (tab.getAttribute('aria-selected') === 'true') {
+        return;
+      }
+
+      activateCategoryTab(tab);
+    });
+
+    tab.addEventListener('keydown', (event) => {
+      switch (event.key) {
+        case 'ArrowRight':
+        case 'ArrowDown': {
+          event.preventDefault();
+          const nextTab = getAdjacentCategoryTab(tab, 'next');
+          if (nextTab) {
+            activateCategoryTab(nextTab);
+            nextTab.focus();
+          }
+          break;
+        }
+        case 'ArrowLeft':
+        case 'ArrowUp': {
+          event.preventDefault();
+          const previousTab = getAdjacentCategoryTab(tab, 'previous');
+          if (previousTab) {
+            activateCategoryTab(previousTab);
+            previousTab.focus();
+          }
+          break;
+        }
+        case 'Home': {
+          event.preventDefault();
+          const firstTab = categoryTabs[0];
+          if (firstTab) {
+            activateCategoryTab(firstTab);
+            firstTab.focus();
+          }
+          break;
+        }
+        case 'End': {
+          event.preventDefault();
+          const lastTab = categoryTabs[categoryTabs.length - 1];
+          if (lastTab) {
+            activateCategoryTab(lastTab);
+            lastTab.focus();
+          }
+          break;
+        }
+        case ' ': // Space
+        case 'Enter': {
+          event.preventDefault();
+          if (tab.getAttribute('aria-selected') !== 'true') {
+            activateCategoryTab(tab);
+          }
+          break;
+        }
+        default:
+          break;
+      }
+    });
+  }
 }
 
 function fuzzyMatch(query, text) {
@@ -263,7 +391,7 @@ function applyFilters() {
 }
 
 async function initTodoList() {
-  if (!todoListContainer || filterTabs.length === 0) {
+  if (!todoListContainer || statusTabs.length === 0) {
     return;
   }
 
@@ -278,23 +406,23 @@ async function initTodoList() {
   populateCategoryFilter(cachedTodoItems);
 
   const initiallyActiveTab =
-    filterTabs.find((tab) => tab.getAttribute('aria-selected') === 'true') ||
-    filterTabs[0];
+    statusTabs.find((tab) => tab.getAttribute('aria-selected') === 'true') ||
+    statusTabs[0];
 
   if (initiallyActiveTab) {
     activeStatus = (initiallyActiveTab.getAttribute('data-status') || 'all').toLowerCase();
-    setActiveFilter(initiallyActiveTab);
+    setActiveStatusTab(initiallyActiveTab);
   }
 
   applyFilters();
 
-  for (const tab of filterTabs) {
+  for (const tab of statusTabs) {
     tab.addEventListener('click', () => {
       if (tab.getAttribute('aria-selected') === 'true') {
         return;
       }
 
-      activateFilter(tab);
+      activateStatusTab(tab);
     });
 
     tab.addEventListener('keydown', (event) => {
@@ -302,9 +430,9 @@ async function initTodoList() {
         case 'ArrowRight':
         case 'ArrowDown': {
           event.preventDefault();
-          const nextTab = getAdjacentTab(tab, 'next');
+          const nextTab = getAdjacentStatusTab(tab, 'next');
           if (nextTab) {
-            activateFilter(nextTab);
+            activateStatusTab(nextTab);
             nextTab.focus();
           }
           break;
@@ -312,27 +440,27 @@ async function initTodoList() {
         case 'ArrowLeft':
         case 'ArrowUp': {
           event.preventDefault();
-          const previousTab = getAdjacentTab(tab, 'previous');
+          const previousTab = getAdjacentStatusTab(tab, 'previous');
           if (previousTab) {
-            activateFilter(previousTab);
+            activateStatusTab(previousTab);
             previousTab.focus();
           }
           break;
         }
         case 'Home': {
           event.preventDefault();
-          const firstTab = filterTabs[0];
+          const firstTab = statusTabs[0];
           if (firstTab) {
-            activateFilter(firstTab);
+            activateStatusTab(firstTab);
             firstTab.focus();
           }
           break;
         }
         case 'End': {
           event.preventDefault();
-          const lastTab = filterTabs[filterTabs.length - 1];
+          const lastTab = statusTabs[statusTabs.length - 1];
           if (lastTab) {
-            activateFilter(lastTab);
+            activateStatusTab(lastTab);
             lastTab.focus();
           }
           break;
@@ -341,7 +469,7 @@ async function initTodoList() {
         case 'Enter': {
           event.preventDefault();
           if (tab.getAttribute('aria-selected') !== 'true') {
-            activateFilter(tab);
+            activateStatusTab(tab);
           }
           break;
         }
@@ -394,17 +522,6 @@ async function initTodoList() {
     });
   }
 
-  if (todoCategoryFilter) {
-    todoCategoryFilter.addEventListener('change', () => {
-      const selectedValue = todoCategoryFilter.value || 'all';
-      if (selectedValue === activeCategory) {
-        return;
-      }
-
-      activeCategory = selectedValue;
-      applyFilters();
-    });
-  }
 }
 
 initTodoList();
