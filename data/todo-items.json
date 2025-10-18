@@ -1,35 +1,7 @@
-[
-  {
-    "id": "todo-001",
-    "title": "Document the new to-do page setup in the project README",
-    "status": "in-progress",
-    "notes": "Outline how updates should be made through the shared JSON file to keep the list consistent.",
-    "lastUpdated": "2024-06-06"
-  },
-  {
-    "id": "todo-002",
-    "title": "Audit theme toggle behaviour across auxiliary pages",
-    "status": "todo",
-    "notes": "Confirm shared header markup keeps the dark/light switch working everywhere.",
-    "lastUpdated": "2024-06-05"
-  },
-  {
-    "id": "todo-003",
-    "title": "Design printable label templates for metric fasteners",
-    "status": "in-progress",
-    "lastUpdated": "2024-06-02"
-  },
-  {
-    "id": "todo-004",
-    "title": "Ship quality-of-life fixes from the latest user feedback",
-    "status": "todo",
-    "notes": "Waiting on final icon assets before updating the presets.",
-    "lastUpdated": "2024-05-29"
-  },
-  {
-    "id": "todo-005",
-    "title": "Polish QR code export for custom hardware bins",
-    "status": "done",
-    "lastUpdated": "2024-05-20"
-  }
-]
+{
+  "id": "todo-006",
+  "title": "Fix QR code formatting",
+  "status": "todo",
+  "notes": "QR codes are not resizing their text and icons properly.",
+  "lastUpdated": "2025-10-18"
+}
