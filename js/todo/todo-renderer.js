@@ -370,7 +370,8 @@ function createTodoListItem(item) {
       : UNCATEGORIZED_CATEGORY;
 
   const header = document.createElement('div');
-  header.className = 'd-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2';
+  header.className =
+    'd-flex flex-column flex-md-row align-items-start justify-content-between gap-2';
 
   const title = document.createElement('span');
   title.className = 'fw-semibold';
