@@ -355,6 +355,12 @@ main {
   letter-spacing: 0.02em;
 }
 
+@media (min-width: 768px) {
+  .todo-vote-controls {
+    margin-top: 0.5rem !important;
+  }
+}
+
 .badge-category-default {
   background-color: var(--bs-tertiary-bg);
   color: var(--bs-body-color);
