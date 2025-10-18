@@ -16,32 +16,60 @@ const CATEGORY_STYLES = {
 const UNCATEGORIZED_CATEGORY = 'uncategorized';
 const TODO_VOTE_ENDPOINT_ATTRIBUTE = 'data-todo-vote-endpoint';
 const DEFAULT_TODO_VOTE_FUNCTION_ENDPOINT = '/api/todo-votes';
+const PRODUCTION_TODO_VOTE_FUNCTION_ENDPOINT =
+  'https://gridfinity-todo-votes.netlify.app/.netlify/functions/todo-votes';
 let cachedTodoVoteEndpoint = null;
 const TODO_VOTE_STORAGE_KEY = 'todoVotes';
 
 let cachedUserVotes = null;
 let voteLabelIdCounter = 0;
 
+function isUsableEndpoint(candidate) {
+  return typeof candidate === 'string' && candidate.trim().length > 0;
+}
+
 function getTodoVoteFunctionEndpoint() {
   if (cachedTodoVoteEndpoint) {
     return cachedTodoVoteEndpoint;
   }
 
-  if (typeof document !== 'undefined' && document.documentElement) {
-    const configuredEndpoint = document.documentElement.getAttribute(
-      TODO_VOTE_ENDPOINT_ATTRIBUTE
-    );
+  const candidates = [];
 
-    if (typeof configuredEndpoint === 'string') {
-      const trimmedEndpoint = configuredEndpoint.trim();
-      if (trimmedEndpoint.length > 0) {
-        cachedTodoVoteEndpoint = trimmedEndpoint;
-        return cachedTodoVoteEndpoint;
-      }
-    }
+  if (typeof document !== 'undefined' && document.documentElement) {
+    candidates.push(
+      document.documentElement.getAttribute(TODO_VOTE_ENDPOINT_ATTRIBUTE)
+    );
   }
 
-  cachedTodoVoteEndpoint = DEFAULT_TODO_VOTE_FUNCTION_ENDPOINT;
+  if (typeof window !== 'undefined' && isUsableEndpoint(window.__TODO_VOTE_ENDPOINT__)) {
+    candidates.push(window.__TODO_VOTE_ENDPOINT__);
+  }
+
+  candidates.push(PRODUCTION_TODO_VOTE_FUNCTION_ENDPOINT);
+  candidates.push(DEFAULT_TODO_VOTE_FUNCTION_ENDPOINT);
+
+  const seen = new Set();
+  for (const candidate of candidates) {
+    if (!isUsableEndpoint(candidate)) {
+      continue;
+    }
+
+    const trimmed = candidate.trim();
+    if (seen.has(trimmed)) {
+      continue;
+    }
+    seen.add(trimmed);
+
+    cachedTodoVoteEndpoint = trimmed;
+    break;
+  }
+
+  if (!cachedTodoVoteEndpoint) {
+    console.warn(
+      'Unable to determine a to-do vote endpoint. Voting functionality will be disabled.'
+    );
+  }
+
   return cachedTodoVoteEndpoint;
 }
 
@@ -462,6 +490,10 @@ async function submitTodoVote(todoId, vote) {
 
   const endpoint = getTodoVoteFunctionEndpoint();
 
+  if (!isUsableEndpoint(endpoint)) {
+    throw new Error('Vote endpoint is not configured.');
+  }
+
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -495,6 +527,11 @@ async function submitTodoVote(todoId, vote) {
 
 async function fetchTodoVotes() {
   const endpoint = getTodoVoteFunctionEndpoint();
+
+  if (!isUsableEndpoint(endpoint)) {
+    console.warn('Skipping vote aggregation request because no endpoint is configured.');
+    return {};
+  }
 
   const response = await fetch(endpoint, {
     cache: 'no-store',
