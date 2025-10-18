@@ -559,3 +559,25 @@ async function initTodoList() {
 }
 
 initTodoList();
+
+document.addEventListener('todo:vote', (event) => {
+  if (!event || !event.detail) {
+    return;
+  }
+
+  const { id, rating } = event.detail;
+  if (id === undefined || id === null) {
+    return;
+  }
+
+  const stringId = String(id);
+  const targetItem = cachedTodoItems.find((item) => String(item?.id) === stringId);
+  if (!targetItem) {
+    return;
+  }
+
+  const numericRating = Number(rating);
+  targetItem.rating = Number.isFinite(numericRating) ? numericRating : 0;
+
+  applyFilters();
+});

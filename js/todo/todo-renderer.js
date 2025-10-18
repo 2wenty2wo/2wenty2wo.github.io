@@ -309,6 +309,14 @@ function createVoteControls(item) {
 
     try {
       await submitTodoVote(todoId, nextVote);
+
+      if (typeof document !== 'undefined' && document) {
+        document.dispatchEvent(
+          new CustomEvent('todo:vote', {
+            detail: { id: todoId, rating: displayedRating }
+          })
+        );
+      }
     } catch (error) {
       console.error('Failed to submit vote for to-do item:', error);
       currentVote = previousVote;
