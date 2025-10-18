@@ -417,7 +417,7 @@ function createTodoListItem(item) {
 
   if (uniqueCategories.length > 0) {
     const categoryList = document.createElement('div');
-    categoryList.className = 'todo-item-categories d-flex flex-wrap gap-2 mt-2';
+    categoryList.className = 'todo-item-categories d-flex flex-wrap gap-2 mt-1';
 
     const visuallyHiddenLabel = document.createElement('span');
     visuallyHiddenLabel.className = 'visually-hidden';
@@ -433,7 +433,7 @@ function createTodoListItem(item) {
 
   if (item.notes) {
     const notes = document.createElement('p');
-    notes.className = 'mb-1 mt-2 text-body-secondary';
+    notes.className = 'todo-item-notes mb-1 mt-1 text-body-secondary';
     notes.textContent = item.notes;
     li.append(notes);
   }

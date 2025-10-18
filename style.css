@@ -345,8 +345,17 @@ main {
   width: auto;
 }
 
+#todo-list .todo-item-categories {
+  margin-top: 0.25rem;
+}
+
 .todo-item-categories {
   align-items: center;
+}
+
+#todo-list .todo-item-notes {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
 }
 
 .todo-item-categories .badge {
