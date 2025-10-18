@@ -9,10 +9,10 @@
   },
   {
     "id": "todo-007",
-    "title": "Document optional notes for Screw and Bolt parts",
+    "title": "Add optional notes input for Screw and Bolt parts",
     "status": "todo",
     "category": "enhancement",
-    "notes": "Explain how the optional notes input works for Screw and Bolt part types, including when it should be used.",
+    "notes": "Implement the optional notes text entry for Screw and Bolt part types so it behaves consistently with the other part types.",
     "lastUpdated": "2025-10-19"
   }
 ]
