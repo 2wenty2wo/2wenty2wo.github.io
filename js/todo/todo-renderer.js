@@ -374,14 +374,17 @@ function createTodoListItem(item) {
   title.textContent = item.title || 'Untitled task';
 
   const badge = createStatusBadge(item.status, normalizedStatus);
-
-  header.append(title, badge);
-  li.append(header);
+  const headerRight = document.createElement('div');
+  headerRight.className = 'd-flex flex-column align-items-end gap-2';
+  headerRight.append(badge);
 
   const voteControls = createVoteControls(item);
   if (voteControls) {
-    li.append(voteControls);
+    headerRight.append(voteControls);
   }
+
+  header.append(title, headerRight);
+  li.append(header);
 
   if (uniqueCategories.length > 0) {
     const categoryList = document.createElement('div');
