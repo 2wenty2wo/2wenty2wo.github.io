@@ -6,5 +6,13 @@
     "category": "bug",
     "notes": "QR codes are not resizing their text and icons properly.",
     "lastUpdated": "2025-10-18"
+  },
+  {
+    "id": "todo-007",
+    "title": "Document optional notes for Screw and Bolt parts",
+    "status": "todo",
+    "category": "enhancement",
+    "notes": "Explain how the optional notes input works for Screw and Bolt part types, including when it should be used.",
+    "lastUpdated": "2025-10-19"
   }
 ]
