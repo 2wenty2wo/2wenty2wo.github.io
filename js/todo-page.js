@@ -373,6 +373,14 @@ function filterItemsByQuery(items, query) {
   });
 }
 
+function getSortableRating(item) {
+  if (!item || typeof item.rating !== 'number' || Number.isNaN(item.rating)) {
+    return null;
+  }
+
+  return item.rating;
+}
+
 function applyFilters() {
   if (!todoListContainer) {
     return;
@@ -387,7 +395,33 @@ function applyFilters() {
 
   const emptyStateMessage = hasActiveFilters ? 'No to-do items match your filters.' : undefined;
 
-  renderTodoList(todoListContainer, filteredItems, emptyStateMessage);
+  const sortedItems = filteredItems
+    .map((item, index) => ({ item, index }))
+    .sort((a, b) => {
+      const ratingA = getSortableRating(a.item);
+      const ratingB = getSortableRating(b.item);
+
+      if (ratingA === null && ratingB === null) {
+        return a.index - b.index;
+      }
+
+      if (ratingA === null) {
+        return 1;
+      }
+
+      if (ratingB === null) {
+        return -1;
+      }
+
+      if (ratingA === ratingB) {
+        return a.index - b.index;
+      }
+
+      return ratingB - ratingA;
+    })
+    .map(({ item }) => item);
+
+  renderTodoList(todoListContainer, sortedItems, emptyStateMessage);
 }
 
 async function initTodoList() {
