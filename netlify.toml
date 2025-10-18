@@ -1,0 +1,8 @@
+[functions]
+  directory = "netlify/functions"
+
+[[redirects]]
+  from = "/api/todo-votes"
+  to = "/.netlify/functions/todo-votes"
+  status = 200
+  force = true
