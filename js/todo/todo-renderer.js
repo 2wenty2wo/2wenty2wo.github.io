@@ -14,6 +14,100 @@ const CATEGORY_STYLES = {
 };
 
 const UNCATEGORIZED_CATEGORY = 'uncategorized';
+const TODO_VOTE_FUNCTION_ENDPOINT = '/.netlify/functions/todo-votes';
+const TODO_VOTE_STORAGE_KEY = 'todoVotes';
+
+let cachedUserVotes = null;
+let voteLabelIdCounter = 0;
+
+function normalizeIdForAttribute(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  const trimmed = value.trim().toLowerCase();
+  if (trimmed.length === 0) {
+    return '';
+  }
+
+  return trimmed.replace(/[^a-z0-9]+/g, '-');
+}
+
+function getStoredVotes() {
+  if (cachedUserVotes) {
+    return cachedUserVotes;
+  }
+
+  if (typeof window === 'undefined' || typeof window.localStorage === 'undefined') {
+    cachedUserVotes = {};
+    return cachedUserVotes;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(TODO_VOTE_STORAGE_KEY);
+    if (!raw) {
+      cachedUserVotes = {};
+      return cachedUserVotes;
+    }
+
+    const parsed = JSON.parse(raw);
+    cachedUserVotes = typeof parsed === 'object' && parsed !== null ? parsed : {};
+  } catch (error) {
+    console.warn('Failed to parse stored to-do votes:', error);
+    cachedUserVotes = {};
+  }
+
+  return cachedUserVotes;
+}
+
+function persistStoredVotes(votes) {
+  cachedUserVotes = votes;
+
+  if (typeof window === 'undefined' || typeof window.localStorage === 'undefined') {
+    return;
+  }
+
+  try {
+    const keys = Object.keys(votes || {});
+    if (keys.length === 0) {
+      window.localStorage.removeItem(TODO_VOTE_STORAGE_KEY);
+    } else {
+      window.localStorage.setItem(TODO_VOTE_STORAGE_KEY, JSON.stringify(votes));
+    }
+  } catch (error) {
+    console.warn('Failed to persist to-do votes:', error);
+  }
+}
+
+function getStoredVote(todoId) {
+  const votes = getStoredVotes();
+  if (!todoId || !votes) {
+    return 0;
+  }
+
+  const value = votes[todoId];
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue : 0;
+}
+
+function setStoredVote(todoId, vote) {
+  if (!todoId) {
+    return;
+  }
+
+  const votes = { ...getStoredVotes() };
+  if (vote === 0) {
+    delete votes[todoId];
+  } else {
+    votes[todoId] = vote;
+  }
+
+  persistStoredVotes(votes);
+}
 
 function normalizeCategory(value) {
   if (typeof value !== 'string') {
@@ -87,6 +181,145 @@ function createStatusBadge(status, normalizedStatus) {
   return badge;
 }
 
+function createVoteControls(item) {
+  if (!item || typeof item !== 'object') {
+    return null;
+  }
+
+  const todoId = item.id;
+  if (!todoId) {
+    return null;
+  }
+
+  const container = document.createElement('div');
+  container.className = 'todo-vote-controls d-flex align-items-center gap-2 mt-3';
+
+  let ratingAvailable = typeof item.rating === 'number' && Number.isFinite(item.rating);
+  let displayedRating = ratingAvailable ? item.rating : 0;
+  let currentVote = getStoredVote(todoId);
+  if (currentVote !== 1 && currentVote !== -1) {
+    currentVote = 0;
+  }
+
+  const idSuffix = normalizeIdForAttribute(String(todoId));
+  voteLabelIdCounter += 1;
+  const scoreLabelId = idSuffix
+    ? `todo-score-${idSuffix}-${voteLabelIdCounter}`
+    : `todo-score-item-${voteLabelIdCounter}`;
+
+  const scoreLabel = document.createElement('span');
+  scoreLabel.className = 'visually-hidden';
+  scoreLabel.id = scoreLabelId;
+  scoreLabel.textContent = 'Net score';
+  container.append(scoreLabel);
+
+  const scoreValue = document.createElement('span');
+  scoreValue.className = 'todo-vote-score fw-semibold';
+  scoreValue.setAttribute('role', 'status');
+  scoreValue.setAttribute('aria-live', 'polite');
+  scoreValue.setAttribute('aria-atomic', 'true');
+  scoreValue.setAttribute('aria-labelledby', scoreLabelId);
+
+  function updateScoreDisplay() {
+    if (!ratingAvailable) {
+      scoreValue.textContent = '—';
+      scoreValue.setAttribute('aria-label', 'Net score unavailable');
+      return;
+    }
+
+    scoreValue.textContent = String(displayedRating);
+    scoreValue.setAttribute('aria-label', `Net score: ${displayedRating}`);
+  }
+
+  updateScoreDisplay();
+
+  const upvoteButton = document.createElement('button');
+  upvoteButton.type = 'button';
+  upvoteButton.className = 'btn btn-sm todo-vote-button btn-outline-success';
+  upvoteButton.textContent = '👍';
+  upvoteButton.setAttribute('aria-label', 'Upvote this to-do item');
+  upvoteButton.setAttribute('aria-pressed', 'false');
+
+  const downvoteButton = document.createElement('button');
+  downvoteButton.type = 'button';
+  downvoteButton.className = 'btn btn-sm todo-vote-button btn-outline-danger';
+  downvoteButton.textContent = '👎';
+  downvoteButton.setAttribute('aria-label', 'Downvote this to-do item');
+  downvoteButton.setAttribute('aria-pressed', 'false');
+
+  function setButtonState(button, isActive, activeClass, inactiveClass) {
+    button.classList.toggle(activeClass, isActive);
+    button.classList.toggle(inactiveClass, !isActive);
+    button.setAttribute('aria-pressed', String(isActive));
+  }
+
+  function updateButtonStates() {
+    setButtonState(upvoteButton, currentVote === 1, 'btn-success', 'btn-outline-success');
+    setButtonState(downvoteButton, currentVote === -1, 'btn-danger', 'btn-outline-danger');
+  }
+
+  updateButtonStates();
+
+  function setButtonsDisabled(disabled) {
+    upvoteButton.disabled = disabled;
+    downvoteButton.disabled = disabled;
+  }
+
+  let isSubmitting = false;
+
+  async function handleVote(targetVote) {
+    if (isSubmitting) {
+      return;
+    }
+
+    const nextVote = currentVote === targetVote ? 0 : targetVote;
+    const previousVote = currentVote;
+    const previousRating = displayedRating;
+    const previousAvailability = ratingAvailable;
+
+    currentVote = nextVote;
+    if (!ratingAvailable) {
+      ratingAvailable = true;
+      displayedRating = nextVote;
+    } else {
+      displayedRating = displayedRating - previousVote + nextVote;
+    }
+
+    updateButtonStates();
+    updateScoreDisplay();
+    setStoredVote(todoId, nextVote);
+
+    isSubmitting = true;
+    setButtonsDisabled(true);
+
+    try {
+      await submitTodoVote(todoId, nextVote);
+    } catch (error) {
+      console.error('Failed to submit vote for to-do item:', error);
+      currentVote = previousVote;
+      ratingAvailable = previousAvailability;
+      displayedRating = previousAvailability ? previousRating : 0;
+      updateButtonStates();
+      updateScoreDisplay();
+      setStoredVote(todoId, previousVote);
+    } finally {
+      isSubmitting = false;
+      setButtonsDisabled(false);
+    }
+  }
+
+  upvoteButton.addEventListener('click', () => {
+    handleVote(1);
+  });
+
+  downvoteButton.addEventListener('click', () => {
+    handleVote(-1);
+  });
+
+  container.append(upvoteButton, scoreValue, downvoteButton);
+  return container;
+}
+
 function createTodoListItem(item) {
   const li = document.createElement('li');
   li.className = 'list-group-item py-3';
@@ -124,6 +357,11 @@ function createTodoListItem(item) {
 
   header.append(title, badge);
   li.append(header);
+
+  const voteControls = createVoteControls(item);
+  if (voteControls) {
+    li.append(voteControls);
+  }
 
   if (uniqueCategories.length > 0) {
     const categoryList = document.createElement('div');
@@ -165,6 +403,67 @@ function showMessage(listElement, message, variant = 'secondary') {
   listElement.append(li);
 }
 
+async function submitTodoVote(todoId, vote) {
+  if (!todoId) {
+    return;
+  }
+
+  const response = await fetch(TODO_VOTE_FUNCTION_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ todoId, vote }),
+  });
+
+  if (response.ok) {
+    return;
+  }
+
+  let errorMessage = `Request failed with status ${response.status}`;
+  try {
+    const payload = await response.json();
+    if (payload && typeof payload.error === 'string' && payload.error.trim().length > 0) {
+      errorMessage += `: ${payload.error}`;
+    }
+  } catch {
+    try {
+      const text = await response.text();
+      if (text.trim().length > 0) {
+        errorMessage += `: ${text.trim()}`;
+      }
+    } catch (innerError) {
+      console.debug('Unable to extract error details from vote response:', innerError);
+    }
+  }
+
+  throw new Error(errorMessage);
+}
+
+async function fetchTodoVotes() {
+  const response = await fetch(TODO_VOTE_FUNCTION_ENDPOINT, {
+    cache: 'no-store',
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Vote request failed with status ${response.status}`);
+  }
+
+  let payload;
+  try {
+    payload = await response.json();
+  } catch {
+    throw new Error('Failed to parse vote aggregates response as JSON.');
+  }
+
+  const votes = payload?.votes;
+  if (!votes || typeof votes !== 'object' || Array.isArray(votes)) {
+    return {};
+  }
+
+  return votes;
+}
+
 export async function fetchTodoItems() {
   const response = await fetch('data/todo-items.json', { cache: 'no-store' });
   if (!response.ok) {
@@ -176,7 +475,36 @@ export async function fetchTodoItems() {
     throw new TypeError('Expected the to-do list response to be an array.');
   }
 
-  return items;
+  let voteAggregates;
+  try {
+    voteAggregates = await fetchTodoVotes();
+  } catch (error) {
+    console.warn('Unable to fetch to-do vote aggregates:', error);
+  }
+
+  if (!voteAggregates) {
+    return items.map((item) => {
+      if (!item || typeof item !== 'object') {
+        return item;
+      }
+
+      return { ...item };
+    });
+  }
+
+  return items.map((item) => {
+    if (!item || typeof item !== 'object') {
+      return item;
+    }
+
+    const aggregate = voteAggregates[item.id];
+    const rating =
+      aggregate && typeof aggregate.score === 'number' && Number.isFinite(aggregate.score)
+        ? aggregate.score
+        : 0;
+
+    return { ...item, rating };
+  });
 }
 
 export function renderTodoList(container, items, emptyStateMessage) {
