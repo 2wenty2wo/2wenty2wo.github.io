@@ -67,9 +67,6 @@ const jsonResponse = (statusCode, body = {}, origin = '') => ({
 });
 
 const getUserIdentifier = (event) => {
-  const headerId = event.headers?.['x-user-id'] || event.headers?.['X-User-Id'];
-  if (headerId) return String(headerId);
-
   const ip =
     event.headers?.['x-client-ip'] ||
     event.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ||
@@ -167,7 +164,10 @@ export const handler = async (event) => {
       return jsonResponse(400, { error: validationError }, origin);
     }
 
-    const userId = payload.userId ? String(payload.userId) : getUserIdentifier(event);
+    const userId = getUserIdentifier(event);
+    if (payload.userId && payload.userId !== userId) {
+      console.warn('Ignoring custom userId from payload in favor of derived identifier.');
+    }
     if (!userId) {
       return jsonResponse(400, { error: 'Unable to determine a user identifier for this vote.' }, origin);
     }
