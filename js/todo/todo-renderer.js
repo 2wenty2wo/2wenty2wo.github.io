@@ -14,11 +14,36 @@ const CATEGORY_STYLES = {
 };
 
 const UNCATEGORIZED_CATEGORY = 'uncategorized';
-const TODO_VOTE_FUNCTION_ENDPOINT = '/.netlify/functions/todo-votes';
+const TODO_VOTE_ENDPOINT_ATTRIBUTE = 'data-todo-vote-endpoint';
+const DEFAULT_TODO_VOTE_FUNCTION_ENDPOINT = '/api/todo-votes';
+let cachedTodoVoteEndpoint = null;
 const TODO_VOTE_STORAGE_KEY = 'todoVotes';
 
 let cachedUserVotes = null;
 let voteLabelIdCounter = 0;
+
+function getTodoVoteFunctionEndpoint() {
+  if (cachedTodoVoteEndpoint) {
+    return cachedTodoVoteEndpoint;
+  }
+
+  if (typeof document !== 'undefined' && document.documentElement) {
+    const configuredEndpoint = document.documentElement.getAttribute(
+      TODO_VOTE_ENDPOINT_ATTRIBUTE
+    );
+
+    if (typeof configuredEndpoint === 'string') {
+      const trimmedEndpoint = configuredEndpoint.trim();
+      if (trimmedEndpoint.length > 0) {
+        cachedTodoVoteEndpoint = trimmedEndpoint;
+        return cachedTodoVoteEndpoint;
+      }
+    }
+  }
+
+  cachedTodoVoteEndpoint = DEFAULT_TODO_VOTE_FUNCTION_ENDPOINT;
+  return cachedTodoVoteEndpoint;
+}
 
 function normalizeIdForAttribute(value) {
   if (typeof value !== 'string') {
@@ -435,7 +460,9 @@ async function submitTodoVote(todoId, vote) {
     return;
   }
 
-  const response = await fetch(TODO_VOTE_FUNCTION_ENDPOINT, {
+  const endpoint = getTodoVoteFunctionEndpoint();
+
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -467,7 +494,9 @@ async function submitTodoVote(todoId, vote) {
 }
 
 async function fetchTodoVotes() {
-  const response = await fetch(TODO_VOTE_FUNCTION_ENDPOINT, {
+  const endpoint = getTodoVoteFunctionEndpoint();
+
+  const response = await fetch(endpoint, {
     cache: 'no-store',
     credentials: 'include',
   });
