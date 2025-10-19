@@ -36,6 +36,10 @@ const CATEGORY_VARIANT_MAP = new Map([
   [UNCATEGORIZED_CATEGORY, 'secondary']
 ]);
 
+const STATUS_QUERY_PARAM = 'status';
+const CATEGORY_QUERY_PARAM = 'category';
+const SEARCH_QUERY_PARAM = 'q';
+
 function getCategoryVariant(value) {
   const normalized = typeof value === 'string' ? value.trim().toLowerCase() : '';
   if (!normalized) {
@@ -43,6 +47,122 @@ function getCategoryVariant(value) {
   }
 
   return CATEGORY_VARIANT_MAP.get(normalized) || 'secondary';
+}
+
+function normalizeStatus(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_]+/g, '-')
+    .replace(/[^a-z0-9-]+/g, '')
+    .replace(/^-+|-+$/g, '');
+
+  return normalized;
+}
+
+function getAvailableStatusValues() {
+  return statusTabs
+    .map((tab) => (tab.getAttribute('data-status') || '').toLowerCase())
+    .filter((value) => value.length > 0);
+}
+
+function findStatusTabByValue(value) {
+  if (!value) {
+    return undefined;
+  }
+
+  const normalized = normalizeStatus(value);
+  if (!normalized) {
+    return undefined;
+  }
+
+  return statusTabs.find(
+    (tab) => (tab.getAttribute('data-status') || '').toLowerCase() === normalized,
+  );
+}
+
+function parseFiltersFromUrl() {
+  const defaults = {
+    status: 'all',
+    category: 'all',
+    search: '',
+  };
+
+  if (typeof window === 'undefined' || typeof window.location === 'undefined') {
+    return defaults;
+  }
+
+  let params;
+  try {
+    params = new URLSearchParams(window.location.search);
+  } catch (error) {
+    console.warn('Failed to parse to-do filters from URL', error);
+    return defaults;
+  }
+
+  const availableStatuses = new Set(getAvailableStatusValues());
+  availableStatuses.add('all');
+
+  const statusParam = normalizeStatus(params.get(STATUS_QUERY_PARAM));
+  if (statusParam && availableStatuses.has(statusParam)) {
+    defaults.status = statusParam;
+  }
+
+  const categoryParam = normalizeCategory(params.get(CATEGORY_QUERY_PARAM));
+  if (categoryParam) {
+    defaults.category = categoryParam;
+  }
+
+  const rawSearchParam = params.get(SEARCH_QUERY_PARAM) ?? params.get('search');
+  if (typeof rawSearchParam === 'string') {
+    defaults.search = rawSearchParam.trim();
+  }
+
+  return defaults;
+}
+
+function syncFiltersToUrl() {
+  if (typeof window === 'undefined' || typeof window.history === 'undefined') {
+    return;
+  }
+
+  try {
+    const url = new URL(window.location.href);
+
+    if (activeStatus && activeStatus !== 'all') {
+      url.searchParams.set(STATUS_QUERY_PARAM, activeStatus);
+    } else {
+      url.searchParams.delete(STATUS_QUERY_PARAM);
+    }
+
+    if (activeCategory && activeCategory !== 'all') {
+      url.searchParams.set(CATEGORY_QUERY_PARAM, activeCategory);
+    } else {
+      url.searchParams.delete(CATEGORY_QUERY_PARAM);
+    }
+
+    if (searchQuery) {
+      url.searchParams.set(SEARCH_QUERY_PARAM, searchQuery);
+    } else {
+      url.searchParams.delete(SEARCH_QUERY_PARAM);
+      url.searchParams.delete('search');
+    }
+
+    const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+    const currentUrl = `${
+      window.location.pathname
+    }${window.location.search}${window.location.hash}`;
+
+    if (nextUrl !== currentUrl) {
+      window.history.replaceState(null, '', nextUrl);
+    }
+  } catch (error) {
+    console.warn('Failed to sync to-do filters to URL', error);
+  }
 }
 
 function setActiveStatusTab(tab) {
@@ -56,8 +176,14 @@ function setActiveStatusTab(tab) {
 
 function activateStatusTab(tab) {
   setActiveStatusTab(tab);
-  activeStatus = (tab.getAttribute('data-status') || 'all').toLowerCase();
+  const nextStatus = normalizeStatus(tab.getAttribute('data-status') || 'all') || 'all';
+  if (activeStatus === nextStatus) {
+    return;
+  }
+
+  activeStatus = nextStatus;
   applyFilters();
+  syncFiltersToUrl();
 }
 
 function getAdjacentStatusTab(currentTab, direction) {
@@ -82,8 +208,14 @@ function setActiveCategoryTab(tab) {
 
 function activateCategoryTab(tab) {
   setActiveCategoryTab(tab);
-  activeCategory = (tab.getAttribute('data-category') || 'all').toLowerCase();
+  const nextCategory = normalizeCategory(tab.getAttribute('data-category') || 'all') || 'all';
+  if (activeCategory === nextCategory) {
+    return;
+  }
+
+  activeCategory = nextCategory;
   applyFilters();
+  syncFiltersToUrl();
 }
 
 function getAdjacentCategoryTab(currentTab, direction) {
@@ -329,6 +461,17 @@ function populateCategoryFilter(items) {
   }
 }
 
+const initialFilters = parseFiltersFromUrl();
+activeStatus = initialFilters.status;
+activeCategory = initialFilters.category;
+searchQuery = initialFilters.search;
+
+if (todoSearchInput) {
+  todoSearchInput.value = searchQuery;
+}
+
+syncFiltersToUrl();
+
 function fuzzyMatch(query, text) {
   if (!query) {
     return true;
@@ -440,11 +583,16 @@ async function initTodoList() {
   populateCategoryFilter(cachedTodoItems);
 
   const initiallyActiveTab =
+    findStatusTabByValue(activeStatus) ||
     statusTabs.find((tab) => tab.getAttribute('aria-selected') === 'true') ||
     statusTabs[0];
 
   if (initiallyActiveTab) {
-    activeStatus = (initiallyActiveTab.getAttribute('data-status') || 'all').toLowerCase();
+    const fallbackStatus =
+      normalizeStatus(initiallyActiveTab.getAttribute('data-status') || 'all') || 'all';
+    if (activeStatus !== fallbackStatus) {
+      activeStatus = fallbackStatus;
+    }
     setActiveStatusTab(initiallyActiveTab);
   }
 
@@ -522,6 +670,7 @@ async function initTodoList() {
 
       searchQuery = nextQuery;
       applyFilters();
+      syncFiltersToUrl();
     });
 
     todoSearchInput.addEventListener('keydown', (event) => {
@@ -531,6 +680,7 @@ async function initTodoList() {
         if (searchQuery !== '') {
           searchQuery = '';
           applyFilters();
+          syncFiltersToUrl();
         }
       }
     });
@@ -551,11 +701,13 @@ async function initTodoList() {
       if (searchQuery !== '') {
         searchQuery = '';
         applyFilters();
+        syncFiltersToUrl();
       }
       todoSearchInput.focus();
     });
   }
 
+  syncFiltersToUrl();
 }
 
 initTodoList();
