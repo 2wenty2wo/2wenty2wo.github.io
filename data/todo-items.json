@@ -38,5 +38,13 @@
     "category": "bug",
     "notes": "Fix formatting and information shown on the labels.",
     "lastUpdated": "2025-10-20"
+  },
+  {
+    "id": "todo-011",
+    "title": "Part Type: Switch",
+    "status": "todo",
+    "category": "bug",
+    "notes": "Fix formatting and information shown on the labels.",
+    "lastUpdated": "2025-10-20"
   }
 ]
