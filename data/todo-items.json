@@ -22,5 +22,21 @@
     "category": "enhancement",
     "notes": "Finish adding the options for the threaded nut insert.",
     "lastUpdated": "2025-10-20"
+  },
+  {
+    "id": "todo-009",
+    "title": "Part Type: Pre-insulated Crimp Terminals",
+    "status": "todo",
+    "category": "bug",
+    "notes": "Fix formatting and information shown on the labels.",
+    "lastUpdated": "2025-10-20"
+  },
+  {
+    "id": "todo-010",
+    "title": "Part Type: Bootlace Ferrules",
+    "status": "todo",
+    "category": "bug",
+    "notes": "Fix formatting and information shown on the labels.",
+    "lastUpdated": "2025-10-20"
   }
 ]
