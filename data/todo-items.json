@@ -14,5 +14,13 @@
     "category": "enhancement",
     "notes": "Implement the optional notes text entry for Screw and Bolt part types so it behaves consistently with the other part types.",
     "lastUpdated": "2025-10-19"
+  },
+  {
+    "id": "todo-008",
+    "title": "Part Type: Threaded Nut Insert",
+    "status": "in-progress",
+    "category": "enhancement",
+    "notes": "Finish adding the options for the threaded nut insert.",
+    "lastUpdated": "2025-10-20"
   }
 ]
