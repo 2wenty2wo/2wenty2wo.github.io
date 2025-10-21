@@ -1419,6 +1419,52 @@ main {
 .theme-toggle-wrapper {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.theme-toggle-wrapper > * {
+  flex-shrink: 0;
+}
+
+.theme-utility-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid var(--theme-toggle-border);
+  background-color: var(--theme-toggle-link-bg, transparent);
+  color: var(--theme-toggle-color);
+  font-family: 'Barlow', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  line-height: 1.1;
+  white-space: nowrap;
+  text-decoration: none;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.theme-utility-link:hover {
+  background-color: var(--theme-toggle-bg-hover);
+  color: var(--theme-toggle-color);
+}
+
+.theme-utility-link:focus-visible {
+  outline: var(--focus-outline-width) solid var(--focus-ring-border);
+  outline-offset: calc(var(--focus-outline-offset) + 2px);
+  box-shadow: 0 0 0 0.2rem var(--theme-toggle-focus-ring);
+  text-decoration: none;
+}
+
+.theme-utility-icon {
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .theme-toggle-button {
