@@ -112,7 +112,7 @@ main {
 .upcoming-focus-areas-header {
   flex-direction: row;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
 }
 
 .height-options > * {
