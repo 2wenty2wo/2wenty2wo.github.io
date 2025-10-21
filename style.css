@@ -1428,45 +1428,7 @@ main {
   flex-shrink: 0;
 }
 
-.theme-utility-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.45rem 0.95rem;
-  border-radius: 999px;
-  border: 1px solid var(--theme-toggle-border);
-  background-color: var(--theme-toggle-link-bg, transparent);
-  color: var(--theme-toggle-color);
-  font-family: 'Barlow', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-  font-weight: 600;
-  font-size: 0.9rem;
-  line-height: 1.1;
-  white-space: nowrap;
-  text-decoration: none;
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease,
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.theme-utility-link:hover {
-  background-color: var(--theme-toggle-bg-hover);
-  color: var(--theme-toggle-color);
-}
-
-.theme-utility-link:focus-visible {
-  outline: var(--focus-outline-width) solid var(--focus-ring-border);
-  outline-offset: calc(var(--focus-outline-offset) + 2px);
-  box-shadow: 0 0 0 0.2rem var(--theme-toggle-focus-ring);
-  text-decoration: none;
-}
-
-.theme-utility-icon {
-  font-size: 1rem;
-  line-height: 1;
-}
-
+.theme-utility-link,
 .theme-toggle-button {
   display: inline-flex;
   align-items: center;
@@ -1480,7 +1442,6 @@ main {
   font-weight: 600;
   font-size: 0.9rem;
   line-height: 1.1;
-  cursor: pointer;
   white-space: nowrap;
   transition:
     background-color 0.2s ease,
@@ -1489,14 +1450,31 @@ main {
     box-shadow 0.2s ease;
 }
 
-.theme-toggle-button:hover {
-  background-color: var(--theme-toggle-bg-hover);
+.theme-utility-link {
+  text-decoration: none;
 }
 
+.theme-toggle-button {
+  cursor: pointer;
+}
+
+.theme-utility-link:hover,
+.theme-toggle-button:hover {
+  background-color: var(--theme-toggle-bg-hover);
+  color: var(--theme-toggle-color);
+}
+
+.theme-utility-link:focus-visible,
 .theme-toggle-button:focus-visible {
   outline: var(--focus-outline-width) solid var(--focus-ring-border);
   outline-offset: calc(var(--focus-outline-offset) + 2px);
   box-shadow: 0 0 0 0.2rem var(--theme-toggle-focus-ring);
+  text-decoration: none;
+}
+
+.theme-utility-icon {
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .theme-toggle-icon {
