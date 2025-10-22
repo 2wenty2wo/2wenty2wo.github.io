@@ -5,7 +5,7 @@
 
 import { state } from '../state.js';
 import { elements } from '../dom-elements.js';
-import { updatePreview, updateDownloadState } from '../render.js';
+import { updatePreview, updateDownloadState } from '../form-updates.js';
 
 const {
   customGraphicSourceRadios,

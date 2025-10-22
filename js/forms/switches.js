@@ -8,7 +8,7 @@ import { elements } from '../dom-elements.js';
 import {
   switchTypeOptions
 } from '../data.js';
-import { updatePreview, updateDownloadState } from '../render.js';
+import { updatePreview, updateDownloadState } from '../form-updates.js';
 
 const {
   switchTypeContainer,

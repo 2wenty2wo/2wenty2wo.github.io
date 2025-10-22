@@ -11,7 +11,7 @@ import {
   findConnectorCategory,
   getConnectorSeriesImage
 } from '../data.js';
-import { updatePreview, updateDownloadState } from '../render.js';
+import { updatePreview, updateDownloadState } from '../form-updates.js';
 
 const {
   connectorCategoryContainer,
