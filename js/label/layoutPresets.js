@@ -367,6 +367,7 @@ function extractPartOverride(entry, partType) {
   if (!partEntry) {
     return null;
   }
+  // eslint-disable-next-line no-unused-vars
   const { [SUB_PARTS_KEY]: _ignored, ...rest } = partEntry;
   return Object.keys(rest).length > 0 ? rest : null;
 }

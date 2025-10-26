@@ -1187,7 +1187,7 @@ function computeAlignedX(zoneX, availableWidth, alignment) {
   return zoneX;
 }
 
-export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
+export function layoutText({ textLines, textRect, preset, pxPerMm }) {
   const mainText = (textLines.line1 || '').trim();
   const textPreset = preset.text_zone || {};
   const mainFontWeight = resolveMainFontWeight(textPreset.main?.font_weight);
@@ -1442,7 +1442,6 @@ export function layoutText({ textLines, textRect, preset, pxPerMm, qrBounds }) {
   const mainFit = fitResult.mainFit;
   const mainAscent = fitResult.mainAscent;
   const mainDescent = fitResult.mainDescent;
-  const hasMainMetrics = fitResult.hasMainMetrics;
   const mainHeight = fitResult.mainHeight;
   const mainLineCount = fitResult.mainLineCount;
   const mainLineHeightPx = fitResult.mainLineHeightPx;
